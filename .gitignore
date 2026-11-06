@@ -1,0 +1,24 @@
+# This folder also holds personal notes, old trackers and spreadsheets that must NOT end up
+# in the public repository. So everything is ignored, and only the app itself is allowed in.
+/*
+!/.github/
+!/src/
+!/scripts/
+!/static/
+!/.gitignore
+!/.npmrc
+!/package.json
+!/package-lock.json
+!/README.md
+!/tsconfig.json
+!/vite.config.ts
+
+# Never commit (even inside the allowed folders)
+node_modules
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*

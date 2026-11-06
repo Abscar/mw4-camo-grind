@@ -1,0 +1,409 @@
+@import 'tailwindcss' source(none);
+@source './lib';
+@source './routes';
+
+/*
+ * Design tokens. Utilities like `bg-panel` or `text-gold` read these variables,
+ * and each theme below only swaps the variable values (switched by data-theme on <html>).
+ */
+@theme inline {
+	--color-bg: var(--t-bg);
+	--color-panel: var(--t-panel);
+	--color-panel-2: var(--t-panel-2);
+	--color-line: var(--t-line);
+	--color-fg: var(--t-fg);
+	--color-muted: var(--t-muted);
+	--color-dim: var(--t-dim);
+	--color-accent: var(--t-accent);
+	--color-on-accent: var(--t-on-accent);
+	--color-tick: var(--t-tick);
+	--color-tick-line: var(--t-tick-line);
+	--color-track: var(--t-track);
+	--color-danger: var(--t-danger);
+
+	/* camo colours: fills, and the "ink" version that is readable as text on panels */
+	--color-gold: var(--t-gold);
+	--color-plat: var(--t-plat);
+	--color-hb: var(--t-hb);
+	--color-div: var(--t-div);
+	--color-new: var(--t-new);
+	--color-brand: var(--t-brand);
+	--color-gold-ink: var(--t-gold-ink, var(--t-gold));
+	--color-plat-ink: var(--t-plat-ink, var(--t-plat));
+	--color-hb-ink: var(--t-hb-ink, var(--t-hb));
+	--color-div-ink: var(--t-div-ink, var(--t-div));
+	--color-new-ink: var(--t-new-ink, var(--t-new));
+
+	/* header band (dark bar in Command Center, invisible elsewhere) */
+	--color-band: var(--t-band);
+	--color-band-fg: var(--t-band-fg);
+	--color-band-muted: var(--t-band-muted);
+	--color-band-chip: var(--t-band-chip);
+	--color-band-line: var(--t-band-line);
+
+	--font-head: var(--t-font-head);
+	--font-body: var(--t-font-body);
+	--radius-card: var(--t-radius);
+	--shadow-card: var(--t-shadow);
+}
+
+/* ---------- themes ---------- */
+
+:root,
+[data-theme='blackout'] {
+	color-scheme: dark;
+	--t-bg: #0b0d10;
+	--t-glow-1: rgb(232 178 58 / 0.07);
+	--t-glow-2: rgb(169 112 255 / 0.05);
+	--t-panel: #12161c;
+	--t-panel-2: #171c24;
+	--t-line: #232a34;
+	--t-fg: #e9ecef;
+	--t-muted: #8b95a4;
+	--t-dim: #4a5361;
+	--t-accent: #e8b23a;
+	--t-on-accent: #0b0d10;
+	--t-brand: #e8b23a;
+	--t-gold: #e8b23a;
+	--t-plat: #c5d0de;
+	--t-hb: #a970ff;
+	--t-hb-ink: #b98aff;
+	--t-div: #36d6c3;
+	--t-new: #ff6a3d;
+	--t-tick: #1d232c;
+	--t-tick-line: #333b47;
+	--t-track: #232a35;
+	--t-danger: #ff6b6b;
+	--t-band: transparent;
+	--t-band-fg: var(--t-fg);
+	--t-band-muted: var(--t-muted);
+	--t-band-chip: var(--t-panel);
+	--t-band-line: var(--t-line);
+	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
+	--t-font-body: Bahnschrift, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+	--t-radius: 4px;
+	--t-shadow: none;
+	/* layout switches (0 = off, 1 = on, or a length) */
+	--t-card-left: 3px;
+	--t-card-top: 0px;
+	--t-head-fill: 0;
+	--t-glow: 0;
+	/* class and mastery accents */
+	--class-1: #e8b23a;
+	--class-2: #e8b23a;
+	--class-3: #e8b23a;
+	--class-4: #e8b23a;
+	--class-5: #e8b23a;
+	--class-6: #e8b23a;
+	--class-7: #e8b23a;
+	--class-8: #e8b23a;
+	--class-9: #e8b23a;
+	--mastery-1: #9fe8ff;
+	--mastery-2: #ff5fd2;
+	--mastery-3: #7c9cff;
+}
+
+[data-theme='field'] {
+	color-scheme: light;
+	--t-bg: #f3efe6;
+	--t-glow-1: transparent;
+	--t-glow-2: transparent;
+	--t-panel: #ffffff;
+	--t-panel-2: #faf7f0;
+	--t-line: #e7e1d4;
+	--t-fg: #23261f;
+	--t-muted: #6b6555;
+	--t-dim: #b5ae9d;
+	--t-accent: #4e6b3a;
+	--t-on-accent: #ffffff;
+	--t-brand: #4e6b3a;
+	--t-gold: #c9972b;
+	--t-gold-ink: #8a6512;
+	--t-plat: #8ea2bb;
+	--t-plat-ink: #556a84;
+	--t-hb: #7b55d8;
+	--t-div: #2c8c83;
+	--t-div-ink: #1f6f68;
+	--t-new: #d9480f;
+	--t-new-ink: #b23a0a;
+	--t-tick: #f3eee4;
+	--t-tick-line: #c9c0ac;
+	--t-track: #ece6da;
+	--t-danger: #b42318;
+	--t-band: transparent;
+	--t-band-fg: var(--t-fg);
+	--t-band-muted: var(--t-muted);
+	--t-band-chip: var(--t-panel);
+	--t-band-line: var(--t-line);
+	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
+	--t-font-body: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+	--t-radius: 8px;
+	--t-shadow: 0 1px 2px rgb(60 50 30 / 0.06), 0 8px 24px rgb(60 50 30 / 0.07);
+	--t-card-left: 0px;
+	--t-card-top: 0px;
+	--t-head-fill: 1;
+	--t-glow: 0;
+	--class-1: #4e6b3a;
+	--class-2: #a4553a;
+	--class-3: #8e3b46;
+	--class-4: #3f5f7a;
+	--class-5: #2e6e68;
+	--class-6: #2f3b5c;
+	--class-7: #6e4f7e;
+	--class-8: #a8611c;
+	--class-9: #4a4a44;
+	--mastery-1: #2f7fa0;
+	--mastery-2: #b4387a;
+	--mastery-3: #4a5fc1;
+}
+
+[data-theme='neon'] {
+	color-scheme: dark;
+	--t-bg: #0e0b1f;
+	--t-glow-1: rgb(255 62 154 / 0.14);
+	--t-glow-2: rgb(45 226 230 / 0.1);
+	--t-panel: #161233;
+	--t-panel-2: #1c173f;
+	--t-line: #2b2560;
+	--t-fg: #f2eeff;
+	--t-muted: #9d96c9;
+	--t-dim: #5a5390;
+	--t-accent: #ff3e9a;
+	--t-on-accent: #0e0b1f;
+	--t-brand: #ff3e9a;
+	--t-gold: #ffc53d;
+	--t-plat: #bfd0ff;
+	--t-hb: #c77dff;
+	--t-div: #2de2e6;
+	--t-new: #b6f23d;
+	--t-tick: #231d4d;
+	--t-tick-line: #3a3280;
+	--t-track: #251e52;
+	--t-danger: #ff6b8b;
+	--t-band: transparent;
+	--t-band-fg: var(--t-fg);
+	--t-band-muted: var(--t-muted);
+	--t-band-chip: var(--t-panel);
+	--t-band-line: var(--t-line);
+	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
+	--t-font-body: Bahnschrift, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+	--t-radius: 6px;
+	--t-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+	--t-card-left: 4px;
+	--t-card-top: 0px;
+	--t-head-fill: 0;
+	--t-glow: 1;
+	--class-1: #ff3e9a;
+	--class-2: #e844b5;
+	--class-3: #d04acf;
+	--class-4: #b453e3;
+	--class-5: #9461ec;
+	--class-6: #7473ee;
+	--class-7: #558aec;
+	--class-8: #3ba6e9;
+	--class-9: #2dc6e6;
+	--mastery-1: #7df9ff;
+	--mastery-2: #ff6ad5;
+	--mastery-3: #8c9eff;
+}
+
+[data-theme='command'] {
+	color-scheme: light;
+	--t-bg: #f3f5f8;
+	--t-glow-1: transparent;
+	--t-glow-2: transparent;
+	--t-panel: #ffffff;
+	--t-panel-2: #f7f9fb;
+	--t-line: #e6e9ee;
+	--t-fg: #111827;
+	--t-muted: #5f6672;
+	--t-dim: #9ca3af;
+	--t-accent: #2563eb;
+	--t-on-accent: #ffffff;
+	--t-brand: #e8b23a;
+	--t-gold: #d4a017;
+	--t-gold-ink: #876509;
+	--t-plat: #94a3b8;
+	--t-plat-ink: #556377;
+	--t-hb: #8b5cf6;
+	--t-hb-ink: #6d3fe0;
+	--t-div: #14b8a6;
+	--t-div-ink: #0f766e;
+	--t-new: #ef4444;
+	--t-new-ink: #c42020;
+	--t-tick: #eef1f5;
+	--t-tick-line: #c7ced8;
+	--t-track: #e9edf2;
+	--t-danger: #c42020;
+	--t-band: #0f1b2d;
+	--t-band-fg: #ffffff;
+	--t-band-muted: #a9b7cc;
+	--t-band-chip: rgb(255 255 255 / 0.08);
+	--t-band-line: rgb(255 255 255 / 0.16);
+	--t-font-head: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+	--t-font-body: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+	--t-radius: 10px;
+	--t-shadow: 0 1px 2px rgb(16 24 40 / 0.05), 0 6px 18px rgb(16 24 40 / 0.06);
+	--t-card-left: 0px;
+	--t-card-top: 3px;
+	--t-head-fill: 0;
+	--t-glow: 0;
+	--class-1: #2563eb;
+	--class-2: #16a34a;
+	--class-3: #dc2626;
+	--class-4: #ea580c;
+	--class-5: #0891b2;
+	--class-6: #7c3aed;
+	--class-7: #db2777;
+	--class-8: #ca8a04;
+	--class-9: #475569;
+	--mastery-1: #0ea5e9;
+	--mastery-2: #db2777;
+	--mastery-3: #4f46e5;
+}
+
+/* ---------- base ---------- */
+
+@layer base {
+	html {
+		-webkit-text-size-adjust: 100%;
+	}
+	body {
+		min-height: 100dvh;
+		background:
+			radial-gradient(1100px 520px at 0% -10%, var(--t-glow-1), transparent 70%),
+			radial-gradient(900px 480px at 100% 0%, var(--t-glow-2), transparent 70%),
+			var(--t-bg);
+		background-attachment: fixed;
+		color: var(--t-fg);
+		font-family: var(--t-font-body);
+		font-size: 15px;
+		line-height: 1.45;
+		transition:
+			background-color 0.25s,
+			color 0.25s;
+	}
+	:focus-visible {
+		outline: 2px solid var(--t-accent);
+		outline-offset: 2px;
+	}
+	button:not(:disabled),
+	[role='button'],
+	summary,
+	label[for] {
+		cursor: pointer;
+	}
+	::selection {
+		background: color-mix(in srgb, var(--t-accent) 35%, transparent);
+	}
+}
+
+/* ---------- a few pieces that are easier as plain CSS ---------- */
+
+@layer components {
+	/* class cards: border on the left (Blackout/Neon) or top (Command Center) in the class colour */
+	.class-card {
+		border-left: var(--t-card-left) solid var(--c);
+		border-top: var(--t-card-top) solid var(--c);
+	}
+	/* Field Manual fills the card header with the class colour */
+	.class-head {
+		background: color-mix(in srgb, var(--c) calc(var(--t-head-fill) * 100%), transparent);
+		color: color-mix(in srgb, #ffffff calc(var(--t-head-fill) * 100%), var(--t-fg));
+	}
+	.class-head .class-no {
+		color: color-mix(in srgb, rgb(255 255 255 / 0.75) calc(var(--t-head-fill) * 100%), var(--c));
+	}
+
+	.bar {
+		height: 6px;
+		border-radius: 999px;
+		background: var(--t-track);
+		overflow: hidden;
+	}
+	.bar > i {
+		display: block;
+		height: 100%;
+		border-radius: inherit;
+		background: var(--k, var(--t-accent));
+		box-shadow: 0 0 calc(var(--t-glow) * 12px) var(--k, var(--t-accent));
+		transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+
+	/* the Gold / Platinum / Harmonic Break boxes */
+	.camo-toggle {
+		border: 1px solid var(--t-tick-line);
+		background: var(--t-tick);
+		color: var(--t-muted);
+		transition:
+			background-color 0.15s,
+			border-color 0.15s,
+			color 0.15s,
+			transform 0.1s,
+			box-shadow 0.2s;
+	}
+	.camo-toggle:hover {
+		border-color: var(--k);
+	}
+	.camo-toggle:active {
+		transform: scale(0.92);
+	}
+	.camo-toggle[aria-pressed='true'] {
+		background: var(--k);
+		border-color: var(--k);
+		color: var(--t-on-accent);
+		box-shadow: 0 0 calc(var(--t-glow) * 14px) color-mix(in srgb, var(--k) 55%, transparent);
+	}
+	.camo-toggle.just-ticked {
+		animation: tick-pop 0.22s ease-out;
+	}
+
+	/* Unconfirmed facts: dotted underline (not just colour) plus hidden text for screen readers */
+	.unverified {
+		text-decoration: underline dotted;
+		text-decoration-color: currentColor;
+		text-underline-offset: 3px;
+		cursor: help;
+	}
+
+	/* hide the content until saved progress is read, so nobody sees default ticks flash by */
+	.app-gate {
+		transition: opacity 0.15s;
+	}
+	.app-gate:not(.ready) {
+		opacity: 0;
+	}
+
+	.no-scrollbar {
+		scrollbar-width: none;
+	}
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+
+	dialog.sheet::backdrop {
+		background: rgb(0 0 0 / 0.55);
+	}
+}
+
+@keyframes tick-pop {
+	0% {
+		transform: scale(0.8);
+	}
+	60% {
+		transform: scale(1.08);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+		scroll-behavior: auto !important;
+	}
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="blackout">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="text-scale" content="scale" />
+		<meta name="theme-color" content="#0B0D10" />
+		<meta name="description" content="Tick off your Modern Warfare 4 Multiplayer camo grind: Gold, Platinum, Harmonic Break, Divergence and Mastery." />
+		<link
+			rel="icon"
+			href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0D10'/%3E%3Cpath d='M16 5l9 5v12l-9 5-9-5V10z' fill='none' stroke='%23E8B23A' stroke-width='2.5'/%3E%3Cpath d='M11 17l3.5 3.5L21 13' fill='none' stroke='%23E8B23A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+		/>
+		<script>
+			// Apply the saved theme before the page paints, so there is no flash of the wrong colours.
+			// Keys must match STORAGE_KEY / LEGACY_KEY in src/lib/progress.svelte.ts.
+			try {
+				var s = JSON.parse(localStorage.getItem('mw4-camo-grind:v2') || 'null');
+				var t = s && s.prefs && s.prefs.theme;
+				if (!t) {
+					var o = JSON.parse(localStorage.getItem('mw4-camo-grind-v1') || 'null');
+					t = o && o.theme;
+				}
+				if (typeof t === 'string') document.documentElement.setAttribute('data-theme', t);
+			} catch (e) {}
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>
