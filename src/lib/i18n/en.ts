@@ -5,8 +5,7 @@
 export const en = {
 	title: { game: 'MW4', app: 'Camo Grind' },
 	pageTitle: 'MW4 Camo Grind',
-	subtitle: (mode: string, season: string, weapons: number, classes: number) =>
-		`${mode} · ${season} · ${weapons} weapons · ${classes} classes`,
+	subtitle: (mode: string, season: string) => `${mode} · ${season}`,
 	unlockOrder: 'Unlock order',
 	masteryShort: 'Mastery',
 

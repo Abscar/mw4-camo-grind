@@ -132,7 +132,7 @@
 					><span class="sr-only"> </span><span class="title-skin">{t.title.app}</span>
 				</h1>
 				<p class="font-head mt-2 text-[11.5px] font-semibold tracking-[0.14em] text-band-muted uppercase">
-					{t.subtitle(GAME_MODE, CURRENT_SEASON, WEAPONS.length, CLASSES.length)}
+					{t.subtitle(GAME_MODE, CURRENT_SEASON)}
 				</p>
 				<ol
 					class="font-head mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-bold tracking-wider uppercase"
