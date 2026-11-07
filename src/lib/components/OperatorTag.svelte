@@ -11,6 +11,27 @@
 
 	const UPPER_TEETH = [20.6, 23.5, 26.4, 29.3, 32.2, 35.1, 38, 40.9];
 	const LOWER_TEETH = [21.2, 24, 26.8, 29.6, 32.4, 35.2, 38, 40.6];
+
+	/**
+	 * Thick smoke from the holk: soft puffs that well up at the ember, swell and drift up (the user's ask,
+	 * 2026-11-07: "more and thicker smoke"). [start s, duration s, sway, end drift, radius]; negative
+	 * delays so the column is already full on load. Mostly drifting left, away from the callsign text.
+	 */
+	const PUFFS = [
+		[0, 5.2, 9, -10, 7],
+		[0.4, 4.6, -8, 6, 6.2],
+		[0.8, 5.6, 10, -20, 7.6],
+		[1.2, 4.9, -9, -4, 6.6],
+		[1.6, 5.4, 8, -15, 7.2],
+		[2, 4.7, -10, 7, 6.4],
+		[2.4, 5.8, 9, -22, 7.8],
+		[2.8, 5, -8, -8, 7],
+		[3.2, 5.3, 10, 3, 6.6],
+		[3.6, 5.5, -9, -16, 7.4],
+		[4, 4.8, 8, -3, 6.4],
+		[4.4, 5.6, -10, -12, 7.5],
+		[4.8, 5.1, 9, -18, 7]
+	];
 </script>
 
 <div class="abscar-only mb-4">
@@ -42,8 +63,11 @@
 						<stop offset="0" stop-color="#ff8a1a" stop-opacity="0.95" />
 						<stop offset="1" stop-color="#ff5a00" stop-opacity="0" />
 					</radialGradient>
+					<filter id="{uid}-puff-blur" x="-100%" y="-100%" width="300%" height="300%">
+						<feGaussianBlur stdDeviation="2.4" />
+					</filter>
 					<filter id="{uid}-blur" x="-50%" y="-50%" width="200%" height="200%">
-						<feGaussianBlur stdDeviation="1.3" />
+						<feGaussianBlur stdDeviation="1.5" />
 					</filter>
 				</defs>
 
@@ -123,12 +147,28 @@
 				<circle class="op-ember-glow" cx="62.6" cy="45.2" r="7.5" fill="url(#{uid}-ember)" />
 				<ellipse cx="62.6" cy="45.2" rx="1.1" ry="3" transform="rotate(12 62.6 45.2)" fill="#ff8a1a" />
 
-				<!-- smoke -->
+				<!-- smoke: thick puffs billowing up, with curling wisps through them -->
+				<g filter="url(#{uid}-puff-blur)" fill="#e2e7e2">
+					{#each PUFFS as [start, dur, sway, dx, r], i (i)}
+						<circle
+							class="op-puff"
+							cx="62.4"
+							cy="42"
+							{r}
+							style:animation-delay="-{start}s"
+							style:animation-duration="{dur}s"
+							style:--sway="{sway}px"
+							style:--dx="{dx}px"
+						/>
+					{/each}
+				</g>
 				<g filter="url(#{uid}-blur)">
 					<path class="op-wisp" d="M62 41 C58 33 66 27 61 19 C57 12 64 6 60 -2" />
 					<path class="op-wisp" d="M63 41 C67 33 59 26 64 18 C68 11 61 5 65 -3" />
 					<path class="op-wisp" d="M62 41 C60 35 65 30 62 24 C59 18 63 13 61 7" />
 					<path class="op-wisp" d="M63 42 C64 36 60 31 63 25 C66 19 62 14 64 8" />
+					<path class="op-wisp" d="M62 42 C57 36 61 29 57 22 C54 16 58 10 55 3" />
+					<path class="op-wisp" d="M63 41 C66 35 62 29 66 22 C69 16 64 10 67 4" />
 				</g>
 			</svg>
 

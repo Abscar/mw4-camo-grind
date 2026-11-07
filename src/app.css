@@ -540,17 +540,23 @@
 	animation: camo-flow 9s ease-in-out infinite alternate;
 }
 
-/* operator emblem: pulsing red eye, glowing ember, smoke wisps */
+/* operator emblem: pulsing red eye, glowing ember, thick smoke (puffs + wisps) */
 .op-eye-glow {
 	animation: eye-pulse 3.2s ease-in-out infinite;
 }
 .op-ember-glow {
 	animation: ember-puff 4.8s ease-in-out infinite;
 }
+.op-puff {
+	opacity: 0;
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: puff-rise 5s ease-out infinite;
+}
 .op-wisp {
 	fill: none;
 	stroke: #dde5dd;
-	stroke-width: 3.4;
+	stroke-width: 4.8;
 	stroke-linecap: round;
 	opacity: 0;
 	transform-box: fill-box;
@@ -558,13 +564,19 @@
 	animation: wisp-rise 5.4s ease-out infinite;
 }
 .op-wisp:nth-child(2) {
-	animation-delay: 1.8s;
+	animation-delay: -1.8s;
 }
 .op-wisp:nth-child(3) {
-	animation-delay: 2.7s;
+	animation-delay: -2.7s;
 }
 .op-wisp:nth-child(4) {
-	animation-delay: 4s;
+	animation-delay: -4s;
+}
+.op-wisp:nth-child(5) {
+	animation-delay: -0.9s;
+}
+.op-wisp:nth-child(6) {
+	animation-delay: -3.4s;
 }
 
 /* ranked badge: iridescent card, the emblem's glow slowly shifts pink ↔ cyan (no hue-rotate:
@@ -859,11 +871,28 @@
 		transform: translateY(4px) scaleX(0.6);
 	}
 	18% {
-		opacity: 0.75;
+		opacity: 0.85;
 	}
 	100% {
 		opacity: 0;
-		transform: translateY(-34px) scaleX(1.8);
+		transform: translateY(-44px) scaleX(2.2);
+	}
+}
+@keyframes puff-rise {
+	0% {
+		opacity: 0;
+		transform: translate(0, 2px) scale(0.4);
+	}
+	10% {
+		opacity: 0.9;
+	}
+	55% {
+		opacity: 0.68;
+		transform: translate(var(--sway), -28px) scale(2.3);
+	}
+	100% {
+		opacity: 0;
+		transform: translate(var(--dx), -66px) scale(4);
 	}
 }
 @keyframes blink {
