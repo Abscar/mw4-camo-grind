@@ -65,6 +65,7 @@ export const en = {
 	},
 
 	loadout: {
+		tag: 'Meta',
 		open: (weapon: string) => `Meta class for ${weapon} (Multiplayer and Warzone)`,
 		title: (weapon: string) => `${weapon} meta class`,
 		modes: { mp: 'Multiplayer', wz: 'Warzone' },

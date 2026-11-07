@@ -24,8 +24,8 @@
 	<!-- name + cartoon on the left; the meta button in its own column on the right, level with
 	     the name, so all the buttons in a box line up -->
 	<div
-		class="grid min-w-0 items-start gap-x-1.5 {hasMetaClass
-			? 'grid-cols-[minmax(0,1fr)_2.75rem]'
+		class="grid min-w-0 items-start gap-x-1 {hasMetaClass
+			? 'grid-cols-[minmax(0,1fr)_auto]'
 			: 'grid-cols-[minmax(0,1fr)]'}"
 	>
 		<div class="min-w-0">
@@ -49,15 +49,21 @@
 			{/if}
 		</div>
 		{#if hasMetaClass}
-			<!-- a 44 px tap target around a 28 px circle, pulled up so the circle sits level with the name -->
+			<!-- a ≥44 px tap target holding a small "META" sign and a 28 px circle. Wide screens: sign to
+			     the left of the circle, pulled up so both sit level with the name. Phones (no room for
+			     that next to the long names): the sign sits on top, level with the name, circle below. -->
 			<button
 				type="button"
-				class="meta-class-btn group -mt-[11px] grid size-11 flex-none place-items-center rounded-full"
+				class="meta-class-btn group flex min-h-11 min-w-11 flex-none flex-col items-center justify-start gap-0.5 rounded-full sm:-mt-[11px] sm:h-11 sm:flex-row sm:items-center sm:gap-1 sm:pr-2"
 				aria-label={metaLabel}
 				aria-haspopup="dialog"
 				title={metaLabel}
 				onclick={() => loadoutView.show(weapon.id)}
 			>
+				<span
+					class="meta-tag font-head rounded-[3px] border border-tick-line bg-tick px-1 text-[9.5px] leading-[15px] font-bold tracking-[0.08em] text-accent uppercase"
+					aria-hidden="true">{t.loadout.tag}</span
+				>
 				<span
 					class="grid size-7 place-items-center rounded-full border border-tick-line bg-tick text-accent transition-colors group-hover:border-accent"
 				>

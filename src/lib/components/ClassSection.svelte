@@ -37,7 +37,7 @@
 		<span class="class-no font-head text-xs font-bold tracking-wider" aria-hidden="true"
 			>{t.cls.number(number)}</span
 		>
-		<h2 id={headingId} class="font-head flex-1 text-[15px] font-bold tracking-wide uppercase">
+		<h2 id={headingId} class="class-title font-head flex-1 text-[15px] font-bold tracking-wide uppercase">
 			{cls.name}
 		</h2>
 		<span class="font-head font-bold tabular-nums">{pct}%</span>
