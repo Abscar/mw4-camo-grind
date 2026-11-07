@@ -17,7 +17,9 @@ export const en = {
 		label: 'Operator',
 		callsign: 'Abscar',
 		online: 'Online',
-		equipped: 'Mastery camos equipped'
+		equipped: 'Mastery camos equipped',
+		rank: 'Rank',
+		rankName: 'Iridescent'
 	},
 	hud: {
 		mode: 'Analysis: camo grind',

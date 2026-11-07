@@ -580,6 +580,35 @@
 	animation-delay: 4s;
 }
 
+/* ranked badge: iridescent card, the badge's colours slowly shift */
+.rank-card {
+	border: 1px solid rgb(255 95 216 / 0.45);
+	background: linear-gradient(135deg, rgb(120 30 160 / 0.35), rgb(20 8 40 / 0.6));
+	box-shadow:
+		0 0 18px rgb(200 80 255 / 0.25),
+		inset 0 0 12px rgb(255 95 216 / 0.12);
+}
+.rank-badge {
+	filter: drop-shadow(0 0 6px rgb(220 100 255 / 0.6));
+	animation: iri-shift 6s ease-in-out infinite alternate;
+}
+@keyframes iri-shift {
+	from {
+		filter: drop-shadow(0 0 6px rgb(220 100 255 / 0.6)) hue-rotate(-20deg);
+	}
+	to {
+		filter: drop-shadow(0 0 9px rgb(90 216 255 / 0.6)) hue-rotate(25deg);
+	}
+}
+.rank-name {
+	background: linear-gradient(100deg, #ff7ad9 0%, #c58bff 35%, #7fe3ff 65%, #ff7ad9 100%);
+	background-size: 300% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: camo-flow 6s ease-in-out infinite alternate;
+}
+
 /* red cyborg vision over the header: tint + a scan line sweeping down */
 .hud-vision {
 	position: absolute;
