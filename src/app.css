@@ -950,7 +950,8 @@
 
 /* Abscar: weapon names sit on a little yellow label with green text */
 [data-theme='blackout'] .weapon-name {
-	padding: 0 7px;
+	padding: 0 6px;
+	font-size: 14px;
 	border-radius: 3px;
 	background: #ffcc33;
 	color: #175a10;
