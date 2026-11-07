@@ -39,8 +39,8 @@ export type MeleeLook = { kind: 'melee'; style: 'knife' | 'axe'; body: string; h
  * Our own cartoons in the skin's style (researched from item pictures), never the game textures,
  * and no names in the UI.
  */
-export type Skin = 'fire-serpent' | 'asiimov' | 'blaze' | 'printstream' | 'bloodsport' | 'frost-borre' | 'fade';
-export type Cs2Model = 'ak47' | 'm4a4' | 'deagle' | 'usps' | 'mp7' | 'r8' | 'xm1014' | 'karambit';
+export type Skin = 'fire-serpent' | 'asiimov' | 'blaze' | 'printstream' | 'bloodsport' | 'frost-borre' | 'fade' | 'lightning-strike';
+export type Cs2Model = 'ak47' | 'm4a4' | 'deagle' | 'usps' | 'mp7' | 'r8' | 'xm1014' | 'karambit' | 'awp';
 export type Cs2Look = { kind: 'cs2'; model: Cs2Model; skin: Skin };
 
 export type GunLook = RifleLook | PistolLook | LauncherLook | MeleeLook | Cs2Look;
@@ -90,7 +90,7 @@ export const WEAPON_LOOKS: Record<string, GunLook> = {
 	'mosin-nagant': rifle({ stock: 'wood', mag: 'none', optic: 'irons', guard: 'wood', muzzle: 'plain', barrel: 1.4, bolt: true, body: BLACK, furniture: WOOD }),
 
 	// Sniper rifles
-	'kg-7-vulcan': rifle({ stock: 'fixed', mag: 'straight', optic: 'big', guard: 'slim', muzzle: 'can', barrel: 1.3, bolt: true, bipod: true, body: OD, furniture: OD }),
+	'kg-7-vulcan': { kind: 'cs2', model: 'awp', skin: 'lightning-strike' }, // the user's pick (2026-11-07), not a same-gun match
 	'astaroth-57': rifle({ stock: 'fixed', mag: 'none', optic: 'big', guard: 'slim', muzzle: 'brake', barrel: 1.5, bolt: true, bipod: true, body: GUNMETAL, furniture: BLACK }),
 	'signal-50': rifle({ bullpup: true, stock: 'fixed', mag: 'straight', optic: 'big', guard: 'slim', muzzle: 'brake', barrel: 1.2, bipod: true, body: BLACK, furniture: BLACK }),
 
