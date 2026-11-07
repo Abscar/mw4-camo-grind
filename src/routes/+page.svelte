@@ -9,9 +9,12 @@
 	import { THEMES } from '#lib/themes.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import { CAMO_FILL } from '#lib/ui.ts';
+	import AbscarFx from '#lib/components/AbscarFx.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
+	import EquippedCamos from '#lib/components/EquippedCamos.svelte';
 	import KpiBar from '#lib/components/KpiBar.svelte';
+	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
@@ -111,15 +114,20 @@
 	<noscript><style>.app-gate { opacity: 1 !important; }</style></noscript>
 </svelte:head>
 
+<AbscarFx />
+
 <div class="app-gate" class:ready={progress.ready}>
-	<div class="bg-band text-band-fg">
-		<header class="mx-auto flex max-w-[1240px] flex-wrap items-end justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8">
-			<div class="min-w-0">
+	<div class="relative overflow-hidden bg-band text-band-fg">
+		<header
+			class="relative mx-auto flex max-w-[1240px] flex-wrap items-end justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
+		>
+			<div class="relative z-[1] min-w-0">
+				<OperatorTag />
 				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
-					<span class="text-brand">{t.title.game}</span><span
+					<span class="brand-glow text-brand">{t.title.game}</span><span
 						class="mx-[0.3em] font-normal text-band-muted"
 						aria-hidden="true">//</span
-					><span class="sr-only"> </span>{t.title.app}
+					><span class="sr-only"> </span><span class="title-skin">{t.title.app}</span>
 				</h1>
 				<p class="font-head mt-2 text-[11.5px] font-semibold tracking-[0.14em] text-band-muted uppercase">
 					{t.subtitle(GAME_MODE, CURRENT_SEASON, WEAPONS.length, CLASSES.length)}
@@ -136,8 +144,9 @@
 						</li>
 					{/each}
 				</ol>
+				<EquippedCamos />
 			</div>
-			<ThemePicker />
+			<div class="relative z-[1]"><ThemePicker /></div>
 		</header>
 	</div>
 

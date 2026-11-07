@@ -19,7 +19,7 @@
 	<div class="min-w-0">
 		<div class="truncate font-semibold" title={weapon.name}>
 			{weapon.name}{#if maxed}<span class="ml-1 text-xs text-hb-ink" title={t.weapon.maxed}
-					><span aria-hidden="true">◆</span><span class="sr-only">({t.weapon.maxed})</span></span
+					><span class="maxed-mark" aria-hidden="true">◆</span><span class="sr-only">({t.weapon.maxed})</span></span
 				>{/if}
 		</div>
 		<div class="flex items-center gap-1.5 text-xs text-muted">

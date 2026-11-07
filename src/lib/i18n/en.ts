@@ -12,6 +12,14 @@ export const en = {
 
 	theme: { label: 'Theme' },
 
+	/** The Abscar theme's header extras. */
+	operator: {
+		label: 'Operator',
+		callsign: 'Abscar',
+		online: 'Online',
+		equipped: 'Mastery camos equipped'
+	},
+
 	kpi: {
 		label: 'Overall progress',
 		percentDone: (pct: number) => `${pct}% done`,

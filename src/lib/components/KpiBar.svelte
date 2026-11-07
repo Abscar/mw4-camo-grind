@@ -16,7 +16,7 @@
 		{@const count = progress.ladderCounts[i]}
 		{@const pct = percent(count, total)}
 		<div
-			class="rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
+			class="hud-frame rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
 			style:border-top-color={CAMO_FILL[camo.id]}
 			style:--k={CAMO_FILL[camo.id]}
 		>
@@ -32,7 +32,7 @@
 	{/each}
 
 	<div
-		class="rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
+		class="hud-frame rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
 		style:border-top-color="var(--t-div)"
 		style:--k="var(--t-div)"
 	>

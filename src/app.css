@@ -43,64 +43,71 @@
 
 	--font-head: var(--t-font-head);
 	--font-body: var(--t-font-body);
+	--font-hud: ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace;
 	--radius-card: var(--t-radius);
 	--shadow-card: var(--t-shadow);
 }
 
 /* ---------- themes ---------- */
 
+/*
+ * "Abscar" (id `blackout`, the dark theme): cyborg-red HUD, gunmetal panels, smoke
+ * and the Mastery camos animated. The extra decoration is
+ * switched on by --t-deco (see the "Abscar" section at the end of this file).
+ */
 :root,
 [data-theme='blackout'] {
 	color-scheme: dark;
-	--t-bg: #0b0d10;
-	--t-glow-1: rgb(232 178 58 / 0.07);
-	--t-glow-2: rgb(169 112 255 / 0.05);
-	--t-panel: #12161c;
-	--t-panel-2: #171c24;
-	--t-line: #232a34;
-	--t-fg: #e9ecef;
-	--t-muted: #8b95a4;
-	--t-dim: #4a5361;
-	--t-accent: #e8b23a;
-	--t-on-accent: #0b0d10;
-	--t-brand: #e8b23a;
+	--t-bg: #07080a;
+	--t-glow-1: rgb(255 36 36 / 0.11);
+	--t-glow-2: rgb(180 77 255 / 0.08);
+	--t-panel: #0e1014;
+	--t-panel-2: #15181e;
+	--t-line: #1f242b;
+	--t-fg: #eceef1;
+	--t-muted: #8f98a6;
+	--t-dim: #4a5260;
+	--t-accent: #ff3434;
+	--t-on-accent: #0a0304;
+	--t-brand: #ff3434;
 	--t-gold: #e8b23a;
 	--t-plat: #c5d0de;
 	--t-hb: #a970ff;
 	--t-hb-ink: #b98aff;
 	--t-div: #36d6c3;
 	--t-new: #ff6a3d;
-	--t-tick: #1d232c;
-	--t-tick-line: #333b47;
-	--t-track: #232a35;
+	--t-tick: #14171c;
+	--t-tick-line: #2b313a;
+	--t-track: #1c2129;
 	--t-danger: #ff6b6b;
 	--t-band: transparent;
 	--t-band-fg: var(--t-fg);
 	--t-band-muted: var(--t-muted);
-	--t-band-chip: var(--t-panel);
+	--t-band-chip: rgb(14 16 20 / 0.85);
 	--t-band-line: var(--t-line);
 	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
 	--t-font-body: Bahnschrift, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
-	--t-radius: 4px;
-	--t-shadow: none;
+	--t-radius: 3px;
+	--t-shadow: 0 14px 34px rgb(0 0 0 / 0.38);
 	/* layout switches (0 = off, 1 = on, or a length) */
 	--t-card-left: 3px;
 	--t-card-top: 0px;
 	--t-head-fill: 0;
-	--t-glow: 0;
-	/* class and mastery accents */
-	--class-1: #e8b23a;
-	--class-2: #e8b23a;
-	--class-3: #e8b23a;
-	--class-4: #e8b23a;
-	--class-5: #e8b23a;
-	--class-6: #e8b23a;
-	--class-7: #e8b23a;
-	--class-8: #e8b23a;
-	--class-9: #e8b23a;
-	--mastery-1: #9fe8ff;
-	--mastery-2: #ff5fd2;
-	--mastery-3: #7c9cff;
+	--t-glow: 0.7;
+	--t-deco: block;
+	/* class stripes run through a fade: yellow → pink → purple → blue */
+	--class-1: #ffd84a;
+	--class-2: #ffaa3d;
+	--class-3: #ff7a5c;
+	--class-4: #ff4f9a;
+	--class-5: #f04bd0;
+	--class-6: #c858ff;
+	--class-7: #9d62ff;
+	--class-8: #7a70ff;
+	--class-9: #5b8cff;
+	--mastery-1: #dfe6ec;
+	--mastery-2: #ff6ad5;
+	--mastery-3: #a48dff;
 }
 
 [data-theme='field'] {
@@ -143,6 +150,7 @@
 	--t-card-top: 0px;
 	--t-head-fill: 1;
 	--t-glow: 0;
+	--t-deco: none;
 	--class-1: #4e6b3a;
 	--class-2: #a4553a;
 	--class-3: #8e3b46;
@@ -193,6 +201,7 @@
 	--t-card-top: 0px;
 	--t-head-fill: 0;
 	--t-glow: 1;
+	--t-deco: none;
 	--class-1: #ff3e9a;
 	--class-2: #e844b5;
 	--class-3: #d04acf;
@@ -248,6 +257,7 @@
 	--t-card-top: 3px;
 	--t-head-fill: 0;
 	--t-glow: 0;
+	--t-deco: none;
 	--class-1: #2563eb;
 	--class-2: #16a34a;
 	--class-3: #dc2626;
@@ -396,6 +406,308 @@
 	100% {
 		transform: scale(1);
 	}
+}
+
+/*
+ * ---------- Abscar (the dark theme's extras) ----------
+ * Unlayered on purpose: these must win over Tailwind utilities, and every rule is scoped to
+ * the decoration classes or to [data-theme='blackout'], so the other themes don't change.
+ * Decoration is aria-hidden or plain text, and prefers-reduced-motion freezes all of it.
+ */
+
+/* the Mastery camos as CSS textures (used for swatches, bars and text in the Abscar theme) */
+:root {
+	--camo-mercurial: linear-gradient(
+		110deg,
+		#59616b 0%,
+		#e8edf2 14%,
+		#8b949e 28%,
+		#ffffff 40%,
+		#737c86 54%,
+		#cfd6dd 68%,
+		#5c646e 82%,
+		#eef2f5 100%
+	);
+	--camo-polyatomic: linear-gradient(
+		120deg,
+		#ff5fd2 0%,
+		#9b5cff 20%,
+		#3de0d0 40%,
+		#ffd36b 60%,
+		#ff7a9c 80%,
+		#ff5fd2 100%
+	);
+	--camo-orion:
+		radial-gradient(1.3px 1.3px at 14% 30%, #fff 60%, transparent 62%),
+		radial-gradient(1px 1px at 40% 72%, #d6e6ff 60%, transparent 62%),
+		radial-gradient(1.4px 1.4px at 68% 24%, #fff 60%, transparent 62%),
+		radial-gradient(1px 1px at 86% 66%, #ffd9f4 60%, transparent 62%),
+		linear-gradient(100deg, transparent 30%, rgb(255 130 225 / 0.45) 44%, rgb(120 220 255 / 0.45) 56%, transparent 70%),
+		linear-gradient(115deg, #1b1145 0%, #3a1d7a 30%, #0f2e66 55%, #2a1260 80%, #1b1145 100%);
+	--camo-orion-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 300% 100%, 100% 100%;
+	--camo-orion-text: linear-gradient(110deg, #c9b8ff 0%, #8fd8ff 30%, #ff9fe6 60%, #c9b8ff 100%);
+}
+
+.camo-skin-1 {
+	background: var(--camo-mercurial);
+	background-size: 300% 100%;
+}
+.camo-skin-2 {
+	background: var(--camo-polyatomic);
+	background-size: 400% 100%;
+}
+.camo-skin-3 {
+	background: var(--camo-orion);
+	background-size: var(--camo-orion-size);
+}
+.camo-skin-1,
+.camo-skin-2,
+.camo-skin-3 {
+	animation: camo-flow 7s ease-in-out infinite alternate;
+}
+.camo-skin-2 {
+	animation-duration: 9s;
+}
+
+@keyframes camo-flow {
+	from {
+		background-position: 0% 50%;
+	}
+	to {
+		background-position: 100% 50%;
+	}
+}
+
+/* everything Abscar-only: shown when the theme sets --t-deco: block */
+.abscar-only {
+	display: var(--t-deco, none);
+}
+
+/* fixed layers: drifting smoke behind the page, faint HUD scanlines + vignette on top */
+.abscar-haze {
+	display: var(--t-deco, none);
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	overflow: hidden;
+	pointer-events: none;
+}
+.abscar-haze > i {
+	position: absolute;
+	width: 75vmax;
+	height: 75vmax;
+	border-radius: 50%;
+	background: radial-gradient(closest-side, rgb(196 210 196 / 0.075), rgb(196 210 196 / 0.02) 55%, transparent);
+	animation: haze-drift 40s ease-in-out infinite alternate;
+	will-change: transform;
+}
+.abscar-haze > i:nth-child(1) {
+	left: -25vmax;
+	bottom: -38vmax;
+}
+.abscar-haze > i:nth-child(2) {
+	right: -30vmax;
+	bottom: -30vmax;
+	animation-duration: 48s;
+	animation-delay: -14s;
+}
+.abscar-haze > i:nth-child(3) {
+	left: 25vw;
+	top: 20vh;
+	width: 55vmax;
+	height: 55vmax;
+	opacity: 0.7;
+	animation-duration: 56s;
+	animation-delay: -30s;
+}
+@keyframes haze-drift {
+	from {
+		transform: translate3d(0, 0, 0) scale(1);
+	}
+	to {
+		transform: translate3d(7vmax, -16vmax, 0) scale(1.3);
+	}
+}
+
+.abscar-scan {
+	display: var(--t-deco, none);
+	position: fixed;
+	inset: 0;
+	z-index: 30;
+	pointer-events: none;
+	background:
+		repeating-linear-gradient(to bottom, rgb(255 40 40 / 0.028) 0 1px, transparent 1px 3px),
+		radial-gradient(ellipse at 50% 35%, transparent 62%, rgb(0 0 0 / 0.32) 100%);
+}
+
+/* header: brand glow, chrome title (Mercurial Drift equipped) */
+[data-theme='blackout'] .brand-glow {
+	text-shadow: 0 0 14px color-mix(in srgb, var(--t-brand) 60%, transparent);
+}
+[data-theme='blackout'] .title-skin {
+	background: var(--camo-mercurial);
+	background-size: 300% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: camo-flow 9s ease-in-out infinite alternate;
+}
+
+/* operator emblem: pulsing red eye, glowing ember, smoke wisps */
+.op-eye-glow {
+	animation: eye-pulse 3.2s ease-in-out infinite;
+}
+.op-ember-glow {
+	animation: ember-puff 4.8s ease-in-out infinite;
+}
+.op-wisp {
+	fill: none;
+	stroke: #dde5dd;
+	stroke-width: 3;
+	stroke-linecap: round;
+	opacity: 0;
+	transform-box: fill-box;
+	transform-origin: 50% 100%;
+	animation: wisp-rise 5.4s ease-out infinite;
+}
+.op-wisp:nth-child(2) {
+	animation-delay: 1.8s;
+}
+.op-wisp:nth-child(3) {
+	animation-delay: 3.6s;
+}
+.op-online-dot {
+	animation: blink 1.6s steps(2, jump-none) infinite;
+}
+@keyframes eye-pulse {
+	0%,
+	100% {
+		opacity: 0.55;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+@keyframes ember-puff {
+	0%,
+	100% {
+		opacity: 0.45;
+	}
+	12% {
+		opacity: 1;
+	}
+	40% {
+		opacity: 0.6;
+	}
+}
+@keyframes wisp-rise {
+	0% {
+		opacity: 0;
+		transform: translateY(4px) scaleX(0.6);
+	}
+	18% {
+		opacity: 0.75;
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-34px) scaleX(1.8);
+	}
+}
+@keyframes blink {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0.25;
+	}
+}
+
+/* equipped Mastery camo chips */
+.equip-chip {
+	border: 1px solid var(--t-line);
+	background: rgb(14 16 20 / 0.8);
+}
+
+/* KPI tiles get HUD corner brackets */
+.hud-frame {
+	position: relative;
+}
+.hud-frame::before,
+.hud-frame::after {
+	content: '';
+	display: var(--t-deco, none);
+	position: absolute;
+	bottom: 6px;
+	width: 9px;
+	height: 9px;
+	border: 0 solid color-mix(in srgb, var(--t-accent) 75%, transparent);
+	pointer-events: none;
+}
+.hud-frame::before {
+	left: 6px;
+	border-left-width: 1.5px;
+	border-bottom-width: 1.5px;
+}
+.hud-frame::after {
+	right: 6px;
+	border-right-width: 1.5px;
+	border-bottom-width: 1.5px;
+}
+
+/* Mastery rows wear their camo: animated bar, camo-coloured name and a camo stripe */
+[data-theme='blackout'] .mastery-row {
+	position: relative;
+	isolation: isolate;
+}
+[data-theme='blackout'] .mastery-row::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: var(--skin);
+	background-size: var(--skin-size);
+	opacity: 0.09;
+	mask-image: linear-gradient(90deg, #000, transparent 70%);
+	pointer-events: none;
+}
+[data-theme='blackout'] .mastery-row .bar > i {
+	background: var(--skin);
+	background-size: var(--skin-size);
+	box-shadow: 0 0 10px color-mix(in srgb, var(--k) 45%, transparent);
+	animation: camo-flow 6s ease-in-out infinite alternate;
+}
+[data-theme='blackout'] .mastery-row .mastery-name {
+	background: var(--skin-text);
+	background-size: 300% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: camo-flow 8s ease-in-out infinite alternate;
+}
+[data-theme='blackout'] .mastery-row[data-camo='1'] {
+	--skin: var(--camo-mercurial);
+	--skin-size: 300% 100%;
+	--skin-text: linear-gradient(110deg, #a3adb7 0%, #ffffff 25%, #bcc5ce 50%, #ffffff 75%, #a3adb7 100%);
+}
+[data-theme='blackout'] .mastery-row[data-camo='2'] {
+	--skin: var(--camo-polyatomic);
+	--skin-size: 400% 100%;
+	--skin-text: var(--camo-polyatomic);
+}
+[data-theme='blackout'] .mastery-row[data-camo='3'] {
+	--skin: var(--camo-orion);
+	--skin-size: var(--camo-orion-size);
+	--skin-text: var(--camo-orion-text);
+}
+
+/* a maxed weapon's ◆ shimmers like Polyatomic */
+[data-theme='blackout'] .maxed-mark {
+	background: var(--camo-polyatomic);
+	background-size: 400% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: camo-flow 6s ease-in-out infinite alternate;
 }
 
 @media (prefers-reduced-motion: reduce) {

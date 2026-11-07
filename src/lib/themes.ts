@@ -1,9 +1,11 @@
 /**
  * The four looks. Colours themselves live in app.css under [data-theme="…"];
  * this list is what the theme picker shows.
+ * The dark theme was "Blackout" and is now the personalised "Abscar" look; its id stays
+ * `blackout` because saved preferences store the id.
  */
 export const THEMES = [
-	{ id: 'blackout', name: 'Blackout', swatch: ['#0B0D10', '#E8B23A'], browserBar: '#0B0D10' },
+	{ id: 'blackout', name: 'Abscar', swatch: ['#07080A', '#FF3434'], browserBar: '#07080A' },
 	{ id: 'field', name: 'Field Manual', swatch: ['#F3EFE6', '#4E6B3A'], browserBar: '#F3EFE6' },
 	{ id: 'neon', name: 'Neon Grid', swatch: ['#0E0B1F', '#FF3E9A'], browserBar: '#0E0B1F' },
 	{ id: 'command', name: 'Command Center', swatch: ['#0F1B2D', '#2563EB'], browserBar: '#0F1B2D' }
