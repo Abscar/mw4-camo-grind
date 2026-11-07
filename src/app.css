@@ -721,8 +721,8 @@
 
 /* weapon-class boxes wear the Hot Rod camo: candy red with flame licks (tile from hotrod.ts) */
 [data-theme='blackout'] .weapon-class {
-	/* shifted up so the first row of flames burns behind the class name */
-	background: var(--hotrod-tile) center -70px / 220px auto repeat, #8e1111;
+	/* big flames like the camo; shifted so the first band burns behind the class name */
+	background: var(--hotrod-tile) center -150px / 440px auto repeat, #8e1111;
 	box-shadow: var(--t-shadow);
 	border-left-width: 0;
 	/* re-tune the theme colours inside the red box so text stays readable */
@@ -734,9 +734,16 @@
 	--t-hb-ink: #e2ccff;
 	--t-new-ink: #ffd0b8;
 }
-/* dark glass behind everything below the class name, so it reads over the flames */
+/* a light dark-glass behind everything below the class name: the camo shows through,
+   the text keeps a strong shadow so it still reads over the flames */
 [data-theme='blackout'] .weapon-class > :not(header) {
-	background: rgb(20 3 3 / 0.5);
+	background: rgb(25 3 3 / 0.28);
+}
+[data-theme='blackout'] .weapon-class li,
+[data-theme='blackout'] .weapon-class footer {
+	text-shadow:
+		0 1px 2px rgb(0 0 0 / 0.95),
+		0 0 8px rgb(0 0 0 / 0.8);
 }
 [data-theme='blackout'] .weapon-class .class-head,
 [data-theme='blackout'] .weapon-class .class-head + div {
