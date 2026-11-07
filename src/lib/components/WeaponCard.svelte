@@ -39,22 +39,26 @@
 			<div class="flex items-center gap-1.5">
 				{#if look}<WeaponIcon {look} />{/if}
 				{#if hasMetaClass}
-					<!-- 28 px to look at, 44 px to tap (the ::before extends the hit area) -->
+					<!-- a 44 px tap target around a 28 px circle; the negative margin keeps the row height -->
 					<button
 						type="button"
-						class="meta-class-btn relative grid size-7 flex-none place-items-center rounded-full border border-tick-line bg-tick text-accent transition-colors before:absolute before:-inset-2 hover:border-accent"
+						class="meta-class-btn group -my-2 grid size-11 flex-none place-items-center rounded-full"
 						aria-label={metaLabel}
 						aria-haspopup="dialog"
 						title={metaLabel}
 						onclick={() => loadoutView.show(weapon.id)}
 					>
-						<svg viewBox="0 0 24 24" class="size-[18px]" aria-hidden="true" focusable="false">
-							<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-								<circle cx="12" cy="12" r="6.5" />
-								<path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5" />
-							</g>
-							<circle cx="12" cy="12" r="1.6" fill="currentColor" />
-						</svg>
+						<span
+							class="grid size-7 place-items-center rounded-full border border-tick-line bg-tick text-accent transition-colors group-hover:border-accent"
+						>
+							<svg viewBox="0 0 24 24" class="size-[18px]" aria-hidden="true" focusable="false">
+								<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+									<circle cx="12" cy="12" r="6.5" />
+									<path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5" />
+								</g>
+								<circle cx="12" cy="12" r="1.6" fill="currentColor" />
+							</svg>
+						</span>
 					</button>
 				{/if}
 			</div>
