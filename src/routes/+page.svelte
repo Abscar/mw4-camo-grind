@@ -20,6 +20,7 @@
 	import LoadoutDialog from '#lib/components/LoadoutDialog.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
+	import SmokeBreak from '#lib/components/SmokeBreak.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -174,6 +175,10 @@
 		{/if}
 
 		<div class="mt-7"><MasterySection /></div>
+
+		<div class="abscar-only mt-7">
+			<div class="h-[clamp(200px,21vw,260px)] overflow-hidden rounded-card shadow-card"><SmokeBreak /></div>
+		</div>
 
 		<div class="mt-7"><SyncPanel /></div>
 
