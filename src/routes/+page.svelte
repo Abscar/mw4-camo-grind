@@ -122,7 +122,7 @@
 <div class="app-gate" class:ready={progress.ready}>
 	<div class="relative bg-band text-band-fg">
 		<div class="abscar-only"><DamascusSteel /></div>
-		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"><i></i></div></div>
+		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"></div></div>
 		<header
 			class="relative mx-auto flex max-w-[1240px] flex-wrap items-stretch justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
 		>
