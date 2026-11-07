@@ -12,7 +12,6 @@
 	import AbscarFx from '#lib/components/AbscarFx.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
-	import EquippedCamos from '#lib/components/EquippedCamos.svelte';
 	import HotRodFlames from '#lib/components/HotRodFlames.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import KpiBar from '#lib/components/KpiBar.svelte';
@@ -119,12 +118,13 @@
 <AbscarFx />
 
 <div class="app-gate" class:ready={progress.ready}>
-	<div class="relative overflow-hidden bg-band text-band-fg">
+	<div class="relative bg-band text-band-fg">
 		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"><i></i></div></div>
 		<header
 			class="relative mx-auto flex max-w-[1240px] flex-wrap items-end justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
 		>
-			<div class="relative z-[1] min-w-0">
+			<div class="absolute top-2 right-2 z-[3] sm:top-3 sm:right-3"><ThemePicker /></div>
+			<div class="relative z-[1] min-w-0 pr-10 sm:pr-0">
 				<OperatorTag />
 				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
 					<span class="brand-glow text-brand">{t.title.game}</span><span
@@ -147,12 +147,8 @@
 						</li>
 					{/each}
 				</ol>
-				<EquippedCamos />
 			</div>
-			<div class="relative z-[1] flex flex-col items-start gap-4 sm:items-end">
-				<HudReadout />
-				<ThemePicker />
-			</div>
+			<div class="relative z-[1]"><HudReadout /></div>
 		</header>
 		<div class="abscar-only"><HotRodFlames /></div>
 	</div>

@@ -9,14 +9,13 @@ export const en = {
 	unlockOrder: 'Unlock order',
 	masteryShort: 'Mastery',
 
-	theme: { label: 'Theme' },
+	theme: { label: 'Theme', current: (name: string) => `Theme: ${name}` },
 
 	/** The Abscar theme's header extras. */
 	operator: {
 		label: 'Operator',
 		callsign: 'Abscar',
 		online: 'Online',
-		equipped: 'Mastery camos equipped',
 		rank: 'Rank',
 		rankName: 'Iridescent'
 	},

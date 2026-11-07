@@ -1,48 +1,51 @@
 <!--
-	A burning strip under the header in the colours of Oden's "Hot Rod" camo: candy red with
-	classic hot-rod flame licks (gold outline, orange-red inside). Our own drawing, repeated as an
-	SVG pattern; two layers drift sideways and the front one flickers. Sparks float up.
-	Abscar theme only, decorative.
+	A strip under the header styled like Oden's "Hot Rod" camo: candy red, with teardrop flame
+	licks (round root, long flicked tip) in orange-red with a gold outline, tall ones behind and
+	short ones in front. Our own drawing in that style (not the game's texture), repeated as an
+	SVG pattern that drifts slowly; sparks float up. Abscar theme only, decorative.
 -->
 <script lang="ts" module>
-	const TILE = 240;
-	const H = 76;
+	const TILE = 300;
+	const H = 80;
+	/** Bottom of the flames' round roots. */
+	const BASE = 68;
 
-	/** One flame lick with its base at the bottom: [left x, base width, height]. */
-	type Lick = [number, number, number];
+	/** [centre x, root width, height, lean (1 = tip flicks right, -1 = left)] */
+	type Lick = [number, number, number, 1 | -1];
 
-	/** A slim hot-rod tongue: rises, curls its tip to the right, sweeps back down. */
-	function lick([x, w, h]: Lick): string {
-		const y = (f: number) => (H - f * h).toFixed(1);
-		const X = (f: number) => (x + f * w).toFixed(1);
+	function lick([cx, w, h, s]: Lick): string {
+		const r = w / 2;
+		const cy = BASE - r;
+		const x = (dx: number) => (cx + s * dx).toFixed(1);
+		const y = (v: number) => v.toFixed(1);
+		const tipY = BASE - h;
+		// tip → down the outer side (an S-curve) → round root → up the inner side (a wave) → tip
 		return (
-			`M${X(0)} ${H} C${X(0)} ${y(0.35)} ${X(0.2)} ${y(0.5)} ${X(0.35)} ${y(0.68)} ` +
-			`C${X(0.5)} ${y(0.85)} ${X(0.42)} ${y(0.95)} ${X(0.72)} ${y(1)} ` +
-			`C${X(0.6)} ${y(0.88)} ${X(0.72)} ${y(0.72)} ${X(0.86)} ${y(0.55)} ` +
-			`C${X(1)} ${y(0.38)} ${X(1)} ${y(0.15)} ${X(1)} ${H} Z`
+			`M${x(0.52 * w)} ${y(tipY)} ` +
+			`C${x(0.12 * w)} ${y(BASE - 0.84 * h)} ${x(0.8 * w)} ${y(cy - 1.4 * r)} ${x(r)} ${y(cy)} ` +
+			`A${r.toFixed(1)} ${r.toFixed(1)} 0 0 ${s === 1 ? 1 : 0} ${x(-r)} ${y(cy)} ` +
+			`C${x(-r)} ${y(cy - 1.5 * r)} ${x(-0.18 * w)} ${y(BASE - 0.6 * h)} ${x(0.08 * w)} ${y(BASE - 0.8 * h)} ` +
+			`C${x(0.26 * w)} ${y(BASE - 0.92 * h)} ${x(0.36 * w)} ${y(BASE - 0.96 * h)} ${x(0.52 * w)} ${y(tipY)} Z`
 		);
 	}
 
-	/** The same lick, shrunk toward its base (for the orange-red inside and the hot core). */
-	const inset = ([x, w, h]: Lick, k: number): Lick => [x + (w * (1 - k)) / 2, w * k, h * k];
-
 	/** Every lick drawn three times (x − tile, x, x + tile) so the pattern tiles seamlessly. */
 	const wrap = (licks: Lick[]): Lick[] =>
-		licks.flatMap(([x, w, h]) => [-TILE, 0, TILE].map((d): Lick => [x + d, w, h]));
+		licks.flatMap(([cx, w, h, s]) => [-TILE, 0, TILE].map((d): Lick => [cx + d, w, h, s]));
 
-	const FRONT = wrap([
-		[0, 34, 48],
-		[38, 30, 62],
-		[76, 34, 42],
-		[116, 32, 58],
-		[156, 30, 46],
-		[194, 34, 60]
+	const TALL = wrap([
+		[18, 24, 62, 1],
+		[78, 22, 66, 1],
+		[140, 24, 58, -1],
+		[200, 22, 64, 1],
+		[260, 24, 60, -1]
 	]);
-	const BACK = wrap([
-		[16, 40, 66],
-		[84, 44, 54],
-		[148, 40, 68],
-		[206, 40, 56]
+	const SHORT = wrap([
+		[48, 20, 44, -1],
+		[108, 19, 40, 1],
+		[170, 20, 46, 1],
+		[230, 19, 38, -1],
+		[290, 20, 42, 1]
 	]);
 </script>
 
@@ -54,20 +57,26 @@
 <div class="hotrod-strip" aria-hidden="true">
 	<svg class="hotrod-svg" height={H} focusable="false">
 		<defs>
-			<pattern id="{uid}-back" width={TILE} height={H} patternUnits="userSpaceOnUse">
-				{#each BACK as l, i (i)}<path d={lick(l)} fill="#8e1010" />{/each}
-				{#each BACK as l, i (i)}<path d={lick(inset(l, 0.7))} fill="#c0200f" />{/each}
-			</pattern>
-			<pattern id="{uid}-front" width={TILE} height={H} patternUnits="userSpaceOnUse">
-				{#each FRONT as l, i (i)}<path d={lick(l)} fill="#f5b818" stroke="#7a0d0d" stroke-width="1" />{/each}
-				{#each FRONT as l, i (i)}<path d={lick(inset(l, 0.74))} fill="#e2361a" />{/each}
-				{#each FRONT as l, i (i)}<path d={lick(inset(l, 0.38))} fill="#ff7a1a" />{/each}
+			<linearGradient id="{uid}-body" x1="0" y1="1" x2="0" y2="0">
+				<stop offset="0" stop-color="#ec4a1c" />
+				<stop offset="1" stop-color="#d02a14" />
+			</linearGradient>
+			<pattern id="{uid}-flames" width={TILE} height={H} patternUnits="userSpaceOnUse">
+				{#each [TALL, SHORT] as row, r (r)}
+					{#each row as l, i (i)}
+						<path
+							d={lick(l)}
+							fill="url(#{uid}-body)"
+							stroke="#f4b51a"
+							stroke-width="3.2"
+							stroke-linejoin="round"
+						/>
+						<path d={lick(l)} fill="none" stroke="#7c0c0a" stroke-width="0.8" opacity="0.6" />
+					{/each}
+				{/each}
 			</pattern>
 		</defs>
-		<g class="hotrod-drift hotrod-drift-back"><rect x={-TILE} width="6000" height={H} fill="url(#{uid}-back)" opacity="0.85" /></g>
-		<g class="hotrod-drift">
-			<g class="hotrod-flicker"><rect x={-TILE} width="6000" height={H} fill="url(#{uid}-front)" /></g>
-		</g>
+		<g class="hotrod-drift"><rect x={-TILE} width="6000" height={H} fill="url(#{uid}-flames)" /></g>
 	</svg>
 	{#each EMBERS as left, i (left)}
 		<i class="hotrod-ember" style:left="{left}%" style:animation-delay="{-(i * 0.73).toFixed(2)}s"></i>
