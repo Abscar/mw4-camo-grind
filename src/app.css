@@ -615,7 +615,7 @@
 		transform: translateX(0);
 	}
 	to {
-		transform: translateX(300px);
+		transform: translateX(220px);
 	}
 }
 .hotrod-ember {
