@@ -104,6 +104,7 @@ const WZ3 = `${WZSTATS} + ${CODMUNITY} + ${DEXERTO}`;
 const S1 = '2026-11-06';
 const DEFAULT_SCOPE = 'No optic attachment: it uses the default scope.';
 const WEAK_IN_WZ = 'Weak in Warzone right now (bottom tier on wzstats and codmunity).';
+const WEAK_ON_WZSTATS = 'Bottom tier in Warzone on wzstats; codmunity rates it average.';
 
 export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	// ---------- Assault Rifles ----------
@@ -126,12 +127,12 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	m4: {
 		mp: build('Versatile', CODMUNITY, S1, {
 			Muzzle: 'FSS IS300',
-			Barrel: 'FT Cannonade 7',
+			Barrel: 'FT Cannonade 7"',
 			'Rear Grip': 'Schlager STB Grip',
 			Ammunition: '5.56 NATO Overpressured',
 			Underbarrel: 'FSS Tac90 Grip'
 		}),
-		wz: build('Long range', CODMUNITY, S1, {
+		wz: build('Long range', WZ2, S1, {
 			Optic: 'Cronen R808',
 			Muzzle: 'FSS IS300',
 			Barrel: '16" Highmark Barrel',
@@ -183,14 +184,14 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		wz: build('Long range', WZ2, S1, {
 			Optic: 'Cronen R808',
 			Muzzle: 'EXP Undertow Gen. 2',
-			Barrel: 'SO 898F 19',
+			Barrel: 'SO 898F 19"',
 			Magazine: '50 Round Drum Mag',
 			Stock: 'Hanbit B56T-L9'
 		})
 	},
 	'kastov-762': {
 		mp: build('Versatile', CODMUNITY, S1, {
-			Barrel: 'FJX Ghostfire 16.3',
+			Barrel: 'FJX Ghostfire 16.3"',
 			'Rear Grip': 'Hanbit TechGrip',
 			Ammunition: '7.62 Soviet Overpressured',
 			Magazine: '45 Round Mag 7.62',
@@ -223,7 +224,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	axion: {
 		mp: build('Versatile', DEXERTO, DEX_DATE, {
 			Muzzle: 'FSS IS40',
-			Barrel: 'SA DMN-L 30',
+			Barrel: 'SA DMN-L 30"',
 			Laser: 'XRK Clutch-LS',
 			'Rear Grip': 'GS50 Grip',
 			Underbarrel: 'FSS Fireline Grip'
@@ -231,7 +232,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		wz: build('Long range', CODMUNITY, S1, {
 			Optic: 'Cronen R808',
 			Muzzle: 'FSS IS300',
-			Barrel: 'SA DMN-L 30',
+			Barrel: 'SA DMN-L 30"',
 			Magazine: '40 Round Mag',
 			Stock: 'TA Harrow Stock'
 		})
@@ -247,7 +248,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		wz: build('Long range', WZ2, S1, {
 			Optic: 'Cronen R808',
 			Muzzle: 'EXP Undertow Gen. 2',
-			Barrel: 'FJX Sypher 27',
+			Barrel: 'FJX Sypher 27"',
 			Magazine: '30 Round Mag',
 			Ammunition: '6.8 Wrath High Velocity'
 		})
@@ -269,7 +270,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				note: 'Brand new gun: codmunity rates it top tier in Multiplayer, wzstats near the bottom.'
 			}
 		),
-		wz: build('Long range', WZ2, S1, {
+		wz: build('Long range', WZSTATS, S1, {
 			Optic: 'Locus PX3 Canted',
 			Muzzle: 'FSS IS300',
 			Barrel: 'IO-556 Tac 18"',
@@ -288,7 +289,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			Laser: 'Schlager Visiv-5'
 		}),
 		wz: build('Close range', CODMUNITY, S1, {
-			Barrel: 'ZLR Mag-Z 9',
+			Barrel: 'ZLR Mag-Z 9"',
 			Magazine: '40 Round Mag',
 			'Rear Grip': 'Demo STP-1',
 			Stock: 'EXP G2-44 Stock',
@@ -345,11 +346,11 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	},
 	'x-58-nyx': {
 		mp: build('Close range', CODMUNITY, S1, {
-			Barrel: 'Doksa 4F 305mm',
-			Laser: 'XRK Clutch-LS',
+			Barrel: 'Mugi HYU-90 228mm',
 			Stock: 'No Stock',
-			'Rear Grip': 'Mugi 050-T Grip',
-			Underbarrel: 'FSS Fireline Grip'
+			'Rear Grip': 'Mugi-X Wrap',
+			Ammunition: '5.8x21mm Overpressured',
+			Underbarrel: 'FSS Tac90 Grip'
 		}),
 		wz: build('Close range', CODMUNITY, S1, {
 			Barrel: 'Doksa 4F 305mm',
@@ -379,7 +380,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	// ---------- Shotguns ----------
 	'rezi-12': {
 		mp: build('Close range', DEXERTO, DEX_DATE, {
-			Barrel: 'ZLR Rogue 90 25',
+			Barrel: 'ZLR Rogue 90 25"',
 			Laser: 'Schlager Visiv-5',
 			Bolt: 'XRK Quad-80',
 			Stock: 'No Stock',
@@ -415,7 +416,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	'finn-lmg': {
 		mp: build('Long range', DEXERTO, DEX_DATE, {
 			Muzzle: 'XRK Mil-Tac Suppressor',
-			Barrel: 'TA Sustain-99 20',
+			Barrel: 'TA Sustain-99 20"',
 			Optic: 'SZ Lonewolf Holo',
 			'Rear Grip': 'XRK Singularity-13',
 			Magazine: '75 Round Box Mag'
@@ -423,7 +424,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		wz: build('Long range', WZ3, S1, {
 			Optic: 'SZ Helios Holo',
 			Muzzle: 'FSS IS300',
-			Barrel: 'TA Sustain-99 20',
+			Barrel: 'TA Sustain-99 20"',
 			Ammunition: '5.56 NATO High Velocity',
 			'Rear Grip': 'Schlager KM60-G'
 		})
@@ -447,7 +448,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				'Rear Grip': 'Assault-L5 Grip',
 				Stock: 'FTAC RZR0 Stock'
 			},
-			{ note: WEAK_IN_WZ }
+			{ note: WEAK_ON_WZSTATS }
 		)
 	},
 	'apoc-338': {
@@ -498,7 +499,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	},
 	'oris-8-6': {
 		mp: build('Long range', DEXERTO, DEX_DATE, {
-			Barrel: 'EXP Crosstac 22',
+			Barrel: 'EXP Crosstac 22"',
 			Laser: 'Schlager Visiv-5',
 			Optic: 'Cronen R808',
 			'Rear Grip': 'OPS-45 XP Grip',
@@ -515,7 +516,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				'Rear Grip': 'Bruen C-Wrap 60',
 				Bolt: 'Lightfire-5 Quick Bolt'
 			},
-			{ note: WEAK_IN_WZ }
+			{ note: WEAK_ON_WZSTATS }
 		)
 	},
 	'mosin-nagant': {
@@ -537,10 +538,10 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 
 	// ---------- Sniper Rifles ----------
 	'kg-7-vulcan': {
-		mp: build('Sniper', `${CODMUNITY} + lfcarry`, S1, {
+		mp: build('Sniper', CODMUNITY, S1, {
 			Muzzle: 'Ivanov QR600',
-			Barrel: 'TT Baem 12',
-			Bolt: 'KT76 Light Bolt',
+			Barrel: 'TT Baem 12"',
+			Stock: 'Bruen KG-7 Mk. IV',
 			Optic: 'Schlager 7x',
 			Comb: 'TT Type 40 Comb',
 			Apex: 'KG-7 Drillcharge'
@@ -583,7 +584,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	},
 	'signal-50': {
 		mp: build('Sniper', DEXERTO, DEX_DATE, {
-			Barrel: 'S50-SB Gen.2 22',
+			Barrel: 'S50-SB Gen.2 22"',
 			Laser: 'Schlager Visiv-5',
 			Optic: 'Cronen R808',
 			Stock: 'Cronen SN-Pad50',
@@ -625,7 +626,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	'krait-p68': {
 		mp: build('Secondary', DEXERTO, DEX_DATE, {
 			Muzzle: 'FTAC Lonestar',
-			Barrel: 'XRK Doc-40 6',
+			Barrel: 'XRK Doc-40 6"',
 			Laser: 'GW 700-V',
 			Optic: 'Z-Dot 9',
 			'Trigger Action': 'P68 Tapper 9',
@@ -633,7 +634,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		}),
 		wz: build('Secondary', WZ2, S1, {
 			Muzzle: 'SFO Proto-33',
-			Barrel: 'XRK Doc-40 6',
+			Barrel: 'XRK Doc-40 6"',
 			Magazine: '20 Round Mag',
 			'Rear Grip': 'Shonay R-Wrap',
 			'Trigger Action': 'P68 Tapper 9'
@@ -663,7 +664,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 	},
 	'mojave-357': {
 		mp: build('Secondary', CODMUNITY, S1, {
-			Barrel: 'Bryson Snub 2',
+			Barrel: 'Bryson Snub 2"',
 			Ammunition: '.357 Magnum Overpressured',
 			'Rear Grip': 'SA Tyrant Grip',
 			'Trigger Action': 'M357 Light',
@@ -675,7 +676,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			S1,
 			{
 				Muzzle: 'Matuzek H357-M Comp',
-				Barrel: 'XRK Greywolf 7.5',
+				Barrel: 'XRK Greywolf 7.5"',
 				Laser: 'GW MDL-2',
 				Ammunition: '.357 Magnum Snake Shot',
 				Cylinder: 'Mojave Speed Cylinder'
