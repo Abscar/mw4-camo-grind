@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { clearLinkFromAddress, linkCodeInAddress } from '#lib/browser.ts';
 	import { DIVERGENCE, DIVERGENCE_REQUIRED, LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
-	import { CLASSES, CURRENT_SEASON, GAME_MODE, WEAPONS } from '#lib/data/weapons.ts';
+	import { CLASSES, WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { decodeLink, sameProgress, type ProgressData } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -139,11 +139,8 @@
 						aria-hidden="true">//</span
 					><span class="sr-only"> </span><span class="title-skin">{t.title.app}</span>
 				</h1>
-				<p class="font-head mt-2 text-[11.5px] font-semibold tracking-[0.14em] text-band-muted uppercase">
-					{t.subtitle(GAME_MODE, CURRENT_SEASON)}
-				</p>
 				<ol
-					class="font-head mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-bold tracking-wider uppercase"
+					class="font-head mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-bold tracking-wider uppercase"
 					aria-label={t.unlockOrder}
 				>
 					{#each ladderSteps as step, i (step.name)}
