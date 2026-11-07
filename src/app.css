@@ -1165,27 +1165,29 @@
 	transform: scale(1.06);
 }
 
-/* Abscar: the user's own white holk picture (assets/holk.webp) lies at the right end of the search
-   row. Pure decoration. The negative top margin lets the smoke rise into the space above, so only
-   the joint itself takes up room and it lines up with the toggle. */
+/* Abscar: the user's own white holk picture (assets/holk.webp), turned around and lying in a glass
+   ashtray (HolkAshtray.svelte), at the right end of the search row. Pure decoration. The negative
+   top margin lets the smoke rise into the space above, so mostly the ashtray takes up room. The
+   widths keep the joint about as big as it was on its own (240 px wide at ≥1024). */
 .toolbar-holk {
-	--w: 112px;
+	--w: 132px;
 	width: var(--w);
 	height: auto;
+	flex: none;
 	margin-left: auto;
-	margin-top: calc(var(--w) * -0.13);
+	margin-top: calc(var(--w) * -0.12);
+	margin-bottom: calc(var(--w) * -0.03);
 	pointer-events: none;
 	user-select: none;
-	filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.5));
 }
 @media (min-width: 768px) {
 	.toolbar-holk {
-		--w: 180px;
+		--w: 212px;
 	}
 }
 @media (min-width: 1024px) {
 	.toolbar-holk {
-		--w: 240px;
+		--w: 284px;
 	}
 }
 @media (max-width: 359px) {
