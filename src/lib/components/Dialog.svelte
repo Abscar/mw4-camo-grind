@@ -4,9 +4,17 @@
 	let {
 		open = $bindable(false),
 		title,
+		wide = false,
 		children,
 		actions
-	}: { open: boolean; title: string; children: Snippet; actions: Snippet } = $props();
+	}: {
+		open: boolean;
+		title: string;
+		/** Room for two columns on wide screens. */
+		wide?: boolean;
+		children: Snippet;
+		actions: Snippet;
+	} = $props();
 
 	const id = $props.id();
 	let el = $state<HTMLDialogElement>();
@@ -20,7 +28,9 @@
 
 <dialog
 	bind:this={el}
-	class="sheet m-auto w-[min(30rem,calc(100vw-2rem))] rounded-card border border-line bg-panel p-0 text-fg shadow-2xl"
+	class="sheet m-auto {wide
+		? 'w-[min(44rem,calc(100vw-2rem))]'
+		: 'w-[min(30rem,calc(100vw-2rem))]'} rounded-card border border-line bg-panel p-0 text-fg shadow-2xl"
 	aria-labelledby="{id}-title"
 	onclose={() => (open = false)}
 	onclick={(e) => {

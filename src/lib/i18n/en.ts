@@ -64,6 +64,22 @@ export const en = {
 		toggle: (camo: string, weapon: string) => `${camo}: ${weapon}`
 	},
 
+	loadout: {
+		open: (weapon: string) => `Meta class for ${weapon} (Multiplayer and Warzone)`,
+		title: (weapon: string) => `${weapon} meta class`,
+		modes: { mp: 'Multiplayer', wz: 'Warzone' },
+		none: {
+			mp: 'No Multiplayer meta class published for this gun yet.',
+			wz: 'No Warzone meta class published for this gun yet.'
+		},
+		perks: 'Perks',
+		equipment: 'Equipment',
+		streaks: 'Streaks',
+		snapshot: (date: string) =>
+			`A snapshot of the meta sites on ${date}. The meta moves with every balance patch, so double-check after big updates.`,
+		close: 'Close'
+	},
+
 	cls: {
 		number: (n: number) => String(n).padStart(2, '0'),
 		maxed: 'Class maxed',

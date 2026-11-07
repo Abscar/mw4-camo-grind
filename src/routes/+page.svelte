@@ -17,6 +17,7 @@
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
 	import hotrodCamo from '#lib/assets/hotrod-camo.webp';
 	import KpiBar from '#lib/components/KpiBar.svelte';
+	import LoadoutDialog from '#lib/components/LoadoutDialog.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
@@ -201,6 +202,8 @@
 </div>
 
 <Toast />
+
+<LoadoutDialog />
 
 <Dialog bind:open={linkDialogOpen} title={t.linkImport.title}>
 	{#if linkOffer}

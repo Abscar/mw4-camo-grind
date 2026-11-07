@@ -36,3 +36,11 @@ export function unlockFact(u: Unlock): Fact {
 export function statusLabel(s: MasteryStatus): string {
 	return t.mastery.status[s];
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "2026-11-06" → "6 Nov 2026" (no Date object, so no time-zone surprises). */
+export function shortDate(iso: string): string {
+	const [y, m, d] = iso.split('-').map(Number);
+	return `${d} ${MONTHS[m - 1]} ${y}`;
+}
