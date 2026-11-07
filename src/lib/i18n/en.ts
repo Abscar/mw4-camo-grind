@@ -72,9 +72,6 @@ export const en = {
 			mp: 'No Multiplayer meta class published for this gun yet.',
 			wz: 'No Warzone meta class published for this gun yet.'
 		},
-		perks: 'Perks',
-		equipment: 'Equipment',
-		streaks: 'Streaks',
 		snapshot: (date: string) =>
 			`A snapshot of the meta sites on ${date}. The meta moves with every balance patch, so double-check after big updates.`,
 		close: 'Close'

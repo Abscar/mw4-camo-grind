@@ -3,7 +3,7 @@
 	screens and stacked on a phone. Opened by the crosshair button on each weapon (WeaponCard).
 -->
 <script lang="ts">
-	import { LOADOUTS, LOADOUTS_AS_OF, type Loadout, type LoadoutMode } from '#lib/data/loadouts.ts';
+	import { LOADOUTS, LOADOUTS_AS_OF, type LoadoutMode } from '#lib/data/loadouts.ts';
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
 	import { WEAPON_BY_ID } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
@@ -17,15 +17,6 @@
 	const weapon = $derived(loadoutView.weaponId ? WEAPON_BY_ID.get(loadoutView.weaponId) : undefined);
 	const builds = $derived(weapon ? (LOADOUTS[weapon.id] ?? {}) : {});
 	const look = $derived(weapon ? WEAPON_LOOKS[weapon.id] : undefined);
-
-	function extras(l: Loadout): [string, string[]][] {
-		const rows: [string, string[] | undefined][] = [
-			[t.loadout.perks, l.perks],
-			[t.loadout.equipment, l.equipment],
-			[t.loadout.streaks, l.streaks]
-		];
-		return rows.filter((r): r is [string, string[]] => !!r[1]?.length);
-	}
 </script>
 
 <Dialog
@@ -65,17 +56,6 @@
 								<dd class="font-semibold break-words text-fg">{a.name}</dd>
 							{/each}
 						</dl>
-
-						{#if extras(l).length > 0}
-							<dl class="mt-2.5 grid gap-1 border-t border-line pt-2.5 text-xs">
-								{#each extras(l) as [label, items] (label)}
-									<div>
-										<dt class="inline font-semibold text-fg">{label}:</dt>
-										<dd class="inline">{items.join(', ')}</dd>
-									</div>
-								{/each}
-							</dl>
-						{/if}
 
 						{#if l.note}
 							<p class="mt-2.5 flex gap-1.5 text-xs text-fg">

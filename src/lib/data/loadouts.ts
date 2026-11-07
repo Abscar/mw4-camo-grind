@@ -1,15 +1,15 @@
 /**
  * Meta classes ("loadouts"): one Multiplayer and one Warzone build per weapon, shown in the
- * popup behind the little crosshair button on each weapon.
+ * popup behind the little crosshair button on each weapon. Attachments only: the user asked
+ * for no perk / equipment / killstreak tips (2026-11-07).
  *
  * This is a SNAPSHOT of what the meta sites recommended, not live data. The meta shifts with
  * every balance patch, so every build carries its source and date, and the popup shows them.
  *
  * Sources: wzstats.gg, codmunity.gg, Dexerto (MW4 tier list 2026-10-30, Warzone Season 1
  * loadouts 2026-11-06) and lfcarry.com. Season 1 started 2026-11-06. "A + B" in `source` means
- * both sites list exactly the same attachments. Warzone perks/equipment are only included when
- * they belong to that exact build (Dexerto is the only site that lists them per build).
- * Attachment names are spelled as on each weapon's attachment list (codmunity.gg).
+ * those sites list exactly the same attachments. Attachment names are spelled as on each
+ * weapon's attachment list (codmunity.gg).
  *
  * `verified: false` = the build is built around something that was nerfed after it was
  * published, or the sites disagree about whether the gun is any good. The `note` says why, and
@@ -68,11 +68,6 @@ export interface Loadout {
 	/** What the build is for, e.g. "Close range". */
 	role: string;
 	attachments: Attachment[];
-	perks?: string[];
-	/** Lethal, tactical (and field upgrade in Multiplayer). */
-	equipment?: string[];
-	/** Multiplayer killstreaks. */
-	streaks?: string[];
 	/** Where the build comes from, e.g. "codmunity.gg". */
 	source: string;
 	/** When the source published or last updated it (YYYY-MM-DD). */
@@ -84,29 +79,27 @@ export interface Loadout {
 export type WeaponLoadouts = Partial<Record<LoadoutMode, Loadout>>;
 
 type Parts = Partial<Record<AttachmentSlot, string>>;
-type Extras = Pick<Loadout, 'perks' | 'equipment' | 'streaks' | 'note'> & { verified?: boolean };
+type Extras = { note?: string; verified?: boolean };
 
 const build = (role: string, source: string, date: string, parts: Parts, extras: Extras = {}): Loadout => {
-	const { verified = true, ...rest } = extras;
+	const { verified = true, note } = extras;
 	return {
 		role,
 		attachments: SLOT_ORDER.filter((slot) => parts[slot]).map((slot) => ({ slot, name: parts[slot]! })),
 		source,
 		date,
 		verified,
-		...rest
+		...(note ? { note } : {})
 	};
 };
 
-// Dexerto's MP tier list (2026-10-30) gives most guns the same perks.
-const DEX_PERKS = ['Ghost', 'Ninja', 'Battle Hardened'];
 const DEXERTO = 'Dexerto';
 const DEX_DATE = '2026-10-30';
 const CODMUNITY = 'codmunity.gg';
 const WZSTATS = 'wzstats.gg';
 /** wzstats and codmunity list the identical build. */
 const WZ2 = `${WZSTATS} + ${CODMUNITY}`;
-/** ...and Dexerto's Warzone Season 1 page too (the perks/equipment come from Dexerto). */
+/** ...and Dexerto's Warzone Season 1 page too. */
 const WZ3 = `${WZSTATS} + ${CODMUNITY} + ${DEXERTO}`;
 const S1 = '2026-11-06';
 const DEFAULT_SCOPE = 'No optic attachment: it uses the default scope.';
@@ -180,19 +173,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		)
 	},
 	'patriot-xmr': {
-		mp: build(
-			'Versatile',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'Meiko 30CAL-SP',
-				Laser: 'SA Laz-500',
-				Optic: 'SZ Prima-4 Dot',
-				'Rear Grip': 'Schlager Attack-7 Grip',
-				Magazine: '35 Round Mag'
-			},
-			{ perks: DEX_PERKS, equipment: ['Frag Grenade', 'Concussion Grenade', 'Trophy System'] }
-		),
+		mp: build('Versatile', DEXERTO, DEX_DATE, {
+			Muzzle: 'Meiko 30CAL-SP',
+			Laser: 'SA Laz-500',
+			Optic: 'SZ Prima-4 Dot',
+			'Rear Grip': 'Schlager Attack-7 Grip',
+			Magazine: '35 Round Mag'
+		}),
 		wz: build('Long range', WZ2, S1, {
 			Optic: 'Cronen R808',
 			Muzzle: 'EXP Undertow Gen. 2',
@@ -209,70 +196,38 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			Magazine: '45 Round Mag 7.62',
 			Underbarrel: 'FSS Tac90 Grip'
 		}),
-		wz: build(
-			'Long range',
-			WZ3,
-			S1,
-			{
-				Optic: 'Cronen R808',
-				Muzzle: 'Gauge-12 Mono',
-				Barrel: 'BCS-K 589mm Barrel',
-				Magazine: '45 Round Mag 7.62',
-				Stock: 'Hanbit Blitz v.9'
-			},
-			{ perks: ['Surveyor', 'Deft Hands', 'Tempered', 'Phantom'], equipment: ['Semtex', 'Snapshot Grenade'] }
-		)
+		wz: build('Long range', WZ3, S1, {
+			Optic: 'Cronen R808',
+			Muzzle: 'Gauge-12 Mono',
+			Barrel: 'BCS-K 589mm Barrel',
+			Magazine: '45 Round Mag 7.62',
+			Stock: 'Hanbit Blitz v.9'
+		})
 	},
 	oden: {
-		mp: build(
-			'Long range',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'Bryson Bullhide 90',
-				Laser: 'XRK Clutch-LS',
-				Optic: 'SZ Micro D-3',
-				Stock: 'Haebang Stal-W5',
-				Underbarrel: 'FSS Fireline Grip'
-			},
-			{
-				perks: DEX_PERKS,
-				equipment: ['Sticky Grenade', 'Concussion Grenade', 'Trophy System'],
-				streaks: ['UAV', 'Crossfire', 'Wheelson']
-			}
-		),
-		wz: build(
-			'Long range',
-			WZ3,
-			S1,
-			{
-				Optic: 'SZ Lonewolf Holo',
-				Muzzle: 'TV Multical-77',
-				Barrel: 'Rockfall-900 Barrel',
-				Magazine: '30 Round Mag',
-				Ammunition: '12.7x55mm High Velocity'
-			},
-			{ perks: ['Incognito', 'Deft Hands', 'Tempered'], equipment: ['Claymore', 'Smoke Grenade'] }
-		)
+		mp: build('Long range', DEXERTO, DEX_DATE, {
+			Muzzle: 'Bryson Bullhide 90',
+			Laser: 'XRK Clutch-LS',
+			Optic: 'SZ Micro D-3',
+			Stock: 'Haebang Stal-W5',
+			Underbarrel: 'FSS Fireline Grip'
+		}),
+		wz: build('Long range', WZ3, S1, {
+			Optic: 'SZ Lonewolf Holo',
+			Muzzle: 'TV Multical-77',
+			Barrel: 'Rockfall-900 Barrel',
+			Magazine: '30 Round Mag',
+			Ammunition: '12.7x55mm High Velocity'
+		})
 	},
 	axion: {
-		mp: build(
-			'Versatile',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'FSS IS40',
-				Barrel: 'SA DMN-L 30',
-				Laser: 'XRK Clutch-LS',
-				'Rear Grip': 'GS50 Grip',
-				Underbarrel: 'FSS Fireline Grip'
-			},
-			{
-				perks: DEX_PERKS,
-				equipment: ['Sticky Grenade', 'Concussion Grenade'],
-				streaks: ['UAV', 'Crossfire', 'Attack Helicopter']
-			}
-		),
+		mp: build('Versatile', DEXERTO, DEX_DATE, {
+			Muzzle: 'FSS IS40',
+			Barrel: 'SA DMN-L 30',
+			Laser: 'XRK Clutch-LS',
+			'Rear Grip': 'GS50 Grip',
+			Underbarrel: 'FSS Fireline Grip'
+		}),
 		wz: build('Long range', CODMUNITY, S1, {
 			Optic: 'Cronen R808',
 			Muzzle: 'FSS IS300',
@@ -282,22 +237,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		})
 	},
 	'cronen-squall': {
-		mp: build(
-			'Versatile',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'HET-S6 Comp',
-				Underbarrel: 'FSS Fireline Grip',
-				Magazine: '30 Round Mag',
-				'Rear Grip': 'FSS Grip 50',
-				Optic: 'Slimline Elite'
-			},
-			{
-				perks: ['Quick Fix', 'Fast Hands', 'Battle Hardened'],
-				equipment: ['Sticky Grenade', 'Stim', 'Munitions Box']
-			}
-		),
+		mp: build('Versatile', DEXERTO, DEX_DATE, {
+			Muzzle: 'HET-S6 Comp',
+			Underbarrel: 'FSS Fireline Grip',
+			Magazine: '30 Round Mag',
+			'Rear Grip': 'FSS Grip 50',
+			Optic: 'Slimline Elite'
+		}),
 		wz: build('Long range', WZ2, S1, {
 			Optic: 'Cronen R808',
 			Muzzle: 'EXP Undertow Gen. 2',
@@ -334,23 +280,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 
 	// ---------- SMGs ----------
 	'iso-nightshade': {
-		mp: build(
-			'Close range',
-			`${WZSTATS} + ${DEXERTO}`,
-			S1,
-			{
-				Muzzle: 'XRK Herder 40',
-				Barrel: 'ZLR Carbon-900',
-				Underbarrel: 'FSS Tac90 Grip',
-				'Rear Grip': 'Demo STP-1',
-				Laser: 'Schlager Visiv-5'
-			},
-			{
-				perks: DEX_PERKS,
-				equipment: ['Frag Grenade', 'Flash Grenade', 'Trophy System'],
-				streaks: ['UAV', 'Counter UAV', 'Attack Helicopter']
-			}
-		),
+		mp: build('Close range', `${WZSTATS} + ${DEXERTO}`, S1, {
+			Muzzle: 'XRK Herder 40',
+			Barrel: 'ZLR Carbon-900',
+			Underbarrel: 'FSS Tac90 Grip',
+			'Rear Grip': 'Demo STP-1',
+			Laser: 'Schlager Visiv-5'
+		}),
 		wz: build('Close range', CODMUNITY, S1, {
 			Barrel: 'ZLR Mag-Z 9',
 			Magazine: '40 Round Mag',
@@ -360,23 +296,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		})
 	},
 	'vel-46': {
-		mp: build(
-			'Close range',
-			`${WZSTATS} + ${DEXERTO}`,
-			S1,
-			{
-				Muzzle: 'XRK Herder 40',
-				Barrel: 'VB-46 Series 11',
-				Underbarrel: 'FSS Fireline Grip',
-				Laser: 'Schlager Visiv-5',
-				Stock: 'VEL 46 Extended'
-			},
-			{
-				perks: DEX_PERKS,
-				equipment: ['Throwing Knife', 'Flash Grenade', 'Trophy System'],
-				streaks: ['UAV', 'Artillery Beacon', 'Attack Helicopter']
-			}
-		),
+		mp: build('Close range', `${WZSTATS} + ${DEXERTO}`, S1, {
+			Muzzle: 'XRK Herder 40',
+			Barrel: 'VB-46 Series 11',
+			Underbarrel: 'FSS Fireline Grip',
+			Laser: 'Schlager Visiv-5',
+			Stock: 'VEL 46 Extended'
+		}),
 		wz: build('Close range', WZSTATS, S1, {
 			Muzzle: '212 LC40 Comp',
 			Barrel: 'VB-46 Series 11',
@@ -386,68 +312,36 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		})
 	},
 	'wz-55-striga': {
-		mp: build(
-			'Close range',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: '330TC2 Gridlock',
-				Barrel: 'GW Sender 500',
-				Laser: 'XRK Clutch-LS',
-				'Rear Grip': 'Matuzek 532-L Grip',
-				Magazine: '35 Round Mag'
-			},
-			{
-				perks: DEX_PERKS,
-				equipment: ['Sticky Grenade', 'Stim', 'Trophy System'],
-				streaks: ['UAV', 'Crossfire', 'Attack Helicopter']
-			}
-		),
-		wz: build(
-			'Close range',
-			WZ3,
-			S1,
-			{
-				Muzzle: 'Full Port Comp',
-				Barrel: 'GW Sender 500',
-				Magazine: '50 Round Drum Mag',
-				'Rear Grip': 'Matuzek 532-L Grip',
-				Stock: 'Wire Stock'
-			},
-			{ perks: ['Hunter', 'Adaptive', 'Berserker', 'Athleticism'], equipment: ['Semtex', 'Concussion Grenade'] }
-		)
+		mp: build('Close range', DEXERTO, DEX_DATE, {
+			Muzzle: '330TC2 Gridlock',
+			Barrel: 'GW Sender 500',
+			Laser: 'XRK Clutch-LS',
+			'Rear Grip': 'Matuzek 532-L Grip',
+			Magazine: '35 Round Mag'
+		}),
+		wz: build('Close range', WZ3, S1, {
+			Muzzle: 'Full Port Comp',
+			Barrel: 'GW Sender 500',
+			Magazine: '50 Round Drum Mag',
+			'Rear Grip': 'Matuzek 532-L Grip',
+			Stock: 'Wire Stock'
+		})
 	},
 	'ppsh-41': {
-		mp: build(
-			'Close range',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'Haebang BAM70',
-				Barrel: 'Hanbit RDR-Tiger 50',
-				Underbarrel: 'FSS Fireline Grip',
-				Laser: 'Schlager Visiv-5',
-				Stock: 'MT-L5 Jinhwa'
-			},
-			{
-				perks: DEX_PERKS,
-				equipment: ['Frag Grenade', 'Stim', 'Trophy System'],
-				streaks: ['UAV', 'Counter UAV', 'Attack Helicopter']
-			}
-		),
-		wz: build(
-			'Close range',
-			WZ3,
-			S1,
-			{
-				Optic: 'ZLR Type C',
-				Muzzle: 'Full Port Comp',
-				Barrel: 'TT Banseok-24N',
-				Underbarrel: 'Mire-50 Tac Grip',
-				Stock: 'MT-L5 Jinhwa'
-			},
-			{ perks: ['Surveyor', 'Adaptive', 'Quick Fix', 'Athleticism'], equipment: ['Throwing Knife', 'Stim'] }
-		)
+		mp: build('Close range', DEXERTO, DEX_DATE, {
+			Muzzle: 'Haebang BAM70',
+			Barrel: 'Hanbit RDR-Tiger 50',
+			Underbarrel: 'FSS Fireline Grip',
+			Laser: 'Schlager Visiv-5',
+			Stock: 'MT-L5 Jinhwa'
+		}),
+		wz: build('Close range', WZ3, S1, {
+			Optic: 'ZLR Type C',
+			Muzzle: 'Full Port Comp',
+			Barrel: 'TT Banseok-24N',
+			Underbarrel: 'Mire-50 Tac Grip',
+			Stock: 'MT-L5 Jinhwa'
+		})
 	},
 	'x-58-nyx': {
 		mp: build('Close range', CODMUNITY, S1, {
@@ -484,23 +378,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 
 	// ---------- Shotguns ----------
 	'rezi-12': {
-		mp: build(
-			'Close range',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Barrel: 'ZLR Rogue 90 25',
-				Laser: 'Schlager Visiv-5',
-				Bolt: 'XRK Quad-80',
-				Stock: 'No Stock',
-				'Rear Grip': 'XRK Bygone-39'
-			},
-			{
-				perks: ['Quick Fix', 'Blood Rush', 'Battle Hardened'],
-				equipment: ['Sticky Grenade', 'Concussion Grenade', 'Portable Radar'],
-				streaks: ['UAV', 'Counter UAV', 'Gunship']
-			}
-		),
+		mp: build('Close range', DEXERTO, DEX_DATE, {
+			Barrel: 'ZLR Rogue 90 25',
+			Laser: 'Schlager Visiv-5',
+			Bolt: 'XRK Quad-80',
+			Stock: 'No Stock',
+			'Rear Grip': 'XRK Bygone-39'
+		}),
 		wz: build('Slugs', WZ2, S1, {
 			Muzzle: 'Haebang Bulsae-10',
 			Barrel: 'Haebang 635R-7',
@@ -510,24 +394,14 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		})
 	},
 	warlord: {
-		mp: build(
-			'Close range',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'WX-600 Choke',
-				Barrel: 'NK Gangta-12G',
-				Bolt: 'L-Strike Bolt',
-				Stock: 'Mugi D40 Stock',
-				'Rear Grip': 'DV3-Sinsok Grip',
-				Apex: 'Warlord Lumen'
-			},
-			{
-				perks: ['Quick Fix', 'Blood Rush', 'Battle Hardened'],
-				equipment: ['Sticky Grenade', 'Concussion Grenade', 'Trophy System'],
-				streaks: ['UAV', 'Crossfire', 'Wheelson']
-			}
-		),
+		mp: build('Close range', DEXERTO, DEX_DATE, {
+			Muzzle: 'WX-600 Choke',
+			Barrel: 'NK Gangta-12G',
+			Bolt: 'L-Strike Bolt',
+			Stock: 'Mugi D40 Stock',
+			'Rear Grip': 'DV3-Sinsok Grip',
+			Apex: 'Warlord Lumen'
+		}),
 		wz: build('Slugs', WZ2, S1, {
 			Muzzle: 'WX-600 Choke',
 			Barrel: 'NK Gangta-12G',
@@ -539,51 +413,29 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 
 	// ---------- LMGs ----------
 	'finn-lmg': {
-		mp: build(
-			'Long range',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'XRK Mil-Tac Suppressor',
-				Barrel: 'TA Sustain-99 20',
-				Optic: 'SZ Lonewolf Holo',
-				'Rear Grip': 'XRK Singularity-13',
-				Magazine: '75 Round Box Mag'
-			},
-			{ perks: DEX_PERKS, equipment: ['Sticky Grenade', 'Smoke Grenade', 'Trophy System'] }
-		),
-		wz: build(
-			'Long range',
-			WZ3,
-			S1,
-			{
-				Optic: 'SZ Helios Holo',
-				Muzzle: 'FSS IS300',
-				Barrel: 'TA Sustain-99 20',
-				Ammunition: '5.56 NATO High Velocity',
-				'Rear Grip': 'Schlager KM60-G'
-			},
-			{ perks: ['Stocked', 'Deft Hands', 'Tempered', 'Fieldcraft'], equipment: ['Semtex', 'Smoke Grenade'] }
-		)
+		mp: build('Long range', DEXERTO, DEX_DATE, {
+			Muzzle: 'XRK Mil-Tac Suppressor',
+			Barrel: 'TA Sustain-99 20',
+			Optic: 'SZ Lonewolf Holo',
+			'Rear Grip': 'XRK Singularity-13',
+			Magazine: '75 Round Box Mag'
+		}),
+		wz: build('Long range', WZ3, S1, {
+			Optic: 'SZ Helios Holo',
+			Muzzle: 'FSS IS300',
+			Barrel: 'TA Sustain-99 20',
+			Ammunition: '5.56 NATO High Velocity',
+			'Rear Grip': 'Schlager KM60-G'
+		})
 	},
 	'type-73': {
-		mp: build(
-			'Versatile',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'Ivanov QR600',
-				Barrel: 'RSS-40F 12',
-				Laser: 'XRK Clutch-LS',
-				Stock: 'FTAC RZR0 Stock',
-				'Rear Grip': 'Assault-L5 Grip'
-			},
-			{
-				perks: DEX_PERKS,
-				equipment: ['Sticky Grenade', 'Smoke Grenade', 'Trophy System'],
-				streaks: ['UAV', 'Counter UAV', 'Wheelson']
-			}
-		),
+		mp: build('Versatile', DEXERTO, DEX_DATE, {
+			Muzzle: 'Ivanov QR600',
+			Barrel: 'RSS-40F 12',
+			Laser: 'XRK Clutch-LS',
+			Stock: 'FTAC RZR0 Stock',
+			'Rear Grip': 'Assault-L5 Grip'
+		}),
 		wz: build(
 			'Long range',
 			WZ2,
@@ -610,25 +462,15 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				Stock: 'EXP Arc-7 Stock',
 				'Rear Grip': 'FSS TCB-1 Grip'
 			},
-			{
-				perks: ['Quick Fix', 'Bomb Squad', 'Battle Hardened'],
-				equipment: ['Frag Grenade', 'Concussion Grenade'],
-				note: 'The APOC-338 itself was nerfed on 28 Oct and again in Season 1.'
-			}
+			{ note: 'The APOC-338 itself was nerfed on 28 Oct and again in Season 1.' }
 		),
-		wz: build(
-			'Long range',
-			WZ3,
-			S1,
-			{
-				Optic: 'SZ Helios Holo',
-				Muzzle: 'TV Multical-77',
-				Barrel: 'SA Trident 24.5',
-				'Rear Grip': 'FSS TCB-1 Grip',
-				Stock: 'EXP Arc-7 Stock'
-			},
-			{ perks: ['Stocked', 'Scavenger', 'Survivor', 'Fieldcraft'], equipment: ['Claymore', 'Smoke Grenade'] }
-		)
+		wz: build('Long range', WZ3, S1, {
+			Optic: 'SZ Helios Holo',
+			Muzzle: 'TV Multical-77',
+			Barrel: 'SA Trident 24.5',
+			'Rear Grip': 'FSS TCB-1 Grip',
+			Stock: 'EXP Arc-7 Stock'
+		})
 	},
 
 	// ---------- Marksman Rifles ----------
@@ -655,22 +497,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		)
 	},
 	'oris-8-6': {
-		mp: build(
-			'Long range',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Barrel: 'EXP Crosstac 22',
-				Laser: 'Schlager Visiv-5',
-				Optic: 'Cronen R808',
-				'Rear Grip': 'OPS-45 XP Grip',
-				Bolt: 'Lightfire-5 Quick Bolt'
-			},
-			{
-				perks: ['Quick Fix', 'Ninja', 'Battle Hardened'],
-				equipment: ['Sticky Grenade', 'Stim', 'Portable Radar']
-			}
-		),
+		mp: build('Long range', DEXERTO, DEX_DATE, {
+			Barrel: 'EXP Crosstac 22',
+			Laser: 'Schlager Visiv-5',
+			Optic: 'Cronen R808',
+			'Rear Grip': 'OPS-45 XP Grip',
+			Bolt: 'Lightfire-5 Quick Bolt'
+		}),
 		wz: build(
 			'Long range',
 			WZ2,
@@ -704,20 +537,14 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 
 	// ---------- Sniper Rifles ----------
 	'kg-7-vulcan': {
-		mp: build(
-			'Sniper',
-			`${CODMUNITY} + lfcarry`,
-			S1,
-			{
-				Muzzle: 'Ivanov QR600',
-				Barrel: 'TT Baem 12',
-				Bolt: 'KT76 Light Bolt',
-				Optic: 'Schlager 7x',
-				Comb: 'TT Type 40 Comb',
-				Apex: 'KG-7 Drillcharge'
-			},
-			{ perks: ['Overkill', 'Ninja', 'Cold-Blooded'], equipment: ['Claymore', 'Snapshot Grenade'] }
-		),
+		mp: build('Sniper', `${CODMUNITY} + lfcarry`, S1, {
+			Muzzle: 'Ivanov QR600',
+			Barrel: 'TT Baem 12',
+			Bolt: 'KT76 Light Bolt',
+			Optic: 'Schlager 7x',
+			Comb: 'TT Type 40 Comb',
+			Apex: 'KG-7 Drillcharge'
+		}),
 		wz: build(
 			'Sniper',
 			WZ2,
@@ -733,19 +560,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		)
 	},
 	'astaroth-57': {
-		mp: build(
-			'Sniper',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Muzzle: 'FSS Moodkiller',
-				Barrel: 'FTAC Crosswind 30',
-				Optic: 'Schlager 7x',
-				Stock: 'Usenko V8-LKR',
-				'Rear Grip': 'FJX S-TAC Grip'
-			},
-			{ perks: ['Overkill', 'Fast Hands', 'Battle Hardened'], equipment: ['Sticky Grenade', 'Stim'] }
-		),
+		mp: build('Sniper', DEXERTO, DEX_DATE, {
+			Muzzle: 'FSS Moodkiller',
+			Barrel: 'FTAC Crosswind 30',
+			Optic: 'Schlager 7x',
+			Stock: 'Usenko V8-LKR',
+			'Rear Grip': 'FJX S-TAC Grip'
+		}),
 		wz: build(
 			'Sniper',
 			WZ3,
@@ -757,30 +578,17 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				Ammunition: '.57 Cal High Velocity',
 				Stock: 'Usenko V8-LKR'
 			},
-			{
-				perks: ['Hunter', 'Deft Hands', 'Tempered', 'Phantom'],
-				equipment: ['Claymore', 'Smoke Grenade'],
-				note: DEFAULT_SCOPE
-			}
+			{ note: DEFAULT_SCOPE }
 		)
 	},
 	'signal-50': {
-		mp: build(
-			'Sniper',
-			DEXERTO,
-			DEX_DATE,
-			{
-				Barrel: 'S50-SB Gen.2 22',
-				Laser: 'Schlager Visiv-5',
-				Optic: 'Cronen R808',
-				Stock: 'Cronen SN-Pad50',
-				'Rear Grip': 'GL Zero Drop 6'
-			},
-			{
-				perks: ['Quick Fix', 'Ninja', 'Battle Hardened'],
-				equipment: ['Sticky Grenade', 'Smoke Grenade', 'Portable Radar']
-			}
-		),
+		mp: build('Sniper', DEXERTO, DEX_DATE, {
+			Barrel: 'S50-SB Gen.2 22',
+			Laser: 'Schlager Visiv-5',
+			Optic: 'Cronen R808',
+			Stock: 'Cronen SN-Pad50',
+			'Rear Grip': 'GL Zero Drop 6'
+		}),
 		wz: build(
 			'Sniper',
 			WZ2,
