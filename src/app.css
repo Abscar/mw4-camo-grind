@@ -90,7 +90,7 @@
 	--t-radius: 3px;
 	/* every box below the header gets a green glowing outline */
 	--t-shadow:
-		0 0 0 1px rgb(120 255 90 / 0.6), 0 0 14px rgb(90 255 60 / 0.35), 0 0 32px rgb(70 220 50 / 0.12),
+		0 0 0 2.5px rgb(120 255 90 / 0.8), 0 0 18px 2px rgb(90 255 60 / 0.45), 0 0 40px rgb(70 220 50 / 0.18),
 		0 14px 34px rgb(0 0 0 / 0.38);
 	/* layout switches (0 = off, 1 = on, or a length) */
 	--t-card-left: 3px;
@@ -719,6 +719,7 @@
 	/* shifted up so the first row of flames burns behind the class name */
 	background: var(--hotrod-tile) center -70px / 220px auto repeat, #8e1111;
 	box-shadow: var(--t-shadow);
+	border-left-width: 0;
 	/* re-tune the theme colours inside the red box so text stays readable */
 	--t-muted: #f6d2c8;
 	--t-line: rgb(255 220 200 / 0.16);
