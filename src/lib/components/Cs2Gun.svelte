@@ -16,8 +16,9 @@
 	const STEEL = '#3a3f46';
 	const HI = { stroke: '#fff', 'stroke-opacity': 0.4, 'stroke-width': 0.8 }; // cartoon highlight
 
-	type Part = 'stock' | 'body' | 'guard' | 'grip' | 'mag' | 'barrel' | 'can' | 'fore' | 'cylinder' | 'sights';
+	type Part = 'stock' | 'body' | 'guard' | 'grip' | 'mag' | 'barrel' | 'can' | 'fore' | 'cylinder' | 'sights' | 'blade';
 	const PLAIN: Record<Part, string> = {
+		blade: '#c9ced4',
 		stock: DARK,
 		body: DARK,
 		guard: DARK,
@@ -36,7 +37,8 @@
 		blaze: { body: 'blaze', cylinder: '#1c1d21' },
 		printstream: { body: 'printstream', can: 'printstream' },
 		bloodsport: { body: 'bloodsport', stock: 'bloodsport', grip: 'bloodsport', fore: 'bloodsport', sights: '#e2b23a' },
-		'frost-borre': { body: 'frost', barrel: 'frost', mag: 'frost', guard: '#4a5059' }
+		'frost-borre': { body: 'frost', barrel: 'frost', mag: 'frost', guard: '#4a5059' },
+		fade: { blade: 'fade' }
 	};
 	const uid = $props.id(); // pattern ids must be unique per icon (the same gun can be on screen twice)
 	const P = $derived.by(() => {
@@ -147,6 +149,14 @@
 			<rect width="3.2" height="2.6" fill="#2b3a52" />
 			<path d="M0 1.3 C0.8 0.1 2.4 0.1 3.2 1.3 C2.4 2.5 0.8 2.5 0 1.3 Z" fill="none" stroke="#a9c8e6" stroke-width="0.35" />
 		</pattern>
+	{:else if skin === 'fade'}
+		<!-- gold at the base, hot pink in the middle, purple to blue at the tip -->
+		<linearGradient id="{uid}-fade" gradientUnits="userSpaceOnUse" x1="36" y1="10" x2="58" y2="18">
+			<stop offset="0" stop-color="#ffb347" />
+			<stop offset="0.25" stop-color="#ff4f9a" />
+			<stop offset="0.6" stop-color="#c04dff" />
+			<stop offset="1" stop-color="#5f7bff" />
+		</linearGradient>
 	{/if}
 </defs>
 
@@ -264,5 +274,21 @@
 			<line x1={x} y1="9" x2={x} y2="12.6" stroke="rgb(0 0 0 / 0.5)" stroke-width="0.5" />
 		{/each}
 		<line x1="19" y1="8.9" x2="29" y2="8.9" {...HI} />
+	{:else if model === 'karambit'}
+		<!-- Karambit: finger ring at the back, grooved handle with jimping, claw blade curving down -->
+		<path
+			d="M5 15.6 A4 4 0 1 0 13 15.6 A4 4 0 1 0 5 15.6 Z M7 15.6 A2 2 0 1 0 11 15.6 A2 2 0 1 0 7 15.6 Z"
+			fill="#b9bfc6"
+			fill-rule="evenodd"
+		/>
+		<path
+			d="M10 10.6 Q10 9.2 11.4 9.2 L33 9 L34.6 9.6 L34.6 13.4 L31.4 14 Q29.6 15.8 27.8 14.2 Q26 15.8 24.2 14.2 Q22.4 15.8 20.6 14.2 L12.6 14.4 Q10.6 14.4 10 12.8 Z"
+			fill="#3a3d42"
+		/>
+		<path d="M26.4 9.1 l0.6 -0.9 l0.6 0.9 l0.6 -0.9 l0.6 0.9 l0.6 -0.9 l0.6 0.9 l0.6 -0.9 l0.6 0.9" fill="none" stroke-width="0.5" />
+		<rect x="33.6" y="8.6" width="2.4" height="5.4" rx="0.5" fill={DARK} />
+		<path d="M35.6 8.8 C44 7.4 53 9 58.6 19.6 C53 14.6 45 13 35.6 13.8 Z" fill={P.blade} />
+		<path d="M38 10.6 C45 9.8 51 11.4 55.2 15.8" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="0.7" />
+		<line x1="12" y1="10.2" x2="31" y2="10" {...HI} />
 	{/if}
 </g>

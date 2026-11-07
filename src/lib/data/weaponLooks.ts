@@ -39,8 +39,8 @@ export type MeleeLook = { kind: 'melee'; style: 'knife' | 'axe'; body: string; h
  * Our own cartoons in the skin's style (researched from item pictures), never the game textures,
  * and no names in the UI.
  */
-export type Skin = 'fire-serpent' | 'asiimov' | 'blaze' | 'printstream' | 'bloodsport' | 'frost-borre';
-export type Cs2Model = 'ak47' | 'm4a4' | 'deagle' | 'usps' | 'mp7' | 'r8' | 'xm1014';
+export type Skin = 'fire-serpent' | 'asiimov' | 'blaze' | 'printstream' | 'bloodsport' | 'frost-borre' | 'fade';
+export type Cs2Model = 'ak47' | 'm4a4' | 'deagle' | 'usps' | 'mp7' | 'r8' | 'xm1014' | 'karambit';
 export type Cs2Look = { kind: 'cs2'; model: Cs2Model; skin: Skin };
 
 export type GunLook = RifleLook | PistolLook | LauncherLook | MeleeLook | Cs2Look;
@@ -107,6 +107,6 @@ export const WEAPON_LOOKS: Record<string, GunLook> = {
 	'pm-40-anvil': { kind: 'launcher', style: 'grenade', body: BLACK },
 
 	// Melee
-	'fss-carbon-edge-1095': { kind: 'melee', style: 'knife', body: GREY, handle: BLACK },
+	'fss-carbon-edge-1095': { kind: 'cs2', model: 'karambit', skin: 'fade' },
 	'zlr-talonhawk': { kind: 'melee', style: 'axe', body: BLACK, handle: OD }
 };
