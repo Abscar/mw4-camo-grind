@@ -567,7 +567,8 @@
 	animation-delay: 4s;
 }
 
-/* ranked badge: iridescent card, the badge's colours slowly shift */
+/* ranked badge: iridescent card, the emblem's glow slowly shifts pink ↔ cyan (no hue-rotate:
+   the gold and the fire in the emblem must keep their colours) */
 .rank-card {
 	border: 1px solid rgb(255 95 216 / 0.45);
 	background: linear-gradient(135deg, rgb(120 30 160 / 0.35), rgb(20 8 40 / 0.6));
@@ -581,10 +582,10 @@
 }
 @keyframes iri-shift {
 	from {
-		filter: drop-shadow(0 0 6px rgb(220 100 255 / 0.6)) hue-rotate(-20deg);
+		filter: drop-shadow(0 0 6px rgb(220 100 255 / 0.6));
 	}
 	to {
-		filter: drop-shadow(0 0 9px rgb(90 216 255 / 0.6)) hue-rotate(25deg);
+		filter: drop-shadow(0 0 9px rgb(90 216 255 / 0.6));
 	}
 }
 [data-theme='blackout'] .rank-name,
