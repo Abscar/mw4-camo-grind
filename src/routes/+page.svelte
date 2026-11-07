@@ -1,14 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { clearLinkFromAddress, linkCodeInAddress } from '#lib/browser.ts';
-	import { DIVERGENCE, DIVERGENCE_REQUIRED, LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
+	import { DIVERGENCE_REQUIRED, LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
 	import { CLASSES, WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { decodeLink, sameProgress, type ProgressData } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { THEMES } from '#lib/themes.ts';
 	import { toast } from '#lib/toast.svelte.ts';
-	import { CAMO_FILL } from '#lib/ui.ts';
 	import AbscarFx from '#lib/components/AbscarFx.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
@@ -45,12 +44,6 @@
 				(needle === '' || s.visible.length > 0)
 		)
 	);
-
-	const ladderSteps = [
-		...LADDER.map((c) => ({ name: c.name, color: CAMO_FILL[c.id] })),
-		{ name: DIVERGENCE.name, color: 'var(--t-div)' },
-		{ name: t.masteryShort, color: 'var(--mastery-1)' }
-	];
 
 	// ----- progress links (#p=…) -----
 
@@ -140,18 +133,6 @@
 						aria-hidden="true">//</span
 					><span class="sr-only"> </span><span class="title-skin">{t.title.app}</span>
 				</h1>
-				<ol
-					class="font-head mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-bold tracking-wider uppercase"
-					aria-label={t.unlockOrder}
-				>
-					{#each ladderSteps as step, i (step.name)}
-						<li class="flex items-center gap-1.5">
-							{#if i > 0}<span class="text-band-muted" aria-hidden="true">→</span>{/if}
-							<span class="size-2 rounded-full" style:background={step.color} aria-hidden="true"></span>
-							{step.name}
-						</li>
-					{/each}
-				</ol>
 				</div>
 			</div>
 			<div class="relative z-[1] flex flex-col items-start justify-between gap-4 sm:items-end">

@@ -4,6 +4,8 @@
 	import { progress } from '#lib/progress.svelte.ts';
 	// the user's own blunt picture (Abscar theme: every class button is drawn as this blunt)
 	import bluntPic from '#lib/assets/blunt.webp';
+	// the user's own white holk picture, decoration at the end of the search row (Abscar only)
+	import holkPic from '#lib/assets/holk.webp';
 
 	let { query = $bindable('') }: { query: string } = $props();
 
@@ -46,6 +48,8 @@
 			></span>
 			{t.toolbar.hideMaxed}
 		</label>
+
+		<img class="toolbar-holk abscar-only" src={holkPic} alt="" width="560" height="146" draggable="false" />
 	</div>
 
 	<div

@@ -5,8 +5,6 @@
 export const en = {
 	title: { game: 'MW4', app: 'Camo Grind' },
 	pageTitle: 'MW4 Camo Grind',
-	unlockOrder: 'Unlock order',
-	masteryShort: 'Mastery',
 
 	theme: { label: 'Theme', current: (name: string) => `Theme: ${name}` },
 
@@ -23,8 +21,20 @@ export const en = {
 		today: (date: string) => `COD news for ${date}:`,
 		noneToday: (date: string) => `Nothing new on ${date} yet. Latest:`,
 		latest: 'Latest COD news:',
-		via: 'Headlines from',
 		newTab: 'opens in a new tab'
+	},
+	/** The news box under the KPI bar. */
+	feed: {
+		heading: 'COD news feed',
+		charlieX: 'Charlie Intel live on X',
+		fresh: 'New',
+		justNow: 'just now',
+		minutesAgo: (n: number) => `${n} min ago`,
+		hoursAgo: (n: number) => `${n} h ago`,
+		yesterday: 'yesterday',
+		more: (n: number) => `Show ${n} more`,
+		fewer: 'Show fewer',
+		footer: (sources: string) => `Headlines from ${sources}, checked every hour.`
 	},
 	hud: {
 		mode: 'Analysis: camo grind',

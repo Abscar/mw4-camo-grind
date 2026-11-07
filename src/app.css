@@ -1048,6 +1048,35 @@
 	transform: scale(1.06);
 }
 
+/* Abscar: the user's own white holk picture (assets/holk.webp) lies at the right end of the search
+   row. Pure decoration. The negative top margin lets the smoke rise into the space above, so only
+   the joint itself takes up room and it lines up with the toggle. */
+.toolbar-holk {
+	--w: 112px;
+	width: var(--w);
+	height: auto;
+	margin-left: auto;
+	margin-top: calc(var(--w) * -0.13);
+	pointer-events: none;
+	user-select: none;
+	filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.5));
+}
+@media (min-width: 768px) {
+	.toolbar-holk {
+		--w: 180px;
+	}
+}
+@media (min-width: 1024px) {
+	.toolbar-holk {
+		--w: 240px;
+	}
+}
+@media (max-width: 359px) {
+	.toolbar-holk {
+		display: none;
+	}
+}
+
 /* Abscar: every ticked box is yellow (the leaf and the G/P/HB column say which camo it is) */
 [data-theme='blackout'] .camo-toggle[aria-pressed='true'] {
 	background: #ffcc33;
