@@ -778,6 +778,54 @@
 	--skin-text: var(--camo-orion-text);
 }
 
+/* ticked boxes: a little cartoon leaf instead of ✔ (Abscar only) */
+.tick-leaf {
+	display: none;
+	width: 30px;
+	height: 30px;
+	overflow: visible;
+	filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.35));
+}
+[data-theme='blackout'] .camo-toggle .tick-leaf {
+	display: block;
+}
+[data-theme='blackout'] .camo-toggle .tick-mark {
+	display: none;
+}
+.tick-leaf-blade {
+	fill: #5fd04a;
+	stroke: #14420f;
+	stroke-width: 1.1;
+	stroke-linejoin: round;
+}
+.tick-leaf-vein {
+	fill: none;
+	stroke: #2c8a22;
+	stroke-width: 0.6;
+	stroke-linecap: round;
+}
+.tick-leaf-stem {
+	fill: none;
+	stroke: #14420f;
+	stroke-width: 1.6;
+	stroke-linecap: round;
+}
+[data-theme='blackout'] .camo-toggle.just-ticked .tick-leaf {
+	animation: leaf-wiggle 0.45s ease-out;
+	transform-origin: 50% 70%;
+}
+@keyframes leaf-wiggle {
+	0% {
+		transform: rotate(-18deg) scale(0.6);
+	}
+	55% {
+		transform: rotate(10deg) scale(1.1);
+	}
+	100% {
+		transform: rotate(0) scale(1);
+	}
+}
+
 /* a maxed weapon's ◆ shimmers like Polyatomic */
 [data-theme='blackout'] .maxed-mark {
 	background: var(--camo-polyatomic);
