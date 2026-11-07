@@ -128,7 +128,10 @@
 		>
 			<div class="absolute top-2 right-2 z-[3] sm:top-3 sm:right-3"><ThemePicker /></div>
 			<div class="relative z-[1] flex min-w-0 flex-col justify-between pr-10 sm:pr-0">
-				<OperatorTag />
+				<div>
+					<OperatorTag />
+					<div class="mb-5"><HudReadout /></div>
+				</div>
 				<div>
 				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
 					<span class="brand-glow text-brand">{t.title.game}</span><span
@@ -155,7 +158,6 @@
 			</div>
 			<div class="relative z-[1] flex flex-col items-start justify-between gap-4 sm:items-end">
 				<div class="abscar-only sm:pr-12"><NewsBuddy /></div>
-				<HudReadout />
 			</div>
 		</header>
 		<div class="abscar-only"><div class="magma-floor"></div></div>

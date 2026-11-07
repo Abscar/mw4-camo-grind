@@ -88,7 +88,10 @@
 	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
 	--t-font-body: Bahnschrift, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 	--t-radius: 3px;
-	--t-shadow: 0 14px 34px rgb(0 0 0 / 0.38);
+	/* every box below the header gets a green glowing outline */
+	--t-shadow:
+		0 0 0 1px rgb(120 255 90 / 0.6), 0 0 14px rgb(90 255 60 / 0.35), 0 0 32px rgb(70 220 50 / 0.12),
+		0 14px 34px rgb(0 0 0 / 0.38);
 	/* layout switches (0 = off, 1 = on, or a length) */
 	--t-card-left: 3px;
 	--t-card-top: 0px;
@@ -663,13 +666,59 @@
 	box-shadow: 0 0 14px 2px rgb(255 90 20 / 0.55);
 }
 
+/* KPI tiles look like their camo: brushed gold, brushed platinum, Harmonic Break's crimson
+   streaks on black, Divergence's faceted chrome (textures from kpiCamos.ts) */
+[data-theme='blackout'] .kpi-tile {
+	color: #fff;
+	text-shadow:
+		0 1px 2px rgb(0 0 0 / 0.9),
+		0 0 10px rgb(0 0 0 / 0.55);
+	--t-muted: rgb(255 255 255 / 0.88);
+	border-top-color: transparent !important;
+}
+[data-theme='blackout'] .kpi-tile h2 {
+	color: #fff;
+}
+[data-theme='blackout'] .kpi-tile .bar {
+	background: rgb(0 0 0 / 0.5);
+}
+[data-theme='blackout'] .kpi-tile .bar > i {
+	background: #fff;
+	box-shadow: 0 0 8px rgb(255 255 255 / 0.75);
+}
+[data-theme='blackout'] .kpi-tile[data-camo='gold'] {
+	background:
+		var(--brushed) 0 0 / 180px 180px,
+		radial-gradient(ellipse at 22% 25%, rgb(255 236 170 / 0.55), transparent 55%),
+		radial-gradient(ellipse at 80% 85%, rgb(80 45 5 / 0.6), transparent 60%),
+		linear-gradient(120deg, #9c701d 0%, #dcae4c 28%, #b3822a 50%, #eec462 72%, #855913 100%);
+}
+[data-theme='blackout'] .kpi-tile[data-camo='platinum'] {
+	background:
+		var(--brushed) 0 0 / 180px 180px,
+		radial-gradient(ellipse at 25% 25%, rgb(255 255 255 / 0.55), transparent 55%),
+		radial-gradient(ellipse at 80% 85%, rgb(30 34 40 / 0.6), transparent 60%),
+		linear-gradient(120deg, #737b83 0%, #d3d9de 28%, #8f979f 50%, #e9edf0 72%, #5f666d 100%);
+}
+[data-theme='blackout'] .kpi-tile[data-camo='harmonicBreak'] {
+	background:
+		var(--brushed) 0 0 / 180px 180px,
+		repeating-linear-gradient(118deg, transparent 0 13px, rgb(235 25 55 / 0.5) 13px 16px, transparent 16px 29px),
+		radial-gradient(ellipse at 70% 30%, rgb(255 40 70 / 0.45), transparent 60%),
+		linear-gradient(118deg, #160306 0%, #6e0a18 32%, #100204 55%, #a3122a 80%, #1a0408 100%);
+}
+[data-theme='blackout'] .kpi-tile[data-camo='divergence'] {
+	background:
+		radial-gradient(ellipse at 30% 20%, rgb(255 255 255 / 0.35), transparent 55%),
+		var(--facets) center / 100% 100% no-repeat,
+		#9aa0a6;
+}
+
 /* weapon-class boxes wear the Hot Rod camo: candy red with flame licks (tile from hotrod.ts) */
 [data-theme='blackout'] .weapon-class {
 	/* shifted up so the first row of flames burns behind the class name */
 	background: var(--hotrod-tile) center -70px / 220px auto repeat, #8e1111;
-	box-shadow:
-		inset 0 0 0 1px rgb(255 190 90 / 0.18),
-		0 14px 34px rgb(0 0 0 / 0.45);
+	box-shadow: var(--t-shadow);
 	/* re-tune the theme colours inside the red box so text stays readable */
 	--t-muted: #f6d2c8;
 	--t-line: rgb(255 220 200 / 0.16);
@@ -915,6 +964,16 @@
 	--skin: var(--camo-orion);
 	--skin-size: var(--camo-orion-size);
 	--skin-text: var(--camo-orion-text);
+}
+
+/* Abscar: every ticked box is yellow (the leaf and the G/P/HB column say which camo it is) */
+[data-theme='blackout'] .camo-toggle[aria-pressed='true'] {
+	background: #ffcc33;
+	border-color: #ffcc33;
+	box-shadow: 0 0 12px rgb(255 204 51 / 0.55);
+}
+[data-theme='blackout'] .camo-toggle:hover {
+	border-color: #ffcc33;
 }
 
 /* ticked boxes: a little cartoon leaf instead of ✔ (Abscar only) */

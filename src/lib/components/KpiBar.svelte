@@ -3,6 +3,7 @@
 	import { WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
+	import { BRUSHED, FACETS } from '#lib/kpiCamos.ts';
 	import { CAMO_FILL, CAMO_INK, percent } from '#lib/ui.ts';
 
 	const total = WEAPONS.length;
@@ -11,14 +12,20 @@
 	const toGo = $derived(DIVERGENCE_REQUIRED - progress.divergenceCount);
 </script>
 
-<section aria-label={t.kpi.label} class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+<section
+	aria-label={t.kpi.label}
+	class="grid grid-cols-2 gap-3 lg:grid-cols-4"
+	style:--brushed={BRUSHED}
+	style:--facets={FACETS}
+>
 	{#each LADDER as camo, i (camo.id)}
 		{@const count = progress.ladderCounts[i]}
 		{@const pct = percent(count, total)}
 		<div
-			class="hud-frame rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
+			class="kpi-tile hud-frame rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
 			style:border-top-color={CAMO_FILL[camo.id]}
 			style:--k={CAMO_FILL[camo.id]}
+			data-camo={camo.id}
 		>
 			<h2 class="font-head text-[11px] font-bold tracking-[0.12em] uppercase {CAMO_INK[camo.id]}">
 				{camo.name}
@@ -32,9 +39,10 @@
 	{/each}
 
 	<div
-		class="hud-frame rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
+		class="kpi-tile hud-frame rounded-card border-t-[3px] bg-panel px-4 py-3.5 shadow-card"
 		style:border-top-color="var(--t-div)"
 		style:--k="var(--t-div)"
+		data-camo="divergence"
 	>
 		<h2 class="font-head text-[11px] font-bold tracking-[0.12em] text-div-ink uppercase">
 			{DIVERGENCE.name}
