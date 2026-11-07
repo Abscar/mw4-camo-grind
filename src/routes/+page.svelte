@@ -13,6 +13,7 @@
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
 	import EquippedCamos from '#lib/components/EquippedCamos.svelte';
+	import HotRodFlames from '#lib/components/HotRodFlames.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
@@ -153,6 +154,7 @@
 				<ThemePicker />
 			</div>
 		</header>
+		<div class="abscar-only"><HotRodFlames /></div>
 	</div>
 
 	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5">

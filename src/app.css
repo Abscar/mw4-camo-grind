@@ -59,17 +59,17 @@
 [data-theme='blackout'] {
 	color-scheme: dark;
 	--t-bg: #07080a;
-	--t-glow-1: rgb(255 36 36 / 0.11);
-	--t-glow-2: rgb(180 77 255 / 0.08);
+	--t-glow-1: rgb(255 60 24 / 0.13);
+	--t-glow-2: rgb(245 184 24 / 0.07);
 	--t-panel: #0e1014;
 	--t-panel-2: #15181e;
 	--t-line: #1f242b;
 	--t-fg: #eceef1;
 	--t-muted: #8f98a6;
 	--t-dim: #4a5260;
-	--t-accent: #ff3434;
+	--t-accent: #ff4418;
 	--t-on-accent: #0a0304;
-	--t-brand: #ff3434;
+	--t-brand: #ff4418;
 	--t-gold: #e8b23a;
 	--t-plat: #c5d0de;
 	--t-hb: #a970ff;
@@ -95,16 +95,16 @@
 	--t-head-fill: 0;
 	--t-glow: 0.7;
 	--t-deco: block;
-	/* class stripes run through a fade: yellow → pink → purple → blue */
+	/* class stripes run through Hot Rod flame colours: gold → orange → red */
 	--class-1: #ffd84a;
-	--class-2: #ffaa3d;
-	--class-3: #ff7a5c;
-	--class-4: #ff4f9a;
-	--class-5: #f04bd0;
-	--class-6: #c858ff;
-	--class-7: #9d62ff;
-	--class-8: #7a70ff;
-	--class-9: #5b8cff;
+	--class-2: #ffc23a;
+	--class-3: #ffab2e;
+	--class-4: #ff9426;
+	--class-5: #ff7d22;
+	--class-6: #ff6620;
+	--class-7: #ff5222;
+	--class-8: #ff4426;
+	--class-9: #ff3b2a;
 	--mastery-1: #dfe6ec;
 	--mastery-2: #ff6ad5;
 	--mastery-3: #a48dff;
@@ -607,6 +607,77 @@
 	background-clip: text;
 	color: transparent;
 	animation: camo-flow 6s ease-in-out infinite alternate;
+}
+
+/* Hot Rod flames: a burning strip under the header, with sparks */
+.hotrod-strip {
+	position: relative;
+	height: 76px;
+	margin-top: -22px;
+	overflow: hidden;
+	pointer-events: none;
+	background: linear-gradient(180deg, transparent, rgb(150 18 14 / 0.45) 75%, rgb(120 12 10 / 0.6));
+	-webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+	mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.hotrod-svg {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	filter: drop-shadow(0 -4px 10px rgb(255 90 20 / 0.45));
+}
+.hotrod-drift {
+	animation: hotrod-drift 9s linear infinite;
+}
+.hotrod-drift-back {
+	animation-duration: 15s;
+	animation-direction: reverse;
+}
+.hotrod-flicker {
+	transform-box: fill-box;
+	transform-origin: 50% 100%;
+	animation: hotrod-flicker 0.9s ease-in-out infinite alternate;
+}
+@keyframes hotrod-drift {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(240px);
+	}
+}
+@keyframes hotrod-flicker {
+	from {
+		transform: scaleY(0.93);
+	}
+	to {
+		transform: scaleY(1.05);
+	}
+}
+.hotrod-ember {
+	position: absolute;
+	bottom: 10px;
+	width: 3px;
+	height: 3px;
+	border-radius: 50%;
+	background: #ffcf4a;
+	box-shadow: 0 0 6px 2px rgb(255 120 30 / 0.8);
+	opacity: 0;
+	animation: ember-rise 6.5s ease-out infinite;
+}
+@keyframes ember-rise {
+	0% {
+		opacity: 0;
+		transform: translate(0, 0) scale(1);
+	}
+	10% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translate(14px, -70px) scale(0.4);
+	}
 }
 
 /* red cyborg vision over the header: tint + a scan line sweeping down */
