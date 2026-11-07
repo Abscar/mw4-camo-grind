@@ -1,8 +1,7 @@
 /*
  * Styles for the focus list, weapon notes, buff/nerf badges (all themes) and the Abscar extras
  * added on 2026-11-07: kill feed, the shine over a weapon that just got maxed, the Divergence
- * flash, the burning holk in the Divergence tile, target-lock corners, the boot text and the HUD
- * glitch. Kept apart from app.css (loaded right after it in +layout.svelte). Unlayered, like
+ * flash, target-lock corners, the boot text and the HUD glitch. Kept apart from app.css (loaded right after it in +layout.svelte). Unlayered, like
  * app.css's Abscar section; everything Abscar-only is scoped to [data-theme='blackout'].
  * app.css's prefers-reduced-motion rule stops every animation; the pieces that only make sense
  * moving are hidden at the bottom of this file.
@@ -413,59 +412,6 @@
 	}
 }
 
-/* ---------- Abscar: the holk in the Divergence tile ---------- */
-[data-theme='blackout'] .kpi-tile[data-camo='divergence'] .bar {
-	display: none;
-}
-.holk-burn {
-	display: block;
-	width: 100%;
-	height: auto;
-	overflow: visible;
-	margin: -2px 0 -4px;
-	filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
-}
-.holk-ember {
-	animation: ember-flicker 1.3s ease-in-out infinite alternate;
-}
-.holk-glow {
-	animation: ember-flicker 1.7s ease-in-out infinite alternate;
-	mix-blend-mode: screen;
-}
-/* grey rather than white: it rises over the light chrome of the tile */
-.holk-smoke circle {
-	fill: rgb(96 98 104 / 0.55);
-	opacity: 0;
-	animation: holk-wisp 3s ease-out infinite;
-}
-.holk-smoke circle:nth-child(2) {
-	animation-delay: 1s;
-}
-.holk-smoke circle:nth-child(3) {
-	animation-delay: 2s;
-}
-@keyframes ember-flicker {
-	from {
-		opacity: 0.7;
-	}
-	to {
-		opacity: 1;
-	}
-}
-@keyframes holk-wisp {
-	0% {
-		opacity: 0;
-		transform: translate(0, 0) scale(0.6);
-	}
-	20% {
-		opacity: 0.8;
-	}
-	100% {
-		opacity: 0;
-		transform: translate(10px, -24px) scale(2.4);
-	}
-}
-
 /* ---------- Abscar: boot text when the page opens (under a second) ---------- */
 .boot {
 	display: none;
@@ -625,8 +571,7 @@
 	.boot,
 	[data-theme='blackout'] .boot,
 	[data-theme='blackout'] .max-shine,
-	.div-unlock,
-	.holk-smoke {
+	.div-unlock {
 		display: none !important;
 	}
 }

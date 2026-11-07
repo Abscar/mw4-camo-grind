@@ -5,7 +5,6 @@
 	import { progress } from '#lib/progress.svelte.ts';
 	import { BRUSHED, FACETS } from '#lib/kpiCamos.ts';
 	import { CAMO_FILL, CAMO_INK, percent } from '#lib/ui.ts';
-	import HolkBurn from './HolkBurn.svelte';
 
 	const total = WEAPONS.length;
 	const divergenceShown = $derived(Math.min(progress.divergenceCount, DIVERGENCE_REQUIRED));
@@ -52,8 +51,6 @@
 			{divergenceShown} <small class="text-base font-semibold text-muted">/ {DIVERGENCE_REQUIRED}</small>
 		</p>
 		<div class="bar"><i style:width="{divergencePct}%"></i></div>
-		<!-- Abscar: the bar is a cone joint that burns down toward 33 -->
-		<div class="abscar-only"><HolkBurn done={divergenceShown} total={DIVERGENCE_REQUIRED} /></div>
 		<p class="mt-2 text-xs text-muted">
 			{#if progress.divergenceUnlocked}
 				<span class="font-bold text-div-ink">✔ {t.kpi.divergenceUnlocked}</span>
