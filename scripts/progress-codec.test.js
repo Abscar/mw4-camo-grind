@@ -4,12 +4,18 @@ import { test } from 'node:test';
 import { DIVERGENCE_REQUIRED, MASTERY, MAX_LEVEL } from '../src/lib/data/camos.ts';
 import { WEAPON_LOOKS } from '../src/lib/data/weaponLooks.ts';
 import { CLASSES, NEXT_FREE_SLOT, WEAPONS } from '../src/lib/data/weapons.ts';
+import { BALANCE, BALANCE_PATCH } from '../src/lib/data/balance.ts';
 import {
+	FOCUS_MAX,
+	NOTE_MAX,
 	decodeLink,
 	defaultProgress,
 	encodeLink,
 	linkCodeFromHash,
-	migrate
+	migrate,
+	normalisePrefs,
+	toExport,
+	toStored
 } from '../src/lib/progress-codec.ts';
 
 test('data: ids and link slots are unique, slots below NEXT_FREE_SLOT', () => {
@@ -59,7 +65,7 @@ test('migrate: old tracker localStorage (v1) keeps every tick and mastery count'
 	assert.equal(m.progress.weapons['cronen-osprey'], 0);
 	assert.equal(m.progress.mastery.mercurialDrift, 12);
 	assert.equal(m.progress.mastery.orionReforged, 500); // clamped to target
-	assert.deepEqual(m.prefs, { theme: 'neon', hideMaxed: true, classFilter: null });
+	assert.deepEqual(m.prefs, { theme: 'neon', hideMaxed: true, classFilter: null, focus: [] });
 });
 
 test('migrate: old tracker export file (v1) works too', () => {
@@ -93,6 +99,51 @@ test('link: round trip, and it stays short', () => {
 	assert.deepEqual(decodeLink(code), p);
 	assert.equal(linkCodeFromHash(`#p=${code}`), code);
 	assert.equal(linkCodeFromHash('#something-else'), null);
+});
+
+test('data: every buff/nerf entry belongs to a known weapon', () => {
+	const ids = new Set(WEAPONS.map((w) => w.id));
+	assert.deepEqual(Object.keys(BALANCE).filter((id) => !ids.has(id)), []);
+	assert.ok(Object.values(BALANCE).every((b) => (b.change === 'buff' || b.change === 'nerf') && b.text.trim() !== ''));
+	assert.match(BALANCE_PATCH.date, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('focus list: known ids only, no doubles, at most FOCUS_MAX', () => {
+	const prefs = normalisePrefs({ focus: ['m4', 'm4', 'no-such-gun', 7, 'oden', 'axion', 'vel-46', 'han-86'] });
+	assert.deepEqual(prefs.focus, ['m4', 'oden', 'axion', 'vel-46']);
+	assert.equal(prefs.focus.length, FOCUS_MAX);
+	assert.deepEqual(normalisePrefs({}).focus, []);
+	assert.deepEqual(normalisePrefs({ focus: 'm4' }).focus, []);
+});
+
+test('notes: kept in saves and backups, trimmed and capped; older saves without notes still load', () => {
+	const long = 'x'.repeat(NOTE_MAX + 50);
+	const stored = toStored(defaultProgress(), normalisePrefs({}), {
+		notes: { m4: 'longshots on big maps' },
+		lastTickAt: '2026-11-07T08:00:00.000Z'
+	});
+	const m = migrate(JSON.parse(JSON.stringify(stored)));
+	assert.ok(m);
+	assert.deepEqual(m.notes, { m4: 'longshots on big maps' });
+	assert.equal(m.lastTickAt, '2026-11-07T08:00:00.000Z');
+	assert.ok(m.savedAt);
+
+	const raw = migrate({ v: 2, progress: { weapons: {}, mastery: {} }, notes: { oden: `  ${long}  `, m4: '   ', 'future-gun': 'hi', axion: 5 } });
+	assert.ok(raw);
+	assert.equal(raw.notes?.oden.length, NOTE_MAX);
+	assert.equal(raw.notes?.m4, undefined);
+	assert.equal(raw.notes?.axion, undefined);
+	assert.equal(raw.notes?.['future-gun'], 'hi');
+
+	const old = migrate({ v: 2, progress: { weapons: { m4: 2 }, mastery: {} }, prefs: { theme: 'neon' } });
+	assert.ok(old);
+	assert.equal(old.notes, undefined);
+	assert.equal(old.lastTickAt, undefined);
+	assert.deepEqual(old.prefs?.focus, []);
+
+	const file = toExport(defaultProgress(), { m4: 'note' });
+	assert.deepEqual(migrate(JSON.parse(JSON.stringify(file)))?.notes, { m4: 'note' });
+	assert.equal(toExport(defaultProgress()).notes, undefined);
 });
 
 test('link: broken codes are rejected', () => {

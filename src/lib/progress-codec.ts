@@ -20,25 +20,42 @@ export interface Prefs {
 	hideMaxed: boolean;
 	/** Class id to show, or null for all classes. */
 	classFilter: string | null;
+	/** The weapons pinned to the focus list (ids, in the order they were pinned, at most FOCUS_MAX). */
+	focus: string[];
 }
+
+/** Weapon id → the user's own note about that weapon. */
+export type Notes = Record<string, string>;
+
+/** How many weapons the focus list holds. */
+export const FOCUS_MAX = 4;
+/** Longest note we keep, in characters. */
+export const NOTE_MAX = 300;
 
 export const CURRENT_VERSION = 2;
 export const APP_ID = 'mw4-camo-grind';
 
-/** What we keep in localStorage. */
+/**
+ * What we keep in localStorage. `notes` and `lastTickAt` were added on 2026-11-07 as optional
+ * fields, so older saves (without them) still read fine and nothing needed a new version.
+ */
 export interface StoredV2 {
 	v: 2;
 	progress: ProgressData;
 	prefs: Prefs;
+	notes?: Notes;
+	/** When a tick last added a camo (ISO), for the news buddy's mood. */
+	lastTickAt?: string;
 	savedAt: string;
 }
 
-/** What "Export backup" writes. */
+/** What "Export backup" writes. `notes` is left out when there are none (and older files have none). */
 export interface ExportV2 {
 	app: typeof APP_ID;
 	v: 2;
 	exported: string;
 	progress: ProgressData;
+	notes?: Notes;
 }
 
 const OLD_MASTERY_IDS: Record<string, string> = {
@@ -61,7 +78,7 @@ export function defaultProgress(): ProgressData {
 }
 
 export function defaultPrefs(): Prefs {
-	return { theme: DEFAULT_THEME, hideMaxed: false, classFilter: null };
+	return { theme: DEFAULT_THEME, hideMaxed: false, classFilter: null, focus: [] };
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {
@@ -107,8 +124,44 @@ export interface Migrated {
 	progress: ProgressData;
 	/** Only present when the source had preferences (localStorage, not export files). */
 	prefs?: Prefs;
+	/** Only present when the source had notes (saves and backups from 2026-11-07 on). */
+	notes?: Notes;
+	lastTickAt?: string;
+	savedAt?: string;
 	/** Version of the source format, for messages. */
 	from: number;
+}
+
+/** A note as we keep it: plain text, trimmed, at most NOTE_MAX characters. */
+export function cleanNote(x: unknown): string {
+	return typeof x === 'string' ? x.trim().slice(0, NOTE_MAX) : '';
+}
+
+/** Keep the usable notes. Unknown weapon ids are kept (they might belong to newer data). */
+export function normaliseNotes(raw: Record<string, unknown>): Notes {
+	const out: Notes = {};
+	for (const [id, value] of Object.entries(raw).slice(0, 500)) {
+		const note = cleanNote(value);
+		if (note !== '') out[id] = note;
+	}
+	return out;
+}
+
+/** An ISO date string we can read, or undefined. */
+function readDate(x: unknown): string | undefined {
+	if (typeof x !== 'string') return undefined;
+	const ms = Date.parse(x);
+	return Number.isFinite(ms) ? new Date(ms).toISOString() : undefined;
+}
+
+/** Optional extras next to the progress: notes, and when the last tick / save happened. */
+function addExtras(migrated: Migrated, raw: Record<string, unknown>): Migrated {
+	if (isObject(raw.notes)) migrated.notes = normaliseNotes(raw.notes);
+	const lastTickAt = readDate(raw.lastTickAt);
+	if (lastTickAt) migrated.lastTickAt = lastTickAt;
+	const savedAt = readDate(raw.savedAt);
+	if (savedAt) migrated.savedAt = savedAt;
+	return migrated;
 }
 
 /**
@@ -127,7 +180,7 @@ export function migrate(raw: unknown): Migrated | null {
 		);
 		const migrated: Migrated = { progress, from: typeof raw.v === 'number' ? raw.v : CURRENT_VERSION };
 		if (isObject(raw.prefs)) migrated.prefs = normalisePrefs(raw.prefs);
-		return migrated;
+		return addExtras(migrated, raw);
 	}
 
 	// v1 (the old single-file tracker): { v: 1, ticks: { id: [g, p, h] }, mastery: { md, pr, or }, theme, hideMaxed }
@@ -162,16 +215,32 @@ export function normalisePrefs(raw: Record<string, unknown>): Prefs {
 		classFilter:
 			typeof raw.classFilter === 'string' && CLASSES.some((c) => c.id === raw.classFilter)
 				? raw.classFilter
-				: null
+				: null,
+		focus: normaliseFocus(raw.focus)
 	};
 }
 
-export function toStored(progress: ProgressData, prefs: Prefs): StoredV2 {
-	return { v: 2, progress, prefs, savedAt: new Date().toISOString() };
+/** Known weapon ids only, no duplicates, at most FOCUS_MAX. */
+export function normaliseFocus(raw: unknown): string[] {
+	if (!Array.isArray(raw)) return [];
+	const known = new Set(WEAPONS.map((w) => w.id));
+	return [...new Set(raw.filter((id): id is string => typeof id === 'string' && known.has(id)))].slice(0, FOCUS_MAX);
 }
 
-export function toExport(progress: ProgressData): ExportV2 {
-	return { app: APP_ID, v: 2, exported: new Date().toISOString(), progress };
+export function toStored(
+	progress: ProgressData,
+	prefs: Prefs,
+	extras: { notes: Notes; lastTickAt: string | null } = { notes: {}, lastTickAt: null }
+): StoredV2 {
+	const stored: StoredV2 = { v: 2, progress, prefs, notes: extras.notes, savedAt: new Date().toISOString() };
+	if (extras.lastTickAt) stored.lastTickAt = extras.lastTickAt;
+	return stored;
+}
+
+export function toExport(progress: ProgressData, notes: Notes = {}): ExportV2 {
+	const file: ExportV2 = { app: APP_ID, v: 2, exported: new Date().toISOString(), progress };
+	if (Object.keys(notes).length > 0) file.notes = notes;
+	return file;
 }
 
 export function sameProgress(a: ProgressData, b: ProgressData): boolean {

@@ -5,6 +5,13 @@
 	a gnarled vine arm and fingertips that glow like lit blunts. Decorative, aria-hidden.
 -->
 <script lang="ts" module>
+	/**
+	 * His mood (NewsBuddy picks it): cheers (waving, sparkles) right after you max a weapon, sleeps
+	 * (closed eyes, Zzz) after midnight, sulks (heavy lids, frown, a little rain cloud) when nothing
+	 * was ticked for a week.
+	 */
+	export type BuddyMood = 'normal' | 'cheer' | 'sleep' | 'sulk';
+
 	type Pt = [number, number];
 
 	/** A serrated leaflet pointing up from (0,0): lens-shaped with small teeth along both edges. */
@@ -108,8 +115,10 @@
 </script>
 
 <script lang="ts">
-	let { class: klass = '' }: { class?: string } = $props();
+	let { class: klass = '', mood = 'normal' }: { class?: string; mood?: BuddyMood } = $props();
 	const uid = $props.id();
+	const awake = $derived(mood !== 'sleep');
+	const eye = $derived(mood === 'cheer' ? { rx: 2.9, ry: 1.7 } : { rx: 2.3, ry: 1.15 });
 </script>
 
 {#snippet leaf(l: Leaf)}
@@ -123,7 +132,7 @@
 	</g>
 {/snippet}
 
-<svg viewBox="0 0 100 100" class={klass} aria-hidden="true" focusable="false">
+<svg viewBox="0 0 100 100" class="{klass} mood-{mood}" aria-hidden="true" focusable="false">
 	<defs>
 		<filter id="{uid}-moss" x="-10%" y="-10%" width="120%" height="120%">
 			<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="7" result="noise" />
@@ -162,9 +171,11 @@
 	{#each BACK as l, i (i)}{@render leaf(l)}{/each}
 	{#each MID as l, i (i)}{@render leaf(l)}{/each}
 
-	<!-- gnarled vine arm -->
-	<path d="M63 77 C72 71 78 57 80 36" fill="none" stroke="url(#{uid}-bark)" stroke-width="7" stroke-linecap="round" />
-	<path d="M64 74 C71 69 76 57 78 41 M70 66 L74.5 63.5 M76 52 L79.5 51" fill="none" stroke="#0f2a0b" stroke-width="0.6" stroke-linecap="round" opacity="0.7" />
+	<!-- gnarled vine arm (with the hand, drawn further down) waves when he cheers -->
+	<g class="buddy-arm">
+		<path d="M63 77 C72 71 78 57 80 36" fill="none" stroke="url(#{uid}-bark)" stroke-width="7" stroke-linecap="round" />
+		<path d="M64 74 C71 69 76 57 78 41 M70 66 L74.5 63.5 M76 52 L79.5 51" fill="none" stroke="#0f2a0b" stroke-width="0.6" stroke-linecap="round" opacity="0.7" />
+	</g>
 
 	<!-- face: mossy, gaunt -->
 	<path
@@ -176,34 +187,171 @@
 	/>
 	<ellipse cx="38" cy="45" rx="3.5" ry="5" fill="#0f2a0b" opacity="0.35" />
 	<ellipse cx="54" cy="45" rx="3.5" ry="5" fill="#0f2a0b" opacity="0.35" />
-	<!-- brows and deep eye sockets -->
-	<path d="M35.8 33.2 Q41 29.6 45.2 33.6 M46.8 33.6 Q51 29.6 56.2 33.2" fill="none" stroke="#0b1f08" stroke-width="2" stroke-linecap="round" />
+	<!-- brows (sad and tilted when he sulks) and deep eye sockets -->
+	{#if mood === 'sulk'}
+		<path d="M35.8 31.6 Q40.6 32.4 45 30.4 M47 30.4 Q51.4 32.4 56.2 31.6" fill="none" stroke="#0b1f08" stroke-width="2" stroke-linecap="round" />
+	{:else}
+		<path d="M35.8 33.2 Q41 29.6 45.2 33.6 M46.8 33.6 Q51 29.6 56.2 33.2" fill="none" stroke="#0b1f08" stroke-width="2" stroke-linecap="round" />
+	{/if}
 	<path d="M36.5 35 Q40.5 32.6 44.6 35.8 Q41 38.6 36.8 36.6 Z" fill="#050b03" />
 	<path d="M55.5 35 Q51.5 32.6 47.4 35.8 Q51 38.6 55.2 36.6 Z" fill="#050b03" />
-	<circle class="buddy-glow" cx="40.6" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
-	<circle class="buddy-glow" cx="51.4" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
-	<ellipse cx="40.6" cy="35.8" rx="2.3" ry="1.15" transform="rotate(14 40.6 35.8)" fill="#ffe86a" />
-	<ellipse cx="51.4" cy="35.8" rx="2.3" ry="1.15" transform="rotate(-14 51.4 35.8)" fill="#ffe86a" />
-	<ellipse cx="40.9" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
-	<ellipse cx="51.1" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
+	{#if awake}
+		<circle class="buddy-glow" cx="40.6" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
+		<circle class="buddy-glow" cx="51.4" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
+		<ellipse cx="40.6" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(14 40.6 35.8)" fill="#ffe86a" />
+		<ellipse cx="51.4" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(-14 51.4 35.8)" fill="#ffe86a" />
+		<ellipse cx="40.9" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
+		<ellipse cx="51.1" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
+		{#if mood === 'sulk'}
+			<!-- heavy lids over the top half of the eyes -->
+			<path d="M37.4 34.6 Q40.6 33.4 43.9 35.6 L43.9 36 Q40.6 35.2 37.4 35.9 Z" fill="#173d11" stroke="#0b1f08" stroke-width="0.4" />
+			<path d="M54.6 34.6 Q51.4 33.4 48.1 35.6 L48.1 36 Q51.4 35.2 54.6 35.9 Z" fill="#173d11" stroke="#0b1f08" stroke-width="0.4" />
+		{/if}
+	{:else}
+		<!-- asleep: closed eyes -->
+		<path d="M37.8 35.6 Q40.6 37.8 43.6 35.8 M48.4 35.8 Q51.4 37.8 54.2 35.6" fill="none" stroke="#ffe86a" stroke-width="0.9" stroke-linecap="round" opacity="0.75" />
+	{/if}
 	<!-- nostrils -->
 	<path d="M44.6 41.8 L45.6 44.2 M47.4 41.8 L46.4 44.2" stroke="#071205" stroke-width="1" stroke-linecap="round" />
-	<!-- grin full of sharp teeth -->
-	<path d="M37.5 47 Q46 64 54.5 47 Q46 55 37.5 47 Z" fill="#060d04" />
-	{#each UPPER_TEETH as d, i (i)}<path {d} fill="#ebe4b2" stroke="#6b6436" stroke-width="0.2" />{/each}
-	{#each LOWER_TEETH as d, i (i)}<path {d} fill="#ddd59c" stroke="#6b6436" stroke-width="0.2" />{/each}
+	{#if mood === 'sulk'}
+		<!-- a sulky frown with a few teeth showing -->
+		<path d="M38.5 53.4 Q46 45.6 53.5 53.4 Q46 50.4 38.5 53.4 Z" fill="#060d04" />
+		<path d="M42.5 50.6 L43.4 52.2 L44.4 50.1 Z M47.6 50.1 L48.6 52.2 L49.5 50.6 Z" fill="#ebe4b2" />
+	{:else if mood === 'sleep'}
+		<!-- snoring: a small round mouth -->
+		<ellipse cx="46" cy="51" rx="2.6" ry="3.2" fill="#060d04" />
+	{:else}
+		<!-- grin full of sharp teeth -->
+		<path d="M37.5 47 Q46 64 54.5 47 Q46 55 37.5 47 Z" fill="#060d04" />
+		{#each UPPER_TEETH as d, i (i)}<path {d} fill="#ebe4b2" stroke="#6b6436" stroke-width="0.2" />{/each}
+		{#each LOWER_TEETH as d, i (i)}<path {d} fill="#ddd59c" stroke="#6b6436" stroke-width="0.2" />{/each}
+	{/if}
 
 	{#each FRONT as l, i (i)}{@render leaf(l)}{/each}
 
-	<!-- hand: knobbly fingers with glowing tips -->
-	<ellipse cx="81.5" cy="32" rx="4.6" ry="4.2" fill="url(#{uid}-bark)" stroke="#0f2a0b" stroke-width="0.5" />
-	{#each FINGERS as f, i (i)}
-		<path d={f.d} fill="none" stroke="#2f6522" stroke-width="2.5" stroke-linecap="round" />
-		<path d={f.d} fill="none" stroke="#0f2a0b" stroke-width="0.4" stroke-linecap="round" opacity="0.6" />
-	{/each}
-	{#each FINGERS as f, i (i)}
-		<circle class="buddy-glow" cx={f.tip[0]} cy={f.tip[1]} r="5" fill="url(#{uid}-glow)" />
-		<circle cx={f.tip[0]} cy={f.tip[1]} r="1.6" fill="#ffe86a" />
-		<circle cx={f.tip[0] - 0.4} cy={f.tip[1] - 0.4} r="0.6" fill="#fffbe0" />
-	{/each}
+	<!-- hand: knobbly fingers with glowing tips (dimmed while he sleeps) -->
+	<g class="buddy-arm">
+		<ellipse cx="81.5" cy="32" rx="4.6" ry="4.2" fill="url(#{uid}-bark)" stroke="#0f2a0b" stroke-width="0.5" />
+		{#each FINGERS as f, i (i)}
+			<path d={f.d} fill="none" stroke="#2f6522" stroke-width="2.5" stroke-linecap="round" />
+			<path d={f.d} fill="none" stroke="#0f2a0b" stroke-width="0.4" stroke-linecap="round" opacity="0.6" />
+		{/each}
+		<g opacity={awake ? 1 : 0.35}>
+			{#each FINGERS as f, i (i)}
+				<circle class="buddy-glow" cx={f.tip[0]} cy={f.tip[1]} r="5" fill="url(#{uid}-glow)" />
+				<circle cx={f.tip[0]} cy={f.tip[1]} r="1.6" fill="#ffe86a" />
+				<circle cx={f.tip[0] - 0.4} cy={f.tip[1] - 0.4} r="0.6" fill="#fffbe0" />
+			{/each}
+		</g>
+	</g>
+
+	{#if mood === 'cheer'}
+		<!-- sparkles popping around him -->
+		{#each [[18, 22, 0], [70, 8, 0.25], [12, 52, 0.5], [92, 46, 0.12], [30, 6, 0.38]] as [x, y, delay], i (i)}
+			<path
+				class="buddy-sparkle"
+				style:animation-delay="{delay}s"
+				transform="translate({x} {y})"
+				d="M0 -4 L1 -1 L4 0 L1 1 L0 4 L-1 1 L-4 0 L-1 -1 Z"
+				fill="#ffe86a"
+			/>
+		{/each}
+	{:else if mood === 'sleep'}
+		<!-- Zzz drifting up -->
+		{#each [[22, 24, 10, 0], [12, 13, 13, 0.9], [0, 0, 16, 1.8]] as [x, y, size, delay], i (i)}
+			<text
+				class="buddy-z"
+				{x}
+				{y}
+				font-size={size}
+				style:animation-delay="{delay}s"
+				fill="#eaffd8"
+				stroke="#0f2a0b"
+				stroke-width="0.9"
+				paint-order="stroke"
+				font-weight="800"
+				font-family="Bahnschrift, 'Segoe UI', sans-serif">Z</text
+			>
+		{/each}
+	{:else if mood === 'sulk'}
+		<!-- a little rain cloud over his head -->
+		<g class="buddy-cloud">
+			<path d="M33 4 Q33 -1.5 38.5 -1 Q41 -5.5 46.5 -4 Q51.5 -6.5 54.5 -1.5 Q60 -1.5 59.5 4 Z" fill="#7b8794" stroke="#3b4450" stroke-width="0.6" />
+			{#each [38, 44, 50, 56] as x, i (x)}
+				<path class="buddy-drop" style:animation-delay="{i * 0.22}s" d="M{x} 6 l-0.9 2.6 a0.95 0.95 0 1 0 1.8 0 z" fill="#8fd3ff" />
+			{/each}
+		</g>
+	{/if}
 </svg>
+
+<style>
+	/* cheering: waves the arm from the shoulder and bobs higher */
+	.mood-cheer :global(.buddy-arm) {
+		transform-box: view-box;
+		transform-origin: 63px 77px;
+		animation: buddy-wave 0.42s ease-in-out infinite alternate;
+	}
+	.buddy-sparkle {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: buddy-pop 0.9s ease-out infinite;
+	}
+	.buddy-z {
+		animation: buddy-zzz 2.7s ease-in-out infinite;
+		opacity: 0;
+	}
+	.mood-sleep {
+		filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.5)) brightness(0.82);
+	}
+	.mood-sulk {
+		filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.5)) saturate(0.6) brightness(0.85);
+	}
+	.buddy-drop {
+		animation: buddy-rain 0.9s linear infinite;
+	}
+	@keyframes buddy-wave {
+		from {
+			transform: rotate(-9deg);
+		}
+		to {
+			transform: rotate(8deg);
+		}
+	}
+	@keyframes buddy-pop {
+		0% {
+			opacity: 0;
+			transform: scale(0.2) rotate(0deg);
+		}
+		40% {
+			opacity: 1;
+			transform: scale(1.2) rotate(45deg);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(0.4) rotate(90deg);
+		}
+	}
+	@keyframes buddy-zzz {
+		0% {
+			opacity: 0;
+			transform: translate(3px, 4px);
+		}
+		30% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(-4px, -6px);
+		}
+	}
+	@keyframes buddy-rain {
+		from {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(9px);
+		}
+	}
+</style>

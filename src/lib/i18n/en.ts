@@ -23,7 +23,28 @@ export const en = {
 		noneToday: (date: string) => `No new nerfs or buffs on ${date}. Latest:`,
 		latest: 'Latest nerfs & buffs:',
 		none: 'No nerf or buff news right now. I’ll shout when the next patch drops.',
-		newTab: 'opens in a new tab'
+		newTab: 'opens in a new tab',
+		/** The buddy's greeting changes with his mood (see NewsBuddy). */
+		mood: {
+			cheer: 'LET’S GOOO, Abscar! Weapon maxed!',
+			sleep: 'Zzz… late night, Abscar.',
+			sulk: 'Abscar… no new camos in a week?'
+		}
+	},
+	/** Abscar theme: the red terminal text for a moment when the page opens. */
+	boot: {
+		title: 'ABSCAR OS // CAMO GRIND MODULE',
+		hud: 'Booting HUD',
+		camos: 'Loading camo data',
+		arsenal: 'Scanning arsenal',
+		weapons: (n: number) => `${n} weapons`,
+		ok: 'OK',
+		go: 'Target acquired. Start grinding.'
+	},
+	/** Abscar theme: the big flash when the 33rd Harmonic Break unlocks Divergence. */
+	unlock: {
+		title: 'Divergence unlocked',
+		sub: (n: number, next: string) => `${n} Harmonic Breaks · next target: ${next}`
 	},
 	/** The one-line news banner (green radar box) above the KPI tiles. */
 	banner: {
@@ -71,7 +92,44 @@ export const en = {
 		newBadge: 'New',
 		newBadgeLong: 'New in Season 1',
 		maxed: 'Maxed',
-		toggle: (camo: string, weapon: string) => `${camo}: ${weapon}`
+		toggle: (camo: string, weapon: string) => `${camo}: ${weapon}`,
+		/** Read out after the weapon's name on the button that opens its card. */
+		openHint: 'open its card: focus list, note, buffs and nerfs',
+		focused: 'on your focus list',
+		buff: 'Buff',
+		nerf: 'Nerf',
+		balanceLong: (change: 'buff' | 'nerf', patch: string) =>
+			`${change === 'buff' ? 'Buffed' : 'Nerfed'} in the ${patch} patch`,
+		editNote: 'Edit your note'
+	},
+
+	/** The weapon card that opens when you tap a weapon. */
+	sheet: {
+		focusAdd: 'Add to focus list',
+		focusRemove: 'Remove from focus list',
+		focusFull: (n: number) => `Your focus list is full (${n} weapons). Remove one from it first.`,
+		note: 'Your note',
+		notePlaceholder: 'e.g. longshots work best on the big maps',
+		noteSaved: 'Saved as you type',
+		charsLeft: (n: number) => `${n} left`,
+		next: 'Next camo',
+		maxed: 'Every camo done ◆',
+		balance: (change: 'buff' | 'nerf', patch: string, date: string) =>
+			`${change === 'buff' ? 'Buffed' : 'Nerfed'} in ${patch} (${date})`,
+		balanceSource: (sources: string) => `From the patch notes, via ${sources}.`,
+		noBalance: (patch: string) => `No changes to this gun in the ${patch} patch.`,
+		meta: 'Meta class',
+		close: 'Done'
+	},
+
+	/** The focus list: up to FOCUS_MAX pinned weapons in the first box. */
+	focus: {
+		heading: 'Focus',
+		sub: (n: number, max: number) => `${n}/${max} pinned`,
+		next: 'Next',
+		maxed: 'Maxed, every camo done ◆',
+		howTo: 'Tap a weapon to unpin it or edit its note.',
+		tip: 'Tip: tap a weapon’s name to pin it to your focus list or write a note about it.'
 	},
 
 	loadout: {
@@ -170,7 +228,7 @@ export const en = {
 
 	help: {
 		howTo:
-			'Tap a box to tick it. Ticking a higher camo fills in the ones below it; unticking a lower one clears the ones above.',
+			'Tap a box to tick it. Ticking a higher camo fills in the ones below it; unticking a lower one clears the ones above. Tap a weapon’s name to pin it to your focus list, write a note or see its latest buff or nerf.',
 		divergence: (n: number) =>
 			`Divergence unlocks at ${n} Harmonic Breaks. Whether Season 1 weapons count toward that is not confirmed yet.`,
 		sources:

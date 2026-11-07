@@ -25,6 +25,11 @@
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
 	import Toolbar from '#lib/components/Toolbar.svelte';
+	import FocusSection from '#lib/components/FocusSection.svelte';
+	import WeaponSheet from '#lib/components/WeaponSheet.svelte';
+	import KillFeed from '#lib/components/KillFeed.svelte';
+	import DivergenceUnlock from '#lib/components/DivergenceUnlock.svelte';
+	import BootSequence from '#lib/components/BootSequence.svelte';
 
 	let query = $state('');
 	const needle = $derived(query.trim().toLowerCase());
@@ -151,13 +156,20 @@
 
 		<div class="mt-6"><Toolbar bind:query /></div>
 
-		{#if sections.length > 0}
+		{#if progress.ready && progress.prefs.focus.length === 0 && Object.keys(progress.notes).length === 0}
+			<p class="mt-3 text-[13px] text-muted">{t.focus.tip}</p>
+		{/if}
+
+		{#if sections.length > 0 || progress.prefs.focus.length > 0}
+			<!-- the focus list is the first box; search, class filter and "hide maxed" don't touch it -->
 			<div class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
+				{#if progress.prefs.focus.length > 0}<FocusSection />{/if}
 				{#each sections as s (s.cls.id)}
 					<ClassSection cls={s.cls} number={s.number} visible={s.visible} />
 				{/each}
 			</div>
-		{:else}
+		{/if}
+		{#if sections.length === 0}
 			{@const cls = CLASSES.find((c) => c.id === progress.prefs.classFilter)}
 			<div class="mt-4 rounded-card bg-panel px-4 py-6 text-center shadow-card">
 				<p class="text-muted">
@@ -193,6 +205,13 @@
 <Toast />
 
 <LoadoutDialog />
+
+<WeaponSheet />
+
+<!-- Abscar extras: kill feed, the Divergence flash and the boot text (decoration, aria-hidden) -->
+<KillFeed />
+<DivergenceUnlock />
+<BootSequence />
 
 <Dialog bind:open={linkDialogOpen} title={t.linkImport.title}>
 	{#if linkOffer}

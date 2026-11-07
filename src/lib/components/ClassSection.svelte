@@ -72,7 +72,7 @@
 		<!-- flex-1: boxes in a row are equally tall; the list takes the extra room so the challenges sit at the bottom -->
 		<ul class="flex-1 px-2 pb-2">
 			{#each visible as weapon (weapon.id)}
-				<WeaponCard {weapon} {columns} />
+				<WeaponCard {weapon} {columns} classId={cls.id} />
 			{/each}
 		</ul>
 	{:else}

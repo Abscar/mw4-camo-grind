@@ -5,49 +5,93 @@
 	import { progress } from '#lib/progress.svelte.ts';
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
 	import { LOADOUTS } from '#lib/data/loadouts.ts';
+	import { BALANCE, BALANCE_PATCH } from '#lib/data/balance.ts';
+	import { feed } from '#lib/feed.svelte.ts';
 	import { loadoutView } from '#lib/loadoutView.svelte.ts';
+	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
+	import { nextChallenge } from '#lib/ui.ts';
 	import CamoToggle from './CamoToggle.svelte';
+	import FactText from './FactText.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
-	let { weapon, columns }: { weapon: Weapon; columns: string } = $props();
+	let {
+		weapon,
+		columns,
+		classId,
+		showNext = false
+	}: {
+		weapon: Weapon;
+		columns: string;
+		classId: string;
+		/** The focus list shows the next camo's challenge under each weapon. */
+		showNext?: boolean;
+	} = $props();
 
-	const maxed = $derived(progress.level(weapon.id) >= MAX_LEVEL);
+	const level = $derived(progress.level(weapon.id));
+	const maxed = $derived(level >= MAX_LEVEL);
 	const look = $derived(WEAPON_LOOKS[weapon.id]);
 	const hasMetaClass = $derived(weapon.id in LOADOUTS);
 	const metaLabel = $derived(t.loadout.open(weapon.name));
+	const balance = $derived(BALANCE[weapon.id]);
+	const focused = $derived(progress.isFocused(weapon.id));
+	const note = $derived(progress.note(weapon.id));
+	const next = $derived(showNext ? nextChallenge(classId, level) : null);
+	/** Abscar: a shine + smoke puff runs over the row when this tick maxed the weapon. */
+	const shine = $derived(feed.lastMaxed?.weaponId === weapon.id ? feed.lastMaxed.id : 0);
 </script>
 
 <li
-	class="grid items-center gap-1.5 rounded-[calc(var(--t-radius)-1px)] px-2 py-1 transition-colors hover:bg-panel-2"
+	class="weapon-row relative grid items-center gap-x-1.5 gap-y-1 rounded-[calc(var(--t-radius)-1px)] px-2 py-1 transition-colors hover:bg-panel-2"
 	style:grid-template-columns={columns}
 >
-	<!-- name + cartoon on the left; the meta button in its own column on the right, level with
-	     the name, so all the buttons in a box line up -->
+	<!-- name + cartoon on the left (one button that opens the weapon's card); the meta button in its
+	     own column on the right, level with the name, so all the buttons in a box line up -->
 	<div
 		class="grid min-w-0 items-start gap-x-1 {hasMetaClass
 			? 'grid-cols-[minmax(0,1fr)_auto]'
 			: 'grid-cols-[minmax(0,1fr)]'}"
 	>
-		<div class="min-w-0">
-			<div class="flex min-w-0">
-				<div class="weapon-name truncate font-semibold" title={weapon.name}>
+		<button
+			type="button"
+			class="weapon-open block min-w-0 text-left"
+			aria-haspopup="dialog"
+			onclick={() => weaponSheet.show(weapon.id)}
+		>
+			<span class="flex min-w-0">
+				<span class="weapon-name block truncate font-semibold" title={weapon.name}>
 					{weapon.name}{#if maxed}<span class="ml-1 text-xs text-hb-ink" title={t.weapon.maxed}
 							><span class="maxed-mark" aria-hidden="true">◆</span><span class="sr-only">({t.weapon.maxed})</span></span
 						>{/if}
-				</div>
-			</div>
-			{#if look || weapon.season === 'season1'}
-				<div class="flex items-center gap-1.5">
-					{#if look}<WeaponIcon {look} />{/if}
-					{#if weapon.season === 'season1'}
-						<span
-							class="font-head flex-none rounded-full border border-current px-1.5 text-[10px] leading-4 font-bold tracking-wider text-new-ink uppercase"
-							title={t.weapon.newBadgeLong}>{t.weapon.newBadge}</span
-						>
-					{/if}
-				</div>
-			{/if}
-		</div>
+				</span>
+			</span>
+			<span class="flex items-center gap-1">
+				{#if look}
+					<span class="relative flex-none">
+						<WeaponIcon {look} />
+						{#if focused}<span class="focus-pin" aria-hidden="true">★</span>{/if}
+					</span>
+				{/if}
+				{#if weapon.season === 'season1'}
+					<span
+						class="font-head flex-none rounded-full border border-current px-1.5 text-[10px] leading-4 font-bold tracking-wider text-new-ink uppercase"
+						title={t.weapon.newBadgeLong}>{t.weapon.newBadge}</span
+					>
+				{/if}
+				{#if balance}
+					<span
+						class="balance-badge font-head flex-none"
+						data-change={balance.change}
+						title={t.weapon.balanceLong(balance.change, BALANCE_PATCH.name)}
+						><span aria-hidden="true">{balance.change === 'buff' ? '▲' : '▼'}</span>{balance.change === 'buff'
+							? t.weapon.buff
+							: t.weapon.nerf}</span
+					>
+				{/if}
+			</span>
+			<span class="sr-only"
+				>{#if focused}({t.weapon.focused}){/if} – {t.weapon.openHint}</span
+			>
+		</button>
 		{#if hasMetaClass}
 			<!-- a ≥44 px tap target holding a small "META" sign and a 28 px circle. Wide screens: sign to
 			     the left of the circle, pulled up so both sit level with the name. Phones (no room for
@@ -86,4 +130,43 @@
 			ontoggle={() => progress.toggle(weapon.id, i)}
 		/>
 	{/each}
+
+	{#if showNext}
+		<p class="col-span-full -mt-0.5 pl-0.5 text-[12.5px] leading-snug text-muted">
+			{#if next}
+				<b class="font-head mr-1 text-[10.5px] font-bold tracking-[0.12em] uppercase">{t.focus.next}</b><b
+					class="font-semibold text-fg">{next.camo.name}:</b
+				>
+				<FactText fact={next.fact} />
+			{:else}
+				<b class="font-semibold text-fg">{t.focus.maxed}</b>
+			{/if}
+		</p>
+	{/if}
+
+	{#if note}
+		<button
+			type="button"
+			class="weapon-note col-span-full -my-1 flex min-h-11 min-w-0 items-center gap-1.5 rounded-[3px] px-1 py-0.5 text-left text-[12.5px] leading-snug"
+			aria-haspopup="dialog"
+			onclick={() => weaponSheet.show(weapon.id)}
+		>
+			<svg viewBox="0 0 16 16" class="size-3 flex-none" aria-hidden="true" focusable="false">
+				<path
+					d="M10.6 2.2l3.2 3.2-8.3 8.3-3.9.7.7-3.9zM9.4 3.4l3.2 3.2"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.6"
+					stroke-linejoin="round"
+				/>
+			</svg>
+			<span class="line-clamp-2 min-w-0 break-words"><span class="sr-only">{t.weapon.editNote}: </span>{note}</span>
+		</button>
+	{/if}
+
+	{#key shine}
+		{#if shine}
+			<span class="max-shine" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+		{/if}
+	{/key}
 </li>

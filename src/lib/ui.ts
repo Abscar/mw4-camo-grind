@@ -1,8 +1,15 @@
 /** Small presentation helpers shared by components. */
 
-import type { LadderCamoId, MasteryStatus } from './data/camos.ts';
-import { UNLOCK_LEVEL_NOTE, type Fact, type Unlock } from './data/weapons.ts';
+import { LADDER, type LadderCamo, type LadderCamoId, type MasteryStatus } from './data/camos.ts';
+import { CLASSES, UNLOCK_LEVEL_NOTE, type Fact, type Unlock } from './data/weapons.ts';
 import { t } from './i18n/en.ts';
+
+/** The next ladder camo a weapon needs and its class's challenge for it, or null when maxed. */
+export function nextChallenge(classId: string, level: number): { camo: LadderCamo; fact: Fact } | null {
+	const camo = LADDER[level];
+	const cls = CLASSES.find((c) => c.id === classId);
+	return camo && cls ? { camo, fact: cls.challenges[camo.id] } : null;
+}
 
 /** Fill colour of each ladder camo (CSS value). */
 export const CAMO_FILL: Record<LadderCamoId, string> = {

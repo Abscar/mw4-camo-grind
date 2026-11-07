@@ -12,15 +12,19 @@ import {
 	type MasteryStatus
 } from './data/camos.ts';
 import { WEAPONS } from './data/weapons.ts';
+import { feed } from './feed.svelte.ts';
 import {
 	CURRENT_VERSION,
+	FOCUS_MAX,
 	clampCount,
+	cleanNote,
 	defaultPrefs,
 	defaultProgress,
 	migrate,
 	toExport,
 	toStored,
 	type Migrated,
+	type Notes,
 	type Prefs,
 	type ProgressData
 } from './progress-codec.ts';
@@ -58,6 +62,12 @@ class Progress {
 	weapons = $state<Record<string, number>>(defaultProgress().weapons);
 	mastery = $state<Record<string, number>>(defaultProgress().mastery);
 	prefs = $state<Prefs>(defaultPrefs());
+	/** The user's own notes per weapon. Not part of progress links (too long), but in backups. */
+	notes = $state<Notes>({});
+	/** When a tick last added a camo (ISO), or null if not known. */
+	lastTickAt = $state<string | null>(null);
+	/** When the saved data was written, as read at load (stands in for lastTickAt on older saves). */
+	#loadedSavedAt: string | null = null;
 
 	/** True once saved progress has been read in the browser. */
 	ready = $state(false);
@@ -107,8 +117,60 @@ class Progress {
 	 * unticking a camo also clears everything above it.
 	 */
 	toggle(weaponId: string, ladderIndex: number): void {
+		const before = this.level(weaponId);
+		const divergenceBefore = this.divergenceUnlocked;
 		this.weapons[weaponId] = this.has(weaponId, ladderIndex) ? ladderIndex : ladderIndex + 1;
+		const after = this.level(weaponId);
+		if (after > before) {
+			this.lastTickAt = new Date().toISOString();
+			feed.gain({
+				weaponId,
+				level: after,
+				maxed: after >= MAX_LEVEL,
+				divergence: !divergenceBefore && this.divergenceUnlocked
+			});
+		}
 		this.save();
+	}
+
+	/** When you last added a camo, as far as we know (ISO), or null. */
+	lastActiveAt(): string | null {
+		return this.lastTickAt ?? this.#loadedSavedAt;
+	}
+
+	note(weaponId: string): string {
+		return this.notes[weaponId] ?? '';
+	}
+
+	setNote(weaponId: string, text: string): void {
+		const note = cleanNote(text);
+		const next = { ...this.notes };
+		if (note === '') delete next[weaponId];
+		else next[weaponId] = note;
+		this.notes = next;
+		this.save();
+	}
+
+	/** Replace every note (import, undo). */
+	setNotes(notes: Notes): void {
+		this.notes = { ...notes };
+		this.save();
+	}
+
+	isFocused(weaponId: string): boolean {
+		return this.prefs.focus.includes(weaponId);
+	}
+
+	/** Pin or unpin a weapon on the focus list. 'full' means it holds FOCUS_MAX already. */
+	toggleFocus(weaponId: string): 'added' | 'removed' | 'full' {
+		const focus = this.prefs.focus;
+		if (focus.includes(weaponId)) {
+			this.setPref('focus', focus.filter((id) => id !== weaponId));
+			return 'removed';
+		}
+		if (focus.length >= FOCUS_MAX) return 'full';
+		this.setPref('focus', [...focus, weaponId]);
+		return 'added';
 	}
 
 	setMastery(id: string, value: number): void {
@@ -149,12 +211,16 @@ class Progress {
 	}
 
 	exportJson(): string {
-		return JSON.stringify(toExport(this.snapshot()), null, 2);
+		return JSON.stringify(toExport(this.snapshot(), { ...this.notes }), null, 2);
 	}
 
 	save(): void {
 		if (!this.ready) return; // never overwrite saved data before it has been read
-		const stored = toStored(this.snapshot(), { ...this.prefs });
+		const stored = toStored(
+			this.snapshot(),
+			{ ...this.prefs, focus: [...this.prefs.focus] },
+			{ notes: { ...this.notes }, lastTickAt: this.lastTickAt }
+		);
 		this.canSave = writeStorage(STORAGE_KEY, JSON.stringify(stored));
 	}
 
@@ -201,6 +267,9 @@ class Progress {
 		this.weapons = m.progress.weapons;
 		this.mastery = m.progress.mastery;
 		if (m.prefs) this.prefs = m.prefs;
+		if (m.notes) this.notes = m.notes;
+		if (m.lastTickAt) this.lastTickAt = m.lastTickAt;
+		if (m.savedAt) this.#loadedSavedAt = m.savedAt;
 	}
 
 	/** Keep several open tabs in step. Returns a function that stops listening. */

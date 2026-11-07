@@ -6,11 +6,17 @@
 	page and the first render match. Placed in the header's right column, Abscar theme only.
 -->
 <script lang="ts">
+	import { feed } from '#lib/feed.svelte.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { news, useNews } from '#lib/news.svelte.ts';
-	import WeedCreature from './WeedCreature.svelte';
+	import { progress } from '#lib/progress.svelte.ts';
+	import WeedCreature, { type BuddyMood } from './WeedCreature.svelte';
 
 	const SHOWN = 3;
+	/** He sulks when nothing was ticked for this long. */
+	const SULK_MS = 7 * 24 * 60 * 60_000;
+	/** He sleeps from midnight until this hour (viewer's clock). */
+	const WAKE_HOUR = 6;
 
 	useNews();
 
@@ -36,14 +42,25 @@
 		const d = new Date(iso);
 		return dayKey(d) === dayKey(now) ? clock(d) : shortDate(d);
 	};
+
+	/** Cheers right after you max a weapon; otherwise sleeps after midnight, sulks after a quiet week. */
+	const mood = $derived.by((): BuddyMood => {
+		if (feed.cheering) return 'cheer';
+		if (!now) return 'normal'; // the prerendered page and the first render match
+		if (now.getHours() < WAKE_HOUR) return 'sleep';
+		const last = progress.ready ? progress.lastActiveAt() : null;
+		if (last && now.getTime() - Date.parse(last) > SULK_MS) return 'sulk';
+		return 'normal';
+	});
+	const greeting = $derived(mood === 'normal' ? t.news.hello : t.news.mood[mood]);
 </script>
 
 <div class="news-buddy flex items-start gap-1.5">
-	<WeedCreature class="buddy size-24 flex-none overflow-visible sm:size-28" />
+	<WeedCreature class="buddy size-24 flex-none overflow-visible sm:size-28" {mood} />
 
 	<div class="news-bubble relative max-w-[400px] min-w-0 rounded-xl px-3.5 pt-2 pb-2">
 		<p class="font-head text-[13px] leading-snug font-bold tracking-wide">
-			<span class="text-[#b6f27a]">{t.news.hello}</span>
+			<span class="text-[#b6f27a]">{greeting}</span>
 			{heading}
 		</p>
 		{#if shown.length > 0}

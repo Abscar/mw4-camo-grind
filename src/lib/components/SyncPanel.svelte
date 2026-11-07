@@ -62,8 +62,17 @@
 			toast.show(t.toast.badFile);
 			return;
 		}
+		// backups from 2026-11-07 on also hold your notes; older ones leave the notes you have alone
+		const notesBefore = { ...progress.notes };
 		const before = progress.replace(migrated.progress);
-		toast.show(t.toast.imported, { label: t.toast.undo, run: () => progress.replace(before) });
+		if (migrated.notes) progress.setNotes(migrated.notes);
+		toast.show(t.toast.imported, {
+			label: t.toast.undo,
+			run: () => {
+				progress.replace(before);
+				if (migrated.notes) progress.setNotes(notesBefore);
+			}
+		});
 	}
 
 	function doReset() {
