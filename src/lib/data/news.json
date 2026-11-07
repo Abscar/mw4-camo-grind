@@ -1,67 +1,179 @@
 {
-	"source": "Dexerto",
-	"sourceUrl": "https://www.dexerto.com/call-of-duty/",
-	"fetchedAt": "2026-11-07T04:05:49.193Z",
+	"fetchedAt": "2026-11-07T06:18:35.668Z",
+	"sources": [
+		{
+			"name": "Dexerto",
+			"url": "https://www.dexerto.com/call-of-duty/"
+		},
+		{
+			"name": "Insider Gaming",
+			"url": "https://insider-gaming.com/"
+		},
+		{
+			"name": "Windows Central",
+			"url": "https://www.windowscentral.com/"
+		},
+		{
+			"name": "esports.gg",
+			"url": "https://esports.gg/"
+		},
+		{
+			"name": "Pure Xbox",
+			"url": "https://www.purexbox.com/"
+		}
+	],
 	"items": [
+		{
+			"title": "Call of Duty: Modern Warfare 4 DMZ Gets Free Trial on All Platforms",
+			"url": "https://insider-gaming.com/call-of-duty-modern-warfare-4-dmz-mode-free-trial-on-all-platforms/",
+			"date": "2026-11-06T20:18:35.000Z",
+			"source": "Insider Gaming"
+		},
+		{
+			"title": "How to complete the secret challenges on Warzone's new Zodiac map",
+			"url": "https://www.windowscentral.com/gaming/call-of-duty/call-of-duty-warzones-new-zodiac-map-secret-challenges-calling-cards-weapon-blueprints-and-how-to-get-them",
+			"date": "2026-11-06T14:51:41.000Z",
+			"source": "Windows Central"
+		},
 		{
 			"title": "New Warzone mode lets you buy Nuke for $1,000,000 to end the game",
 			"url": "https://www.dexerto.com/call-of-duty/new-warzone-mode-lets-you-buy-nuke-for-1000000-to-end-the-game-3425358/",
-			"date": "2026-11-06T10:43:59.000Z"
+			"date": "2026-11-06T10:43:59.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "All weapon buffs and nerfs in Modern Warfare 4 & Warzone Season 1",
 			"url": "https://www.dexerto.com/call-of-duty/all-weapon-buffs-and-nerfs-in-modern-warfare-4-warzone-season-1-3425115/",
-			"date": "2026-11-05T21:19:51.000Z"
+			"date": "2026-11-05T21:19:51.000Z",
+			"source": "Dexerto"
+		},
+		{
+			"title": "Call of Duty: MW4 no longer demands VRR on Xbox for optimal performance",
+			"url": "https://www.windowscentral.com/gaming/call-of-duty/modern-warfare-4-bringing-back-120hz",
+			"date": "2026-11-05T19:01:35.000Z",
+			"source": "Windows Central"
+		},
+		{
+			"title": "What are Kill Modes in Modern Warfare 4? Answered",
+			"url": "https://esports.gg/guides/call-of-duty/what-are-kill-modes-in-modern-warfare-4-answered/",
+			"date": "2026-11-05T16:23:00.000Z",
+			"source": "esports.gg"
+		},
+		{
+			"title": "Review: Call Of Duty: Modern Warfare 4 - The First COD I've Cared About In Ages",
+			"url": "https://www.purexbox.com/reviews/xbox-series-x/call-of-duty-modern-warfare-4",
+			"date": "2026-11-04T17:00:00.000Z",
+			"source": "Pure Xbox"
+		},
+		{
+			"title": "MW4 DMZ players need to do this loot run before Season 1 starts",
+			"url": "https://www.windowscentral.com/gaming/call-of-duty/if-youre-playing-modern-warfare-4-dmz-you-need-to-do-this-loot-run-before-season-1-especially-if-youre-a-solo-player",
+			"date": "2026-11-04T15:45:32.000Z",
+			"source": "Windows Central"
+		},
+		{
+			"title": "Modern Warfare 4 Boosts Call Of Duty Players On Xbox, But Falls Short Of Black Ops 7 Impact",
+			"url": "https://www.purexbox.com/news/2026/11/modern-warfare-4-boosts-call-of-duty-players-on-xbox-but-falls-short-of-black-ops-7-impact",
+			"date": "2026-11-04T13:00:00.000Z",
+			"source": "Pure Xbox"
 		},
 		{
 			"title": "Call of Duty player says $280 Asus monitor saved them from stray bullet fired outside house",
 			"url": "https://www.dexerto.com/call-of-duty/call-of-duty-player-says-280-asus-monitor-saved-them-from-stray-bullet-fired-outside-house-3424108/",
-			"date": "2026-11-02T21:43:24.000Z"
+			"date": "2026-11-02T21:43:24.000Z",
+			"source": "Dexerto"
+		},
+		{
+			"title": "Here's what's new for Warzone when it integrates with Modern Warfare 4",
+			"url": "https://www.windowscentral.com/gaming/call-of-duty/call-of-duty-warzones-modern-warfare-4-integration-has-been-revealed-heres-what-it-looks-like",
+			"date": "2026-11-02T18:00:17.000Z",
+			"source": "Windows Central"
 		},
 		{
 			"title": "Warzone Season 1 removes Verdansk and Rebirth Island but they return with updates",
 			"url": "https://www.dexerto.com/call-of-duty/warzone-season-1-removes-verdansk-and-rebirth-island-3424008/",
-			"date": "2026-11-02T18:00:00.000Z"
+			"date": "2026-11-02T18:00:00.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "Real footage of a South Korean tragedy to be removed from Modern Warfare 4 after backlash",
 			"url": "https://www.dexerto.com/call-of-duty/real-footage-of-a-south-korean-tragedy-to-be-removed-from-modern-warfare-4-after-backlash-3423160/",
-			"date": "2026-10-30T12:35:18.000Z"
+			"date": "2026-10-30T12:35:18.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "Call of Duty: Modern Warfare 4 review – A few maps short of a classic",
 			"url": "https://www.dexerto.com/call-of-duty/call-of-duty-modern-warfare-4-review-3422664/",
-			"date": "2026-10-29T14:41:48.000Z"
+			"date": "2026-10-29T14:41:48.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "Modern Warfare 4 Season 1 adds terrifying new DMZ map and missions",
 			"url": "https://www.dexerto.com/call-of-duty/modern-warfare-4-season-1-adds-terrifying-new-dmz-map-and-missions-3422428/",
-			"date": "2026-10-28T17:01:12.000Z"
+			"date": "2026-10-28T17:01:12.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "One-shot Modern Warfare 4 rifle is a throwback to one of CoD’s most OP weapons",
 			"url": "https://www.dexerto.com/call-of-duty/one-shot-modern-warfare-4-rifle-is-a-throwback-to-one-of-cods-most-op-weapons-3422193/",
-			"date": "2026-10-27T16:03:22.000Z"
+			"date": "2026-10-27T16:03:22.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "Korean politician tells president to play Modern Warfare 4 to understand war threat",
 			"url": "https://www.dexerto.com/call-of-duty/korean-politician-tells-president-to-play-modern-warfare-4-to-understand-war-threat-3422121/",
-			"date": "2026-10-27T13:10:15.000Z"
+			"date": "2026-10-27T13:10:15.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "Modern Warfare 4 has secret 3D-printed guns you can find on one map",
 			"url": "https://www.dexerto.com/call-of-duty/modern-warfare-4-has-secret-3d-printed-guns-you-can-find-on-one-map-3421806/",
-			"date": "2026-10-26T11:41:58.000Z"
+			"date": "2026-10-26T11:41:58.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "Call of Duty pro Temp arrested on domestic violence aggravated assault charge",
 			"url": "https://www.dexerto.com/call-of-duty/call-of-duty-pro-temp-arrested-on-domestic-violence-aggravated-assault-charge-3421439/",
-			"date": "2026-10-23T18:28:38.000Z"
+			"date": "2026-10-23T18:28:38.000Z",
+			"source": "Dexerto"
 		},
 		{
 			"title": "Modern Warfare 4 boss responds to SBMM backlash as players call it “miserable”",
 			"url": "https://www.dexerto.com/call-of-duty/modern-warfare-4-boss-responds-to-sbmm-backlash-as-players-call-it-miserable-3421274/",
-			"date": "2026-10-23T14:45:20.000Z"
+			"date": "2026-10-23T14:45:20.000Z",
+			"source": "Dexerto"
+		}
+	],
+	"patches": [
+		{
+			"title": "All weapon buffs and nerfs in Modern Warfare 4 & Warzone Season 1",
+			"url": "https://www.dexerto.com/call-of-duty/all-weapon-buffs-and-nerfs-in-modern-warfare-4-warzone-season-1-3425115/",
+			"date": "2026-11-05T21:19:51.000Z",
+			"source": "Dexerto"
+		},
+		{
+			"title": "One-shot Modern Warfare 4 rifle is a throwback to one of CoD’s most OP weapons",
+			"url": "https://www.dexerto.com/call-of-duty/one-shot-modern-warfare-4-rifle-is-a-throwback-to-one-of-cods-most-op-weapons-3422193/",
+			"date": "2026-10-27T16:03:22.000Z",
+			"source": "Dexerto"
+		},
+		{
+			"title": "MW4 players already want “OP” second life trait removed from DMZ",
+			"url": "https://www.dexerto.com/call-of-duty/mw4-players-already-want-op-second-life-trait-removed-from-dmz-3420638/",
+			"date": "2026-10-21T09:48:06.000Z",
+			"source": "Dexerto"
+		},
+		{
+			"title": "New Warzone Assault Rifle has fastest TTK in the game with no recoil",
+			"url": "https://www.dexerto.com/call-of-duty/new-warzone-assault-rifle-has-fastest-ttk-in-the-game-with-no-recoil-3411117/",
+			"date": "2026-09-22T11:29:30.000Z",
+			"source": "Dexerto"
+		},
+		{
+			"title": "All weapon buffs and nerfs in Black Ops 7 & Warzone Season 6",
+			"url": "https://www.dexerto.com/call-of-duty/all-weapon-buffs-and-nerfs-in-black-ops-7-warzone-season-6-3409619/",
+			"date": "2026-09-16T20:36:53.000Z",
+			"source": "Dexerto"
 		}
 	]
 }

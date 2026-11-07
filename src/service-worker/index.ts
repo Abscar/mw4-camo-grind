@@ -16,8 +16,10 @@ const BASE = new URL('./', self.location.href).pathname;
 const abs = (path: string) => BASE + path.replace(/^\//, '');
 
 const PRECACHE = [...immutable, ...assets, ...prerendered].map((f) => abs(f.path));
+/** The COD headlines change every hour: always asked for fresh (the cached copy is the offline fallback). */
+const NEWS_FILE = abs('news.json');
 /** Served cache-first (hashed file names never change). */
-const PRECACHED = new Set(PRECACHE);
+const PRECACHED = new Set(PRECACHE.filter((path) => path !== NEWS_FILE));
 /**
  * SvelteKit checks this file for new deployments when the tab regains focus. Cache it too
  * (but keep it network-first), so that check gets an answer instead of an error when offline.

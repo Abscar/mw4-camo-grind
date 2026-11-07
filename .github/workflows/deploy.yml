@@ -5,9 +5,10 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: 'main'
-  # rebuild every morning so the news buddy's COD headlines stay fresh (06:15 UTC)
+  # Every hour: look for new COD headlines (news box + news buddy). The site is only rebuilt
+  # when there are new ones; an hour without news stops after the check.
   schedule:
-    - cron: '15 6 * * *'
+    - cron: '23 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -21,6 +22,8 @@ concurrency:
 jobs:
   build_site:
     runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.decide.outputs.publish }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -31,27 +34,38 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Fetch the latest COD headlines (never fails the build)
+        id: news
+        run: npm run news
+
+      # Pushes and manual runs always publish; the hourly check only when there are new headlines.
+      - name: Decide whether to publish
+        id: decide
+        run: echo "publish=${{ github.event_name != 'schedule' || steps.news.outputs.changed == 'true' }}" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
+        if: steps.decide.outputs.publish == 'true'
         run: npm ci
 
       - name: Check and test
+        if: steps.decide.outputs.publish == 'true'
         run: |
           npm run check
           npm test
 
-      - name: Fetch today's COD headlines (never fails the build)
-        run: npm run news
-
       - name: Configure Pages
+        if: steps.decide.outputs.publish == 'true'
         id: pages
         uses: actions/configure-pages@v6
 
       - name: Build
+        if: steps.decide.outputs.publish == 'true'
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build
 
       - name: Upload Artifacts
+        if: steps.decide.outputs.publish == 'true'
         uses: actions/upload-pages-artifact@v5
         with:
           path: 'build/'
@@ -59,6 +73,7 @@ jobs:
 
   deploy:
     needs: build_site
+    if: needs.build_site.outputs.publish == 'true'
     runs-on: ubuntu-latest
 
     permissions:

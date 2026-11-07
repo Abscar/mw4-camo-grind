@@ -22,3 +22,5 @@ Thumbs.db
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+# written by `npm run news` before every build (the committed copy is src/lib/data/news.json)
+/static/news.json

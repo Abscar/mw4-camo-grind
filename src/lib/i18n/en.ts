@@ -16,13 +16,27 @@ export const en = {
 		rank: 'Rank',
 		rankName: 'Iridescent'
 	},
+	/** The news buddy's speech bubble: nerfs, buffs, movement and patch changes only. */
 	news: {
 		hello: 'Yo Abscar!',
-		today: (date: string) => `COD news for ${date}:`,
-		noneToday: (date: string) => `Nothing new on ${date} yet. Latest:`,
-		latest: 'Latest COD news:',
-		via: 'Headlines from',
+		today: (date: string) => `Nerfs & buffs for ${date}:`,
+		noneToday: (date: string) => `No new nerfs or buffs on ${date}. Latest:`,
+		latest: 'Latest nerfs & buffs:',
+		none: 'No nerf or buff news right now. I’ll shout when the next patch drops.',
 		newTab: 'opens in a new tab'
+	},
+	/** The news box under the KPI bar. */
+	feed: {
+		heading: 'COD news feed',
+		charlieX: 'Charlie Intel live on X',
+		fresh: 'New',
+		justNow: 'just now',
+		minutesAgo: (n: number) => `${n} min ago`,
+		hoursAgo: (n: number) => `${n} h ago`,
+		yesterday: 'yesterday',
+		more: (n: number) => `Show ${n} more`,
+		fewer: 'Show fewer',
+		footer: (sources: string) => `Headlines from ${sources}, checked every hour.`
 	},
 	hud: {
 		mode: 'Analysis: camo grind',
