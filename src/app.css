@@ -808,8 +808,14 @@
 .hud-line:nth-child(4) {
 	animation-delay: 1.05s;
 }
+/* blinking arrow after "Status: Grinding" (was a block cursor; the user asked for an arrow) */
 .hud-cursor {
-	margin-left: 4px;
+	display: inline-block;
+	width: 1.3em;
+	height: auto;
+	margin-left: 6px;
+	vertical-align: -0.05em;
+	filter: drop-shadow(0 0 3px rgb(255 40 40 / 0.75));
 	animation: blink 1s steps(2, jump-none) infinite;
 }
 @keyframes hud-boot {
