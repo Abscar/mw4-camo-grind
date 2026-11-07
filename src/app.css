@@ -808,7 +808,7 @@
 .hud-line:nth-child(4) {
 	animation-delay: 1.05s;
 }
-/* blinking arrow after "Status: Grinding" (was a block cursor; the user asked for an arrow) */
+/* blinking arrow after "Status: Grinding", pointing back at it (was a block cursor; the user asked for an arrow) */
 .hud-cursor {
 	display: inline-block;
 	width: 1.3em;

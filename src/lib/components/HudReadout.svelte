@@ -33,7 +33,7 @@
 				class="hud-cursor"
 				viewBox="0 0 14 10"
 				width="14"
-				height="10"><path d="M0 3.6h7V0l7 5-7 5V6.4H0z" fill="currentColor" /></svg
+				height="10"><path d="M14 3.6H7V0L0 5l7 5V6.4h7z" fill="currentColor" /></svg
 			>
 		</p>
 	</div>
