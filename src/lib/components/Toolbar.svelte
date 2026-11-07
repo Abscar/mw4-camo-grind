@@ -2,6 +2,8 @@
 	import { CLASSES } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
+	// the user's own blunt picture (Abscar theme: every class button is drawn as this blunt)
+	import bluntPic from '#lib/assets/blunt.webp';
 
 	let { query = $bindable('') }: { query: string } = $props();
 
@@ -47,15 +49,16 @@
 	</div>
 
 	<div
-		class="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+		class="class-chips no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
 		role="group"
 		aria-label={t.toolbar.classFilter}
+		style:--blunt="url({bluntPic})"
 	>
 		{#each chips as chip (chip.id ?? 'all')}
 			{@const on = progress.prefs.classFilter === chip.id}
 			<button
 				type="button"
-				class="font-head min-h-11 flex-none rounded-full border px-4 text-[13px] font-semibold transition-colors {on
+				class="class-chip font-head min-h-11 flex-none rounded-full border px-4 text-[13px] font-semibold transition-colors {on
 					? 'border-accent bg-accent text-on-accent'
 					: 'border-line bg-panel text-muted hover:text-fg'}"
 				aria-pressed={on}
