@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { DIVERGENCE, DIVERGENCE_REQUIRED, MASTERY } from '#lib/data/camos.ts';
 	import { t } from '#lib/i18n/en.ts';
+	import { FACETS, GALAXY, RAINBOW, SHARDS, TWINKLE } from '#lib/kpiCamos.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { percent } from '#lib/ui.ts';
 	import MasteryRow from './MasteryRow.svelte';
@@ -14,6 +15,11 @@
 <section
 	class="class-card overflow-hidden rounded-card bg-panel shadow-card"
 	style:--c="var(--t-div)"
+	style:--facets={FACETS}
+	style:--rainbow={RAINBOW}
+	style:--shards={SHARDS}
+	style:--galaxy={GALAXY}
+	style:--twinkle={TWINKLE}
 	aria-labelledby="mastery-heading"
 >
 	<header class="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pt-4 pb-3 sm:px-5">
@@ -24,11 +30,12 @@
 	</header>
 
 	<div
-		class="grid items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3.5 sm:px-5 md:grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.3fr)_auto_minmax(110px,1fr)_96px]"
+		class="camo-row grid items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3.5 sm:px-5 md:grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.3fr)_auto_minmax(110px,1fr)_96px]"
 		style:--k="var(--t-div)"
+		data-camo="divergence"
 	>
 		<div class="flex items-center justify-between gap-3 md:block">
-			<h3 class="font-head text-[15px] font-bold text-div-ink">{DIVERGENCE.name}</h3>
+			<h3 class="camo-row-name font-head text-[15px] font-bold text-div-ink">{DIVERGENCE.name}</h3>
 			<div class="md:hidden"><StatusPill status={divergenceStatus} /></div>
 		</div>
 		<p class="text-[13px] text-muted">{DIVERGENCE.how}. {t.mastery.fromTicks}.</p>

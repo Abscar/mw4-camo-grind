@@ -23,12 +23,12 @@
 </script>
 
 <div
-	class="mastery-row grid items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3.5 sm:px-5 md:grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.3fr)_auto_minmax(110px,1fr)_96px]"
+	class="camo-row grid items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3.5 sm:px-5 md:grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.3fr)_auto_minmax(110px,1fr)_96px]"
 	style:--k="var(--mastery-{number}, var(--t-accent))"
 	data-camo={number}
 >
 	<div class="flex items-center justify-between gap-3 md:block">
-		<h3 class="mastery-name font-head text-[15px] font-bold text-(--k)">{camo.name}</h3>
+		<h3 class="camo-row-name font-head text-[15px] font-bold text-(--k)">{camo.name}</h3>
 		<div class="md:hidden"><StatusPill {status} /></div>
 	</div>
 	<p class="text-[13px] text-muted">

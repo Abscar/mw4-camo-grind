@@ -429,9 +429,9 @@
  * Decoration is aria-hidden or plain text, and prefers-reduced-motion freezes all of it.
  */
 
-/* the Mastery camos as CSS textures (used for swatches, bars and text in the Abscar theme) */
+/* flowing sheens for gradient text in the Abscar theme: chrome (the title) and iridescent (◆) */
 :root {
-	--camo-mercurial: linear-gradient(
+	--chrome-sheen: linear-gradient(
 		110deg,
 		#59616b 0%,
 		#e8edf2 14%,
@@ -442,7 +442,7 @@
 		#5c646e 82%,
 		#eef2f5 100%
 	);
-	--camo-polyatomic: linear-gradient(
+	--iri-sheen: linear-gradient(
 		120deg,
 		#ff5fd2 0%,
 		#9b5cff 20%,
@@ -451,15 +451,6 @@
 		#ff7a9c 80%,
 		#ff5fd2 100%
 	);
-	--camo-orion:
-		radial-gradient(1.3px 1.3px at 14% 30%, #fff 60%, transparent 62%),
-		radial-gradient(1px 1px at 40% 72%, #d6e6ff 60%, transparent 62%),
-		radial-gradient(1.4px 1.4px at 68% 24%, #fff 60%, transparent 62%),
-		radial-gradient(1px 1px at 86% 66%, #ffd9f4 60%, transparent 62%),
-		linear-gradient(100deg, transparent 30%, rgb(255 130 225 / 0.45) 44%, rgb(120 220 255 / 0.45) 56%, transparent 70%),
-		linear-gradient(115deg, #1b1145 0%, #3a1d7a 30%, #0f2e66 55%, #2a1260 80%, #1b1145 100%);
-	--camo-orion-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 300% 100%, 100% 100%;
-	--camo-orion-text: linear-gradient(110deg, #c9b8ff 0%, #8fd8ff 30%, #ff9fe6 60%, #c9b8ff 100%);
 }
 
 @keyframes camo-flow {
@@ -533,12 +524,12 @@
 		radial-gradient(ellipse at 50% 35%, transparent 62%, rgb(0 0 0 / 0.32) 100%);
 }
 
-/* header: brand glow, chrome title (Mercurial Drift equipped) */
+/* header: brand glow, flowing chrome title */
 [data-theme='blackout'] .brand-glow {
 	text-shadow: 0 0 14px color-mix(in srgb, var(--t-brand) 60%, transparent);
 }
 [data-theme='blackout'] .title-skin {
-	background: var(--camo-mercurial);
+	background: var(--chrome-sheen);
 	background-size: 300% 100%;
 	-webkit-background-clip: text;
 	background-clip: text;
@@ -903,50 +894,170 @@
 	border-bottom-width: 1.5px;
 }
 
-/* Mastery rows wear their camo: animated bar, camo-coloured name and a camo stripe */
-[data-theme='blackout'] .mastery-row {
+/*
+ * Divergence & Mastery rows wear their camo as the whole background (the user's ask, 2026-11-07),
+ * drawn after the official renders: Divergence = faceted chrome with rainbow oil-slick swirls,
+ * Mercurial Drift = glossy hot pink melting into rose gold with lilac drifts, Polyatomic
+ * Reforged = blue / violet / lilac crystal shards, Orion Reforged = a purple-crimson galaxy.
+ * ::before is the camo plus a dark glass for the text; ::after is the camo's motion.
+ * Textures come from kpiCamos.ts via MasterySection's style. White text with a hard shadow.
+ */
+[data-theme='blackout'] .camo-row {
 	position: relative;
 	isolation: isolate;
+	overflow: hidden;
+	color: #fff;
+	text-shadow:
+		0 1px 2px rgb(0 0 0 / 0.95),
+		0 0 9px rgb(0 0 0 / 0.75);
+	border-top-color: rgb(0 0 0 / 0.6);
+	--t-muted: rgb(255 255 255 / 0.9);
+	--t-tick: rgb(8 6 14 / 0.62);
+	--t-tick-line: rgb(255 255 255 / 0.4);
+	--glass: rgb(8 6 16 / 0.42);
 }
-[data-theme='blackout'] .mastery-row::before {
+[data-theme='blackout'] .camo-row::before,
+[data-theme='blackout'] .camo-row::after {
 	content: '';
 	position: absolute;
 	inset: 0;
 	z-index: -1;
-	background: var(--skin);
-	background-size: var(--skin-size);
-	opacity: 0.09;
-	mask-image: linear-gradient(90deg, #000, transparent 70%);
 	pointer-events: none;
 }
-[data-theme='blackout'] .mastery-row .bar > i {
-	background: var(--skin);
-	background-size: var(--skin-size);
-	box-shadow: 0 0 10px color-mix(in srgb, var(--k) 45%, transparent);
-	animation: camo-flow 6s ease-in-out infinite alternate;
+[data-theme='blackout'] .camo-row::before {
+	background: linear-gradient(var(--glass), var(--glass)), var(--row-camo);
 }
-[data-theme='blackout'] .mastery-row .mastery-name {
-	background: var(--skin-text);
-	background-size: 300% 100%;
-	-webkit-background-clip: text;
-	background-clip: text;
-	color: transparent;
-	animation: camo-flow 8s ease-in-out infinite alternate;
+[data-theme='blackout'] .camo-row .camo-row-name {
+	color: #fff;
+	font-size: 16px;
+	letter-spacing: 0.02em;
+	text-shadow:
+		0 1px 2px rgb(0 0 0 / 0.95),
+		0 0 10px rgb(0 0 0 / 0.85);
 }
-[data-theme='blackout'] .mastery-row[data-camo='1'] {
-	--skin: var(--camo-mercurial);
-	--skin-size: 300% 100%;
-	--skin-text: linear-gradient(110deg, #a3adb7 0%, #ffffff 25%, #bcc5ce 50%, #ffffff 75%, #a3adb7 100%);
+[data-theme='blackout'] .camo-row .bar {
+	background: rgb(0 0 0 / 0.55);
 }
-[data-theme='blackout'] .mastery-row[data-camo='2'] {
-	--skin: var(--camo-polyatomic);
-	--skin-size: 400% 100%;
-	--skin-text: var(--camo-polyatomic);
+[data-theme='blackout'] .camo-row .bar > i {
+	background: #fff;
+	box-shadow: 0 0 8px rgb(255 255 255 / 0.75);
 }
-[data-theme='blackout'] .mastery-row[data-camo='3'] {
-	--skin: var(--camo-orion);
-	--skin-size: var(--camo-orion-size);
-	--skin-text: var(--camo-orion-text);
+[data-theme='blackout'] .camo-row .status-pill:not([data-status='complete']) {
+	background-color: rgb(8 6 14 / 0.7);
+}
+[data-theme='blackout'] .camo-row input {
+	text-shadow: none;
+}
+
+/* Divergence: chrome facets under slowly drifting rainbow swirls */
+[data-theme='blackout'] .camo-row[data-camo='divergence'] {
+	--glass: rgb(8 8 14 / 0.4);
+	--row-camo:
+		radial-gradient(ellipse at 25% 15%, rgb(255 255 255 / 0.4), transparent 60%), var(--facets) 0 0 / 400px 200px,
+		#9aa0a6;
+}
+[data-theme='blackout'] .camo-row[data-camo='divergence']::after {
+	right: -520px;
+	background: var(--rainbow) 0 0 / 520px 260px;
+	opacity: 0.8;
+	mix-blend-mode: screen;
+	animation: camo-slide 40s linear infinite;
+}
+@keyframes camo-slide {
+	to {
+		transform: translateX(-520px);
+	}
+}
+
+/* Mercurial Drift: hot pink ↔ rose gold, colour-shifting, with lilac drifts and a gloss */
+[data-theme='blackout'] .camo-row[data-camo='1'] {
+	--glass: rgb(40 0 26 / 0.26);
+	--row-camo:
+		linear-gradient(176deg, rgb(255 255 255 / 0.38) 0%, transparent 30%, transparent 62%, rgb(70 0 40 / 0.4) 100%),
+		radial-gradient(ellipse 9% 46% at 21% 32%, rgb(165 105 255 / 0.85), transparent 72%),
+		radial-gradient(ellipse 6% 30% at 27% 72%, rgb(185 130 255 / 0.7), transparent 72%),
+		radial-gradient(ellipse 8% 40% at 61% 76%, rgb(150 95 255 / 0.8), transparent 72%),
+		radial-gradient(ellipse 7% 38% at 86% 24%, rgb(175 120 255 / 0.75), transparent 72%),
+		linear-gradient(
+			105deg,
+			#ff1f93 0%,
+			#ff52b0 12%,
+			#d81a86 22%,
+			#ff8f9a 32%,
+			#f2a95e 42%,
+			#ffd27f 50%,
+			#c97a3e 58%,
+			#f8a0b8 66%,
+			#ff3aa4 78%,
+			#c3127a 88%,
+			#ff1f93 100%
+		)
+		0 0 / 300% 100%;
+}
+[data-theme='blackout'] .camo-row[data-camo='1']::before {
+	animation: mercurial-shift 14s ease-in-out infinite alternate;
+}
+@keyframes mercurial-shift {
+	from {
+		background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0% 50%;
+	}
+	to {
+		background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 100% 50%;
+	}
+}
+
+/* Polyatomic Reforged: crystal shards, with a light glint sweeping across */
+[data-theme='blackout'] .camo-row[data-camo='2'] {
+	--glass: rgb(6 4 30 / 0.3);
+	--row-camo:
+		linear-gradient(176deg, rgb(255 255 255 / 0.2) 0%, transparent 35%, transparent 65%, rgb(0 0 30 / 0.3) 100%),
+		var(--shards) 0 0 / 360px 200px;
+}
+
+/* Mercurial Drift and Polyatomic Reforged: a glossy glint now and then */
+[data-theme='blackout'] .camo-row[data-camo='1']::after,
+[data-theme='blackout'] .camo-row[data-camo='2']::after {
+	background: linear-gradient(
+		105deg,
+		transparent 38%,
+		rgb(255 255 255 / 0.3) 48%,
+		rgb(255 255 255 / 0.08) 54%,
+		transparent 62%
+	);
+	transform: translateX(-100%);
+	animation: camo-glint 8s ease-in-out infinite;
+}
+[data-theme='blackout'] .camo-row[data-camo='2']::after {
+	animation-delay: -3s;
+}
+@keyframes camo-glint {
+	0% {
+		transform: translateX(-100%);
+	}
+	55%,
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+/* Orion Reforged: deep space with nebulae; the brightest stars twinkle */
+[data-theme='blackout'] .camo-row[data-camo='3'] {
+	--glass: rgb(0 0 0 / 0.12);
+	--row-camo:
+		radial-gradient(ellipse 45% 120% at 72% 60%, rgb(220 30 90 / 0.28), transparent 70%),
+		var(--galaxy) 0 0 / 600px 300px;
+}
+[data-theme='blackout'] .camo-row[data-camo='3']::after {
+	background: var(--twinkle) 0 0 / 600px 300px;
+	animation: twinkle 3.6s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+	from {
+		opacity: 0.25;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 /* Abscar: weapon names sit on a little yellow label with green text */
@@ -1135,9 +1246,9 @@
 	}
 }
 
-/* a maxed weapon's ◆ shimmers like Polyatomic */
+/* a maxed weapon's ◆ shimmers */
 [data-theme='blackout'] .maxed-mark {
-	background: var(--camo-polyatomic);
+	background: var(--iri-sheen);
 	background-size: 400% 100%;
 	-webkit-background-clip: text;
 	background-clip: text;

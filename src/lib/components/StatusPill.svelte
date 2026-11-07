@@ -13,7 +13,8 @@
 </script>
 
 <span
-	class="font-head inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-bold tracking-widest whitespace-nowrap uppercase {style[
+	data-status={status}
+	class="status-pill font-head inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-bold tracking-widest whitespace-nowrap uppercase {style[
 		status
 	]}"
 >
