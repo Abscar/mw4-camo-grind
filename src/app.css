@@ -387,6 +387,16 @@
 		opacity: 0;
 	}
 
+	/* the miniature cartoon gun under each weapon name */
+	.weapon-icon {
+		display: block;
+		width: 70px;
+		height: 26px;
+		margin-top: 1px;
+		/* a thin light "sticker" edge so dark guns stand out on dark boxes */
+		filter: drop-shadow(0 0 0.7px rgb(255 255 255 / 0.95)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
+	}
+
 	.no-scrollbar {
 		scrollbar-width: none;
 	}

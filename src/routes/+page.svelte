@@ -198,7 +198,7 @@
 		<footer class="mt-7 grid gap-1.5 text-xs text-muted">
 			<p>{t.help.howTo}</p>
 			<p>{t.help.divergence(DIVERGENCE_REQUIRED)}</p>
-			<p>{t.help.sources} <span class="unverified">{t.help.unverifiedLegend}</span></p>
+			<p>{t.help.sources}</p>
 		</footer>
 	</main>
 </div>

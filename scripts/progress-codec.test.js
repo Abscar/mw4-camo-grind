@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DIVERGENCE_REQUIRED, MASTERY, MAX_LEVEL } from '../src/lib/data/camos.ts';
+import { WEAPON_LOOKS } from '../src/lib/data/weaponLooks.ts';
 import { CLASSES, NEXT_FREE_SLOT, WEAPONS } from '../src/lib/data/weapons.ts';
 import {
 	decodeLink,
@@ -17,6 +18,12 @@ test('data: ids and link slots are unique, slots below NEXT_FREE_SLOT', () => {
 	assert.ok(WEAPONS.every((w) => w.slot >= 0 && w.slot < NEXT_FREE_SLOT));
 	assert.equal(new Set(CLASSES.map((c) => c.id)).size, CLASSES.length);
 	assert.equal(new Set(MASTERY.map((m) => m.id)).size, MASTERY.length);
+});
+
+test('data: every weapon has a cartoon icon look, and no look is orphaned', () => {
+	const ids = new Set(WEAPONS.map((w) => w.id));
+	assert.deepEqual(WEAPONS.filter((w) => !WEAPON_LOOKS[w.id]).map((w) => w.id), []);
+	assert.deepEqual(Object.keys(WEAPON_LOOKS).filter((id) => !ids.has(id)), []);
 });
 
 test('data: counts match the known launch + Season 1 roster', () => {
