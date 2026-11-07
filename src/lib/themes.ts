@@ -5,7 +5,7 @@
  * `blackout` because saved preferences store the id.
  */
 export const THEMES = [
-	{ id: 'blackout', name: 'Abscar', swatch: ['#07080A', '#FF4418'], browserBar: '#07080A' },
+	{ id: 'blackout', name: 'Abscar', swatch: ['#23160D', '#FF4418'], browserBar: '#23160D' },
 	{ id: 'field', name: 'Field Manual', swatch: ['#F3EFE6', '#4E6B3A'], browserBar: '#F3EFE6' },
 	{ id: 'neon', name: 'Neon Grid', swatch: ['#0E0B1F', '#FF3E9A'], browserBar: '#0E0B1F' },
 	{ id: 'command', name: 'Command Center', swatch: ['#0F1B2D', '#2563EB'], browserBar: '#0F1B2D' }

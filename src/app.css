@@ -58,15 +58,16 @@
 :root,
 [data-theme='blackout'] {
 	color-scheme: dark;
-	--t-bg: #07080a;
+	/* backgrounds in a dark, old-oak brown (the user's ask, 2026-11-07; it was near-black grey) */
+	--t-bg: #23160d;
 	--t-glow-1: rgb(255 60 24 / 0.13);
 	--t-glow-2: rgb(245 184 24 / 0.07);
-	--t-panel: #0e1014;
-	--t-panel-2: #15181e;
-	--t-line: #1f242b;
+	--t-panel: #2e1e12;
+	--t-panel-2: #382516;
+	--t-line: #4d3420;
 	--t-fg: #eceef1;
 	--t-muted: #8f98a6;
-	--t-dim: #4a5260;
+	--t-dim: #6b5642;
 	--t-accent: #ff4418;
 	--t-on-accent: #0a0304;
 	--t-brand: #ff4418;
@@ -76,9 +77,9 @@
 	--t-hb-ink: #b98aff;
 	--t-div: #36d6c3;
 	--t-new: #ff6a3d;
-	--t-tick: #14171c;
-	--t-tick-line: #2b313a;
-	--t-track: #1c2129;
+	--t-tick: #2a1b10;
+	--t-tick-line: #5a3d26;
+	--t-track: #3d2a19;
 	--t-danger: #ff6b6b;
 	--t-band: transparent;
 	--t-band-fg: var(--t-fg);
