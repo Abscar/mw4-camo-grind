@@ -29,7 +29,7 @@
 </script>
 
 <section
-	class="class-card overflow-hidden rounded-card bg-panel shadow-card"
+	class="class-card weapon-class overflow-hidden rounded-card bg-panel shadow-card"
 	style:--c="var(--class-{number}, var(--t-accent))"
 	aria-labelledby={headingId}
 >

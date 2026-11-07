@@ -12,8 +12,9 @@
 	import AbscarFx from '#lib/components/AbscarFx.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
-	import HotRodFlames from '#lib/components/HotRodFlames.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
+	import MagmaRock from '#lib/components/MagmaRock.svelte';
+	import { HOTROD_TILE } from '#lib/hotrod.ts';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
@@ -119,6 +120,7 @@
 
 <div class="app-gate" class:ready={progress.ready}>
 	<div class="relative bg-band text-band-fg">
+		<div class="abscar-only"><MagmaRock /></div>
 		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"><i></i></div></div>
 		<header
 			class="relative mx-auto flex max-w-[1240px] flex-wrap items-end justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
@@ -150,10 +152,10 @@
 			</div>
 			<div class="relative z-[1]"><HudReadout /></div>
 		</header>
-		<div class="abscar-only"><HotRodFlames /></div>
+		<div class="abscar-only"><div class="magma-floor"></div></div>
 	</div>
 
-	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5">
+	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5" style:--hotrod-tile={HOTROD_TILE}>
 		<div class="mt-5"><KpiBar /></div>
 
 		<div class="mt-6"><Toolbar bind:query /></div>
