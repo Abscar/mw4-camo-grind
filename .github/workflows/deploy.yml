@@ -5,6 +5,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: 'main'
+  # rebuild every morning so the news buddy's COD headlines stay fresh (06:15 UTC)
+  schedule:
+    - cron: '15 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -35,6 +38,9 @@ jobs:
         run: |
           npm run check
           npm test
+
+      - name: Fetch today's COD headlines (never fails the build)
+        run: npm run news
 
       - name: Configure Pages
         id: pages

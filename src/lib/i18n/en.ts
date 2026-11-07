@@ -19,6 +19,14 @@ export const en = {
 		rank: 'Rank',
 		rankName: 'Iridescent'
 	},
+	news: {
+		hello: 'Yo Abscar!',
+		today: (date: string) => `COD news for ${date}:`,
+		noneToday: (date: string) => `Nothing new on ${date} yet. Latest:`,
+		latest: 'Latest COD news:',
+		via: 'Headlines from',
+		newTab: 'opens in a new tab'
+	},
 	hud: {
 		mode: 'Analysis: camo grind',
 		target: 'Target',
