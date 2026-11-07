@@ -14,6 +14,7 @@
 	import Dialog from '#lib/components/Dialog.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import MagmaRock from '#lib/components/MagmaRock.svelte';
+	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
 	import { HOTROD_TILE } from '#lib/hotrod.ts';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
@@ -123,11 +124,12 @@
 		<div class="abscar-only"><MagmaRock /></div>
 		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"><i></i></div></div>
 		<header
-			class="relative mx-auto flex max-w-[1240px] flex-wrap items-end justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
+			class="relative mx-auto flex max-w-[1240px] flex-wrap items-stretch justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
 		>
 			<div class="absolute top-2 right-2 z-[3] sm:top-3 sm:right-3"><ThemePicker /></div>
-			<div class="relative z-[1] min-w-0 pr-10 sm:pr-0">
+			<div class="relative z-[1] flex min-w-0 flex-col justify-between pr-10 sm:pr-0">
 				<OperatorTag />
+				<div>
 				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
 					<span class="brand-glow text-brand">{t.title.game}</span><span
 						class="mx-[0.3em] font-normal text-band-muted"
@@ -149,8 +151,12 @@
 						</li>
 					{/each}
 				</ol>
+				</div>
 			</div>
-			<div class="relative z-[1]"><HudReadout /></div>
+			<div class="relative z-[1] flex flex-col items-start justify-between gap-4 sm:items-end">
+				<div class="abscar-only sm:pr-12"><NewsBuddy /></div>
+				<HudReadout />
+			</div>
 		</header>
 		<div class="abscar-only"><div class="magma-floor"></div></div>
 	</div>

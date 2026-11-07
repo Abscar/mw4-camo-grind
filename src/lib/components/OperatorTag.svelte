@@ -5,7 +5,6 @@
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
-	import NewsBuddy from './NewsBuddy.svelte';
 	import RankBadge from './RankBadge.svelte';
 
 	const uid = $props.id();
@@ -15,7 +14,7 @@
 </script>
 
 <div class="abscar-only mb-4">
-	<div class="flex flex-wrap items-start gap-x-5 gap-y-3">
+	<div class="flex flex-wrap items-center gap-x-5 gap-y-3">
 		<div class="flex items-center gap-3.5">
 			<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" aria-hidden="true" focusable="false">
 				<defs>
@@ -146,6 +145,5 @@
 		</div>
 
 		<RankBadge />
-		<NewsBuddy />
 	</div>
 </div>
