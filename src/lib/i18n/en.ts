@@ -25,10 +25,12 @@ export const en = {
 		none: 'No nerf or buff news right now. I’ll shout when the next patch drops.',
 		newTab: 'opens in a new tab'
 	},
-	/** The slim news banner above the KPI tiles. */
+	/** The one-line news banner (green radar box) above the KPI tiles. */
 	banner: {
 		heading: 'COD news',
 		charlieX: 'Charlie Intel on X',
+		more: 'More news',
+		less: 'Less',
 		justNow: 'just now',
 		minutesAgo: (n: number) => `${n} min ago`,
 		hoursAgo: (n: number) => `${n} h ago`,
