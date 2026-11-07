@@ -20,7 +20,7 @@ export interface NewsSource {
 export interface NewsFile {
 	fetchedAt: string;
 	sources: NewsSource[];
-	/** The newest COD headlines (the news box). */
+	/** The newest COD headlines (the news banner). */
 	items: Headline[];
 	/** The newest nerf / buff / movement / patch headlines (the news buddy), kept longer. */
 	patches: Headline[];

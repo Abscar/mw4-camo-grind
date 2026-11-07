@@ -25,18 +25,14 @@ export const en = {
 		none: 'No nerf or buff news right now. I’ll shout when the next patch drops.',
 		newTab: 'opens in a new tab'
 	},
-	/** The news box under the KPI bar. */
-	feed: {
-		heading: 'COD news feed',
-		charlieX: 'Charlie Intel live on X',
-		fresh: 'New',
+	/** The slim news banner above the KPI tiles. */
+	banner: {
+		heading: 'COD news',
+		charlieX: 'Charlie Intel on X',
 		justNow: 'just now',
 		minutesAgo: (n: number) => `${n} min ago`,
 		hoursAgo: (n: number) => `${n} h ago`,
-		yesterday: 'yesterday',
-		more: (n: number) => `Show ${n} more`,
-		fewer: 'Show fewer',
-		footer: (sources: string) => `Headlines from ${sources}, checked every hour.`
+		yesterday: 'yesterday'
 	},
 	hud: {
 		mode: 'Analysis: camo grind',

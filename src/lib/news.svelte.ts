@@ -1,6 +1,6 @@
 /**
- * The COD headlines shown by the news box (NewsFeed) and the nerf/buff headlines shown by the
- * news buddy (NewsBuddy).
+ * The COD headlines shown by the news banner (NewsBanner) and the nerf/buff headlines shown by
+ * the news buddy (NewsBuddy).
  *
  * The build bakes news.json into the page, so headlines show at once, also offline. Once the
  * page has loaded it asks for the published copy (GitHub refreshes it every hour), and again
@@ -16,14 +16,14 @@ import { OFFLINE_FILE } from './browser.ts';
 import { readNews, type Headline, type NewsSource } from './news-codec.ts';
 import { SITE_URL } from './site.ts';
 
-/** Charlie Intel's own posts are only on X; the news box links there. */
+/** Charlie Intel's own posts are only on X; the news banner links there. */
 export const CHARLIE_INTEL_X = 'https://x.com/charlieintel';
 
 const RECHECK_MS = 10 * 60_000;
 const initial = readNews(baked);
 
 class News {
-	/** The newest COD headlines (news box). */
+	/** The newest COD headlines (news banner). */
 	items = $state<Headline[]>(initial?.items ?? []);
 	/** The newest nerf / buff / movement headlines (news buddy). */
 	patches = $state<Headline[]>(initial?.patches ?? []);
@@ -37,12 +37,12 @@ export const news = new News();
 export function timeAgo(iso: string, now: Date): string {
 	const then = new Date(iso);
 	const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000);
-	if (minutes < 1) return t.feed.justNow;
-	if (minutes < 60) return t.feed.minutesAgo(minutes);
-	if (minutes < 24 * 60) return t.feed.hoursAgo(Math.floor(minutes / 60));
+	if (minutes < 1) return t.banner.justNow;
+	if (minutes < 60) return t.banner.minutesAgo(minutes);
+	if (minutes < 24 * 60) return t.banner.hoursAgo(Math.floor(minutes / 60));
 	const yesterday = new Date(now);
 	yesterday.setDate(now.getDate() - 1);
-	if (then.toDateString() === yesterday.toDateString()) return t.feed.yesterday;
+	if (then.toDateString() === yesterday.toDateString()) return t.banner.yesterday;
 	return then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 

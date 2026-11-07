@@ -5,7 +5,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: 'main'
-  # Every hour: look for new COD headlines (news box + news buddy). The site is only rebuilt
+  # Every hour: look for new COD headlines (news banner + news buddy). The site is only rebuilt
   # when there are new ones; an hour without news stops after the check.
   schedule:
     - cron: '23 * * * *'

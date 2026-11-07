@@ -14,7 +14,7 @@
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
-	import NewsFeed from '#lib/components/NewsFeed.svelte';
+	import NewsBanner from '#lib/components/NewsBanner.svelte';
 	import hotrodCamo from '#lib/assets/hotrod-camo.webp';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import LoadoutDialog from '#lib/components/LoadoutDialog.svelte';
@@ -144,9 +144,9 @@
 	</div>
 
 	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5" style:--hotrod-tile="url({hotrodCamo})">
-		<div class="mt-5"><KpiBar /></div>
+		<div class="mt-5"><NewsBanner /></div>
 
-		<div class="mt-6"><NewsFeed /></div>
+		<div class="mt-4"><KpiBar /></div>
 
 		<div class="mt-6"><Toolbar bind:query /></div>
 

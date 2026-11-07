@@ -7,7 +7,7 @@
 // headlines the website already shows are kept.
 //
 // It starts from the headlines the website is showing now (falling back to the local file), adds
-// the new ones and keeps the newest 20 (`items`, the news box) plus the newest nerf / buff /
+// the new ones and keeps the newest 20 (`items`, the news banner) plus the newest nerf / buff /
 // movement headlines of the last 60 days (`patches`, the news buddy). On GitHub it reports
 // `changed=true|false` as a step output, so an hour without news skips the rebuild.
 // Usage: node scripts/fetch-news.js
