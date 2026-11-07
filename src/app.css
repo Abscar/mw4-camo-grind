@@ -606,74 +606,69 @@
 	animation: camo-flow 6s ease-in-out infinite alternate;
 }
 
-/* Magma Ire header: charcoal rock with glowing lava cracks, stronger toward the bottom */
-.magma {
+/* Damascus header: black folded steel with flowing gold layers and a moving glint */
+.damascus {
 	position: absolute;
 	inset: 0;
 	overflow: hidden;
 	pointer-events: none;
-	background:
-		radial-gradient(60% 80% at 20% 90%, rgb(70 40 26 / 0.55), transparent 70%),
-		radial-gradient(50% 70% at 85% 70%, rgb(60 34 24 / 0.5), transparent 70%),
-		linear-gradient(180deg, #0b0807, #1a1310 70%, #241a15);
-	-webkit-mask-image: linear-gradient(180deg, rgb(0 0 0 / 0.5), #000 90%);
-	mask-image: linear-gradient(180deg, rgb(0 0 0 / 0.5), #000 90%);
+	background: #0b0703;
 }
-.magma-svg {
+.damascus-svg {
 	position: absolute;
 	inset: 0;
 	width: 100%;
 	height: 100%;
-	opacity: 0.5;
 }
-/* keep the header text crisp on top of the lava */
+.damascus-sheen {
+	position: absolute;
+	inset: 0 -60%;
+	background: linear-gradient(
+		105deg,
+		transparent 38%,
+		rgb(255 236 180 / 0.22) 47%,
+		rgb(255 250 225 / 0.32) 50%,
+		rgb(255 236 180 / 0.22) 53%,
+		transparent 62%
+	);
+	animation: damascus-glint 9s ease-in-out infinite;
+	will-change: transform;
+}
+@keyframes damascus-glint {
+	0%,
+	15% {
+		transform: translateX(-35%);
+	}
+	85%,
+	100% {
+		transform: translateX(35%);
+	}
+}
+/* tone the metal down where the text sits, so it stays readable */
+.damascus-shade {
+	position: absolute;
+	inset: 0;
+	background:
+		radial-gradient(70% 90% at 22% 60%, rgb(0 0 0 / 0.55), transparent 75%),
+		linear-gradient(180deg, rgb(0 0 0 / 0.4), rgb(0 0 0 / 0.28) 55%, rgb(0 0 0 / 0.5));
+}
+@media (max-width: 639px) {
+	/* on a phone the text covers the whole header, so darken it evenly */
+	.damascus-shade {
+		background: rgb(0 0 0 / 0.55);
+	}
+}
+/* keep the header text crisp on top of the metal */
 [data-theme='blackout'] header {
 	text-shadow:
 		0 1px 2px rgb(0 0 0 / 0.9),
 		0 0 14px rgb(0 0 0 / 0.75);
 }
-/* the lava glow "breathes" */
-.magma-glow {
-	filter: blur(3px);
-	animation: magma-breathe 4.5s ease-in-out infinite alternate;
-}
-@keyframes magma-breathe {
-	from {
-		opacity: 0.35;
-	}
-	to {
-		opacity: 0.85;
-	}
-}
-.magma-spark {
-	position: absolute;
-	bottom: 6px;
-	width: 3px;
+/* a polished gold seam along the bottom of the header */
+.damascus-floor {
 	height: 3px;
-	border-radius: 50%;
-	background: #ffd84a;
-	box-shadow: 0 0 6px 2px rgb(255 140 30 / 0.8);
-	opacity: 0;
-	animation: spark-rise 7s ease-out infinite;
-}
-@keyframes spark-rise {
-	0% {
-		opacity: 0;
-		transform: translate(0, 0) scale(1);
-	}
-	10% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-		transform: translate(16px, -110px) scale(0.4);
-	}
-}
-/* a molten seam along the bottom of the header */
-.magma-floor {
-	height: 3px;
-	background: linear-gradient(90deg, transparent, #ff4a12 10%, #ffd23a 50%, #ff4a12 90%, transparent);
-	box-shadow: 0 0 14px 2px rgb(255 90 20 / 0.55);
+	background: linear-gradient(90deg, transparent, #b07a2c 10%, #fff0b8 50%, #b07a2c 90%, transparent);
+	box-shadow: 0 0 12px 1px rgb(240 190 90 / 0.5);
 }
 
 /* KPI tiles look like their camo: brushed gold, brushed platinum, Harmonic Break's crimson

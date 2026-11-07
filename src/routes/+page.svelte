@@ -13,7 +13,7 @@
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
-	import MagmaRock from '#lib/components/MagmaRock.svelte';
+	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
 	import { HOTROD_TILE } from '#lib/hotrod.ts';
 	import KpiBar from '#lib/components/KpiBar.svelte';
@@ -121,7 +121,7 @@
 
 <div class="app-gate" class:ready={progress.ready}>
 	<div class="relative bg-band text-band-fg">
-		<div class="abscar-only"><MagmaRock /></div>
+		<div class="abscar-only"><DamascusSteel /></div>
 		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"><i></i></div></div>
 		<header
 			class="relative mx-auto flex max-w-[1240px] flex-wrap items-stretch justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
@@ -160,7 +160,7 @@
 				<div class="abscar-only sm:pr-12"><NewsBuddy /></div>
 			</div>
 		</header>
-		<div class="abscar-only"><div class="magma-floor"></div></div>
+		<div class="abscar-only"><div class="damascus-floor"></div></div>
 	</div>
 
 	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5" style:--hotrod-tile={HOTROD_TILE}>
