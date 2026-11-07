@@ -2,7 +2,9 @@
 	The news banner above the KPI tiles, styled as a CoD4-style green radar screen (the user's
 	ask, 2026-11-07): one line with the latest COD headline, and a button that opens the box to
 	show a few more plus a link to Charlie Intel's live posts on X. It replaced a big 8-headline
-	news box ("too big and clunky") and then a 3-headline strip. Headlines come from
+	news box ("too big and clunky") and then a 3-headline strip. On the left: a little turning
+	radar with red blips and the yellow player arrow; the button slides the box open (same day:
+	bigger radar, smooth opening). Headlines come from
 	news.svelte.ts (news.json, refreshed every hour). Same look in every theme.
 	Titles are cut to one line (the full title is in the tooltip). The "opens in a new tab" text
 	sits outside the cut-off title on purpose: inside it, it would end up past the full title's
@@ -15,6 +17,23 @@
 
 	/** Headlines in the opened box (the first one included). */
 	const OPENED = 6;
+
+	/** One turn of the radar sweep, in seconds (the blips flash in step with it). */
+	const SWEEP = 2.4;
+	/** Enemy blips on the little radar: angle clockwise from the top, distance from the middle (0–1).
+	    Each one flashes when the sweep passes over it, like a UAV ping. */
+	const BLIPS = [
+		{ angle: 55, dist: 0.62 },
+		{ angle: 160, dist: 0.45 },
+		{ angle: 250, dist: 0.7 }
+	].map(({ angle, dist }) => {
+		const rad = (angle * Math.PI) / 180;
+		return {
+			x: 50 + 50 * dist * Math.sin(rad),
+			y: 50 - 50 * dist * Math.cos(rad),
+			delay: -(1 - angle / 360) * SWEEP
+		};
+	});
 
 	useNews();
 
@@ -62,7 +81,15 @@
 	<section class="radar rounded-card px-3 sm:px-4" aria-labelledby="{panelId}-heading">
 		<div class="flex items-center gap-3">
 			<h2 id="{panelId}-heading" class="font-head flex min-h-11 flex-none items-center gap-2.5">
-				<span class="scope" aria-hidden="true"></span>
+				<span class="scope" style="--sweep: {SWEEP}s" aria-hidden="true">
+					<span class="sweep"></span>
+					{#each BLIPS as blip, i (i)}
+						<span class="blip" style="left: {blip.x}%; top: {blip.y}%; animation-delay: {blip.delay}s"></span>
+					{/each}
+					<svg viewBox="0 0 20 20" class="player">
+						<path d="M10 6.6 12.7 13 10 11.6 7.3 13Z" />
+					</svg>
+				</span>
 				<span class="radar-hot text-[12px] font-bold tracking-[0.14em] uppercase max-sm:sr-only">{t.banner.heading}</span>
 			</h2>
 
@@ -88,13 +115,16 @@
 			{/if}
 		</div>
 
-		<div id="{panelId}-more" hidden={!open}>
-			<ol>
-				{#each more as item (item.url)}
-					<li class="radar-rule flex border-t">{@render headline(item, false)}</li>
-				{/each}
-			</ol>
-			<div class="radar-rule flex justify-end border-t lg:hidden">{@render xLink('')}</div>
+		<!-- slides open (grid rows 0fr → 1fr); `inert` keeps the closed list out of Tab and screen readers -->
+		<div id="{panelId}-more" class={['more', open && 'open']} inert={!open}>
+			<div class="more-inner">
+				<ol>
+					{#each more as item (item.url)}
+						<li class="radar-rule flex border-t">{@render headline(item, false)}</li>
+					{/each}
+				</ol>
+				<div class="radar-rule flex justify-end border-t lg:hidden">{@render xLink('')}</div>
+			</div>
 		</div>
 	</section>
 {/if}
@@ -140,39 +170,123 @@
 		background: rgb(70 255 120 / 0.18);
 	}
 
-	/* the radar scope: two rings, a cross and a sweep that turns (still for reduced motion) */
+	/* The little radar on the left, like the CoD4 minimap: two rings and a cross on dark green
+	   glass, a sweep with a fading trail that turns clockwise, red enemy blips that flash as the
+	   sweep passes them, and the yellow player arrow in the middle. Still for reduced motion. */
 	.scope {
 		position: relative;
-		width: 24px;
-		height: 24px;
+		width: 32px;
+		height: 32px;
 		flex: none;
 		overflow: hidden;
 		border-radius: 50%;
 		background:
-			linear-gradient(rgb(70 255 120 / 0.35), rgb(70 255 120 / 0.35)) center / 1px 100% no-repeat,
-			linear-gradient(rgb(70 255 120 / 0.35), rgb(70 255 120 / 0.35)) center / 100% 1px no-repeat,
-			radial-gradient(circle, transparent 0 32%, rgb(70 255 120 / 0.5) 33% 37%, transparent 38%),
-			#031008;
+			linear-gradient(rgb(70 255 120 / 0.4), rgb(70 255 120 / 0.4)) center / 1px 100% no-repeat,
+			linear-gradient(rgb(70 255 120 / 0.4), rgb(70 255 120 / 0.4)) center / 100% 1px no-repeat,
+			radial-gradient(
+				circle closest-side,
+				transparent 0 44%,
+				rgb(70 255 120 / 0.5) 45% 49%,
+				transparent 50% 88%,
+				rgb(70 255 120 / 0.45) 89% 93%,
+				transparent 94%
+			),
+			radial-gradient(circle closest-side, #0b3016, #031008);
 		box-shadow:
-			0 0 0 1px rgb(70 255 120 / 0.75),
-			0 0 8px rgb(70 255 120 / 0.45);
+			0 0 0 1.5px rgb(70 255 120 / 0.8),
+			0 0 10px rgb(70 255 120 / 0.5),
+			inset 0 0 6px rgb(0 0 0 / 0.8);
 	}
-	.scope::after {
-		content: '';
+	@media (min-width: 640px) {
+		.scope {
+			width: 38px;
+			height: 38px;
+		}
+	}
+	/* the bright edge sits at 12 o'clock (the end of the gradient) with the trail behind it */
+	.sweep {
 		position: absolute;
 		inset: 0;
 		border-radius: 50%;
-		background: conic-gradient(from 0deg, rgb(120 255 160 / 0.9), rgb(120 255 160 / 0) 28%, transparent);
-		animation: radar-sweep 2.4s linear infinite;
+		background: conic-gradient(
+			rgb(120 255 160 / 0) 0 55%,
+			rgb(120 255 160 / 0.28) 82%,
+			rgb(140 255 170 / 0.8) 99.2%,
+			rgb(210 255 220) 99.2% 100%
+		);
+		animation: radar-sweep var(--sweep) linear infinite;
+	}
+	.blip {
+		position: absolute;
+		width: 4px;
+		height: 4px;
+		margin: -2px 0 0 -2px;
+		border-radius: 50%;
+		background: #ff4b3a;
+		box-shadow: 0 0 4px 1px rgb(255 60 40 / 0.85);
+		opacity: 0;
+		animation: radar-blip var(--sweep) linear infinite;
+	}
+	.player {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		fill: #ffd84a;
+		stroke: #3a2c00;
+		stroke-width: 0.5;
+		stroke-linejoin: round;
+		filter: drop-shadow(0 0 1.5px rgb(255 216 74 / 0.8));
 	}
 	@keyframes radar-sweep {
 		to {
 			transform: rotate(360deg);
 		}
 	}
+	@keyframes radar-blip {
+		0% {
+			opacity: 1;
+			transform: scale(1.4);
+		}
+		12% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		70%,
+		100% {
+			opacity: 0;
+		}
+	}
+
+	/* "More news" slides the box open instead of popping it */
+	.more {
+		display: grid;
+		/* minmax(0, …): the long one-line titles must not widen the column (sideways scroll on phones) */
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: 0fr;
+		transition: grid-template-rows 0.35s ease;
+	}
+	.more.open {
+		grid-template-rows: 1fr;
+	}
+	.more-inner {
+		min-height: 0;
+		overflow: hidden;
+		/* where supported, let the focus outline show past the edges */
+		overflow: clip;
+		overflow-clip-margin: 6px;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
-		.scope::after {
+		.sweep,
+		.blip {
 			animation: none;
+		}
+		.blip {
+			opacity: 0.9;
+		}
+		.more {
+			transition: none;
 		}
 	}
 </style>
