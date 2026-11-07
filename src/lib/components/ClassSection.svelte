@@ -29,7 +29,7 @@
 </script>
 
 <section
-	class="class-card weapon-class overflow-hidden rounded-card bg-panel shadow-card"
+	class="class-card weapon-class flex flex-col overflow-hidden rounded-card bg-panel shadow-card"
 	style:--c="var(--class-{number}, var(--t-accent))"
 	aria-labelledby={headingId}
 >
@@ -69,13 +69,14 @@
 	</div>
 
 	{#if visible.length > 0}
-		<ul class="px-2 pb-2">
+		<!-- flex-1: boxes in a row are equally tall; the list takes the extra room so the challenges sit at the bottom -->
+		<ul class="flex-1 px-2 pb-2">
 			{#each visible as weapon (weapon.id)}
 				<WeaponCard {weapon} {columns} />
 			{/each}
 		</ul>
 	{:else}
-		<p class="px-4 pt-1 pb-3 text-sm text-muted">{t.cls.allHidden}</p>
+		<p class="flex-1 px-4 pt-1 pb-3 text-sm text-muted">{t.cls.allHidden}</p>
 	{/if}
 
 	<footer class="grid gap-1 border-t border-line px-4 py-3 text-[13px] text-muted">

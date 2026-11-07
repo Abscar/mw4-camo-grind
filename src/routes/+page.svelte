@@ -151,7 +151,7 @@
 		<div class="mt-6"><Toolbar bind:query /></div>
 
 		{#if sections.length > 0}
-			<div class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] items-start gap-4">
+			<div class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
 				{#each sections as s (s.cls.id)}
 					<ClassSection cls={s.cls} number={s.number} visible={s.visible} />
 				{/each}
