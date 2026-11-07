@@ -22,6 +22,9 @@ export default defineConfig(({ mode }) => {
 	const offlineFile = mode === 'file';
 
 	return {
+		// The offline file must be a single file, so pictures are baked into it as data URLs.
+		// (That makes the inlined bundle bigger than Vite's default 500 kB warning, on purpose.)
+		...(offlineFile ? { build: { assetsInlineLimit: 50 * 1024 * 1024, chunkSizeWarningLimit: 2048 } } : {}),
 		plugins: [
 			...(offlineFile ? [dropPageOptions] : []),
 			tailwindcss(),

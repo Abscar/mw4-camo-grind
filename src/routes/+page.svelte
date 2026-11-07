@@ -15,7 +15,7 @@
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
-	import { HOTROD_TILE } from '#lib/hotrod.ts';
+	import hotrodCamo from '#lib/assets/hotrod-camo.webp';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
@@ -163,7 +163,7 @@
 		<div class="abscar-only"><div class="damascus-floor"></div></div>
 	</div>
 
-	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5" style:--hotrod-tile={HOTROD_TILE}>
+	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5" style:--hotrod-tile="url({hotrodCamo})">
 		<div class="mt-5"><KpiBar /></div>
 
 		<div class="mt-6"><Toolbar bind:query /></div>

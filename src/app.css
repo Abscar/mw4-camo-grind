@@ -719,10 +719,10 @@
 		#9aa0a6;
 }
 
-/* weapon-class boxes wear the Hot Rod camo: candy red with flame licks (tile from hotrod.ts) */
+/* weapon-class boxes wear the Hot Rod picture the user made */
 [data-theme='blackout'] .weapon-class {
-	/* big flames like the camo; shifted so the first band burns behind the class name */
-	background: var(--hotrod-tile) center -150px / 440px auto repeat, #8e1111;
+	/* the user's own Hot Rod picture (src/lib/assets/hotrod-camo.webp), filling the box */
+	background: var(--hotrod-tile) center top / 760px auto repeat, #5a0a0a;
 	box-shadow: var(--t-shadow);
 	border-left-width: 0;
 	/* re-tune the theme colours inside the red box so text stays readable */
