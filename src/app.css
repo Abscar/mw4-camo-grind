@@ -606,13 +606,13 @@
 	animation: camo-flow 6s ease-in-out infinite alternate;
 }
 
-/* Damascus header: black folded steel with flowing gold layers and a moving glint */
+/* Damascus Reforged header: blue-violet folded steel with pink and light-blue contour lines */
 .damascus {
 	position: absolute;
 	inset: 0;
 	overflow: hidden;
 	pointer-events: none;
-	background: #0b0703;
+	background: #2a22b5;
 }
 .damascus-svg {
 	position: absolute;
@@ -626,9 +626,9 @@
 	background: linear-gradient(
 		105deg,
 		transparent 38%,
-		rgb(255 236 180 / 0.22) 47%,
-		rgb(255 250 225 / 0.32) 50%,
-		rgb(255 236 180 / 0.22) 53%,
+		rgb(235 225 255 / 0.22) 47%,
+		rgb(250 245 255 / 0.34) 50%,
+		rgb(235 225 255 / 0.22) 53%,
 		transparent 62%
 	);
 	animation: damascus-glint 9s ease-in-out infinite;
@@ -649,13 +649,13 @@
 	position: absolute;
 	inset: 0;
 	background:
-		radial-gradient(70% 90% at 22% 60%, rgb(0 0 0 / 0.55), transparent 75%),
-		linear-gradient(180deg, rgb(0 0 0 / 0.4), rgb(0 0 0 / 0.28) 55%, rgb(0 0 0 / 0.5));
+		radial-gradient(70% 90% at 22% 60%, rgb(6 3 30 / 0.55), transparent 75%),
+		linear-gradient(180deg, rgb(6 3 30 / 0.4), rgb(6 3 30 / 0.25) 55%, rgb(6 3 30 / 0.5));
 }
 @media (max-width: 639px) {
 	/* on a phone the text covers the whole header, so darken it evenly */
 	.damascus-shade {
-		background: rgb(0 0 0 / 0.55);
+		background: rgb(6 3 30 / 0.55);
 	}
 }
 /* keep the header text crisp on top of the metal */
@@ -664,11 +664,11 @@
 		0 1px 2px rgb(0 0 0 / 0.9),
 		0 0 14px rgb(0 0 0 / 0.75);
 }
-/* a polished gold seam along the bottom of the header */
+/* a polished pink-to-cyan seam along the bottom of the header */
 .damascus-floor {
 	height: 3px;
-	background: linear-gradient(90deg, transparent, #b07a2c 10%, #fff0b8 50%, #b07a2c 90%, transparent);
-	box-shadow: 0 0 12px 1px rgb(240 190 90 / 0.5);
+	background: linear-gradient(90deg, transparent, #ff6fd2 15%, #dff6ff 50%, #7fd8ff 85%, transparent);
+	box-shadow: 0 0 12px 1px rgb(140 120 255 / 0.55);
 }
 
 /* KPI tiles look like their camo: brushed gold, brushed platinum, Harmonic Break's crimson

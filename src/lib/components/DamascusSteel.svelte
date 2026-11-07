@@ -1,28 +1,28 @@
 <!--
-	The header's backdrop in the Abscar theme, styled after the Damascus mastery camo: folded steel,
-	black with flowing gold and bronze layers and a glossy sheen. Our own procedural drawing (not the
-	game's texture): thin metal bands bent into Damascus swirls by an SVG turbulence displacement,
-	plus a slow moving glint. Decorative, aria-hidden.
+	The header's backdrop in the Abscar theme, styled after MW4's Damascus Reforged mastery camo:
+	glossy blue-violet metal with flowing Damascus contour lines alternating hot pink and light blue,
+	with thin deep-blue lines between. Our own procedural drawing (not the game's texture): thin
+	bands bent into Damascus swirls by an SVG turbulence displacement, plus a slow moving glint.
+	Decorative, aria-hidden.
 -->
 <script lang="ts" module>
 	/** The folded layers, top to bottom within one repeat: [colour, thickness in px]. */
 	const BANDS: [string, number][] = [
-		['#0d0803', 1.3],
-		['#6e4616', 0.8],
-		['#c9922f', 1.2],
-		['#f6cf6a', 1.4],
-		['#fff3c4', 0.5],
-		['#e6b34f', 1.2],
-		['#a06c22', 0.9],
-		['#140c04', 1.5],
-		['#8a5a1c', 0.8],
-		['#e3b04f', 1.3],
-		['#ffe6a0', 0.5],
-		['#b98330', 1],
-		['#1a1006', 1.2]
+		['#2a22b5', 1.4],
+		['#5a3cf0', 1.6],
+		['#ff6fd2', 0.9],
+		['#ffc6ef', 0.35],
+		['#8a5cff', 1.5],
+		['#3d4de6', 1.1],
+		['#7fd8ff', 0.9],
+		['#dff6ff', 0.35],
+		['#6a48f5', 1.6],
+		['#2f2ac6', 1.2]
 	];
-	const PERIOD = BANDS.reduce((sum, [, h]) => sum + h, 0);
-	const STRIPES = BANDS.reduce<{ y: number; h: number; c: string }[]>((acc, [c, h]) => {
+	/** How chunky the layers are drawn (1 = the thicknesses above). */
+	const SCALE = 1.8;
+	const PERIOD = BANDS.reduce((sum, [, h]) => sum + h * SCALE, 0);
+	const STRIPES = BANDS.map(([c, h]): [string, number] => [c, h * SCALE]).reduce<{ y: number; h: number; c: string }[]>((acc, [c, h]) => {
 		const y = acc.length ? acc[acc.length - 1].y + acc[acc.length - 1].h : 0;
 		return [...acc, { y, h, c }];
 	}, []);
