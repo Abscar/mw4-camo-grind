@@ -13,6 +13,7 @@
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
 	import EquippedCamos from '#lib/components/EquippedCamos.svelte';
+	import HudReadout from '#lib/components/HudReadout.svelte';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
@@ -118,6 +119,7 @@
 
 <div class="app-gate" class:ready={progress.ready}>
 	<div class="relative overflow-hidden bg-band text-band-fg">
+		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"><i></i></div></div>
 		<header
 			class="relative mx-auto flex max-w-[1240px] flex-wrap items-end justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
 		>
@@ -146,7 +148,10 @@
 				</ol>
 				<EquippedCamos />
 			</div>
-			<div class="relative z-[1]"><ThemePicker /></div>
+			<div class="relative z-[1] flex flex-col items-start gap-4 sm:items-end">
+				<HudReadout />
+				<ThemePicker />
+			</div>
 		</header>
 	</div>
 

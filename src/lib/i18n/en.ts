@@ -19,6 +19,15 @@ export const en = {
 		online: 'Online',
 		equipped: 'Mastery camos equipped'
 	},
+	hud: {
+		mode: 'Analysis: camo grind',
+		target: 'Target',
+		allDone: 'None, every Mastery camo is complete',
+		maxed: 'Weapons maxed',
+		status: 'Status',
+		grinding: 'Grinding',
+		complete: 'Complete'
+	},
 
 	kpi: {
 		label: 'Overall progress',

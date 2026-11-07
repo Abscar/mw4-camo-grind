@@ -563,7 +563,7 @@
 .op-wisp {
 	fill: none;
 	stroke: #dde5dd;
-	stroke-width: 3;
+	stroke-width: 3.4;
 	stroke-linecap: round;
 	opacity: 0;
 	transform-box: fill-box;
@@ -574,7 +574,85 @@
 	animation-delay: 1.8s;
 }
 .op-wisp:nth-child(3) {
-	animation-delay: 3.6s;
+	animation-delay: 2.7s;
+}
+.op-wisp:nth-child(4) {
+	animation-delay: 4s;
+}
+
+/* red cyborg vision over the header: tint + a scan line sweeping down */
+.hud-vision {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background:
+		linear-gradient(180deg, rgb(255 30 30 / 0.08), transparent 70%),
+		repeating-linear-gradient(90deg, rgb(255 40 40 / 0.035) 0 1px, transparent 1px 48px);
+}
+/* a full-size layer whose top edge is the scan line, moved down by its own height */
+.hud-vision > i {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		180deg,
+		rgb(255 70 70 / 0.6) 0 2px,
+		rgb(255 40 40 / 0.14) 2px,
+		transparent 16px
+	);
+	opacity: 0;
+	animation: hud-sweep 7s linear infinite;
+	will-change: transform;
+}
+@keyframes hud-sweep {
+	0% {
+		transform: translateY(-2px);
+		opacity: 0;
+	}
+	6% {
+		opacity: 1;
+	}
+	60% {
+		opacity: 0.8;
+	}
+	75%,
+	100% {
+		transform: translateY(100%);
+		opacity: 0;
+	}
+}
+
+/* the HUD readout: red terminal text with a glow, lines boot up one by one */
+.hud-readout {
+	border-left: 2px solid var(--t-accent);
+	padding: 2px 0 2px 10px;
+	color: #ff4a4a;
+	text-shadow: 0 0 8px rgb(255 40 40 / 0.55);
+}
+.hud-line {
+	animation: hud-boot 0.5s steps(4, end) both;
+}
+.hud-line:nth-child(2) {
+	animation-delay: 0.35s;
+}
+.hud-line:nth-child(3) {
+	animation-delay: 0.7s;
+}
+.hud-line:nth-child(4) {
+	animation-delay: 1.05s;
+}
+.hud-cursor {
+	margin-left: 4px;
+	animation: blink 1s steps(2, jump-none) infinite;
+}
+@keyframes hud-boot {
+	from {
+		opacity: 0;
+		clip-path: inset(0 100% 0 0);
+	}
+	to {
+		opacity: 1;
+		clip-path: inset(0 0 0 0);
+	}
 }
 .op-online-dot {
 	animation: blink 1.6s steps(2, jump-none) infinite;
