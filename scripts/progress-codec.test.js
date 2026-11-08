@@ -32,6 +32,16 @@ test('data: every weapon has a cartoon icon look, and no look is orphaned', () =
 	assert.deepEqual(Object.keys(WEAPON_LOOKS).filter((id) => !ids.has(id)), []);
 });
 
+test('data: Special camos (before Gold): 3 per launch weapon, 0 or 3 otherwise, names unique', () => {
+	for (const w of WEAPONS) {
+		if (w.season === 'launch') assert.equal(w.specials.length, 3, w.id);
+		else assert.ok([0, 3].includes(w.specials.length), w.id);
+		for (const s of w.specials) assert.ok(s.name.trim() && s.challenge.text.trim(), w.id);
+	}
+	const names = WEAPONS.flatMap((w) => w.specials.map((s) => s.name.toLowerCase()));
+	assert.equal(new Set(names).size, names.length);
+});
+
 test('data: counts match the known launch + Season 1 roster', () => {
 	assert.equal(WEAPONS.length, 37);
 	assert.equal(WEAPONS.filter((w) => w.season === 'launch').length, 33);

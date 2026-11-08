@@ -94,7 +94,7 @@ export const en = {
 		maxed: 'Maxed',
 		toggle: (camo: string, weapon: string) => `${camo}: ${weapon}`,
 		/** Read out after the weapon's name on the button that opens its card. */
-		openHint: 'open its card: focus list, note, buffs and nerfs',
+		openHint: 'open its card: challenges before Gold, focus list, note, buffs and nerfs',
 		focused: 'on your focus list',
 		buff: 'Buff',
 		nerf: 'Nerf',
@@ -112,6 +112,14 @@ export const en = {
 		notePlaceholder: 'e.g. longshots work best on the big maps',
 		noteSaved: 'Saved as you type',
 		charsLeft: (n: number) => `${n} left`,
+		/** The weapon's 3 Special camos: the challenges before Gold. */
+		preGold: 'Before Gold: 3 challenges',
+		preGoldSoon: 'Before Gold',
+		preGoldDone: 'Done',
+		preGoldDoneLong: 'Done: this weapon has Gold, so these are finished',
+		preGoldHint:
+			'Each one opens at a set weapon level. Gold opens when all three are done and the weapon has its 8 level-up camos.',
+		preGoldUnknown: 'Not out yet. Its challenges are added here when the weapon is released.',
 		next: 'Next camo',
 		maxed: 'Every camo done ◆',
 		balance: (change: 'buff' | 'nerf', patch: string, date: string) =>
@@ -129,7 +137,7 @@ export const en = {
 		next: 'Next',
 		maxed: 'Maxed, every camo done ◆',
 		howTo: 'Tap a weapon to unpin it or edit its note.',
-		tip: 'Tip: tap a weapon’s name to pin it to your focus list or write a note about it.'
+		tip: 'Tip: tap a weapon’s name to see its 3 challenges before Gold, pin it to your focus list or write a note about it.'
 	},
 
 	loadout: {

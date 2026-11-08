@@ -1,7 +1,8 @@
 <!--
-	The weapon card: opens when you tap a weapon's name (WeaponCard). Pin the weapon to the focus
-	list, write your own note about it (saved as you type), see its change in the latest balance
-	patch (data/balance.ts) and the next camo's challenge; a shortcut to its meta class.
+	The weapon card: opens when you tap a weapon's name (WeaponCard). Its 3 challenges before Gold
+	(Special camos, weapons.ts), pin the weapon to the focus list, write your own note about it (saved
+	as you type), see its change in the latest balance patch (data/balance.ts) and the next camo's
+	challenge; a shortcut to its meta class.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -84,6 +85,36 @@
 				<p class="-mt-2 text-xs text-fg" role="alert">{t.sheet.focusFull(FOCUS_MAX)}</p>
 			{/if}
 
+			<!-- the 3 Special camos: what you have to do on this gun before Gold opens -->
+			<section class="pre-gold rounded-card border border-line bg-panel-2 p-3" aria-labelledby="{id}-pre">
+				<h3
+					id="{id}-pre"
+					class="font-head flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] font-bold tracking-[0.12em] text-muted uppercase"
+				>
+					<span>{weapon.specials.length ? t.sheet.preGold : t.sheet.preGoldSoon}</span>
+					{#if level >= 1 && weapon.specials.length}
+						<span class="pre-gold-done text-gold-ink" title={t.sheet.preGoldDoneLong}
+							><span aria-hidden="true">✔ </span>{t.sheet.preGoldDone}<span class="sr-only"
+								>: {t.sheet.preGoldDoneLong}</span
+							></span
+						>
+					{/if}
+				</h3>
+				{#if weapon.specials.length}
+					<ul class="mt-1.5 grid gap-1.5">
+						{#each weapon.specials as special (special.name)}
+							<li class="flex gap-2 text-fg">
+								<span class="pre-gold-dot mt-[0.45em] size-2 flex-none rotate-45 rounded-[1px]" aria-hidden="true"></span>
+								<span class="min-w-0"><b class="font-semibold">{special.name}:</b> <FactText fact={special.challenge} /></span>
+							</li>
+						{/each}
+					</ul>
+					<p class="mt-2 text-[11px] leading-snug">{t.sheet.preGoldHint}</p>
+				{:else}
+					<p class="mt-1 text-fg">{t.sheet.preGoldUnknown}</p>
+				{/if}
+			</section>
+
 			<section class="rounded-card border border-line bg-panel-2 p-3" aria-labelledby="{id}-next">
 				<h3 id="{id}-next" class="font-head text-[11px] font-bold tracking-[0.12em] text-muted uppercase">
 					{t.sheet.next}
@@ -150,6 +181,12 @@
 </Dialog>
 
 <style>
+	/* a little gold diamond in front of each pre-Gold challenge */
+	.pre-gold-dot {
+		background: var(--t-gold);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--t-gold) 55%, black);
+	}
+
 	/* the cartoon gun at the top of the card, a bit bigger than in the list */
 	.sheet-gun :global(.weapon-icon) {
 		width: 112px;
