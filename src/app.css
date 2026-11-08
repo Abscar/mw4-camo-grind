@@ -1196,7 +1196,8 @@
 }
 
 /* Abscar: the user's own white holk picture (assets/holk.webp), turned around and lying in a glass
-   ashtray (HolkAshtray.svelte), at the right end of the search row. Pure decoration. The negative
+   ashtray (HolkAshtray.svelte), at the right end of the search row. A just-for-fun button (a tap
+   flicks the ash off; its own styles turn pointer events back on). The negative
    top margin lets the smoke rise into the space above, so mostly the ashtray takes up room. The
    widths keep the joint about as big as it was on its own (240 px wide at ≥1024). */
 .toolbar-holk {

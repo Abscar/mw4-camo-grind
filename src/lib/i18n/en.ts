@@ -81,7 +81,9 @@ export const en = {
 		clearSearch: 'Clear search',
 		hideMaxed: 'Hide maxed weapons',
 		classFilter: 'Show class',
-		allClasses: 'All'
+		allClasses: 'All',
+		/** Abscar: the joint in the ashtray at the end of the search row is a just-for-fun button. */
+		holkTap: 'Tap the ash off'
 	},
 
 	weapon: {
