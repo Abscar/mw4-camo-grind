@@ -1,0 +1,20 @@
+# The sync service for MW4 Camo Grind (see worker.js). Not part of the static website:
+# it lives on the user's own free Cloudflare account at https://mw4-camo-sync.<subdomain>.workers.dev
+#
+# Deploy (from this folder, with Cloudflare's own CLI; it isn't a project dependency):
+#   npx wrangler@4 login      # once: the user approves in their browser
+#   npx wrangler@4 deploy
+# Then put the printed workers.dev address in SYNC_URL (src/lib/site.ts) and publish the site.
+name = "mw4-camo-sync"
+main = "worker.js"
+compatibility_date = "2026-10-15"
+workers_dev = true
+
+[[durable_objects.bindings]]
+name = "STORE"
+class_name = "SyncStore"
+
+# SQLite-backed Durable Objects are on Cloudflare's free plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SyncStore"]

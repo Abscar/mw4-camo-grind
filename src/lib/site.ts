@@ -5,3 +5,10 @@
  * Example: 'https://example.github.io/mw4-camo-grind/'
  */
 export const SITE_URL = 'https://abscar.github.io/mw4-camo-grind/';
+
+/**
+ * The automatic-sync service (sync-worker/, a Cloudflare Worker on the user's own account).
+ * Empty = sync isn't online yet, and the app hides everything about it.
+ * For local testing, VITE_SYNC_URL overrides it (see scripts/sync-dev-server.js).
+ */
+export const SYNC_URL = '';

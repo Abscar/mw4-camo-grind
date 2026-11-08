@@ -5,6 +5,7 @@
 !/src/
 !/scripts/
 !/static/
+!/sync-worker/
 !/.gitignore
 !/.npmrc
 !/package.json

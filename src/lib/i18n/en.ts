@@ -200,7 +200,54 @@ export const en = {
 		linkShare: 'Share…',
 		close: 'Close',
 		linkNotAvailable:
-			'Progress links need the online version of the tracker. Use “Export backup” to move your ticks instead.'
+			'Progress links need the online version of the tracker. Use “Export backup” to move your ticks instead.',
+		/** The intro once automatic sync is online. */
+		introSync:
+			'Your ticks are saved in this browser. Turn on automatic sync to have them on your phone too. A progress link or a backup file moves them by hand.'
+	},
+
+	/** Automatic sync between devices (sync.svelte.ts), shown once the sync service is online. */
+	autoSync: {
+		heading: 'Automatic sync',
+		offText:
+			'Keep your ticks, notes and focus list the same on this browser and your phone, automatically. No account or password: a private sync link connects your devices.',
+		onText:
+			'On. Open your sync link once on your phone or another computer. After that, your ticks follow you both ways.',
+		turnOn: 'Turn on sync',
+		haveLink: 'I have a sync link…',
+		showLink: 'Sync link for your phone',
+		syncNow: 'Sync now',
+		turnOff: 'Turn off on this device',
+		status: {
+			off: '',
+			syncing: 'Syncing…',
+			synced: 'Synced',
+			offline: 'Offline: saved here, syncs when you’re back online',
+			error: 'Couldn’t reach sync, trying again soon'
+		},
+		syncedAt: (time: string) => `Synced at ${time}`,
+		linkTitle: 'Your sync link',
+		linkBody:
+			'Open this link once on your phone (or another computer). After that, your ticks, notes and focus list stay the same everywhere. Anyone with the link can see and change your ticks, so send it only to yourself.',
+		pasteTitle: 'Use a sync link',
+		pasteBody: 'Paste the sync link from your other device.',
+		pasteLabel: 'Sync link',
+		pasteUse: 'Connect',
+		pasteBad: 'That doesn’t look like a sync link.',
+		joinTitle: 'Turn on sync with this link?',
+		joinBody: (synced: string, here: string) => `The synced ticks have ${synced}. This browser has ${here}.`,
+		joinHint: '“Combine both” keeps the higher tick of every weapon from both, so nothing is lost.',
+		joinCombine: 'Combine both',
+		joinUse: 'Use the synced ticks',
+		cancel: 'Cancel',
+		toastOn: 'Sync is on. Open your sync link on your other device.',
+		toastJoined: 'Sync is on. Your ticks from your other device are here.',
+		toastOff: 'Sync is off on this device. Your ticks stay here.',
+		toastAlready: 'Sync is already on with this link',
+		toastNotFound: 'That sync link isn’t active, so nothing changed',
+		toastOffline: 'You’re offline. Open the sync link again when you’re online.',
+		toastError: 'Couldn’t reach sync just now. Try the link again in a moment.',
+		resetNote: 'Sync is on, so this also resets your other devices.'
 	},
 
 	reset: {

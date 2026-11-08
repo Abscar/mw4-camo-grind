@@ -28,6 +28,7 @@ import {
 	type Prefs,
 	type ProgressData
 } from './progress-codec.ts';
+import type { SyncDoc } from './sync-codec.ts';
 
 /** Where progress lives in the browser. Bump the version (and extend `migrate`) when the shape changes. */
 export const STORAGE_KEY = 'mw4-camo-grind:v2';
@@ -189,6 +190,37 @@ class Progress {
 		return { weapons: { ...this.weapons }, mastery: { ...this.mastery } };
 	}
 
+	/** What automatic sync shares with your other devices (sync-codec.ts). */
+	syncDoc(): SyncDoc {
+		return {
+			progress: this.snapshot(),
+			notes: { ...this.notes },
+			focus: [...this.prefs.focus],
+			lastTickAt: this.lastTickAt
+		};
+	}
+
+	/**
+	 * Take what automatic sync brought from another device. Like import and links, this never
+	 * feeds the kill feed or the Divergence flash (only your own taps do).
+	 */
+	applySynced(doc: SyncDoc): void {
+		this.weapons = { ...doc.progress.weapons };
+		this.mastery = { ...doc.progress.mastery };
+		this.notes = { ...doc.notes };
+		this.prefs = { ...this.prefs, focus: [...doc.focus] };
+		if (doc.lastTickAt) this.lastTickAt = doc.lastTickAt;
+		this.save();
+	}
+
+	/** Run `fn` after every save (automatic sync listens). Returns a function that stops it. */
+	onSaved(fn: () => void): () => void {
+		this.#onSaved.add(fn);
+		return () => this.#onSaved.delete(fn);
+	}
+
+	#onSaved = new Set<() => void>();
+
 	/** Replace all progress (import, link, reset, undo). Returns what was there before, for Undo. */
 	replace(next: ProgressData): ProgressData {
 		const before = this.snapshot();
@@ -222,6 +254,7 @@ class Progress {
 			{ notes: { ...this.notes }, lastTickAt: this.lastTickAt }
 		);
 		this.canSave = writeStorage(STORAGE_KEY, JSON.stringify(stored));
+		for (const fn of this.#onSaved) fn();
 	}
 
 	/** Read saved progress (or the old tracker's) from the browser. Call once, in the browser. */
