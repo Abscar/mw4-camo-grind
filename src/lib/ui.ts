@@ -11,6 +11,12 @@ export function nextChallenge(classId: string, level: number): { camo: LadderCam
 	return camo && cls ? { camo, fact: cls.challenges[camo.id] } : null;
 }
 
+/** All 3 ladder camos (Gold, Platinum, Harmonic Break) with their challenge for a weapon class. */
+export function ladderChallenges(classId: string): { camo: LadderCamo; fact: Fact }[] {
+	const cls = CLASSES.find((c) => c.id === classId);
+	return cls ? LADDER.map((camo) => ({ camo, fact: cls.challenges[camo.id] })) : [];
+}
+
 /** Fill colour of each ladder camo (CSS value). */
 export const CAMO_FILL: Record<LadderCamoId, string> = {
 	gold: 'var(--t-gold)',

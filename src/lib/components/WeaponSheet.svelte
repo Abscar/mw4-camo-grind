@@ -1,12 +1,11 @@
 <!--
 	The weapon card: opens when you tap a weapon's name (WeaponCard). Its 3 challenges before Gold
 	(Special camos, weapons.ts), pin the weapon to the focus list, write your own note about it (saved
-	as you type), see its change in the latest balance patch (data/balance.ts) and the next camo's
-	challenge; a shortcut to its meta class.
+	as you type), see its change in the latest balance patch (data/balance.ts) and the challenges of
+	all 3 ladder camos (always all three, whatever is ticked); a shortcut to its meta class.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { MAX_LEVEL } from '#lib/data/camos.ts';
 	import { BALANCE, BALANCE_PATCH } from '#lib/data/balance.ts';
 	import { LOADOUTS } from '#lib/data/loadouts.ts';
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
@@ -15,7 +14,7 @@
 	import { loadoutView } from '#lib/loadoutView.svelte.ts';
 	import { FOCUS_MAX, NOTE_MAX } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
-	import { nextChallenge, shortDate } from '#lib/ui.ts';
+	import { CAMO_FILL, CAMO_INK, ladderChallenges, shortDate } from '#lib/ui.ts';
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import FactText from './FactText.svelte';
@@ -27,7 +26,7 @@
 	const balance = $derived(weapon ? BALANCE[weapon.id] : undefined);
 	const focused = $derived(weapon ? progress.isFocused(weapon.id) : false);
 	const level = $derived(weapon ? progress.level(weapon.id) : 0);
-	const next = $derived(weapon ? nextChallenge(weapon.classId, level) : null);
+	const challenges = $derived(weapon ? ladderChallenges(weapon.classId) : []);
 	const hasMeta = $derived(weapon ? weapon.id in LOADOUTS : false);
 
 	/** The text box keeps its own copy while you type; every change is saved straight away. */
@@ -115,17 +114,31 @@
 				{/if}
 			</section>
 
-			<section class="rounded-card border border-line bg-panel-2 p-3" aria-labelledby="{id}-next">
-				<h3 id="{id}-next" class="font-head text-[11px] font-bold tracking-[0.12em] text-muted uppercase">
-					{t.sheet.next}
+			<!-- Gold, Platinum and Harmonic Break with their challenges: always all three (the user's ask),
+			     a ticked one only gets a small "✔ Done" -->
+			<section class="rounded-card border border-line bg-panel-2 p-3" aria-labelledby="{id}-camos">
+				<h3 id="{id}-camos" class="font-head text-[11px] font-bold tracking-[0.12em] text-muted uppercase">
+					{t.sheet.camos}
 				</h3>
-				<p class="mt-1 text-fg">
-					{#if next && level < MAX_LEVEL}
-						<b class="font-semibold">{next.camo.name}:</b> <FactText fact={next.fact} />
-					{:else}
-						{t.sheet.maxed}
-					{/if}
-				</p>
+				<ul class="mt-1.5 grid gap-1.5">
+					{#each challenges as { camo, fact }, i (camo.id)}
+						<li class="flex items-start gap-2 text-fg">
+							<span
+								class="camo-dot mt-[0.45em] size-2 flex-none rotate-45 rounded-[1px]"
+								style:--c={CAMO_FILL[camo.id]}
+								aria-hidden="true"
+							></span>
+							<span class="min-w-0 flex-1"
+								><b class="font-semibold {CAMO_INK[camo.id]}">{camo.name}:</b> <FactText {fact} /></span
+							>
+							{#if level > i}
+								<span class="flex-none text-[11px] leading-[1.6] font-bold whitespace-nowrap {CAMO_INK[camo.id]}"
+									><span aria-hidden="true">✔ </span>{t.sheet.camoDone}</span
+								>
+							{/if}
+						</li>
+					{/each}
+				</ul>
 			</section>
 
 			<section class="rounded-card border border-line bg-panel-2 p-3">
@@ -185,6 +198,12 @@
 	.pre-gold-dot {
 		background: var(--t-gold);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--t-gold) 55%, black);
+	}
+
+	/* the same diamond in each ladder camo's own colour */
+	.camo-dot {
+		background: var(--c);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 55%, black);
 	}
 
 	/* the cartoon gun at the top of the card, a bit bigger than in the list */

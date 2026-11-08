@@ -120,8 +120,9 @@ export const en = {
 		preGoldHint:
 			'Each one opens at a set weapon level. Gold opens when all three are done and the weapon has its 8 level-up camos.',
 		preGoldUnknown: 'Not out yet. Its challenges are added here when the weapon is released.',
-		next: 'Next camo',
-		maxed: 'Every camo done ◆',
+		/** All 3 ladder camos with their challenges, always shown. */
+		camos: 'Camo challenges',
+		camoDone: 'Done',
 		balance: (change: 'buff' | 'nerf', patch: string, date: string) =>
 			`${change === 'buff' ? 'Buffed' : 'Nerfed'} in ${patch} (${date})`,
 		balanceSource: (sources: string) => `From the patch notes, via ${sources}.`,
