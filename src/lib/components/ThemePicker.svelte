@@ -2,11 +2,18 @@
 	Theme picker, tucked away in the header's top-right corner: a small swatch button that opens a
 	menu with the four looks. Closes on pick, outside click or Escape.
 	The menu stays in the page while closed (just `hidden`), so its buttons always exist.
+	Under the swatch: the sound-effects on/off button (sound.svelte.ts). It sits below rather than
+	beside the swatch so the corner stays one button wide and never reaches the operator emblem
+	(phones) or the news buddy (desktop).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
+	import { sound } from '#lib/sound.svelte.ts';
 	import { THEMES } from '#lib/themes.ts';
+
+	// the on/off setting is read after load, so the prerendered page and the first render match
+	$effect(() => sound.load());
 
 	const menuId = $props.id();
 	let open = $state(false);
@@ -54,6 +61,27 @@
 		></span>
 	</button>
 
+	<button
+		type="button"
+		class="grid size-11 place-items-center rounded-full text-band-muted opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 aria-pressed:opacity-100"
+		aria-pressed={sound.on}
+		aria-label={t.sound.label}
+		title={sound.on ? t.sound.on : t.sound.off}
+		onclick={() => sound.set(!sound.on)}
+	>
+		<svg class="sound-icon size-5" viewBox="0 0 24 24" aria-hidden="true">
+			<path d="M3.5 9.2h3.8L12.6 5v14l-5.3-4.2H3.5z" fill="currentColor" />
+			<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+				{#if sound.on}
+					<path d="M15.6 9.4a3.7 3.7 0 0 1 0 5.2" />
+					<path d="M18.2 6.8a7.4 7.4 0 0 1 0 10.4" />
+				{:else}
+					<path d="M16 9.5l5 5M21 9.5l-5 5" />
+				{/if}
+			</g>
+		</svg>
+	</button>
+
 	<div
 		id={menuId}
 		class="absolute top-12 right-0 z-40 grid min-w-44 gap-1 rounded-card border border-line bg-panel p-1.5 text-fg shadow-[0_14px_34px_rgb(0_0_0/0.4)]"
@@ -85,3 +113,10 @@
 		{/each}
 	</div>
 </div>
+
+<style>
+	/* Abscar: a dark halo so the speaker stays readable on the busy Damascus header */
+	:global([data-theme='blackout']) .sound-icon {
+		filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.9)) drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+	}
+</style>

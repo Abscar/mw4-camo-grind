@@ -2,7 +2,10 @@
  * What just happened when you ticked a box: the Abscar theme's kill-feed rows, the shine over a
  * weapon that just got maxed, the "Divergence unlocked" flash and the news buddy cheering.
  * Only your own ticks get here (progress.toggle), never loading, importing or another tab.
+ * Also plays the tick's sound effect (if sound is on).
  */
+
+import { sound } from './sound.svelte.ts';
 
 export interface Gain {
 	id: number;
@@ -44,6 +47,7 @@ class Feed {
 			this.#cheerTimer = setTimeout(() => (this.cheering = false), CHEER_MS);
 		}
 		if (row.divergence) this.divergence = row;
+		sound.play(row.divergence ? 'divergence' : row.maxed ? 'maxed' : 'camo');
 	}
 }
 

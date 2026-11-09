@@ -16,17 +16,20 @@ import { feed } from './feed.svelte.ts';
 import {
 	CURRENT_VERSION,
 	FOCUS_MAX,
+	SPECIALS_ALL,
 	clampCount,
 	cleanNote,
 	defaultPrefs,
 	defaultProgress,
+	mergeStamps,
 	migrate,
 	toExport,
 	toStored,
 	type Migrated,
 	type Notes,
 	type Prefs,
-	type ProgressData
+	type ProgressData,
+	type Stamps
 } from './progress-codec.ts';
 import type { SyncDoc } from './sync-codec.ts';
 
@@ -62,6 +65,10 @@ export type LoadResult = 'fresh' | 'loaded' | 'migrated-v1' | 'unreadable';
 class Progress {
 	weapons = $state<Record<string, number>>(defaultProgress().weapons);
 	mastery = $state<Record<string, number>>(defaultProgress().mastery);
+	/** Ticked Special camos (before Gold) per weapon, as bits (progress-codec.ts). */
+	specials = $state<Record<string, number>>({});
+	/** When each ladder camo was ticked, for the grind stats (stats.ts). */
+	stamps = $state<Stamps>({});
 	prefs = $state<Prefs>(defaultPrefs());
 	/** The user's own notes per weapon. Not part of progress links (too long), but in backups. */
 	notes = $state<Notes>({});
@@ -122,6 +129,7 @@ class Progress {
 		const divergenceBefore = this.divergenceUnlocked;
 		this.weapons[weaponId] = this.has(weaponId, ladderIndex) ? ladderIndex : ladderIndex + 1;
 		const after = this.level(weaponId);
+		this.#stamp(weaponId, before, after);
 		if (after > before) {
 			this.lastTickAt = new Date().toISOString();
 			feed.gain({
@@ -132,6 +140,43 @@ class Progress {
 			});
 		}
 		this.save();
+	}
+
+	/** Note when the camos a tap added were ticked; a camo the tap took away loses its time. */
+	#stamp(weaponId: string, before: number, after: number): void {
+		const times = (this.stamps[weaponId] ?? []).slice(0, after);
+		for (let i = 0; i < after; i++) times[i] = i >= before ? Date.now() : (times[i] ?? 0);
+		const next = { ...this.stamps };
+		if (times.some(Boolean)) next[weaponId] = times;
+		else delete next[weaponId];
+		this.stamps = next;
+	}
+
+	/** A Special camo (before Gold) is done when it is ticked, or when the weapon has Gold. */
+	special(weaponId: string, index: number): boolean {
+		return this.level(weaponId) >= 1 || (((this.specials[weaponId] ?? 0) >> index) & 1) === 1;
+	}
+
+	/** How many of the weapon's `total` Special camos are done. */
+	specialsDone(weaponId: string, total: number): number {
+		let n = 0;
+		for (let i = 0; i < total; i++) if (this.special(weaponId, i)) n++;
+		return n;
+	}
+
+	/**
+	 * Tick or untick a Special camo. Not while the weapon has Gold (they all count as done then;
+	 * untick Gold first). Returns the new state, or null when nothing changed.
+	 */
+	toggleSpecial(weaponId: string, index: number): boolean | null {
+		if (this.level(weaponId) >= 1 || index < 0 || index > 2) return null;
+		const mask = ((this.specials[weaponId] ?? 0) ^ (1 << index)) & SPECIALS_ALL;
+		const next = { ...this.specials };
+		if (mask) next[weaponId] = mask;
+		else delete next[weaponId];
+		this.specials = next;
+		this.save();
+		return ((mask >> index) & 1) === 1;
 	}
 
 	/** When you last added a camo, as far as we know (ISO), or null. */
@@ -187,7 +232,7 @@ class Progress {
 	}
 
 	snapshot(): ProgressData {
-		return { weapons: { ...this.weapons }, mastery: { ...this.mastery } };
+		return { weapons: { ...this.weapons }, mastery: { ...this.mastery }, specials: { ...this.specials } };
 	}
 
 	/** What automatic sync shares with your other devices (sync-codec.ts). */
@@ -196,7 +241,8 @@ class Progress {
 			progress: this.snapshot(),
 			notes: { ...this.notes },
 			focus: [...this.prefs.focus],
-			lastTickAt: this.lastTickAt
+			lastTickAt: this.lastTickAt,
+			stamps: { ...this.stamps }
 		};
 	}
 
@@ -207,6 +253,8 @@ class Progress {
 	applySynced(doc: SyncDoc): void {
 		this.weapons = { ...doc.progress.weapons };
 		this.mastery = { ...doc.progress.mastery };
+		if (doc.progress.specials) this.specials = { ...doc.progress.specials };
+		this.stamps = mergeStamps(this.weapons, doc.stamps);
 		this.notes = { ...doc.notes };
 		this.prefs = { ...this.prefs, focus: [...doc.focus] };
 		if (doc.lastTickAt) this.lastTickAt = doc.lastTickAt;
@@ -221,24 +269,30 @@ class Progress {
 
 	#onSaved = new Set<() => void>();
 
-	/** Replace all progress (import, link, reset, undo). Returns what was there before, for Undo. */
+	/**
+	 * Replace all progress (import, link, reset, undo). Returns what was there before, for Undo.
+	 * Data without Special camos (older backups and links) leaves those ticks alone.
+	 */
 	replace(next: ProgressData): ProgressData {
 		const before = this.snapshot();
 		this.weapons = { ...next.weapons };
 		this.mastery = { ...next.mastery };
+		if (next.specials) this.specials = { ...next.specials };
+		this.stamps = mergeStamps(this.weapons, this.stamps);
 		this.save();
 		return before;
 	}
 
 	reset(): ProgressData {
-		return this.replace(defaultProgress());
+		return this.replace({ ...defaultProgress(), specials: {} });
 	}
 
 	isDefault(): boolean {
 		const d = defaultProgress();
 		return (
 			WEAPONS.every((w) => this.level(w.id) === d.weapons[w.id]) &&
-			MASTERY.every((m) => (this.mastery[m.id] ?? 0) === 0)
+			MASTERY.every((m) => (this.mastery[m.id] ?? 0) === 0) &&
+			Object.keys(this.specials).length === 0
 		);
 	}
 
@@ -251,7 +305,7 @@ class Progress {
 		const stored = toStored(
 			this.snapshot(),
 			{ ...this.prefs, focus: [...this.prefs.focus] },
-			{ notes: { ...this.notes }, lastTickAt: this.lastTickAt }
+			{ notes: { ...this.notes }, lastTickAt: this.lastTickAt, stamps: { ...this.stamps } }
 		);
 		this.canSave = writeStorage(STORAGE_KEY, JSON.stringify(stored));
 		for (const fn of this.#onSaved) fn();
@@ -299,6 +353,8 @@ class Progress {
 	#apply(m: Migrated): void {
 		this.weapons = m.progress.weapons;
 		this.mastery = m.progress.mastery;
+		if (m.progress.specials) this.specials = m.progress.specials;
+		if (m.stamps) this.stamps = mergeStamps(m.progress.weapons, m.stamps);
 		if (m.prefs) this.prefs = m.prefs;
 		if (m.notes) this.notes = m.notes;
 		if (m.lastTickAt) this.lastTickAt = m.lastTickAt;

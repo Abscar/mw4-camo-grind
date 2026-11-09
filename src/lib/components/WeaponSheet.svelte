@@ -18,6 +18,7 @@
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import FactText from './FactText.svelte';
+	import SpecialTick from './SpecialTick.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	const id = $props.id();
@@ -28,6 +29,7 @@
 	const level = $derived(weapon ? progress.level(weapon.id) : 0);
 	const challenges = $derived(weapon ? ladderChallenges(weapon.classId) : []);
 	const hasMeta = $derived(weapon ? weapon.id in LOADOUTS : false);
+	const specialsDone = $derived(weapon ? progress.specialsDone(weapon.id, weapon.specials.length) : 0);
 
 	/** The text box keeps its own copy while you type; every change is saved straight away. */
 	let draft = $state('');
@@ -97,14 +99,22 @@
 								>: {t.sheet.preGoldDoneLong}</span
 							></span
 						>
+					{:else if weapon.specials.length}
+						<span class="text-gold-ink tabular-nums">{t.sheet.preGoldCount(specialsDone, weapon.specials.length)}</span>
 					{/if}
 				</h3>
 				{#if weapon.specials.length}
-					<ul class="mt-1.5 grid gap-1.5">
-						{#each weapon.specials as special (special.name)}
-							<li class="flex gap-2 text-fg">
-								<span class="pre-gold-dot mt-[0.45em] size-2 flex-none rotate-45 rounded-[1px]" aria-hidden="true"></span>
-								<span class="min-w-0"><b class="font-semibold">{special.name}:</b> <FactText fact={special.challenge} /></span>
+					<ul class="mt-1 grid gap-0.5">
+						{#each weapon.specials as special, i (special.name)}
+							<li>
+								<SpecialTick
+									weaponId={weapon.id}
+									weaponName={weapon.name}
+									index={i}
+									total={weapon.specials.length}
+									name={special.name}
+									challenge={special.challenge}
+								/>
 							</li>
 						{/each}
 					</ul>
@@ -194,13 +204,7 @@
 </Dialog>
 
 <style>
-	/* a little gold diamond in front of each pre-Gold challenge */
-	.pre-gold-dot {
-		background: var(--t-gold);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--t-gold) 55%, black);
-	}
-
-	/* the same diamond in each ladder camo's own colour */
+	/* a little diamond in front of each ladder camo, in its own colour */
 	.camo-dot {
 		background: var(--c);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 55%, black);

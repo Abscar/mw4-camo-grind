@@ -12,6 +12,7 @@
 	import { nextChallenge } from '#lib/ui.ts';
 	import CamoToggle from './CamoToggle.svelte';
 	import FactText from './FactText.svelte';
+	import SpecialTick from './SpecialTick.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	let {
@@ -36,6 +37,15 @@
 	const focused = $derived(progress.isFocused(weapon.id));
 	const note = $derived(progress.note(weapon.id));
 	const next = $derived(showNext ? nextChallenge(classId, level) : null);
+	/** The 3 challenges before Gold: how many are ticked (only while the weapon has no Gold). */
+	const specialsTotal = $derived(weapon.specials.length);
+	const pips = $derived(specialsTotal && level === 0 ? progress.specialsDone(weapon.id, specialsTotal) : null);
+	const goldReady = $derived(pips !== null && pips === specialsTotal);
+	/** Focus list: before Gold, the next unticked challenge comes first. */
+	const nextSpecial = $derived(
+		showNext && level === 0 ? weapon.specials.find((_, i) => !progress.special(weapon.id, i)) : undefined
+	);
+
 	/** Abscar: a shine + smoke puff runs over the row when this tick maxed the weapon. */
 	const shine = $derived(feed.lastMaxed?.weaponId === weapon.id ? feed.lastMaxed.id : 0);
 </script>
@@ -128,12 +138,40 @@
 			pressed={progress.has(weapon.id, i)}
 			weaponName={weapon.name}
 			ontoggle={() => progress.toggle(weapon.id, i)}
+			pips={i === 0 ? pips : null}
+			ready={i === 0 && goldReady}
 		/>
 	{/each}
 
+	<!-- the 3 challenges before Gold as tick chips, only while the weapon has no Gold. Waits for
+	     progress.ready: the prerendered page has no saved data, so it must not draw them yet. -->
+	{#if progress.ready && pips !== null}
+		<div class="col-span-full -mt-0.5 flex flex-wrap items-center gap-1 pb-1 pl-0.5" role="group" aria-label="{t.weapon.preGoldShort}: {weapon.name}">
+			<span class="font-head mr-0.5 w-full text-[9.5px] font-bold tracking-[0.12em] text-muted uppercase sm:w-auto" aria-hidden="true"
+				>{t.weapon.preGoldShort}</span
+			>
+			{#each weapon.specials as special, i (special.name)}
+				<SpecialTick
+					weaponId={weapon.id}
+					weaponName={weapon.name}
+					index={i}
+					total={specialsTotal}
+					name={special.name}
+					challenge={special.challenge}
+					chip
+				/>
+			{/each}
+		</div>
+	{/if}
+
 	{#if showNext}
 		<p class="col-span-full -mt-0.5 pl-0.5 text-[12.5px] leading-snug text-muted">
-			{#if next}
+			{#if nextSpecial}
+				<b class="font-head mr-1 text-[10.5px] font-bold tracking-[0.12em] uppercase">{t.focus.next}</b><b
+					class="font-semibold text-fg">{nextSpecial.name} ({t.weapon.preGoldShort}):</b
+				>
+				<FactText fact={nextSpecial.challenge} />
+			{:else if next}
 				<b class="font-head mr-1 text-[10.5px] font-bold tracking-[0.12em] uppercase">{t.focus.next}</b><b
 					class="font-semibold text-fg">{next.camo.name}:</b
 				>

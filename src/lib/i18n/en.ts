@@ -7,6 +7,8 @@ export const en = {
 	pageTitle: 'MW4 Camo Grind',
 
 	theme: { label: 'Theme', current: (name: string) => `Theme: ${name}` },
+	/** Sound effects for your own ticks (button next to the theme picker; off by default). */
+	sound: { label: 'Sound effects', on: 'Sound effects: on', off: 'Sound effects: off' },
 
 	/** The Abscar theme's header extras. */
 	operator: {
@@ -31,6 +33,10 @@ export const en = {
 			sulk: 'Abscar… no new camos in a week?'
 		}
 	},
+	/** Abscar theme: tapping the news buddy (he coughs, blows a smoke ring or laughs). */
+	buddy: {
+		poke: 'Poke the weed buddy'
+	},
 	/** Abscar theme: the red terminal text for a moment when the page opens. */
 	boot: {
 		title: 'ABSCAR OS // CAMO GRIND MODULE',
@@ -46,6 +52,8 @@ export const en = {
 		title: 'Divergence unlocked',
 		sub: (n: number, next: string) => `${n} Harmonic Breaks · next target: ${next}`
 	},
+	/** Abscar theme: the cyborg banner is a just-for-fun button (its eyes flare and fire lasers). */
+	cyborg: { wake: 'Wake the cyborg' },
 	/** The one-line news banner (green radar box) above the KPI tiles. */
 	banner: {
 		heading: 'COD news',
@@ -75,6 +83,20 @@ export const en = {
 		divergenceLaunchOnly: 'Counting launch weapons only'
 	},
 
+	/** The grind stats line under the KPI tiles (stats.ts). */
+	stats: {
+		label: 'Your grind',
+		today: 'Today',
+		week: 'This week',
+		camos: (n: number) => `${n} camo${n === 1 ? '' : 's'}`,
+		divergence: 'Divergence',
+		eta: (days: number, date: string) => `≈ ${days} day${days === 1 ? '' : 's'} (${date})`,
+		etaLong: 'At your pace of the last two weeks (Harmonic Breaks ticked per day).',
+		tooSoon: 'estimate after 2 days of ticking',
+		noPace: 'no Harmonic Break in 14 days',
+		unlocked: 'unlocked'
+	},
+
 	toolbar: {
 		search: 'Search weapons',
 		searchPlaceholder: 'Search weapons…',
@@ -102,7 +124,12 @@ export const en = {
 		nerf: 'Nerf',
 		balanceLong: (change: 'buff' | 'nerf', patch: string) =>
 			`${change === 'buff' ? 'Buffed' : 'Nerfed'} in the ${patch} patch`,
-		editNote: 'Edit your note'
+		editNote: 'Edit your note',
+		/** The Special camos (the 3 challenges before Gold). */
+		special: (camo: string, weapon: string) => `${camo} (before Gold): ${weapon}`,
+		preGoldPips: (n: number, total: number) => `${n} of ${total} challenges before Gold done`,
+		preGoldShort: 'Before Gold',
+		goldReady: 'Gold ready!'
 	},
 
 	/** The weapon card that opens when you tap a weapon. */
@@ -120,7 +147,9 @@ export const en = {
 		preGoldDone: 'Done',
 		preGoldDoneLong: 'Done: this weapon has Gold, so these are finished',
 		preGoldHint:
-			'Each one opens at a set weapon level. Gold opens when all three are done and the weapon has its 8 level-up camos.',
+			'Tick them off as you go. Each one opens at a set weapon level. Gold opens when all three are done and the weapon has its 8 level-up camos.',
+		preGoldCount: (n: number, total: number) => `${n}/${total} done`,
+		preGoldLocked: 'Done: this weapon has Gold. Untick Gold to change these.',
 		preGoldUnknown: 'Not out yet. Its challenges are added here when the weapon is released.',
 		/** All 3 ladder camos with their challenges, always shown. */
 		camos: 'Camo challenges',

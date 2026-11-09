@@ -2,7 +2,8 @@
 	The news buddy himself: a leafy weed creature (our own drawing, in the spirit of the
 	"Blunt Fingers" skin): a bush of serrated cannabis leaves in several greens around a mossy,
 	textured face with deep eye sockets, glowing yellow eyes and a grin full of sharp teeth,
-	a gnarled vine arm and fingertips that glow like lit blunts. Decorative, aria-hidden.
+	a gnarled vine arm and fingertips that glow like lit blunts. Decorative, aria-hidden: in the
+	header, NewsBuddy wraps him in a button and passes `reaction` when he's poked.
 -->
 <script lang="ts" module>
 	/**
@@ -12,7 +13,40 @@
 	 */
 	export type BuddyMood = 'normal' | 'cheer' | 'sleep' | 'sulk';
 
+	/**
+	 * What he does when you poke him (NewsBuddy picks one, never the same twice in a row; about 2 s):
+	 * coughs out smoke puffs, blows smoke rings, or laughs with "HA"s popping up. Drawn over any mood.
+	 */
+	export type BuddyReaction = 'cough' | 'ring' | 'laugh';
+	export const REACTIONS: BuddyReaction[] = ['cough', 'ring', 'laugh'];
+
 	type Pt = [number, number];
+
+	/** Cough puffs from the mouth: [dx, dy, final scale, delay s] (in step with the three coughs). */
+	const PUFFS: [number, number, number, number][] = [
+		[-36, -14, 3.2, 0.09],
+		[-38, 8, 3, 0.59],
+		[-10, -36, 3.2, 0.63],
+		[-30, -30, 3.6, 1.09]
+	];
+	/** Smoke rings: [dx, dy, final scale, delay s] (in step with the two blows). */
+	const RINGS: [number, number, number, number][] = [
+		[-8, -48, 3.3, 0.36],
+		[7, -44, 2.9, 0.86]
+	];
+	/** "HA"s popping up while he laughs: [x, y, font size, tilt deg, delay s]. */
+	const HAS: [number, number, number, number, number][] = [
+		[0, 32, 14, -16, 0.05],
+		[8, 8, 16, -8, 0.38],
+		[60, 4, 14, 12, 0.66],
+		[33, -4, 13, 6, 0.92],
+		[-6, 18, 12, -20, 1.18]
+	];
+	/** Upper teeth along the wide-open laughing mouth. */
+	const LAUGH_TEETH = Array.from({ length: 8 }, (_, i) => {
+		const x = 38.2 + i * 2;
+		return `M${x} 46.4 L${x + 1} 49 L${x + 2} 46.4 Z`;
+	});
 
 	/** A serrated leaflet pointing up from (0,0): lens-shaped with small teeth along both edges. */
 	function serrated(l: number, w: number): string {
@@ -115,9 +149,22 @@
 </script>
 
 <script lang="ts">
-	let { class: klass = '', mood = 'normal' }: { class?: string; mood?: BuddyMood } = $props();
+	let {
+		class: klass = '',
+		mood = 'normal',
+		reaction = null,
+		run = 0
+	}: {
+		class?: string;
+		mood?: BuddyMood;
+		/** Plays while set (NewsBuddy clears it after ~2 s). */
+		reaction?: BuddyReaction | null;
+		/** Bumped on every poke, so the smoke and "HA"s start over. */
+		run?: number;
+	} = $props();
 	const uid = $props.id();
-	const awake = $derived(mood !== 'sleep');
+	/** A poke wakes him up for the reaction. */
+	const awake = $derived(mood !== 'sleep' || reaction !== null);
 	const eye = $derived(mood === 'cheer' ? { rx: 2.9, ry: 1.7 } : { rx: 2.3, ry: 1.15 });
 </script>
 
@@ -160,8 +207,25 @@
 			<stop offset="0.4" stop-color="#ffd23a" stop-opacity="0.45" />
 			<stop offset="1" stop-color="#ffd23a" stop-opacity="0" />
 		</radialGradient>
+		<radialGradient id="{uid}-smoke">
+			<stop offset="0" stop-color="#f4f6f1" />
+			<stop offset="0.55" stop-color="#d3d8cf" stop-opacity="0.9" />
+			<stop offset="0.8" stop-color="#9ba196" stop-opacity="0.55" />
+			<stop offset="1" stop-color="#8a9086" stop-opacity="0" />
+		</radialGradient>
+		<radialGradient id="{uid}-cheek" cx="0.42" cy="0.38">
+			<stop offset="0" stop-color="#6fb24f" />
+			<stop offset="1" stop-color="#2d6322" />
+		</radialGradient>
 	</defs>
 
+	<!-- everything that shakes, bounces or leans when he's poked -->
+	<g
+		class="buddy-body"
+		class:react-cough={reaction === 'cough'}
+		class:react-ring={reaction === 'ring'}
+		class:react-laugh={reaction === 'laugh'}
+	>
 	<!-- body -->
 	<path
 		d="M22 100 C22 80 32 66 46 64 C60 66 70 80 70 100 Z"
@@ -188,22 +252,32 @@
 	<ellipse cx="38" cy="45" rx="3.5" ry="5" fill="#0f2a0b" opacity="0.35" />
 	<ellipse cx="54" cy="45" rx="3.5" ry="5" fill="#0f2a0b" opacity="0.35" />
 	<!-- brows (sad and tilted when he sulks) and deep eye sockets -->
-	{#if mood === 'sulk'}
+	{#if mood === 'sulk' && !reaction}
 		<path d="M35.8 31.6 Q40.6 32.4 45 30.4 M47 30.4 Q51.4 32.4 56.2 31.6" fill="none" stroke="#0b1f08" stroke-width="2" stroke-linecap="round" />
+	{:else if reaction === 'laugh'}
+		<path d="M35.8 32 Q41 27.8 45.2 31.6 M46.8 31.6 Q51 27.8 56.2 32" fill="none" stroke="#0b1f08" stroke-width="2" stroke-linecap="round" />
 	{:else}
 		<path d="M35.8 33.2 Q41 29.6 45.2 33.6 M46.8 33.6 Q51 29.6 56.2 33.2" fill="none" stroke="#0b1f08" stroke-width="2" stroke-linecap="round" />
 	{/if}
 	<path d="M36.5 35 Q40.5 32.6 44.6 35.8 Q41 38.6 36.8 36.6 Z" fill="#050b03" />
 	<path d="M55.5 35 Q51.5 32.6 47.4 35.8 Q51 38.6 55.2 36.6 Z" fill="#050b03" />
-	{#if awake}
+	{#if reaction === 'cough'}
+		<!-- coughing: eyes squeezed shut -->
+		<path d="M38 34.2 L43 35.9 L38 37.6 M54 34.2 L49 35.9 L54 37.6" fill="none" stroke="#ffe86a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" />
+	{:else if reaction === 'laugh'}
+		<!-- laughing: glowing eyes squinted into happy arcs -->
+		<circle class="buddy-glow" cx="40.6" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
+		<circle class="buddy-glow" cx="51.4" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
+		<path d="M37.8 37.4 Q40.6 32.6 43.6 37.4 M48.4 37.4 Q51.4 32.6 54.2 37.4" fill="none" stroke="#ffe86a" stroke-width="1.5" stroke-linecap="round" />
+	{:else if awake}
 		<circle class="buddy-glow" cx="40.6" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
 		<circle class="buddy-glow" cx="51.4" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
 		<ellipse cx="40.6" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(14 40.6 35.8)" fill="#ffe86a" />
 		<ellipse cx="51.4" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(-14 51.4 35.8)" fill="#ffe86a" />
 		<ellipse cx="40.9" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
 		<ellipse cx="51.1" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
-		{#if mood === 'sulk'}
-			<!-- heavy lids over the top half of the eyes -->
+		{#if mood === 'sulk' || reaction === 'ring'}
+			<!-- heavy (sulking) or relaxed (blowing rings) lids over the top half of the eyes -->
 			<path d="M37.4 34.6 Q40.6 33.4 43.9 35.6 L43.9 36 Q40.6 35.2 37.4 35.9 Z" fill="#173d11" stroke="#0b1f08" stroke-width="0.4" />
 			<path d="M54.6 34.6 Q51.4 33.4 48.1 35.6 L48.1 36 Q51.4 35.2 54.6 35.9 Z" fill="#173d11" stroke="#0b1f08" stroke-width="0.4" />
 		{/if}
@@ -213,7 +287,29 @@
 	{/if}
 	<!-- nostrils -->
 	<path d="M44.6 41.8 L45.6 44.2 M47.4 41.8 L46.4 44.2" stroke="#071205" stroke-width="1" stroke-linecap="round" />
-	{#if mood === 'sulk'}
+	{#if reaction === 'cough' || reaction === 'ring'}
+		<!-- puffed cheeks (they swell before each cough / blow) -->
+		{#each [38.4, 53.6] as cx (cx)}
+			<ellipse class="buddy-cheek" {cx} cy="48.8" rx="3.9" ry="3.4" fill="url(#{uid}-cheek)" stroke="#0f2a0b" stroke-width="0.4" />
+		{/each}
+	{/if}
+	{#if reaction === 'cough'}
+		<!-- coughing: a small round open mouth -->
+		<ellipse class="buddy-cough-mouth" cx="46" cy="51.2" rx="2.7" ry="2.3" fill="#060d04" stroke="#0b1f08" stroke-width="0.5" />
+	{:else if reaction === 'ring'}
+		<!-- blowing rings: pursed lips -->
+		<g class="buddy-purse">
+			<ellipse cx="46" cy="51.4" rx="2.8" ry="2.4" fill="#3a7428" stroke="#0b1f08" stroke-width="0.6" />
+			<ellipse cx="46" cy="51.4" rx="1.2" ry="1" fill="#060d04" />
+		</g>
+	{:else if reaction === 'laugh'}
+		<!-- laughing: mouth wide open, teeth on top, tongue at the bottom -->
+		<g class="buddy-jaw">
+			<path d="M36.8 46.6 Q46 45.4 55.2 46.6 Q54.6 60.5 46 61 Q37.4 60.5 36.8 46.6 Z" fill="#060d04" stroke="#0b1f08" stroke-width="0.5" />
+			<path d="M40.5 58.8 Q46 53.6 51.5 58.8 Q46 61 40.5 58.8 Z" fill="#a8344a" />
+			{#each LAUGH_TEETH as d, i (i)}<path {d} fill="#ebe4b2" stroke="#6b6436" stroke-width="0.2" />{/each}
+		</g>
+	{:else if mood === 'sulk'}
 		<!-- a sulky frown with a few teeth showing -->
 		<path d="M38.5 53.4 Q46 45.6 53.5 53.4 Q46 50.4 38.5 53.4 Z" fill="#060d04" />
 		<path d="M42.5 50.6 L43.4 52.2 L44.4 50.1 Z M47.6 50.1 L48.6 52.2 L49.5 50.6 Z" fill="#ebe4b2" />
@@ -244,6 +340,7 @@
 			{/each}
 		</g>
 	</g>
+	</g>
 
 	{#if mood === 'cheer'}
 		<!-- sparkles popping around him -->
@@ -256,7 +353,7 @@
 				fill="#ffe86a"
 			/>
 		{/each}
-	{:else if mood === 'sleep'}
+	{:else if mood === 'sleep' && !reaction}
 		<!-- Zzz drifting up -->
 		{#each [[22, 24, 10, 0], [12, 13, 13, 0.9], [0, 0, 16, 1.8]] as [x, y, size, delay], i (i)}
 			<text
@@ -282,6 +379,51 @@
 			{/each}
 		</g>
 	{/if}
+
+	<!-- what a poke sets off: drawn on top, started over on every poke -->
+	{#key run}
+		{#if reaction === 'cough'}
+			<g transform="translate(46 51)">
+				{#each PUFFS as [dx, dy, s, delay], i (i)}
+					<circle
+						class="buddy-puff"
+						r="4.6"
+						fill="url(#{uid}-smoke)"
+						style:--dx="{dx}px"
+						style:--dy="{dy}px"
+						style:--s={s}
+						style:animation-delay="{delay}s"
+					/>
+				{/each}
+			</g>
+		{:else if reaction === 'ring'}
+			<g transform="translate(46 51)">
+				{#each RINGS as [dx, dy, s, delay], i (i)}
+					<g class="buddy-ring" style:--dx="{dx}px" style:--dy="{dy}px" style:--s={s} style:animation-delay="{delay}s">
+						<ellipse rx="3.4" ry="1.7" fill="none" stroke="#dfe4da" stroke-width="2.6" opacity="0.4" />
+						<ellipse rx="3.4" ry="1.7" fill="none" stroke="#ffffff" stroke-width="1.1" />
+					</g>
+				{/each}
+			</g>
+		{:else if reaction === 'laugh'}
+			{#each HAS as [x, y, size, r, delay], i (i)}
+				<text
+					class="buddy-ha"
+					{x}
+					{y}
+					font-size={size}
+					style:--r="{r}deg"
+					style:animation-delay="{delay}s"
+					fill="#ffe86a"
+					stroke="#0f2a0b"
+					stroke-width="1"
+					paint-order="stroke"
+					font-weight="900"
+					font-family="Bahnschrift, 'Segoe UI', sans-serif">HA</text
+				>
+			{/each}
+		{/if}
+	{/key}
 </svg>
 
 <style>
@@ -308,6 +450,265 @@
 	}
 	.buddy-drop {
 		animation: buddy-rain 0.9s linear infinite;
+	}
+	/* ---- poked (NewsBuddy): every part is a CSS animation, so reduced motion freezes it. The
+	   resting styles are a still "mid-reaction" pose, which is what reduced motion shows. ---- */
+	.buddy-body {
+		transform-box: view-box;
+		transform-origin: 46px 98px;
+	}
+	.react-cough {
+		animation: buddy-cough-body 1.8s ease-in-out both;
+	}
+	.react-laugh {
+		animation: buddy-laugh-body 1.8s ease-in-out both;
+	}
+	.react-ring {
+		animation: buddy-ring-body 2s ease-in-out both;
+	}
+	.buddy-cheek,
+	.buddy-cough-mouth,
+	.buddy-purse,
+	.buddy-puff,
+	.buddy-ring,
+	.buddy-ha {
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+	.react-cough .buddy-cheek {
+		animation: buddy-cheek-cough 1.8s ease-in-out both;
+	}
+	.react-ring .buddy-cheek {
+		animation: buddy-cheek-ring 2s ease-in-out both;
+	}
+	.buddy-cough-mouth {
+		animation: buddy-cough-mouth 1.8s ease-in-out both;
+	}
+	.buddy-purse {
+		animation: buddy-purse 2s ease-in-out both;
+	}
+	.buddy-jaw {
+		transform-box: fill-box;
+		transform-origin: 50% 0;
+		animation: buddy-jaw 1.8s ease-in-out both;
+	}
+	.buddy-puff {
+		opacity: 0.6;
+		transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5)) scale(calc(var(--s) * 0.6));
+		animation: buddy-puff 0.95s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+	}
+	.buddy-ring {
+		opacity: 0.75;
+		transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5)) scale(calc(var(--s) * 0.6));
+		animation: buddy-ring 1.15s cubic-bezier(0.2, 0.6, 0.4, 1) both;
+	}
+	.buddy-ha {
+		transform: rotate(var(--r));
+		animation: buddy-ha 0.95s ease-out both;
+	}
+	@keyframes buddy-cough-body {
+		0%,
+		18%,
+		46%,
+		74%,
+		100% {
+			transform: none;
+		}
+		5%,
+		33%,
+		61% {
+			transform: translateY(1.8px) scale(1.035, 0.95);
+		}
+		9%,
+		37%,
+		65% {
+			transform: translate(-1.4px, -0.6px) rotate(-1.6deg);
+		}
+		13%,
+		41%,
+		69% {
+			transform: translate(1.2px, 0) rotate(1.3deg);
+		}
+	}
+	@keyframes buddy-cheek-cough {
+		0% {
+			transform: scale(1.1);
+		}
+		3%,
+		29%,
+		57% {
+			transform: scale(1.3);
+		}
+		8%,
+		36%,
+		64% {
+			transform: scale(0.85);
+		}
+		16%,
+		44%,
+		72%,
+		100% {
+			transform: none;
+		}
+	}
+	@keyframes buddy-cough-mouth {
+		0%,
+		100% {
+			transform: scale(0.6);
+		}
+		5%,
+		33%,
+		61% {
+			transform: scale(1.4);
+		}
+		14%,
+		42%,
+		70% {
+			transform: scale(0.7);
+		}
+	}
+	@keyframes buddy-puff {
+		0% {
+			opacity: 0;
+			transform: scale(0.25);
+		}
+		15% {
+			opacity: 0.95;
+			transform: translate(calc(var(--dx) * 0.15), calc(var(--dy) * 0.15)) scale(calc(var(--s) * 0.45));
+		}
+		55% {
+			opacity: 0.8;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(var(--dx), var(--dy)) scale(var(--s));
+		}
+	}
+	@keyframes buddy-ring-body {
+		0%,
+		30%,
+		55%,
+		100% {
+			transform: none;
+		}
+		12%,
+		36% {
+			transform: translateY(-1px) rotate(-2deg) scale(1.02);
+		}
+		19%,
+		44% {
+			transform: translateY(0.6px) rotate(1.5deg);
+		}
+	}
+	@keyframes buddy-cheek-ring {
+		0% {
+			transform: scale(0.9);
+		}
+		12%,
+		34% {
+			transform: scale(1.3);
+		}
+		19%,
+		44% {
+			transform: scale(0.9);
+		}
+		60%,
+		100% {
+			transform: none;
+		}
+	}
+	@keyframes buddy-purse {
+		0% {
+			transform: scale(0.8);
+		}
+		18%,
+		43% {
+			transform: scale(1.35);
+		}
+		26%,
+		50% {
+			transform: scale(0.9);
+		}
+		100% {
+			transform: none;
+		}
+	}
+	@keyframes buddy-ring {
+		0% {
+			opacity: 0;
+			transform: scale(0.35);
+		}
+		10% {
+			opacity: 0.95;
+			transform: translate(calc(var(--dx) * 0.08), calc(var(--dy) * 0.08)) scale(calc(var(--s) * 0.3));
+		}
+		60% {
+			opacity: 0.85;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(var(--dx), var(--dy)) scale(var(--s));
+		}
+	}
+	@keyframes buddy-laugh-body {
+		0%,
+		76%,
+		100% {
+			transform: none;
+		}
+		9% {
+			transform: translateY(-4.5px) rotate(-3deg);
+		}
+		18%,
+		36% {
+			transform: translateY(0) scale(1.04, 0.95);
+		}
+		27% {
+			transform: translateY(-4.5px) rotate(3deg);
+		}
+		46% {
+			transform: translateY(-3.5px) rotate(-2deg);
+		}
+		56% {
+			transform: translateY(0) scale(1.03, 0.96);
+		}
+		66% {
+			transform: translateY(-2.5px) rotate(2deg);
+		}
+	}
+	@keyframes buddy-jaw {
+		0%,
+		18%,
+		36%,
+		56%,
+		76%,
+		100% {
+			transform: none;
+		}
+		9%,
+		27%,
+		46%,
+		66% {
+			transform: scaleY(0.68);
+		}
+	}
+	@keyframes buddy-ha {
+		0% {
+			opacity: 0;
+			transform: rotate(var(--r)) scale(0.2);
+		}
+		25% {
+			opacity: 1;
+			transform: rotate(var(--r)) scale(1.25);
+		}
+		40% {
+			opacity: 1;
+			transform: rotate(var(--r)) scale(1);
+		}
+		100% {
+			opacity: 0;
+			transform: translateY(-9px) rotate(var(--r)) scale(1);
+		}
 	}
 	@keyframes buddy-wave {
 		from {

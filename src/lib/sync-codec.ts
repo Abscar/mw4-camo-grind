@@ -8,13 +8,24 @@
  */
 
 import { MASTERY } from './data/camos.ts';
-import { APP_ID, migrate, normaliseFocus, type Notes, type ProgressData } from './progress-codec.ts';
+import {
+	APP_ID,
+	mergeStamps,
+	migrate,
+	normaliseFocus,
+	type Notes,
+	type ProgressData,
+	type Stamps
+} from './progress-codec.ts';
 
 export interface SyncDoc {
+	/** Includes the Special camos (before Gold) since 2026-11-08. */
 	progress: ProgressData;
 	notes: Notes;
 	focus: string[];
 	lastTickAt: string | null;
+	/** When each camo was ticked (grind stats). Optional so older documents still read. */
+	stamps?: Stamps;
 }
 
 /** Format of the document the sync service keeps (bump + extend fromWire if it changes). */
@@ -27,11 +38,13 @@ export interface SyncWire {
 	notes: Notes;
 	focus: string[];
 	lastTickAt?: string;
+	stamps?: Stamps;
 }
 
 export function toWire(doc: SyncDoc): SyncWire {
 	const wire: SyncWire = { app: APP_ID, sync: SYNC_FORMAT, progress: doc.progress, notes: doc.notes, focus: doc.focus };
 	if (doc.lastTickAt) wire.lastTickAt = doc.lastTickAt;
+	if (doc.stamps && Object.keys(doc.stamps).length > 0) wire.stamps = doc.stamps;
 	return wire;
 }
 
@@ -40,8 +53,16 @@ export function fromWire(raw: unknown): SyncDoc | null {
 	const m = migrate(raw);
 	if (!m) return null;
 	const focus = typeof raw === 'object' && raw !== null ? normaliseFocus((raw as Record<string, unknown>).focus) : [];
-	return { progress: m.progress, notes: m.notes ?? {}, focus, lastTickAt: m.lastTickAt ?? null };
+	return {
+		progress: m.progress,
+		notes: m.notes ?? {},
+		focus,
+		lastTickAt: m.lastTickAt ?? null,
+		stamps: mergeStamps(m.progress.weapons, m.stamps)
+	};
 }
+
+const specialsOf = (d: SyncDoc) => d.progress.specials ?? {};
 
 const keys = (...objects: Record<string, unknown>[]) => [...new Set(objects.flatMap((o) => Object.keys(o)))];
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -56,9 +77,11 @@ export function sameDoc(a: SyncDoc, b: SyncDoc): boolean {
 	return (
 		keys(a.progress.weapons, b.progress.weapons).every((id) => (a.progress.weapons[id] ?? 0) === (b.progress.weapons[id] ?? 0)) &&
 		MASTERY.every((m) => (a.progress.mastery[m.id] ?? 0) === (b.progress.mastery[m.id] ?? 0)) &&
+		keys(specialsOf(a), specialsOf(b)).every((id) => (specialsOf(a)[id] ?? 0) === (specialsOf(b)[id] ?? 0)) &&
 		keys(a.notes, b.notes).every((id) => (a.notes[id] ?? '') === (b.notes[id] ?? '')) &&
 		sameList(a.focus, b.focus) &&
-		(a.lastTickAt ?? '') === (b.lastTickAt ?? '')
+		(a.lastTickAt ?? '') === (b.lastTickAt ?? '') &&
+		JSON.stringify(mergeStamps(a.progress.weapons, a.stamps)) === JSON.stringify(mergeStamps(b.progress.weapons, b.stamps))
 	);
 }
 
@@ -80,13 +103,27 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 	for (const m of MASTERY) {
 		mastery[m.id] = pickCount(base.progress.mastery[m.id] ?? 0, local.progress.mastery[m.id] ?? 0, remote.progress.mastery[m.id] ?? 0);
 	}
+	// Special camos: one-sided changes win; both changed → every tick either side has
+	const specials: Record<string, number> = {};
+	const [bs, ls, rs] = [specialsOf(base), specialsOf(local), specialsOf(remote)];
+	for (const id of keys(bs, ls, rs)) {
+		const [b, l, r] = [bs[id] ?? 0, ls[id] ?? 0, rs[id] ?? 0];
+		const mask = l === b ? r : r === b ? l : l | r;
+		if (mask) specials[id] = mask;
+	}
 	const notes: Notes = {};
 	for (const id of keys(base.notes, local.notes, remote.notes)) {
 		const note = pick(base.notes[id] ?? '', local.notes[id] ?? '', remote.notes[id] ?? '');
 		if (note) notes[id] = note;
 	}
 	const focus = sameList(local.focus, base.focus) ? [...remote.focus] : [...local.focus];
-	return { progress: { weapons, mastery }, notes, focus, lastTickAt: later(local.lastTickAt, remote.lastTickAt) };
+	return {
+		progress: { weapons, mastery, specials },
+		notes,
+		focus,
+		lastTickAt: later(local.lastTickAt, remote.lastTickAt),
+		stamps: mergeStamps(weapons, local.stamps, remote.stamps)
+	};
 }
 
 /**
@@ -101,11 +138,17 @@ export function combine(local: SyncDoc, remote: SyncDoc): SyncDoc {
 	}
 	const mastery: Record<string, number> = {};
 	for (const m of MASTERY) mastery[m.id] = Math.max(local.progress.mastery[m.id] ?? 0, remote.progress.mastery[m.id] ?? 0);
+	const specials: Record<string, number> = {};
+	for (const id of keys(specialsOf(local), specialsOf(remote))) {
+		const mask = (specialsOf(local)[id] ?? 0) | (specialsOf(remote)[id] ?? 0);
+		if (mask) specials[id] = mask;
+	}
 	return {
-		progress: { weapons, mastery },
+		progress: { weapons, mastery, specials },
 		notes: { ...local.notes, ...remote.notes },
 		focus: remote.focus.length > 0 ? [...remote.focus] : [...local.focus],
-		lastTickAt: later(local.lastTickAt, remote.lastTickAt)
+		lastTickAt: later(local.lastTickAt, remote.lastTickAt),
+		stamps: mergeStamps(weapons, local.stamps, remote.stamps)
 	};
 }
 

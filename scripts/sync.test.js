@@ -66,6 +66,27 @@ test('sync: joining combines without losing a tick', () => {
 	assert.deepEqual(c.focus, ['oden']);
 });
 
+test('sync: Special camos and tick times travel and merge without losing a tick', () => {
+	const withSpecials = (specials, extra = {}) => {
+		const d = doc({ 'csg-35': 0, m4: 2 }, extra);
+		d.progress.specials = specials;
+		return d;
+	};
+	const d = withSpecials({ 'csg-35': 1 }, { stamps: { m4: [0, 1762600000000] } });
+	const back = fromWire(JSON.parse(JSON.stringify(toWire(d))));
+	assert.ok(sameDoc(back, d));
+	assert.deepEqual(back.progress.specials, { 'csg-35': 1 });
+	assert.deepEqual(back.stamps, { m4: [0, 1762600000000] });
+	assert.ok(!sameDoc(d, withSpecials({ 'csg-35': 3 })));
+
+	const base = withSpecials({ 'csg-35': 1, 'cronen-osprey': 2 });
+	const merged = merge3(base, withSpecials({ 'csg-35': 3, 'cronen-osprey': 2 }), withSpecials({ 'csg-35': 5 }));
+	assert.deepEqual(merged.progress.specials, { 'csg-35': 7 });
+	assert.deepEqual(combine(withSpecials({ m4: 1 }), withSpecials({ m4: 4, oden: 2 })).progress.specials, { m4: 5, oden: 2 });
+	const stamped = merge3(doc({ m4: 1 }), doc({ m4: 2 }, { stamps: { m4: [0, 50] } }), doc({ m4: 1 }));
+	assert.deepEqual(stamped.stamps, { m4: [0, 50] });
+});
+
 test('sync: codes are long and random, links and pasted text are read', () => {
 	const a = makeSyncCode();
 	assert.equal(a.length, 22);

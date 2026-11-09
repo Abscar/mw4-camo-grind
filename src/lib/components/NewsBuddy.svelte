@@ -4,13 +4,14 @@
 	box). Headlines come from news.svelte.ts (`patches` in news.json, refreshed every hour on
 	GitHub, kept for 60 days). "Today" is worked out in the browser after load, so the prerendered
 	page and the first render match. Placed in the header's right column, Abscar theme only.
+	The buddy himself is a button: a poke makes him cough, blow smoke rings or laugh (~2 s).
 -->
 <script lang="ts">
 	import { feed } from '#lib/feed.svelte.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { news, useNews } from '#lib/news.svelte.ts';
 	import { progress } from '#lib/progress.svelte.ts';
-	import WeedCreature, { type BuddyMood } from './WeedCreature.svelte';
+	import WeedCreature, { REACTIONS, type BuddyMood, type BuddyReaction } from './WeedCreature.svelte';
 
 	const SHOWN = 3;
 	/** He sulks when nothing was ticked for this long. */
@@ -53,10 +54,29 @@
 		return 'normal';
 	});
 	const greeting = $derived(mood === 'normal' ? t.news.hello : t.news.mood[mood]);
+
+	/** Just for fun: poke him and he coughs, blows smoke rings or laughs (never the same twice in a row). */
+	const REACT_MS = 2100;
+	let reaction = $state<BuddyReaction | null>(null);
+	let run = $state(0);
+	let last: BuddyReaction | null = null;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	function poke() {
+		const options = REACTIONS.filter((r) => r !== last);
+		last = options[Math.floor(Math.random() * options.length)];
+		reaction = last;
+		run++;
+		clearTimeout(timer);
+		timer = setTimeout(() => (reaction = null), REACT_MS);
+	}
+	$effect(() => () => clearTimeout(timer));
 </script>
 
 <div class="news-buddy flex items-start gap-1.5">
-	<WeedCreature class="buddy size-24 flex-none overflow-visible sm:size-28" {mood} />
+	<button type="button" class="buddy-btn flex-none" aria-label={t.buddy.poke} title={t.buddy.poke} onclick={poke}>
+		<WeedCreature class="buddy block size-24 overflow-visible sm:size-28" {mood} {reaction} {run} />
+	</button>
 
 	<div class="news-bubble relative max-w-[400px] min-w-0 rounded-xl px-3.5 pt-2 pb-2">
 		<p class="font-head text-[13px] leading-snug font-bold tracking-wide">
@@ -86,3 +106,15 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.buddy-btn {
+		display: block;
+		padding: 0;
+		border: 0;
+		background: none;
+		border-radius: 16px;
+		-webkit-tap-highlight-color: transparent;
+		touch-action: manipulation;
+	}
+</style>

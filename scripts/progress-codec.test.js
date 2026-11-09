@@ -12,8 +12,11 @@ import {
 	defaultProgress,
 	encodeLink,
 	linkCodeFromHash,
+	mergeStamps,
 	migrate,
 	normalisePrefs,
+	normaliseSpecials,
+	normaliseStamps,
 	toExport,
 	toStored
 } from '../src/lib/progress-codec.ts';
@@ -106,9 +109,42 @@ test('link: round trip, and it stays short', () => {
 	p.mastery.polyatomicReforged = 17;
 	const code = encodeLink(p);
 	assert.ok(code.length < 40, code);
-	assert.deepEqual(decodeLink(code), p);
+	assert.deepEqual(decodeLink(code), { ...p, specials: {} });
 	assert.equal(linkCodeFromHash(`#p=${code}`), code);
 	assert.equal(linkCodeFromHash('#something-else'), null);
+});
+
+test('link: Special camos (before Gold) ride along; older links without them leave them alone', () => {
+	const p = defaultProgress();
+	p.weapons['csg-35'] = 0;
+	p.specials = { 'csg-35': 0b101, 'cronen-osprey': 0b010, 'han-86': 0b111 };
+	const code = encodeLink(p);
+	assert.ok(code.length < 60, code);
+	assert.deepEqual(decodeLink(code)?.specials, p.specials);
+	const old = code.split('.').slice(0, 2 + MASTERY.length).join('.');
+	assert.equal(decodeLink(old)?.specials, undefined);
+	assert.equal(decodeLink(`${old}.S!`), null);
+});
+
+test('specials and tick times: kept in saves, cleaned up, older saves still load', () => {
+	const p = defaultProgress();
+	p.specials = { 'csg-35': 3 };
+	const stored = toStored(p, normalisePrefs({}), { notes: {}, lastTickAt: null, stamps: { m4: [0, 1762600000000] } });
+	const m = migrate(JSON.parse(JSON.stringify(stored)));
+	assert.deepEqual(m?.progress.specials, { 'csg-35': 3 });
+	assert.deepEqual(m?.stamps, { m4: [0, 1762600000000] });
+	assert.deepEqual(normaliseSpecials({ a: 9, b: 0, c: 'x', d: 7 }), { a: 1, d: 7 });
+	assert.deepEqual(normaliseStamps({ a: [1, -5, 'x', 4], b: [0, 0], c: 'nope' }), { a: [1, 0, 0] });
+	const old = migrate({ v: 2, progress: { weapons: { m4: 2 }, mastery: {} } });
+	assert.equal(old?.progress.specials, undefined);
+	assert.equal(old?.stamps, undefined);
+	assert.equal(toStored(p, normalisePrefs({})).stamps, undefined);
+});
+
+test('tick times: only for camos the weapon still has; the earliest known time wins', () => {
+	const merged = mergeStamps({ m4: 2, oden: 0, axion: 3 }, { m4: [5, 9, 12], oden: [3] }, { m4: [0, 7], axion: [0, 0, 4] });
+	assert.deepEqual(merged, { m4: [5, 7], axion: [0, 0, 4] });
+	assert.deepEqual(mergeStamps({ m4: 1 }, undefined, { m4: [0] }), {});
 });
 
 test('data: every buff/nerf entry belongs to a known weapon', () => {

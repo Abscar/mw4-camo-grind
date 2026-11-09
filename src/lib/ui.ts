@@ -52,6 +52,12 @@ export function statusLabel(s: MasteryStatus): string {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** A moment (ms) → "17 Nov", in the viewer's time zone. */
+export function dayMonth(ms: number): string {
+	const d = new Date(ms);
+	return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
 /** "2026-11-06" → "6 Nov 2026" (no Date object, so no time-zone surprises). */
 export function shortDate(iso: string): string {
 	const [y, m, d] = iso.split('-').map(Number);
