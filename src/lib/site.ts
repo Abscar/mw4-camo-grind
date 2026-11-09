@@ -11,4 +11,4 @@ export const SITE_URL = 'https://abscar.github.io/mw4-camo-grind/';
  * Empty = sync isn't online yet, and the app hides everything about it.
  * For local testing, VITE_SYNC_URL overrides it (see scripts/sync-dev-server.js).
  */
-export const SYNC_URL = '';
+export const SYNC_URL = 'https://mw4-camo-sync.abscar.workers.dev';
