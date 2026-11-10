@@ -1,9 +1,11 @@
 <!--
 	Banner right above the cyborg banner (Abscar only): the user's own poster of their operator (the green,
-	moss-covered cyborg sniper "Abscar") next to their mate's (the red "Philestar"), with the Iridescent rank
-	emblem and the MW4 logo (assets/squad-banner.webp, from their Pictures folder, 2026-11-10; 1672×941,
-	webp q 0.8). Unlike the cyborg banner it is shown whole (the box keeps the picture's shape): it has
-	names and a logo right up to its edges, and cropping would cut them off.
+	moss-covered cyborg sniper "Abscar") next to their mate's (the red "Phillestar"), with the Iridescent
+	rank emblem and the MW4 logo (assets/squad-banner.webp, from their Pictures folder, 2026-11-10;
+	1672×941, webp q 0.8). The original spelled the mate "Philestar"; two l's is right (the user), so the
+	L was repeated in the picture (everything right of the gap L|E moved 35 px right inside a feathered
+	band around the name). Unlike the cyborg banner it is shown whole (the box keeps the picture's
+	shape): it has names and a logo right up to its edges, and cropping would cut them off.
 	Our only extra: Abscar's two red eyes glow a little, drawn in picture coordinates so they stay on the
 	eyes at any width (prefers-reduced-motion freezes the pulse). Decoration only, so the alt text is empty.
 -->
