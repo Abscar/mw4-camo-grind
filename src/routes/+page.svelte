@@ -23,6 +23,7 @@
 	import MasterySection from '#lib/components/MasterySection.svelte';
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
 	import SquadBanner from '#lib/components/SquadBanner.svelte';
+	import NukeBanner from '#lib/components/NukeBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -200,7 +201,8 @@
 		<div class="mt-7"><MasterySection /></div>
 
 		<div class="abscar-only mt-7">
-			<div class="overflow-hidden rounded-card shadow-card"><SquadBanner /></div>
+			<div class="overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
+			<div class="mt-4 overflow-hidden rounded-card shadow-card"><SquadBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
 		</div>
 
