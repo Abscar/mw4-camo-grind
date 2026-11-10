@@ -70,22 +70,28 @@
 		<div class="hidden justify-self-end md:block"><StatusPill status={divergenceStatus} /></div>
 	</div>
 
-	<!-- one track per mode (Multiplayer, then Warzone and DMZ under it); Divergence opens all three -->
-	{#each MASTERY_TRACKS as track (track.mode)}
-		<div
-			class="mastery-mode flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-t border-line px-4 pt-3 pb-2.5 sm:px-5"
-			data-mode={track.mode}
-		>
-			<h3 class="font-head text-[13px] font-bold tracking-widest uppercase">{t.mastery.modes[track.mode].name}</h3>
-			<p class="text-xs text-muted">{t.mastery.modes[track.mode].note}</p>
-		</div>
-		{#each track.camos as camo, i (camo.id)}
-			<MasteryRow
-				{camo}
-				number={i + 1}
-				status={progress.masteryByMode[track.mode][i]}
-				previousName={i === 0 ? DIVERGENCE.name : track.camos[i - 1].name}
-			/>
+	<!--
+		one framed box per mode, in this order: Multiplayer, Warzone, DMZ (the user's ask 2026-11-10:
+		"divide them so they're split into their categories"); Divergence above opens all three
+	-->
+	<div class="mastery-groups flex flex-col gap-3.5 border-t border-line p-2.5 sm:gap-4 sm:p-4">
+		{#each MASTERY_TRACKS as track (track.mode)}
+			<section class="mastery-group" data-mode={track.mode} aria-labelledby="mastery-mode-{track.mode}">
+				<div class="mastery-mode flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 pt-3 pb-2.5 sm:px-5">
+					<h3 id="mastery-mode-{track.mode}" class="font-head text-[13px] font-bold tracking-widest uppercase">
+						{t.mastery.modes[track.mode].name}
+					</h3>
+					<p class="text-xs text-muted">{t.mastery.modes[track.mode].note}</p>
+				</div>
+				{#each track.camos as camo, i (camo.id)}
+					<MasteryRow
+						{camo}
+						number={i + 1}
+						status={progress.masteryByMode[track.mode][i]}
+						previousName={i === 0 ? DIVERGENCE.name : track.camos[i - 1].name}
+					/>
+				{/each}
+			</section>
 		{/each}
-	{/each}
+	</div>
 </section>
