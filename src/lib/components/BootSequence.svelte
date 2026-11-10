@@ -2,6 +2,8 @@
 	Abscar theme: for about two seconds when the page opens, a big red "WELCOME ABSCAR & PHILLESTAR"
 	powers on like an old screen, red terminal text boots up under it ("ABSCAR OS … OK"), then it all
 	fades away. Pure CSS, in the prerendered page, so it starts at once.
+	Since 2026-11-10 (the user's brief): only on the first visit of the day and never in compact mode,
+	and any tap or key skips it (app.html's inline script sets data-boot on <html>).
 	Clicks go straight through it, and with reduced motion it isn't shown at all.
 -->
 <script lang="ts">
@@ -30,5 +32,15 @@
 			{/each}
 			<p class="boot-line boot-go">{t.boot.go}<span class="boot-caret"></span></p>
 		</div>
+		<p class="boot-skip font-hud">{t.bootSkip}</p>
 	</div>
 </div>
+
+<style>
+	.boot-skip {
+		font-size: 11px;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: rgb(255 176 160 / 0.7);
+	}
+</style>

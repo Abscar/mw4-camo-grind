@@ -229,6 +229,9 @@ class Sync {
 
 	#schedulePush(): void {
 		if (!this.on) return;
+		// not "Synced" while a change is waiting to be sent: the status only says Synced once the
+		// sync service has confirmed it (#ok)
+		this.status = 'syncing';
 		clearTimeout(this.#pushTimer);
 		this.#pushTimer = setTimeout(() => void this.#run('push'), PUSH_DELAY);
 	}

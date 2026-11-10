@@ -91,6 +91,83 @@
 	}
 }
 
+/* "MP meta": only on guns in the Multiplayer overall top list (WeaponCard) */
+.meta-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 5px;
+	border: 1px solid var(--t-accent);
+	border-radius: 999px;
+	background: var(--t-tick);
+	color: var(--t-fg);
+	font-size: 9.5px;
+	line-height: 15px;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	text-shadow: none;
+	white-space: nowrap;
+}
+[data-theme='blackout'] .meta-badge {
+	border-color: transparent;
+	background: #ffcc33;
+	color: #175a10;
+	box-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+}
+
+/* the small "Platinum 30/50" line under a weapon's name, and the › that says "opens details" */
+.progress-line {
+	margin-top: 1px;
+	color: var(--t-fg);
+	font-weight: 600;
+}
+.open-chevron {
+	color: var(--t-muted);
+	transition: transform 0.15s;
+}
+.weapon-open:hover .open-chevron {
+	transform: translateX(2px);
+	color: var(--t-fg);
+}
+[data-theme='blackout'] .open-chevron {
+	color: #fff;
+	filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.9));
+}
+
+/* "Continue grinding": one card per pinned weapon (gunmetal box in Abscar, dark glass cards on it) */
+.grind-card {
+	border: 1px solid var(--t-line);
+	background: var(--t-panel-2);
+}
+[data-theme='blackout'] .grind-card {
+	border: 1.5px solid rgb(255 255 255 / 0.9);
+	border-radius: 10px;
+	background: rgb(10 14 18 / 0.62);
+	box-shadow:
+		0 0 0 1px rgb(0 0 0 / 0.45),
+		inset 0 0 0 1px rgb(0 0 0 / 0.25);
+	text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+}
+[data-theme='blackout'] .grind-card .field,
+[data-theme='blackout'] .grind-card .step-btn,
+[data-theme='blackout'] .grind-card .btn {
+	text-shadow: none;
+}
+[data-theme='blackout'] .focus-card > ul,
+[data-theme='blackout'] .focus-card > div {
+	background: rgb(6 9 12 / 0.2);
+}
+
+/* Abscar: the weapon rows get a little dark glass so names and boxes stand out on the gunmetal */
+[data-theme='blackout'] .weapon-class .weapon-row {
+	background-color: rgb(6 9 12 / 0.22);
+}
+
+/* the save / sync pill and the counters keep a plain shadow-free look over the Abscar header */
+[data-theme='blackout'] .site-header .save-status {
+	background: rgb(10 6 20 / 0.7);
+}
+
 /* the note under a weapon */
 .weapon-note {
 	color: var(--t-muted);

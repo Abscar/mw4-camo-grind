@@ -3,11 +3,13 @@
  * the sync service stores, merging two devices' changes, and sync codes/links. No browser APIs
  * and no runes, so Node tests it directly (scripts/sync.test.js).
  *
- * Shared: ticks, Mastery counts, notes, the focus list and when you last ticked.
- * Per device: theme, class filter, "hide maxed".
+ * Shared: ticks, Mastery counts, before-Gold ticks, counters (2026-11-10), notes, the focus list and
+ * when you last ticked.
+ * Per device: theme, class filter, status filter, "hide maxed", compact mode.
  */
 
 import { ALL_MASTERY } from './data/camos.ts';
+import { pruneCounts } from './steps.ts';
 import {
 	APP_ID,
 	mergeStamps,
@@ -63,6 +65,7 @@ export function fromWire(raw: unknown): SyncDoc | null {
 }
 
 const specialsOf = (d: SyncDoc) => d.progress.specials ?? {};
+const countsOf = (d: SyncDoc) => d.progress.counts ?? {};
 
 const keys = (...objects: Record<string, unknown>[]) => [...new Set(objects.flatMap((o) => Object.keys(o)))];
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -78,6 +81,7 @@ export function sameDoc(a: SyncDoc, b: SyncDoc): boolean {
 		keys(a.progress.weapons, b.progress.weapons).every((id) => (a.progress.weapons[id] ?? 0) === (b.progress.weapons[id] ?? 0)) &&
 		ALL_MASTERY.every((m) => (a.progress.mastery[m.id] ?? 0) === (b.progress.mastery[m.id] ?? 0)) &&
 		keys(specialsOf(a), specialsOf(b)).every((id) => (specialsOf(a)[id] ?? 0) === (specialsOf(b)[id] ?? 0)) &&
+		keys(countsOf(a), countsOf(b)).every((k) => (countsOf(a)[k] ?? 0) === (countsOf(b)[k] ?? 0)) &&
 		keys(a.notes, b.notes).every((id) => (a.notes[id] ?? '') === (b.notes[id] ?? '')) &&
 		sameList(a.focus, b.focus) &&
 		(a.lastTickAt ?? '') === (b.lastTickAt ?? '') &&
@@ -113,6 +117,17 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 		const mask = l === b ? r : r === b ? l : l | r;
 		if (mask) specials[id] = mask;
 	}
+	// Counters: one-sided changes win; both changed → the higher one (a grind only goes up). A side
+	// without counters at all (a device still on an older page) changed nothing. Counters of steps the
+	// merged ticks have done are dropped (steps.ts).
+	const counts: Record<string, number> = {};
+	const bc = countsOf(base);
+	const lc = local.progress.counts ?? bc;
+	const rc = remote.progress.counts ?? bc;
+	for (const k of keys(bc, lc, rc)) {
+		const n = pickCount(bc[k] ?? 0, lc[k] ?? 0, rc[k] ?? 0);
+		if (n > 0) counts[k] = n;
+	}
 	const notes: Notes = {};
 	for (const id of keys(base.notes, local.notes, remote.notes)) {
 		const note = pick(base.notes[id] ?? '', local.notes[id] ?? '', remote.notes[id] ?? '');
@@ -120,7 +135,7 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 	}
 	const focus = sameList(local.focus, base.focus) ? [...remote.focus] : [...local.focus];
 	return {
-		progress: { weapons, mastery, specials },
+		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials) },
 		notes,
 		focus,
 		lastTickAt: later(local.lastTickAt, remote.lastTickAt),
@@ -145,8 +160,12 @@ export function combine(local: SyncDoc, remote: SyncDoc): SyncDoc {
 		const mask = (specialsOf(local)[id] ?? 0) | (specialsOf(remote)[id] ?? 0);
 		if (mask) specials[id] = mask;
 	}
+	const counts: Record<string, number> = {};
+	for (const k of keys(countsOf(local), countsOf(remote))) {
+		counts[k] = Math.max(countsOf(local)[k] ?? 0, countsOf(remote)[k] ?? 0);
+	}
 	return {
-		progress: { weapons, mastery, specials },
+		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials) },
 		notes: { ...local.notes, ...remote.notes },
 		focus: remote.focus.length > 0 ? [...remote.focus] : [...local.focus],
 		lastTickAt: later(local.lastTickAt, remote.lastTickAt),

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { MasteryStatus } from '#lib/data/camos.ts';
 	import { statusLabel } from '#lib/ui.ts';
+	import StatusIcon from './StatusIcon.svelte';
 
 	let { status }: { status: MasteryStatus } = $props();
 
@@ -9,7 +10,6 @@
 		active: 'border-gold/50 bg-gold/12 text-gold-ink',
 		complete: 'border-div bg-div text-on-accent'
 	} as const;
-	const icon = { locked: '○', active: '●', complete: '✔' } as const;
 </script>
 
 <span
@@ -18,5 +18,5 @@
 		status
 	]}"
 >
-	<span aria-hidden="true">{icon[status]}</span>{statusLabel(status)}
+	<StatusIcon {status} />{statusLabel(status)}
 </span>

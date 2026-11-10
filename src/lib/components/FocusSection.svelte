@@ -1,50 +1,166 @@
 <!--
-	The focus list: the weapons you're grinding right now (pinned from their weapon card), first in
-	the grid of weapon boxes, with the next camo's challenge under each one. Not affected by search,
-	class filter or "hide maxed". Looks like a weapon-class box (Hot Rod picture in Abscar).
+	"Continue grinding" (2026-11-10, the user's brief): the focus list, right under the progress
+	overview, full width. Per pinned weapon: name and class, the G / P / HB boxes, the challenge(s)
+	you're on with their exact text, a counter where the challenge can be counted, what's left, and
+	the note. With nothing pinned: what this is for, and a few weapons to pin, each with the fact from
+	your own progress that put it there (filters.ts `suggestions`), never a guess at what's quickest.
+	Search, class and status filters don't touch it. The Hot Rod look in Abscar, like the class boxes.
 -->
 <script lang="ts">
-	import { LADDER } from '#lib/data/camos.ts';
-	import { WEAPON_BY_ID } from '#lib/data/weapons.ts';
+	import { tickLadder } from '#lib/actions.ts';
+	import { LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
+	import { CLASSES, WEAPON_BY_ID } from '#lib/data/weapons.ts';
+	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
+	import { suggestions, type SuggestReason } from '#lib/filters.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { FOCUS_MAX } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
-	import { CAMO_INK } from '#lib/ui.ts';
-	import WeaponCard from './WeaponCard.svelte';
+	import { activeSteps } from '#lib/steps.ts';
+	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
+	import CamoToggle from './CamoToggle.svelte';
+	import StepRow from './StepRow.svelte';
+	import WeaponIcon from './WeaponIcon.svelte';
 
-	const columns = `minmax(0, 1fr) repeat(${LADDER.length}, 2.75rem)`;
 	const weapons = $derived(progress.prefs.focus.flatMap((id) => WEAPON_BY_ID.get(id) ?? []));
+	const className = (id: string) => CLASSES.find((c) => c.id === id)?.name ?? '';
+	const ideas = $derived(
+		progress.ready && weapons.length === 0
+			? suggestions(
+					{ weapons: progress.weapons, specials: progress.specials, counts: progress.counts, focus: progress.prefs.focus },
+					progress.divergenceCount
+				)
+			: []
+	);
+
+	function reasonText(r: SuggestReason): string {
+		switch (r.kind) {
+			case 'goldReady':
+				return t.focus.reason.goldReady;
+			case 'counter':
+				return t.focus.reason.counter(r.step, r.count, r.target);
+			case 'lastCamo':
+				return t.focus.reason.lastCamo(r.divergenceLeft, r.season1);
+			case 'preGold':
+				return t.focus.reason.preGold(r.done, r.total);
+		}
+	}
 </script>
 
 <section
-	class="class-card weapon-class focus-card flex flex-col overflow-hidden rounded-card bg-panel shadow-card"
+	id="continue"
+	class="class-card weapon-class focus-card overflow-hidden rounded-card bg-panel shadow-card"
 	style:--c="var(--t-accent)"
 	aria-labelledby="focus-heading"
 >
-	<header class="class-head flex items-center gap-2.5 px-4 py-3">
+	<header class="class-head flex flex-wrap items-center gap-x-2.5 gap-y-1 px-4 py-3">
 		<span class="focus-star-big text-lg leading-none" aria-hidden="true">★</span>
 		<h2 id="focus-heading" class="class-title font-head flex-1 text-[15px] font-bold tracking-wide uppercase">
 			{t.focus.heading}
 		</h2>
-		<span class="font-head text-xs font-bold tabular-nums">{t.focus.sub(weapons.length, FOCUS_MAX)}</span>
+		{#if weapons.length > 0}
+			<span class="font-head num text-xs font-bold">{t.focus.sub(weapons.length, FOCUS_MAX)}</span>
+		{/if}
 	</header>
 
-	<div
-		class="font-head grid items-center gap-1.5 border-t border-line px-4 pt-2 pb-1 text-[10.5px] font-bold tracking-[0.12em] text-muted uppercase"
-		style:grid-template-columns={columns}
-		aria-hidden="true"
-	>
-		<span>{t.weapon.column}</span>
-		{#each LADDER as camo (camo.id)}
-			<span class="text-center {CAMO_INK[camo.id]}">{camo.short}</span>
-		{/each}
-	</div>
+	{#if weapons.length > 0}
+		<ul class="grid grid-cols-[minmax(0,1fr)] gap-3 p-3 sm:p-4 md:grid-cols-[repeat(2,minmax(0,1fr))]">
+			{#each weapons as weapon (weapon.id)}
+				{@const level = progress.level(weapon.id)}
+				{@const steps = activeSteps(weapon.id, level, progress.specials[weapon.id] ?? 0)}
+				{@const look = WEAPON_LOOKS[weapon.id]}
+				{@const note = progress.note(weapon.id)}
+				<li class="grind-card grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 rounded-card p-3">
+					<div class="flex flex-wrap items-start gap-2">
+						<button
+							type="button"
+							class="weapon-open flex min-h-11 min-w-[11rem] flex-1 items-center gap-2 text-left"
+							aria-haspopup="dialog"
+							onclick={() => weaponSheet.show(weapon.id)}
+						>
+							{#if look}<span class="compact-hide flex-none"><WeaponIcon {look} /></span>{/if}
+							<span class="min-w-0">
+								<span class="weapon-name block truncate font-semibold">{weapon.name}</span>
+								<span class="block text-[12px] text-muted">{className(weapon.classId)}</span>
+							</span>
+							<span class="sr-only">– {t.weapon.openHint}</span>
+						</button>
+						<div class="flex flex-none gap-1.5">
+							{#each LADDER as camo, i (camo.id)}
+								<CamoToggle
+									{camo}
+									pressed={progress.has(weapon.id, i)}
+									weaponName={weapon.name}
+									ontoggle={() => tickLadder(weapon.id, i)}
+								/>
+							{/each}
+						</div>
+					</div>
 
-	<ul class="flex-1 px-2 pb-2">
-		{#each weapons as weapon (weapon.id)}
-			<WeaponCard {weapon} {columns} classId={weapon.classId} showNext />
-		{/each}
-	</ul>
+					{#if level >= MAX_LEVEL}
+						<p class="text-[13px] font-semibold text-fg">{t.focus.maxed}</p>
+					{:else if steps.length > 0}
+						<div class="grid gap-3">
+							{#each steps as step (step.key)}
+								<StepRow weaponId={weapon.id} {step} compact />
+							{/each}
+						</div>
+					{/if}
 
-	<footer class="border-t border-line px-4 py-3 text-[13px] text-muted">{t.focus.howTo}</footer>
+					<div class="flex flex-wrap items-center gap-2 border-t border-line pt-2">
+						<button
+							type="button"
+							class="weapon-note flex min-h-11 min-w-0 flex-1 items-center gap-1.5 rounded-[3px] px-1 text-left text-[12.5px] leading-snug"
+							aria-haspopup="dialog"
+							onclick={() => weaponSheet.show(weapon.id)}
+						>
+							<svg viewBox="0 0 16 16" class="size-3 flex-none" aria-hidden="true" focusable="false">
+								<path d="M10.6 2.2l3.2 3.2-8.3 8.3-3.9.7.7-3.9zM9.4 3.4l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+							</svg>
+							{#if note}<span class="line-clamp-2 min-w-0 break-words"
+									><span class="sr-only">{t.weapon.editNote}: </span>{note}</span
+								>{:else}<span class="not-italic">{t.focus.addNote}<span class="sr-only">: {weapon.name}</span></span>{/if}
+						</button>
+						<button type="button" class="btn btn-sm" onclick={() => progress.toggleFocus(weapon.id)}
+							>{t.focus.unpin}<span class="sr-only"> {weapon.name}</span></button
+						>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<div class="grid gap-3 p-4">
+			<div>
+				<h3 class="font-head text-[15px] font-bold text-fg">{t.focus.emptyTitle}</h3>
+				<p class="mt-1 max-w-3xl text-[13.5px] text-muted">{t.focus.emptyBody(FOCUS_MAX)}</p>
+				<p class="mt-2 text-[13.5px] text-fg">{ideas.length > 0 ? t.focus.emptyHow : t.focus.emptyNone}</p>
+			</div>
+			{#if ideas.length > 0}
+				<ul class="grid grid-cols-[minmax(0,1fr)] gap-2 md:grid-cols-[repeat(3,minmax(0,1fr))]">
+					{#each ideas as idea (idea.weaponId)}
+						{@const w = WEAPON_BY_ID.get(idea.weaponId)}
+						{#if w}
+							<li class="grind-card flex items-center gap-3 rounded-card p-3">
+								<div class="min-w-0 flex-1">
+									<button
+										type="button"
+										class="weapon-open block min-h-11 max-w-full text-left"
+										aria-haspopup="dialog"
+										onclick={() => weaponSheet.show(w.id)}
+									>
+										<span class="weapon-name inline-block max-w-full truncate font-semibold">{w.name}</span>
+										<span class="block text-[12px] text-muted">{className(w.classId)}</span>
+									</button>
+									<p class="mt-1 text-[12.5px] leading-snug text-fg"><span class="sr-only">{t.focus.why}: </span>{reasonText(idea.reason)}</p>
+								</div>
+								<button type="button" class="btn btn-primary flex-none" aria-label={t.focus.pinLabel(w.name)} onclick={() => progress.toggleFocus(w.id)}
+									>★ {t.focus.pin}</button
+								>
+							</li>
+						{/if}
+					{/each}
+				</ul>
+				<p class="text-[12px] text-muted">{t.focus.suggestNote}</p>
+			{/if}
+		</div>
+	{/if}
 </section>

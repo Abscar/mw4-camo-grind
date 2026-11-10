@@ -13,15 +13,47 @@
 		<script>
 			// Apply the saved theme before the page paints, so there is no flash of the wrong colours.
 			// Keys must match STORAGE_KEY / LEGACY_KEY in src/lib/progress.svelte.ts.
-			try {
-				var s = JSON.parse(localStorage.getItem('mw4-camo-grind:v2') || 'null');
-				var t = s && s.prefs && s.prefs.theme;
-				if (!t) {
-					var o = JSON.parse(localStorage.getItem('mw4-camo-grind-v1') || 'null');
-					t = o && o.theme;
+			// Compact mode and the welcome screen are decided here too, before the first paint.
+			(function () {
+				var html = document.documentElement;
+				var compact = false;
+				try {
+					var s = JSON.parse(localStorage.getItem('mw4-camo-grind:v2') || 'null');
+					var t = s && s.prefs && s.prefs.theme;
+					compact = !!(s && s.prefs && s.prefs.compact === true);
+					if (!t) {
+						var o = JSON.parse(localStorage.getItem('mw4-camo-grind-v1') || 'null');
+						t = o && o.theme;
+					}
+					if (typeof t === 'string') html.setAttribute('data-theme', t);
+				} catch (e) {}
+				if (compact) html.setAttribute('data-compact', '');
+				// The welcome screen shows once a day (never in compact mode); any tap or key skips it.
+				var boot = 'off';
+				try {
+					var day = new Date().toDateString();
+					if (!compact && localStorage.getItem('mw4-camo-grind:boot') !== day) {
+						localStorage.setItem('mw4-camo-grind:boot', day);
+						boot = 'on';
+					}
+				} catch (e) {}
+				html.setAttribute('data-boot', boot);
+				if (boot === 'on') {
+					var skip = function () {
+						html.setAttribute('data-boot', 'off');
+						removeEventListener('pointerdown', skip, true);
+						removeEventListener('keydown', skip, true);
+					};
+					addEventListener('pointerdown', skip, true);
+					addEventListener('keydown', skip, true);
+					setTimeout(skip, 2400);
 				}
-				if (typeof t === 'string') document.documentElement.setAttribute('data-theme', t);
-			} catch (e) {}
+				// pause the decoration while the tab is hidden
+				document.addEventListener('visibilitychange', function () {
+					if (document.hidden) html.setAttribute('data-page-hidden', '');
+					else html.removeAttribute('data-page-hidden');
+				});
+			})();
 		</script>
 		<script>
 			// Right after a new version goes live, a browser can still hold the previous page (GitHub Pages
@@ -29,14 +61,40 @@
 			// page then shows up without its styles (seen 2026-11-10 after five deploys in 15 minutes). When
 			// one of our build files fails to load, reload once to get the current version. The flag stops a
 			// loop and is cleared 10 s after a good load, so a later deploy can recover the same way.
+			// If the one reload didn't help (or storage is blocked, so we can't know), say so in plain words
+			// with a Reload button instead of leaving a broken page (no automatic loop).
 			(function () {
 				var KEY = 'mw4-camo-grind:reloaded';
+				var shown = false;
+				function explain() {
+					if (shown) return;
+					shown = true;
+					var show = function () {
+						var box = document.createElement('div');
+						box.setAttribute('role', 'alert');
+						box.style.cssText =
+							'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;max-width:560px;margin:0 auto;padding:14px 16px;border-radius:10px;background:#111;color:#fff;font:15px/1.45 system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)';
+						box.innerHTML =
+							'<p style="margin:0 0 10px">Part of the page didn’t load, probably because a new version just went live. Your ticks are safe in this browser.</p>';
+						var btn = document.createElement('button');
+						btn.type = 'button';
+						btn.textContent = 'Reload the page';
+						btn.style.cssText = 'min-height:44px;padding:0 16px;border:0;border-radius:999px;background:#ff4418;color:#000;font:600 15px system-ui,sans-serif;cursor:pointer';
+						btn.onclick = function () {
+							location.reload();
+						};
+						box.appendChild(btn);
+						document.body.appendChild(box);
+					};
+					if (document.body) show();
+					else addEventListener('DOMContentLoaded', show);
+				}
 				function recover() {
 					try {
-						if (sessionStorage.getItem(KEY)) return;
+						if (sessionStorage.getItem(KEY)) return explain();
 						sessionStorage.setItem(KEY, '1');
 					} catch (e) {
-						return;
+						return explain();
 					}
 					location.reload();
 				}

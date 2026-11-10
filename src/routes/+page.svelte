@@ -3,6 +3,7 @@
 	import { clearLinkFromAddress, linkCodeInAddress } from '#lib/browser.ts';
 	import { DIVERGENCE_REQUIRED, LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
 	import { CLASSES, WEAPONS } from '#lib/data/weapons.ts';
+	import { matchesStatus } from '#lib/filters.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { decodeLink, sameProgress, type ProgressData } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -13,8 +14,8 @@
 	import Dialog from '#lib/components/Dialog.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
-	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
 	import NewsBanner from '#lib/components/NewsBanner.svelte';
+	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
 	import RetroTv from '#lib/components/RetroTv.svelte';
 	import hotrodCamo from '#lib/assets/hotrod-camo.webp';
 	import KpiBar from '#lib/components/KpiBar.svelte';
@@ -23,6 +24,7 @@
 	import MasterySection from '#lib/components/MasterySection.svelte';
 	import MetaSection from '#lib/components/MetaSection.svelte';
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
+	import SaveStatus from '#lib/components/SaveStatus.svelte';
 	import SquadBanner from '#lib/components/SquadBanner.svelte';
 	import NukeBanner from '#lib/components/NukeBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
@@ -38,23 +40,41 @@
 	let query = $state('');
 	const needle = $derived(query.trim().toLowerCase());
 
+	/** What saved progress the status filters look at (filters.ts). */
+	const grind = $derived({
+		weapons: progress.weapons,
+		specials: progress.specials,
+		counts: progress.counts,
+		focus: progress.prefs.focus
+	});
+
 	const sections = $derived(
 		CLASSES.map((cls, i) => {
 			const classHit =
 				needle !== '' &&
 				(cls.name.toLowerCase().includes(needle) || cls.short.toLowerCase() === needle);
+			const status = progress.prefs.status;
 			const visible = cls.weapons.filter(
 				(w) =>
 					(needle === '' || classHit || w.name.toLowerCase().includes(needle)) &&
-					!(progress.prefs.hideMaxed && progress.level(w.id) >= MAX_LEVEL)
+					!(progress.prefs.hideMaxed && progress.level(w.id) >= MAX_LEVEL) &&
+					(status === null || matchesStatus(status, grind, w))
 			);
 			return { cls, number: i + 1, visible };
 		}).filter(
 			(s) =>
 				(progress.prefs.classFilter === null || s.cls.id === progress.prefs.classFilter) &&
-				(needle === '' || s.visible.length > 0)
+				((needle === '' && progress.prefs.status === null) || s.visible.length > 0)
 		)
 	);
+	const shownCount = $derived(sections.reduce((n, s) => n + s.visible.length, 0));
+
+	function clearFilters() {
+		query = '';
+		progress.setPref('classFilter', null);
+		progress.setPref('status', null);
+		progress.setPref('hideMaxed', false);
+	}
 
 	// ----- progress links (#p=…) -----
 
@@ -107,12 +127,13 @@
 		};
 	});
 
-	// ----- theme on <html> -----
+	// ----- theme and compact mode on <html> -----
 
 	$effect(() => {
-		if (!progress.ready) return; // keep the theme app.html applied until saved prefs are read
+		if (!progress.ready) return; // keep what app.html applied until saved prefs are read
 		const theme = THEMES.find((x) => x.id === progress.prefs.theme) ?? THEMES[0];
 		document.documentElement.setAttribute('data-theme', theme.id);
+		document.documentElement.toggleAttribute('data-compact', progress.prefs.compact);
 		document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.browserBar);
 	});
 </script>
@@ -122,21 +143,31 @@
 	<noscript><style>.app-gate { opacity: 1 !important; }</style></noscript>
 </svelte:head>
 
+<a
+	href="#weapons"
+	class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[90] focus:rounded-full focus:bg-panel focus:px-4 focus:py-3 focus:text-fg"
+	>{t.nav.skip}</a
+>
+
 <AbscarFx />
 
 <div class="app-gate" class:ready={progress.ready}>
 	<div class="relative bg-band text-band-fg">
-		<div class="abscar-only"><DamascusSteel /></div>
-		<div class="abscar-only" aria-hidden="true"><div class="hud-vision"></div></div>
-		<!-- Abscar lays this out as a grid (style block below); the other themes only show the title -->
+		<div class="abscar-only compact-hide"><DamascusSteel /></div>
+		<div class="abscar-only compact-hide" aria-hidden="true"><div class="hud-vision"></div></div>
+		<!-- the settings row: save status on the left; Compact, theme and sound on the right (2026-11-10) -->
+		<div class="hdr-bar relative z-[32] mx-auto flex max-w-[1240px] items-center justify-between gap-2 px-4 pt-2 sm:px-5 sm:pt-3">
+			<div class="min-w-0"><SaveStatus /></div>
+			<ThemePicker />
+		</div>
+		<!-- Abscar lays this out as a grid (style block below); the other themes only show the title.
+		     Squad frame, HUD + title, the news buddy, and the old TV beside them (the user's layout). -->
 		<header
-			class="abscar-header relative mx-auto flex max-w-[1240px] flex-wrap items-stretch justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
+			class="abscar-header relative mx-auto flex max-w-[1240px] flex-wrap items-stretch justify-between gap-4 px-4 pt-3 pb-5 sm:px-5 sm:pt-4"
 		>
-			<!-- z above the TV, so the theme menu opens over it -->
-			<div class="absolute top-2 right-2 z-[32] sm:top-3 sm:right-3"><ThemePicker /></div>
-			<div class="hdr-squad abscar-only relative z-[1] min-w-0 pr-10 sm:pr-0"><OperatorTag /></div>
-			<div class="hdr-title relative z-[1] min-w-0 pr-10 sm:pr-0">
-				<div class="mb-5"><HudReadout /></div>
+			<div class="hdr-squad abscar-only compact-hide relative z-[1] min-w-0"><OperatorTag /></div>
+			<div class="hdr-title relative z-[1] min-w-0">
+				<div class="compact-hide mb-5"><HudReadout /></div>
 				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
 					<span class="brand-glow text-brand">{t.title.game}</span><span
 						class="mx-[0.3em] font-normal text-band-muted"
@@ -146,54 +177,56 @@
 			</div>
 			<!-- the old TV with CoD montages; z above the fixed scanline layer (z 30), so nothing is
 			     drawn over the video -->
-			<div class="hdr-tv abscar-only relative z-[31]"><RetroTv /></div>
-			<div class="hdr-buddy abscar-only relative z-[1]"><NewsBuddy /></div>
+			<div class="hdr-tv abscar-only compact-hide relative z-[31]"><RetroTv /></div>
+			<div class="hdr-buddy abscar-only compact-hide relative z-[1]"><NewsBuddy /></div>
 		</header>
-		<div class="abscar-only"><div class="damascus-floor"></div></div>
+		<div class="abscar-only compact-hide"><div class="damascus-floor"></div></div>
 	</div>
 
 	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5" style:--hotrod-tile="url({hotrodCamo})">
-		<div class="mt-5"><NewsBanner /></div>
+		<!-- the green radar with the latest COD news -->
+		<div class="compact-hide mt-5"><NewsBanner /></div>
 
+		<!-- overall progress and the next milestone -->
 		<div class="mt-4"><KpiBar /></div>
 
-		<div class="mt-6"><Toolbar bind:query /></div>
+		<!-- 3. continue grinding: the focus list -->
+		<div class="mt-6"><FocusSection /></div>
 
-		{#if progress.ready && progress.prefs.focus.length === 0 && Object.keys(progress.notes).length === 0}
-			<p class="mt-3 text-[13px] text-muted">{t.focus.tip}</p>
-		{/if}
+		<!-- 4. search and filters -->
+		<div id="weapons" class="mt-6 scroll-mt-4">
+			<Toolbar bind:query shown={shownCount} total={WEAPONS.length} onclear={clearFilters} />
+		</div>
 
-		{#if sections.length > 0 || progress.prefs.focus.length > 0}
-			<!-- the focus list is the first box; search, class filter and "hide maxed" don't touch it -->
+		<!-- 5. the weapon list -->
+		{#if sections.length > 0}
 			<div class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] gap-4">
-				{#if progress.prefs.focus.length > 0}<FocusSection />{/if}
 				{#each sections as s (s.cls.id)}
 					<ClassSection cls={s.cls} number={s.number} visible={s.visible} />
 				{/each}
 			</div>
-		{/if}
-		{#if sections.length === 0}
+		{:else}
 			{@const cls = CLASSES.find((c) => c.id === progress.prefs.classFilter)}
 			<div class="mt-4 rounded-card bg-panel px-4 py-6 text-center shadow-card">
 				<p class="text-muted">
-					{cls ? t.empty.noMatchInClass(query.trim(), cls.name) : t.empty.noMatch(query.trim())}
+					{#if needle !== ''}
+						{cls ? t.empty.noMatchInClass(query.trim(), cls.name) : t.empty.noMatch(query.trim())}
+					{:else}
+						{t.empty.noMatchFilters}
+					{/if}
+					{#if progress.prefs.hideMaxed}{' '}{t.empty.hideMaxedOn}{/if}
 				</p>
-				<button
-					type="button"
-					class="font-head mt-3 min-h-11 rounded-full border border-accent px-4 text-[13px] font-semibold text-fg"
-					onclick={() => {
-						query = '';
-						progress.setPref('classFilter', null);
-					}}>{t.empty.showAll}</button
-				>
+				<button type="button" class="btn mt-3 border-accent" onclick={clearFilters}>{t.toolbar.clear}</button>
 			</div>
 		{/if}
 
+		<!-- 6. Divergence and Mastery -->
 		<div class="mt-7"><MasterySection /></div>
 
-		<div class="mt-7"><MetaSection /></div>
+		<!-- 7. news and everything else -->
+		<div class="compact-hide mt-7"><MetaSection /></div>
 
-		<div class="abscar-only mt-7">
+		<div class="abscar-only compact-hide mt-7">
 			<!-- top and bottom banner share one height (the user's ask: "same size so they look in proportion") -->
 			<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
 			<div class="mt-4 overflow-hidden rounded-card shadow-card"><SquadBanner /></div>
@@ -202,7 +235,7 @@
 
 		<div class="mt-7"><SyncPanel /></div>
 
-		<footer class="mt-7 grid gap-1.5 text-xs text-muted">
+		<footer class="compact-hide mt-7 grid gap-1.5 text-xs text-muted">
 			<p>{t.help.howTo}</p>
 			<p>{t.help.divergence(DIVERGENCE_REQUIRED)}</p>
 			<p>{t.help.sources}</p>
@@ -226,16 +259,8 @@
 		<p>{t.linkImport.body(summary(linkOffer), summary(progress.snapshot()))}</p>
 	{/if}
 	{#snippet actions()}
-		<button
-			type="button"
-			class="font-head min-h-11 rounded-full border border-line bg-panel-2 px-4 text-[13px] font-semibold"
-			onclick={() => (linkDialogOpen = false)}>{t.linkImport.keep}</button
-		>
-		<button
-			type="button"
-			class="font-head min-h-11 rounded-full border border-accent bg-accent px-4 text-[13px] font-semibold text-on-accent"
-			onclick={() => linkOffer && applyLink(linkOffer)}>{t.linkImport.use}</button
-		>
+		<button type="button" class="btn" onclick={() => (linkDialogOpen = false)}>{t.linkImport.keep}</button>
+		<button type="button" class="btn btn-primary" onclick={() => linkOffer && applyLink(linkOffer)}>{t.linkImport.use}</button>
 	{/snippet}
 </Dialog>
 
@@ -286,8 +311,7 @@
 			grid-template-areas: 'squad tv' 'title tv' 'buddy tv';
 		}
 		:global([data-theme='blackout']) .hdr-tv {
-			margin-top: -16px;
-			padding-right: 48px;
+			margin-top: -8px;
 		}
 	}
 </style>

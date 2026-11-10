@@ -10,7 +10,9 @@
 		weaponName,
 		ontoggle,
 		pips = null,
-		ready = false
+		ready = false,
+		note = '',
+		unsure = false
 	}: {
 		camo: LadderCamo;
 		pressed: boolean;
@@ -20,12 +22,18 @@
 		pips?: number | null;
 		/** Gold box only: all 3 ticked, so Gold is next (a gold shimmer until it's ticked). */
 		ready?: boolean;
+		/** Added to the label: what unticking also clears, or an uncertainty about this camo. */
+		note?: string;
+		/** A small ? in the corner: something about this camo isn't confirmed (Season 1 weapons' HB → Divergence). */
+		unsure?: boolean;
 	} = $props();
 
 	let pop = $state(false);
 	const showPips = $derived(!pressed && pips !== null);
 	const label = $derived(
-		t.weapon.toggle(camo.name, weaponName) + (showPips && pips !== null ? ` (${t.weapon.preGoldPips(pips, 3)})` : '')
+		t.weapon.toggle(camo.name, weaponName) +
+			(showPips && pips !== null ? ` (${t.weapon.preGoldPips(pips, 3)})` : '') +
+			(note ? ` (${note})` : '')
 	);
 
 	function click() {
@@ -60,9 +68,24 @@
 			</span>
 		{/if}
 	{/if}
+	{#if unsure}<span class="unsure-mark" aria-hidden="true">?</span>{/if}
 </button>
 
 <style>
+	/* Season 1 weapons' HB box: counting toward Divergence isn't confirmed */
+	.unsure-mark {
+		position: absolute;
+		top: 1px;
+		right: 3px;
+		font-size: 9.5px;
+		font-weight: 900;
+		line-height: 1;
+		color: var(--t-muted);
+		text-shadow: none;
+	}
+	[aria-pressed='true'] .unsure-mark {
+		color: rgb(0 0 0 / 0.65);
+	}
 	/* three little diamonds under the G: the challenges before Gold */
 	.lift {
 		transform: translateY(-5px);

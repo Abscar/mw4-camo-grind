@@ -87,7 +87,7 @@ test('migrate: old tracker localStorage (v1) keeps every tick and mastery count'
 	assert.equal(m.progress.weapons['cronen-osprey'], 0);
 	assert.equal(m.progress.mastery.mercurialDrift, 12);
 	assert.equal(m.progress.mastery.orionReforged, 500); // clamped to target
-	assert.deepEqual(m.prefs, { theme: 'neon', hideMaxed: true, classFilter: null, focus: [] });
+	assert.deepEqual(m.prefs, { theme: 'neon', hideMaxed: true, classFilter: null, focus: [], status: null, compact: false });
 });
 
 test('migrate: old tracker export file (v1) works too', () => {

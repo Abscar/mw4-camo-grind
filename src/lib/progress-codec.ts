@@ -6,6 +6,7 @@
 
 import { ALL_MASTERY, MASTERY, MASTERY_EXTRA, MASTERY_TRACKS, MAX_LEVEL } from './data/camos.ts';
 import { CLASSES, WEAPONS } from './data/weapons.ts';
+import { isStatusFilter, type StatusFilter } from './filters.ts';
 import { DEFAULT_THEME, isThemeId, type ThemeId } from './themes.ts';
 
 export interface ProgressData {
@@ -22,6 +23,13 @@ export interface ProgressData {
 	 * (older saves, backups and links) leaves your ticks alone. A weapon with Gold counts as all 3 done.
 	 */
 	specials?: Record<string, number>;
+	/**
+	 * Counters toward the step you're on: "<weapon id>:<step>" → how many so far (steps.ts has the
+	 * rules: a done step has no counter, a counter is below its target). Added 2026-11-10 as an
+	 * optional field like `specials`: data without it (older saves, backups, links, sync documents
+	 * from an older page) leaves your counters alone.
+	 */
+	counts?: Record<string, number>;
 }
 
 /** All 3 Special camos ticked. */
@@ -41,6 +49,10 @@ export interface Prefs {
 	classFilter: string | null;
 	/** The weapons pinned to the focus list (ids, in the order they were pinned, at most FOCUS_MAX). */
 	focus: string[];
+	/** Status filter on the weapon list (filters.ts), or null for every weapon. Per device. */
+	status: StatusFilter | null;
+	/** Compact mode between matches: focus weapons and quick updates first, less decoration. Per device. */
+	compact: boolean;
 }
 
 /** Weapon id → the user's own note about that weapon. */
@@ -99,6 +111,30 @@ export function defaultProgress(): ProgressData {
 }
 
 /**
+ * The two kinds of reset (Backup & other devices → Reset…):
+ * - 'preset': the starting preset, Gold ticked on every launch weapon (how a new tracker starts);
+ * - 'zero':   nothing ticked at all, Gold cleared on the launch weapons too.
+ * Both clear before-Gold ticks, counters and every Mastery count.
+ */
+export function resetProgress(kind: 'preset' | 'zero'): ProgressData {
+	const p = defaultProgress();
+	if (kind === 'zero') for (const id of Object.keys(p.weapons)) p.weapons[id] = 0;
+	return { ...p, specials: {}, counts: {} };
+}
+
+/** Clean counters: known shape of key, whole numbers above 0 (steps.ts prunes them against the ticks). */
+export function normaliseCounts(raw: Record<string, unknown>): Record<string, number> {
+	const out: Record<string, number> = {};
+	for (const [k, value] of Object.entries(raw).slice(0, 600)) {
+		const n = typeof value === 'number' ? value : Number(value);
+		if (/^[a-z0-9][a-z0-9.-]*:(s[0-2]|g|p|hb)$/.test(k) && Number.isFinite(n) && n >= 1) {
+			out[k] = Math.min(1_000_000, Math.trunc(n));
+		}
+	}
+	return out;
+}
+
+/**
  * A Warzone or DMZ track the source knows nothing about (none of its ids) is taken out, so
  * applying the source leaves those counts alone (`Progress.replace` keeps what it doesn't get).
  */
@@ -110,7 +146,7 @@ function dropUnknownTracks(mastery: Record<string, number>, source: Record<strin
 }
 
 export function defaultPrefs(): Prefs {
-	return { theme: DEFAULT_THEME, hideMaxed: false, classFilter: null, focus: [] };
+	return { theme: DEFAULT_THEME, hideMaxed: false, classFilter: null, focus: [], status: null, compact: false };
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {
@@ -258,6 +294,7 @@ export function migrate(raw: unknown): Migrated | null {
 			isObject(p.mastery) ? p.mastery : {}
 		);
 		if (isObject(p.specials)) progress.specials = normaliseSpecials(p.specials);
+		if (isObject(p.counts)) progress.counts = normaliseCounts(p.counts);
 		const migrated: Migrated = { progress, from: typeof raw.v === 'number' ? raw.v : CURRENT_VERSION };
 		if (isObject(raw.prefs)) migrated.prefs = normalisePrefs(raw.prefs);
 		return addExtras(migrated, raw);
@@ -296,7 +333,9 @@ export function normalisePrefs(raw: Record<string, unknown>): Prefs {
 			typeof raw.classFilter === 'string' && CLASSES.some((c) => c.id === raw.classFilter)
 				? raw.classFilter
 				: null,
-		focus: normaliseFocus(raw.focus)
+		focus: normaliseFocus(raw.focus),
+		status: isStatusFilter(raw.status) ? raw.status : d.status,
+		compact: typeof raw.compact === 'boolean' ? raw.compact : d.compact
 	};
 }
 
@@ -328,8 +367,11 @@ export function toExport(progress: ProgressData, notes: Notes = {}): ExportV2 {
 export function sameProgress(a: ProgressData, b: ProgressData): boolean {
 	const sa = a.specials;
 	const sb = b.specials;
+	const ca = a.counts;
+	const cb = b.counts;
 	const known = (p: ProgressData, id: string) => MASTERY.some((m) => m.id === id) || id in p.mastery;
 	return (
+		(!ca || !cb || [...new Set([...Object.keys(ca), ...Object.keys(cb)])].every((k) => (ca[k] ?? 0) === (cb[k] ?? 0))) &&
 		WEAPONS.every((w) => (a.weapons[w.id] ?? 0) === (b.weapons[w.id] ?? 0)) &&
 		ALL_MASTERY.every(
 			(m) => !known(a, m.id) || !known(b, m.id) || (a.mastery[m.id] ?? 0) === (b.mastery[m.id] ?? 0)

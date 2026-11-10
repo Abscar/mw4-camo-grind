@@ -7,6 +7,27 @@ export const en = {
 	pageTitle: 'MW4 Camo Grind',
 
 	theme: { label: 'Theme', current: (name: string) => `Theme: ${name}` },
+	/** Compact mode between matches (header button; saved per device). */
+	compact: {
+		label: 'Compact mode',
+		short: 'Compact',
+		on: 'Compact mode: on. Focus weapons and quick updates first, less decoration.',
+		off: 'Compact mode: off'
+	},
+	/** The save / sync status in the header (truthful: "Synced" only after the sync service confirmed). */
+	saveStatus: {
+		saved: 'Saved in this browser',
+		notSaving: 'Not saving in this browser',
+		syncing: 'Syncing…',
+		synced: 'Synced',
+		offline: 'Couldn’t sync (offline). Saved here',
+		error: 'Couldn’t sync. Saved here',
+		open: 'Backup & sync settings'
+	},
+	/** Skip link + section names for the page's main parts. */
+	nav: {
+		skip: 'Skip to the weapon list'
+	},
 	/** Sound effects for your own ticks (button next to the theme picker; off by default). */
 	sound: { label: 'Sound effects', on: 'Sound effects: on', off: 'Sound effects: off' },
 
@@ -103,7 +124,28 @@ export const en = {
 		percentDone: (pct: number) => `${pct}% done`,
 		divergenceUnlocked: 'Unlocked',
 		divergenceToGo: (n: number) => `${n} Harmonic Break${n === 1 ? '' : 's'} to go`,
-		divergenceLaunchOnly: 'Counting launch weapons only'
+		divergenceLaunchOnly: 'Counting launch weapons only',
+		/** what the number under each tile counts */
+		weaponsUnit: 'weapons',
+		divergenceUnit: 'Harmonic Breaks needed',
+		/** the small line under the tiles: catalogue size and camo steps */
+		steps: (done: number, total: number) => `${done} / ${total} camo steps`,
+		catalogue: (weapons: number, camos: number) => `${weapons} weapons × ${camos} camos`,
+		next: 'Next milestone',
+		nextDivergence: (n: number) => `Divergence: ${n} more Harmonic Break${n === 1 ? '' : 's'}`,
+		nextMastery: (name: string, mode: string, count: string, target: string) => `${name} (${mode}): ${count} / ${target}`,
+		nextAllDone: 'Every Mastery camo is complete ◆',
+		season1Note: 'Includes Season 1 weapons: whether they count toward Divergence isn’t confirmed yet.',
+		/** "What do these numbers mean?" */
+		explain: 'What do the numbers mean?',
+		explainCatalogue: (weapons: number, launch: number, s1: number) =>
+			`Weapons in the tracker: ${weapons} (${launch} at launch, ${s1} from Season 1), Multiplayer only.`,
+		explainSteps: (camos: number, total: number) =>
+			`Camo steps: each weapon has ${camos} ladder camos (Gold, Platinum, Harmonic Break), ${total} in all. The tiles count weapons that have each camo.`,
+		explainDivergence: (needed: number, weapons: number) =>
+			`Divergence: unlocks when ${needed} of the ${weapons} weapons have Harmonic Break. Only Harmonic Breaks count toward it.`,
+		explainMastery:
+			'Mastery: account-wide, one track per mode (Multiplayer, Warzone, DMZ). Each opens once Divergence is unlocked, then runs in order. You count those in the Mastery section.'
 	},
 
 	/** The grind stats line under the KPI tiles (stats.ts). */
@@ -127,6 +169,24 @@ export const en = {
 		hideMaxed: 'Hide maxed weapons',
 		classFilter: 'Show class',
 		allClasses: 'All',
+		statusFilter: 'Show weapons that are',
+		status: {
+			started: 'Started',
+			near: 'Near done',
+			focus: 'Focus',
+			done: 'Done',
+			available: 'Available now'
+		},
+		statusHelp: {
+			started: 'At least one camo or before-Gold challenge done or counted, not maxed yet.',
+			near: 'A challenge you’re on is at least 75% done by its own counter, or all 3 challenges before Gold are done. Each challenge only counts against its own target.',
+			focus: 'The weapons on your focus list.',
+			done: 'Gold, Platinum and Harmonic Break all ticked.',
+			available: 'Out now with a next camo to earn (leaves out maxed weapons and weapons that aren’t released yet).'
+		},
+		results: (n: number, total: number) => `${n} of ${total} weapons`,
+		clear: 'Clear filters',
+		legend: 'G = Gold · P = Platinum · HB = Harmonic Break',
 		/** Abscar: the joint in the ashtray at the end of the search row is a just-for-fun button. */
 		holkTap: 'Tap the ash off'
 	},
@@ -151,7 +211,52 @@ export const en = {
 		/** The Special camos (the 3 challenges before Gold, ticked in the weapon card). */
 		preGoldPips: (n: number, total: number) => `${n} of ${total} challenges before Gold done`,
 		preGoldShort: 'Before Gold',
-		goldReady: 'Gold ready!'
+		goldReady: 'Gold ready!',
+		/** what unticking a lower camo also does (in the box's label) */
+		untickClears: (higher: string) => `unticking also clears ${higher}`,
+		/** Season 1 weapons' Harmonic Break box: may not count toward Divergence */
+		s1Divergence: 'Season 1 weapon: whether its Harmonic Break counts toward Divergence isn’t confirmed',
+		/** small progress line under a weapon in the list */
+		progressLine: (step: string, count: number, target: number) => `${step} ${count}/${target}`,
+		preGoldLine: (n: number, total: number) => `Before Gold ${n}/${total}`,
+		/** the Multiplayer meta badge in the list (only guns in the MP overall top list) */
+		metaBadge: 'MP meta',
+		metaBadgeLong: (date: string, sources: string) =>
+			`In the Multiplayer overall top 5 (${sources}, ${date}). Tap the weapon for its builds.`
+	},
+
+	/** A step's counter (StepCounter): how far a challenge you're on is. */
+	counter: {
+		minus: (n: number) => `Minus ${n}`,
+		plus: (n: number) => `Plus ${n}`,
+		value: (name: string) => `${name}: how many so far`,
+		of: (target: number) => `/ ${target}`,
+		left: (n: number) => `${n} to go`,
+		/** what the number counts */
+		unitTotal: (unit: string) => unit,
+		unitRepeat: (feat: string) => `times: ${feat}`,
+		once: 'Has to happen in one match, so there is nothing to add up. Tick it when you get it.',
+		undo: 'Undo',
+		undoLabel: (name: string) => `Undo the last change to ${name}`,
+		/** read out a moment after the last tap (not on every tap) */
+		announce: (name: string, count: number, target: number) => `${name}: ${count} of ${target}, ${target - count} to go`,
+		completed: (camo: string, weapon: string) => `${camo} done on ${weapon} ✔`
+	},
+
+	/** Step status words (always with an icon, never colour alone). */
+	step: {
+		done: 'Done',
+		active: 'On it',
+		locked: 'Locked',
+		lockedGold: 'Opens when the 3 challenges before Gold are done (and the weapon has its 8 level-up camos)',
+		lockedLadder: (prev: string) => `Opens after ${prev}`,
+		lockedUnreleased: 'Not out yet'
+	},
+
+	/** Toasts for ticks (only when a tap does more than it shows). */
+	tickToast: {
+		cleared: (camo: string, weapon: string, higher: string) => `${camo} unticked on ${weapon}. ${higher} cleared too.`,
+		and: ' and '
 	},
 
 	/** The weapon card that opens when you tap a weapon. */
@@ -181,17 +286,51 @@ export const en = {
 		balanceSource: (sources: string) => `From the patch notes, via ${sources}.`,
 		noBalance: (patch: string) => `No changes to this gun in the ${patch} patch.`,
 		meta: 'Meta class',
-		close: 'Done'
+		close: 'Done',
+		/** new in the card (2026-11-10) */
+		classLine: (cls: string, season: string) => `${cls} · ${season}`,
+		seasonLaunch: 'Launch weapon',
+		seasonS1: 'Season 1 weapon',
+		unlock: 'Unlock',
+		progress: 'Progress',
+		builds: 'Builds (Multiplayer & Warzone)',
+		metaTier: (tier: string, rank: number, cls: string, date: string) =>
+			`Multiplayer meta: ${tier} tier, #${rank} in ${cls} (snapshot ${date})`,
+		metaNone: 'Not in the Multiplayer meta lists right now.',
+		balanceHeading: 'Latest balance patch',
+		noteHeading: 'Note'
 	},
 
-	/** The focus list: up to FOCUS_MAX pinned weapons in the first box. */
+	/** "Continue grinding": the focus list, right under the progress overview. */
 	focus: {
-		heading: 'Focus',
+		heading: 'Continue grinding',
 		sub: (n: number, max: number) => `${n}/${max} pinned`,
 		next: 'Next',
 		maxed: 'Maxed, every camo done ◆',
 		howTo: 'Tap a weapon to unpin it or edit its note.',
-		tip: 'Tip: tap a weapon’s name to see its 3 challenges before Gold, pin it to your focus list or write a note about it.'
+		tip: 'Tip: tap a weapon’s name to see its 3 challenges before Gold, pin it to your focus list or write a note about it.',
+		open: (weapon: string) => `Open ${weapon}`,
+		note: 'Note',
+		addNote: 'Add note',
+		unpin: 'Unpin',
+		emptyTitle: 'Pin the weapons you’re grinding',
+		emptyBody: (max: number) =>
+			`Pin up to ${max} weapons and they show up here with the challenge you’re on, a counter and quick ticks, so you can update between matches without scrolling.`,
+		emptyHow: 'Open any weapon (tap its name) and choose “Add to focus list”, or pin one of these:',
+		emptyNone: 'Open any weapon (tap its name) and choose “Add to focus list”.',
+		pin: 'Pin',
+		pinLabel: (weapon: string) => `Pin ${weapon} to your focus list`,
+		why: 'Why',
+		reason: {
+			goldReady: 'All 3 challenges before Gold are done, so Gold is next.',
+			counter: (step: string, count: number, target: number) => `You’ve counted ${count} / ${target} on ${step}.`,
+			lastCamo: (left: number, s1: boolean) =>
+				left > 0
+					? `Platinum done: Harmonic Break is its last camo, and Divergence needs ${left} more${s1 ? ' (if Season 1 weapons count, not confirmed)' : ''}.`
+					: 'Platinum done: Harmonic Break is its last camo.',
+			preGold: (done: number, total: number) => `${done} of ${total} challenges before Gold done.`
+		},
+		suggestNote: 'Picked from your own progress only, not from how fast a grind is.'
 	},
 
 	loadout: {
@@ -235,8 +374,23 @@ export const en = {
 	empty: {
 		noMatch: (q: string) => `No weapons match “${q}”.`,
 		noMatchInClass: (q: string, cls: string) => `No weapons in ${cls} match “${q}”.`,
+		noMatchFilters: 'No weapons match these filters.',
+		hideMaxedOn: '“Hide maxed weapons” is on too.',
 		showAll: 'Show everything'
 	},
+
+	/** The fold-out panel with the COD news and the old TV (Abscarvision), lower on the page. */
+	intel: {
+		heading: 'News & Abscarvision',
+		headingPlain: 'COD news',
+		open: 'Show',
+		close: 'Hide',
+		latest: 'Latest:',
+		videoNote: 'The TV only loads its videos while this panel is open.'
+	},
+
+	/** The boot screen: once a day, any tap or key skips it. */
+	bootSkip: 'Tap to skip',
 
 	mastery: {
 		heading: 'Divergence & Mastery',
@@ -325,10 +479,27 @@ export const en = {
 	},
 
 	reset: {
-		title: 'Reset all progress?',
-		body: 'Gold goes back to ticked on the launch weapons, and every other tick and Mastery count is cleared. Export a backup first if you might want it back.',
+		title: 'Reset progress?',
+		body: 'Pick what to reset to. Your notes and focus list stay. Export a backup first if you might want it back.',
+		presetLabel: 'Restore starting preset',
+		presetBody: (launch: number) =>
+			`Gold ticked on the ${launch} launch weapons (how the tracker starts). Everything else cleared: Platinum, Harmonic Break, before-Gold ticks, counters and Mastery counts.`,
+		zeroLabel: 'Start from zero',
+		zeroBody: 'Nothing ticked at all, Gold cleared on the launch weapons too. Before-Gold ticks, counters and Mastery counts cleared.',
 		exportFirst: 'Export backup first',
 		confirm: 'Reset',
+		cancel: 'Cancel'
+	},
+
+	/** Importing a backup: checked first, then you confirm. */
+	importCheck: {
+		title: 'Load this backup?',
+		body: (file: string, here: string) => `The backup has ${file}. This browser has ${here}. Loading it replaces this browser’s ticks.`,
+		exported: (date: string) => `Saved on ${date}.`,
+		notes: (n: number) => `It holds ${n} note${n === 1 ? '' : 's'}, which replace yours.`,
+		noNotes: 'It holds no notes, so yours stay.',
+		tooBig: 'That file is too big to be an MW4 Camo Grind backup',
+		use: 'Load the backup',
 		cancel: 'Cancel'
 	},
 

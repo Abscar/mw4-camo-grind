@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { announcer } from '#lib/announce.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 </script>
 
@@ -28,3 +29,6 @@
 		</div>
 	{/if}
 </div>
+
+<!-- counters: read out once after a pause, not on every tap -->
+<div class="sr-only" role="status" aria-live="polite">{announcer.text}</div>

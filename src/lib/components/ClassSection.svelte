@@ -68,7 +68,7 @@
 	>
 		<span>{t.weapon.column}</span>
 		{#each LADDER as camo (camo.id)}
-			<span class="text-center {CAMO_INK[camo.id]}">{camo.short}</span>
+			<span class="text-center {CAMO_INK[camo.id]}" title={camo.name}>{camo.short}</span>
 		{/each}
 		{#if cls.id === PEEK_CLASS}
 			<!-- Abscar easter egg: the friend's operator peeks over this line now and then (absolute, so no grid cell) -->
@@ -80,14 +80,14 @@
 		<!-- flex-1: boxes in a row are equally tall; the list takes the extra room so the challenges sit at the bottom -->
 		<ul class="flex-1 px-2 pb-2">
 			{#each visible as weapon (weapon.id)}
-				<WeaponCard {weapon} {columns} classId={cls.id} />
+				<WeaponCard {weapon} {columns} />
 			{/each}
 		</ul>
 	{:else}
 		<p class="flex-1 px-4 pt-1 pb-3 text-sm text-muted">{t.cls.allHidden}</p>
 	{/if}
 
-	<footer class="grid gap-1 border-t border-line px-4 py-3 text-[13px] text-muted">
+	<footer class="compact-hide grid gap-1 border-t border-line px-4 py-3 text-[13px] text-muted">
 		<h3 class="sr-only">{t.cls.challenges}</h3>
 		{#each LADDER as camo (camo.id)}
 			<div>

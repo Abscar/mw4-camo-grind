@@ -4,7 +4,7 @@
 	import { LADDER } from '#lib/data/camos.ts';
 	import { WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
-	import { migrate, type ProgressData } from '#lib/progress-codec.ts';
+	import { migrate, type Migrated, type ProgressData } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { fetchRemote, sync } from '#lib/sync.svelte.ts';
 	import { syncCodeFromText, type SyncDoc } from '#lib/sync-codec.ts';
@@ -14,6 +14,10 @@
 	let fileInput = $state<HTMLInputElement>();
 	let linkOpen = $state(false);
 	let resetOpen = $state(false);
+	let resetKind = $state<'preset' | 'zero'>('preset');
+	/** A backup file that passed the checks, waiting for you to confirm. */
+	let importOffer = $state<{ migrated: Migrated; exported: string | null } | null>(null);
+	let importOpen = $state(false);
 	/** The link dialog shows either the progress link or the sync link. */
 	let linkKind = $state<'progress' | 'sync'>('progress');
 	let link = $state<string | null>(null);
@@ -29,11 +33,10 @@
 	let joinOpen = $state(false);
 	let joinOffer = $state<{ code: string; rev: number; doc: SyncDoc } | null>(null);
 
-	const btn =
-		'font-head min-h-11 rounded-full border px-4 text-[13px] font-semibold transition-colors';
-	const plain = `${btn} border-line bg-panel-2 text-fg hover:border-accent`;
-	const primary = `${btn} border-accent bg-accent text-on-accent`;
-	const danger = `${btn} border-line bg-panel-2 text-danger hover:border-danger`;
+	const btn = 'btn';
+	const plain = 'btn';
+	const primary = 'btn btn-primary';
+	const danger = 'btn btn-danger';
 
 	// Sync starts once saved progress has been read (+page.svelte's onMount sets progress.ready).
 	$effect(() => {
@@ -163,7 +166,12 @@
 		);
 	}
 
+	/** Read and check a backup file first; nothing changes until you confirm (applyImport). */
 	async function importBackup(file: File) {
+		if (file.size > 1_000_000) {
+			toast.show(t.importCheck.tooBig);
+			return;
+		}
 		let data: unknown;
 		try {
 			data = JSON.parse(await file.text());
@@ -175,6 +183,18 @@
 			toast.show(t.toast.badFile);
 			return;
 		}
+		const raw = data as { exported?: unknown };
+		const exported = typeof raw.exported === 'string' && Number.isFinite(Date.parse(raw.exported)) ? raw.exported : null;
+		importOffer = { migrated, exported };
+		importOpen = true;
+	}
+
+	function applyImport() {
+		const offer = importOffer;
+		importOpen = false;
+		importOffer = null;
+		if (!offer) return;
+		const migrated = offer.migrated;
 		// backups from 2026-11-07 on also hold your notes; older ones leave the notes you have alone
 		const notesBefore = { ...progress.notes };
 		const before = progress.replace(migrated.progress);
@@ -190,13 +210,13 @@
 
 	function doReset() {
 		resetOpen = false;
-		const before = progress.reset();
+		const before = progress.reset(resetKind);
 		toast.show(t.toast.reset, { label: t.toast.undo, run: () => progress.replace(before) });
 	}
 </script>
 
 <section id="sync" class="rounded-card bg-panel px-4 py-4 shadow-card sm:px-5" aria-labelledby="sync-heading">
-	<h2 id="sync-heading" class="font-head text-base font-bold tracking-wide uppercase">{t.sync.heading}</h2>
+	<h2 id="sync-heading" tabindex="-1" class="font-head text-base font-bold tracking-wide uppercase outline-none">{t.sync.heading}</h2>
 	<p class="mt-1.5 max-w-3xl text-sm text-muted">{sync.available ? t.sync.introSync : t.sync.intro}</p>
 
 	{#if sync.available}
@@ -232,7 +252,10 @@
 		<button type="button" class={sync.available ? plain : primary} onclick={openLink}>{t.sync.copyLink}</button>
 		<button type="button" class={plain} onclick={exportBackup}>{t.sync.exportFile}</button>
 		<button type="button" class={plain} onclick={() => fileInput?.click()}>{t.sync.importFile}</button>
-		<button type="button" class={danger} onclick={() => (resetOpen = true)}>{t.sync.reset}</button>
+		<button type="button" class={danger} onclick={() => {
+				resetKind = 'preset';
+				resetOpen = true;
+			}}>{t.sync.reset}</button>
 	</div>
 	<input
 		bind:this={fileInput}
@@ -326,13 +349,40 @@
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={importOpen} title={t.importCheck.title}>
+	{#if importOffer}
+		<p>{t.importCheck.body(summary(importOffer.migrated.progress), summary(progress.snapshot()))}</p>
+		{#if importOffer.exported}
+			<p class="mt-2">{t.importCheck.exported(new Date(importOffer.exported).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))}</p>
+		{/if}
+		<p class="mt-2">
+			{importOffer.migrated.notes ? t.importCheck.notes(Object.keys(importOffer.migrated.notes).length) : t.importCheck.noNotes}
+		</p>
+		{#if sync.on}<p class="mt-2 font-semibold text-fg">{t.autoSync.resetNote}</p>{/if}
+	{/if}
+	{#snippet actions()}
+		<button type="button" class={plain} onclick={() => (importOpen = false)}>{t.importCheck.cancel}</button>
+		<button type="button" class={plain} onclick={exportBackup}>{t.reset.exportFirst}</button>
+		<button type="button" class={primary} onclick={applyImport}>{t.importCheck.use}</button>
+	{/snippet}
+</Dialog>
+
 <Dialog bind:open={resetOpen} title={t.reset.title}>
 	<p>{t.reset.body}</p>
+	<fieldset class="mt-3 grid gap-2">
+		<legend class="sr-only">{t.reset.title}</legend>
+		{#each [{ kind: 'preset', label: t.reset.presetLabel, body: t.reset.presetBody(WEAPONS.filter((w) => w.season === 'launch').length) }, { kind: 'zero', label: t.reset.zeroLabel, body: t.reset.zeroBody }] as const as opt (opt.kind)}
+			<label class="reset-opt flex cursor-pointer items-start gap-2.5 rounded-lg border border-line bg-panel-2 p-3">
+				<input type="radio" name="reset-kind" value={opt.kind} bind:group={resetKind} class="mt-1 size-4 flex-none accent-(--t-accent)" />
+				<span><b class="font-semibold text-fg">{opt.label}</b><span class="mt-0.5 block text-[12.5px]">{opt.body}</span></span>
+			</label>
+		{/each}
+	</fieldset>
 	{#if sync.on}<p class="mt-2 font-semibold text-fg">{t.autoSync.resetNote}</p>{/if}
 	{#snippet actions()}
 		<button type="button" class={plain} onclick={() => (resetOpen = false)}>{t.reset.cancel}</button>
 		<button type="button" class={plain} onclick={exportBackup}>{t.reset.exportFirst}</button>
-		<button type="button" class="{btn} border-danger bg-danger text-white" onclick={doReset}>{t.reset.confirm}</button>
+		<button type="button" class="btn btn-danger-solid" onclick={doReset}>{t.reset.confirm}</button>
 	{/snippet}
 </Dialog>
 

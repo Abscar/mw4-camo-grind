@@ -87,7 +87,8 @@
 	--t-band-chip: rgb(14 16 20 / 0.85);
 	--t-band-line: var(--t-line);
 	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
-	--t-font-body: Bahnschrift, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+	/* headings keep the condensed DIN look; names, challenges and numbers use the plainer UI font (2026-11-10) */
+	--t-font-body: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 	--t-radius: 3px;
 	/* every box below the header gets a fiery glowing outline (green until 2026-11-10, the user's ask:
 	   "yellow/red, a bit of fire vibes around"): a hot yellow edge, an orange glow, and a red glow
@@ -200,7 +201,7 @@
 	--t-band-chip: var(--t-panel);
 	--t-band-line: var(--t-line);
 	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
-	--t-font-body: Bahnschrift, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+	--t-font-body: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 	--t-radius: 6px;
 	--t-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
 	--t-card-left: 4px;
@@ -410,6 +411,206 @@
 	dialog.sheet::backdrop {
 		background: rgb(0 0 0 / 0.55);
 	}
+
+	/*
+	 * ---------- the shared building blocks (2026-11-10 design system) ----------
+	 * Type:     .font-head (Bahnschrift, condensed DIN) for headings and labels; the body font for
+	 *           weapon names, challenges and numbers; .num = tabular figures for every counter.
+	 * Spacing:  sections 24 px apart (mt-6), panels 16 px inside (p-4), rows 8 px (gap-2).
+	 * Radius:   var(--t-radius) for panels, 999px for buttons and chips, 8px for fields.
+	 * Status:   done = ✔ + --t-ok, on it = ▶ + --t-gold, locked = lock icon + muted (never colour alone).
+	 * States:   :focus-visible outline (base layer), hover = accent border, disabled = 45% + no pointer.
+	 */
+	.eyebrow {
+		font-family: var(--t-font-head);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--t-muted);
+	}
+	.num {
+		font-variant-numeric: tabular-nums;
+	}
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		min-height: 2.75rem;
+		padding: 0 1rem;
+		border: 1px solid var(--t-line);
+		border-radius: 999px;
+		background: var(--t-panel-2);
+		color: var(--t-fg);
+		font-family: var(--t-font-head);
+		font-size: 13px;
+		font-weight: 600;
+		transition:
+			border-color 0.15s,
+			background-color 0.15s,
+			color 0.15s;
+	}
+	.btn:hover:not(:disabled) {
+		border-color: var(--t-accent);
+	}
+	.btn-primary {
+		border-color: var(--t-accent);
+		background: var(--t-accent);
+		color: var(--t-on-accent);
+	}
+	.btn-danger {
+		color: var(--t-danger);
+	}
+	.btn-danger:hover:not(:disabled) {
+		border-color: var(--t-danger);
+	}
+	.btn-danger-solid {
+		border-color: var(--t-danger);
+		background: var(--t-danger);
+		color: #fff;
+	}
+	.btn-sm {
+		min-height: 2.75rem;
+		padding: 0 0.75rem;
+		font-size: 12px;
+	}
+	/* a 44 × 44 tap target with a smaller visible face */
+	.icon-btn {
+		display: inline-grid;
+		place-items: center;
+		min-width: 2.75rem;
+		min-height: 2.75rem;
+		border-radius: 999px;
+		color: var(--t-fg);
+	}
+	.btn:disabled,
+	.icon-btn:disabled,
+	.step-btn:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+	.field {
+		height: 2.75rem;
+		border: 1px solid var(--t-tick-line);
+		border-radius: 8px;
+		background: var(--t-tick);
+		color: var(--t-fg);
+		outline: none;
+	}
+	.field:focus {
+		border-color: var(--t-accent);
+	}
+	/* the − / + buttons of a counter */
+	.step-btn {
+		display: grid;
+		place-items: center;
+		min-width: 2.75rem;
+		height: 2.75rem;
+		padding: 0 0.4rem;
+		border: 1px solid var(--t-tick-line);
+		border-radius: 8px;
+		background: var(--t-tick);
+		color: var(--t-fg);
+		font-family: var(--t-font-head);
+		font-size: 14px;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.step-btn:hover:not(:disabled) {
+		border-color: var(--t-accent);
+	}
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-height: 2.75rem;
+		padding: 0 0.9rem;
+		border: 1px solid var(--t-line);
+		border-radius: 999px;
+		background: var(--t-panel);
+		color: var(--t-muted);
+		font-family: var(--t-font-head);
+		font-size: 13px;
+		font-weight: 600;
+		white-space: nowrap;
+		transition:
+			border-color 0.15s,
+			color 0.15s,
+			background-color 0.15s;
+	}
+	.chip:hover {
+		color: var(--t-fg);
+	}
+	.chip[aria-pressed='true'] {
+		border-color: var(--t-accent);
+		background: var(--t-accent);
+		color: var(--t-on-accent);
+	}
+	/* status words with their icon: done / on it / locked */
+	.status-tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-family: var(--t-font-head);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+	.status-tag[data-status='done'] {
+		color: var(--t-ok);
+	}
+	.status-tag[data-status='active'] {
+		color: var(--t-gold-ink, var(--t-gold));
+	}
+	.status-tag[data-status='locked'] {
+		color: var(--t-muted);
+	}
+}
+
+/* status colours per theme (done reads as "complete" in each look) */
+:root,
+[data-theme='blackout'] {
+	--t-ok: #7dff5a;
+}
+[data-theme='field'] {
+	--t-ok: #2d7a1f;
+}
+[data-theme='neon'] {
+	--t-ok: #b6f23d;
+}
+[data-theme='command'] {
+	--t-ok: #15803d;
+}
+
+/*
+ * Compact mode (the header's "Compact" button, saved per device): focus weapons, the challenge you're
+ * on and quick updates first; decoration and secondary information hidden. app.html sets
+ * data-compact before the first paint, so nothing flashes.
+ */
+[data-compact] .compact-hide,
+[data-compact] .abscar-haze,
+[data-compact] .abscar-scan,
+[data-compact] .boot {
+	display: none !important;
+}
+[data-compact] .weapon-open .weapon-icon,
+[data-compact] .weapon-open .focus-pin {
+	display: none;
+}
+
+/* the welcome screen: once a day, any tap or key skips it (app.html sets data-boot) */
+[data-boot='off'] .boot {
+	display: none !important;
+}
+
+/* a hidden tab doesn't need to keep any decoration moving */
+[data-page-hidden] *,
+[data-page-hidden] *::before,
+[data-page-hidden] *::after {
+	animation-play-state: paused !important;
 }
 
 @keyframes tick-pop {
@@ -483,7 +684,7 @@
 	width: 75vmax;
 	height: 75vmax;
 	border-radius: 50%;
-	background: radial-gradient(closest-side, rgb(196 210 196 / 0.075), rgb(196 210 196 / 0.02) 55%, transparent);
+	background: radial-gradient(closest-side, rgb(196 210 196 / 0.05), rgb(196 210 196 / 0.014) 55%, transparent);
 	animation: haze-drift 40s ease-in-out infinite alternate;
 	will-change: transform;
 }
@@ -522,8 +723,8 @@
 	z-index: 30;
 	pointer-events: none;
 	background:
-		repeating-linear-gradient(to bottom, rgb(255 40 40 / 0.028) 0 1px, transparent 1px 3px),
-		radial-gradient(ellipse at 50% 35%, transparent 62%, rgb(0 0 0 / 0.32) 100%);
+		repeating-linear-gradient(to bottom, rgb(255 40 40 / 0.016) 0 1px, transparent 1px 3px),
+		radial-gradient(ellipse at 50% 35%, transparent 66%, rgb(0 0 0 / 0.22) 100%);
 }
 
 /* header: brand glow, flowing chrome title */
@@ -688,7 +889,7 @@
 	--t-muted: rgb(255 255 255 / 0.88);
 	border-top-color: transparent !important;
 }
-[data-theme='blackout'] .kpi-tile h2 {
+[data-theme='blackout'] .kpi-tile h3 {
 	color: #fff;
 }
 [data-theme='blackout'] .kpi-tile .bar {

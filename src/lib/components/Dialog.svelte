@@ -1,3 +1,7 @@
+<!--
+	A modal dialog on the browser's own <dialog>: the page behind is inert (focus stays inside),
+	Escape closes it, a click on the backdrop closes it, and focus goes back to whatever opened it.
+-->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
@@ -18,12 +22,24 @@
 
 	const id = $props.id();
 	let el = $state<HTMLDialogElement>();
+	/** What had focus when the dialog opened, to hand it back on close. */
+	let opener: HTMLElement | null = null;
 
 	$effect(() => {
 		if (!el) return;
-		if (open && !el.open) el.showModal();
+		if (open && !el.open) {
+			opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+			el.showModal();
+		}
 		if (!open && el.open) el.close();
 	});
+
+	function returnFocus() {
+		const target = opener;
+		opener = null;
+		// after the browser's own focus fix-up; never scroll the page to it
+		if (target && target.isConnected) requestAnimationFrame(() => target.focus({ preventScroll: true }));
+	}
 </script>
 
 <dialog
@@ -32,7 +48,10 @@
 		? 'w-[min(44rem,calc(100vw-2rem))]'
 		: 'w-[min(30rem,calc(100vw-2rem))]'} rounded-card border border-line bg-panel p-0 text-fg shadow-2xl"
 	aria-labelledby="{id}-title"
-	onclose={() => (open = false)}
+	onclose={() => {
+		open = false;
+		returnFocus();
+	}}
 	onclick={(e) => {
 		if (e.target === el) open = false;
 	}}

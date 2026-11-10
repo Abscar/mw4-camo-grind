@@ -25,6 +25,7 @@ import {
 	defaultProgress,
 	mergeStamps,
 	migrate,
+	resetProgress,
 	toExport,
 	toStored,
 	type Migrated,
@@ -34,6 +35,7 @@ import {
 	type Stamps
 } from './progress-codec.ts';
 import type { SyncDoc } from './sync-codec.ts';
+import { countKey, pruneCounts, stepInfo, type StepKey } from './steps.ts';
 
 /** Where progress lives in the browser. Bump the version (and extend `migrate`) when the shape changes. */
 export const STORAGE_KEY = 'mw4-camo-grind:v2';
@@ -64,6 +66,29 @@ function backup(raw: string, reason: string): void {
 
 export type LoadResult = 'fresh' | 'loaded' | 'migrated-v1' | 'unreadable';
 
+/** Everything about one weapon a tap or a counter can change, so Undo can put all of it back. */
+export interface WeaponState {
+	weaponId: string;
+	level: number;
+	specials: number;
+	stamps: number[] | undefined;
+	counts: Record<string, number>;
+}
+
+/** What a tap on a ladder box did: the state before it, and which camos it took away. */
+export interface ToggleResult {
+	before: WeaponState;
+	from: number;
+	to: number;
+}
+
+/** What a counter change did. 'completed' = it reached the target and ticked the step. */
+export interface CountResult {
+	before: WeaponState;
+	value: number;
+	completed: boolean;
+}
+
 class Progress {
 	weapons = $state<Record<string, number>>(defaultProgress().weapons);
 	mastery = $state<Record<string, number>>(defaultProgress().mastery);
@@ -71,6 +96,8 @@ class Progress {
 	specials = $state<Record<string, number>>({});
 	/** When each ladder camo was ticked, for the grind stats (stats.ts). */
 	stamps = $state<Stamps>({});
+	/** Counters toward the steps you're on ("<weapon id>:<step>" → count; rules in steps.ts). */
+	counts = $state<Record<string, number>>({});
 	prefs = $state<Prefs>(defaultPrefs());
 	/** The user's own notes per weapon. Not part of progress links (too long), but in backups. */
 	notes = $state<Notes>({});
@@ -136,12 +163,21 @@ class Progress {
 	 * Ladder rule: ticking a camo also ticks everything below it;
 	 * unticking a camo also clears everything above it.
 	 */
-	toggle(weaponId: string, ladderIndex: number): void {
+	toggle(weaponId: string, ladderIndex: number): ToggleResult {
+		const state = this.capture(weaponId);
+		this.#setLevel(weaponId, this.has(weaponId, ladderIndex) ? ladderIndex : ladderIndex + 1);
+		this.save();
+		return { before: state, from: state.level, to: this.level(weaponId) };
+	}
+
+	/** Set a weapon's ladder level as your own tap: tick times, counters, and the kill feed on a gain. */
+	#setLevel(weaponId: string, next: number): void {
 		const before = this.level(weaponId);
 		const divergenceBefore = this.divergenceUnlocked;
-		this.weapons[weaponId] = this.has(weaponId, ladderIndex) ? ladderIndex : ladderIndex + 1;
+		this.weapons[weaponId] = next;
 		const after = this.level(weaponId);
 		this.#stamp(weaponId, before, after);
+		this.counts = pruneCounts(this.counts, this.weapons, this.specials);
 		if (after > before) {
 			this.lastTickAt = new Date().toISOString();
 			feed.gain({
@@ -151,7 +187,73 @@ class Progress {
 				divergence: !divergenceBefore && this.divergenceUnlocked
 			});
 		}
+	}
+
+	/** One weapon's ticks, before-Gold ticks, tick times and counters, for Undo. */
+	capture(weaponId: string): WeaponState {
+		const prefix = `${weaponId}:`;
+		return {
+			weaponId,
+			level: this.level(weaponId),
+			specials: this.specials[weaponId] ?? 0,
+			stamps: this.stamps[weaponId] ? [...this.stamps[weaponId]] : undefined,
+			counts: Object.fromEntries(Object.entries(this.counts).filter(([k]) => k.startsWith(prefix)))
+		};
+	}
+
+	/** Put one weapon back the way `capture` saw it (Undo). Never feeds the kill feed. */
+	restore(state: WeaponState): void {
+		const id = state.weaponId;
+		this.weapons[id] = state.level;
+		const specials = { ...this.specials };
+		if (state.specials) specials[id] = state.specials;
+		else delete specials[id];
+		this.specials = specials;
+		const stamps = { ...this.stamps };
+		if (state.stamps) stamps[id] = [...state.stamps];
+		else delete stamps[id];
+		this.stamps = stamps;
+		const prefix = `${id}:`;
+		this.counts = {
+			...Object.fromEntries(Object.entries(this.counts).filter(([k]) => !k.startsWith(prefix))),
+			...state.counts
+		};
 		this.save();
+	}
+
+	/** How far a step's counter is (0 when it has none). */
+	count(weaponId: string, key: StepKey): number {
+		return this.counts[countKey(weaponId, key)] ?? 0;
+	}
+
+	/**
+	 * Set a step's counter (direct input, +1 / −1, bigger steps). Reaching the target ticks the step
+	 * (the ladder rule fills the camos below it) and clears the counter, see steps.ts. Returns null
+	 * when nothing changed (a done step, a step without a counter, the same number).
+	 */
+	setCount(weaponId: string, key: StepKey, value: number): CountResult | null {
+		const step = stepInfo(weaponId, key);
+		if (!step || step.target === 0 || !Number.isFinite(value)) return null;
+		const done = step.kind === 'special' ? this.special(weaponId, step.index) : this.has(weaponId, step.index);
+		if (done) return null;
+		const next = Math.max(0, Math.min(step.target, Math.trunc(value)));
+		const k = countKey(weaponId, key);
+		if (next === (this.counts[k] ?? 0)) return null;
+		const before = this.capture(weaponId);
+		if (next >= step.target) {
+			const counts = { ...this.counts };
+			delete counts[k];
+			this.counts = counts;
+			if (step.kind === 'special') this.specials = { ...this.specials, [weaponId]: ((this.specials[weaponId] ?? 0) | (1 << step.index)) & SPECIALS_ALL };
+			else this.#setLevel(weaponId, step.index + 1);
+		} else {
+			const counts = { ...this.counts };
+			if (next > 0) counts[k] = next;
+			else delete counts[k];
+			this.counts = counts;
+		}
+		this.save();
+		return { before, value: next, completed: next >= step.target };
 	}
 
 	/** Note when the camos a tap added were ticked; a camo the tap took away loses its time. */
@@ -187,6 +289,7 @@ class Progress {
 		if (mask) next[weaponId] = mask;
 		else delete next[weaponId];
 		this.specials = next;
+		this.counts = pruneCounts(this.counts, this.weapons, this.specials); // a ticked one has no counter
 		this.save();
 		return ((mask >> index) & 1) === 1;
 	}
@@ -249,7 +352,12 @@ class Progress {
 	}
 
 	snapshot(): ProgressData {
-		return { weapons: { ...this.weapons }, mastery: this.#masteryCounts(), specials: { ...this.specials } };
+		return {
+			weapons: { ...this.weapons },
+			mastery: this.#masteryCounts(),
+			specials: { ...this.specials },
+			counts: { ...this.counts }
+		};
 	}
 
 	/** What automatic sync shares with your other devices (sync-codec.ts). */
@@ -271,6 +379,7 @@ class Progress {
 		this.weapons = { ...doc.progress.weapons };
 		this.mastery = { ...this.#masteryCounts(), ...doc.progress.mastery };
 		if (doc.progress.specials) this.specials = { ...doc.progress.specials };
+		this.counts = pruneCounts(doc.progress.counts ?? this.counts, this.weapons, this.specials);
 		this.stamps = mergeStamps(this.weapons, doc.stamps);
 		this.notes = { ...doc.notes };
 		this.prefs = { ...this.prefs, focus: [...doc.focus] };
@@ -295,13 +404,15 @@ class Progress {
 		this.weapons = { ...next.weapons };
 		this.mastery = { ...before.mastery, ...next.mastery };
 		if (next.specials) this.specials = { ...next.specials };
+		this.counts = pruneCounts(next.counts ?? this.counts, this.weapons, this.specials);
 		this.stamps = mergeStamps(this.weapons, this.stamps);
 		this.save();
 		return before;
 	}
 
-	reset(): ProgressData {
-		return this.replace({ ...defaultProgress(), specials: {} });
+	/** 'preset' = Gold on every launch weapon (how the tracker starts); 'zero' = nothing at all. */
+	reset(kind: 'preset' | 'zero' = 'preset'): ProgressData {
+		return this.replace(resetProgress(kind));
 	}
 
 	isDefault(): boolean {
@@ -309,7 +420,8 @@ class Progress {
 		return (
 			WEAPONS.every((w) => this.level(w.id) === d.weapons[w.id]) &&
 			ALL_MASTERY.every((m) => (this.mastery[m.id] ?? 0) === 0) &&
-			Object.keys(this.specials).length === 0
+			Object.keys(this.specials).length === 0 &&
+			Object.keys(this.counts).length === 0
 		);
 	}
 
@@ -371,6 +483,7 @@ class Progress {
 		this.weapons = m.progress.weapons;
 		this.mastery = { ...this.#masteryCounts(), ...m.progress.mastery };
 		if (m.progress.specials) this.specials = m.progress.specials;
+		if (m.progress.counts) this.counts = pruneCounts(m.progress.counts, m.progress.weapons, this.specials);
 		if (m.stamps) this.stamps = mergeStamps(m.progress.weapons, m.stamps);
 		if (m.prefs) this.prefs = m.prefs;
 		if (m.notes) this.notes = m.notes;

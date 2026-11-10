@@ -2,9 +2,8 @@
 	Theme picker, tucked away in the header's top-right corner: a small swatch button that opens a
 	menu with the four looks. Closes on pick, outside click or Escape.
 	The menu stays in the page while closed (just `hidden`), so its buttons always exist.
-	Under the swatch: the sound-effects on/off button (sound.svelte.ts). It sits below rather than
-	beside the swatch so the corner stays one button wide and never reaches the operator emblem
-	(phones) or the news buddy (desktop).
+	In one row with it (2026-11-10): the Compact mode button and the sound-effects on/off button
+	(sound.svelte.ts; sound never starts by itself).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -43,7 +42,22 @@
 	});
 </script>
 
-<div class="relative" bind:this={root}>
+<div class="relative flex items-center gap-0.5" bind:this={root}>
+	<!-- compact mode between matches (saved per device; app.html applies it before the first paint) -->
+	<button
+		type="button"
+		class="font-head inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold text-band-muted opacity-75 transition-opacity hover:opacity-100 focus-visible:opacity-100 aria-pressed:text-band-fg aria-pressed:opacity-100"
+		aria-pressed={progress.prefs.compact}
+		title={progress.prefs.compact ? t.compact.on : t.compact.off}
+		onclick={() => progress.setPref('compact', !progress.prefs.compact)}
+	>
+		<svg viewBox="0 0 16 16" class="size-4 flex-none" aria-hidden="true" focusable="false">
+			<path d="M2.5 4h11M2.5 8h11M2.5 12h11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+			{#if progress.prefs.compact}<path d="M2.5 4h11" stroke="currentColor" stroke-width="3" stroke-linecap="round" />{/if}
+		</svg>
+		<span class="max-[420px]:sr-only">{t.compact.short}</span>
+	</button>
+
 	<button
 		bind:this={toggle}
 		type="button"
