@@ -89,10 +89,12 @@
 	--t-font-head: Bahnschrift, 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui, sans-serif;
 	--t-font-body: Bahnschrift, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 	--t-radius: 3px;
-	/* every box below the header gets a green glowing outline */
+	/* every box below the header gets a fiery glowing outline (green until 2026-11-10, the user's ask:
+	   "yellow/red, a bit of fire vibes around"): a hot yellow edge, an orange glow, and a red glow
+	   nudged upwards like flames rising off the box */
 	--t-shadow:
-		0 0 0 2.5px rgb(120 255 90 / 0.8), 0 0 18px 2px rgb(90 255 60 / 0.45), 0 0 40px rgb(70 220 50 / 0.18),
-		0 14px 34px rgb(0 0 0 / 0.38);
+		0 0 0 2.5px rgb(255 196 60 / 0.9), 0 0 14px 2px rgb(255 120 24 / 0.55), 0 -6px 30px 2px rgb(255 50 16 / 0.35),
+		0 0 46px rgb(220 30 10 / 0.2), 0 14px 34px rgb(0 0 0 / 0.38);
 	/* layout switches (0 = off, 1 = on, or a length) */
 	--t-card-left: 3px;
 	--t-card-top: 0px;
@@ -1282,7 +1284,7 @@
 
 /* Abscar: the class filter buttons are the user's own blunt picture (assets/blunt.webp, cut out of
    its black background) with green text on the wrap. They all have the same width so the picture
-   never stretches; the selected one glows green like the boxes and sits a little bigger. */
+   never stretches; the selected one glows like the boxes (fire since 2026-11-10) and sits a little bigger. */
 [data-theme='blackout'] .class-chips {
 	gap: 4px;
 	/* room for the glow: the row scrolls sideways on phones, which clips anything outside it */
@@ -1322,7 +1324,7 @@
 }
 [data-theme='blackout'] .class-chip[aria-pressed='true'] {
 	color: #c4ff9f;
-	filter: drop-shadow(0 0 2px rgb(140 255 100 / 0.95)) drop-shadow(0 0 9px rgb(90 255 60 / 0.6));
+	filter: drop-shadow(0 0 2px rgb(255 196 60 / 0.95)) drop-shadow(0 0 9px rgb(255 90 20 / 0.65));
 	transform: scale(1.06);
 }
 
