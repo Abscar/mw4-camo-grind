@@ -109,7 +109,6 @@
 							<li>
 								<SpecialTick
 									weaponId={weapon.id}
-									weaponName={weapon.name}
 									index={i}
 									total={weapon.specials.length}
 									name={special.name}

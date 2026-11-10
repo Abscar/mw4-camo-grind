@@ -125,8 +125,7 @@ export const en = {
 		balanceLong: (change: 'buff' | 'nerf', patch: string) =>
 			`${change === 'buff' ? 'Buffed' : 'Nerfed'} in the ${patch} patch`,
 		editNote: 'Edit your note',
-		/** The Special camos (the 3 challenges before Gold). */
-		special: (camo: string, weapon: string) => `${camo} (before Gold): ${weapon}`,
+		/** The Special camos (the 3 challenges before Gold, ticked in the weapon card). */
 		preGoldPips: (n: number, total: number) => `${n} of ${total} challenges before Gold done`,
 		preGoldShort: 'Before Gold',
 		goldReady: 'Gold ready!'

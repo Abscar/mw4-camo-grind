@@ -1,8 +1,8 @@
 <!--
-	One Special camo (a challenge before Gold) as a tick button: a gold diamond that fills when
-	ticked, with a burst of gold sparks; when it was the last of the three, "Gold ready!" floats up.
-	`chip` = just the name (chips under each weapon in the list), otherwise name + challenge (weapon card).
-	Locked (shown done) while the weapon has Gold.
+	One Special camo (a challenge before Gold) as a tick row in the weapon card: a gold diamond that
+	fills when ticked, with a burst of gold sparks; when it was the last of the three, "Gold ready!"
+	floats up. Locked (shown done) while the weapon has Gold. (Chips under each weapon in the list
+	were removed 2026-11-10 at the user's ask: the card is enough.)
 -->
 <script lang="ts">
 	import type { Fact } from '#lib/data/weapons.ts';
@@ -12,20 +12,16 @@
 
 	let {
 		weaponId,
-		weaponName,
 		index,
 		total,
 		name,
-		challenge,
-		chip = false
+		challenge
 	}: {
 		weaponId: string;
-		weaponName: string;
 		index: number;
 		total: number;
 		name: string;
 		challenge: Fact;
-		chip?: boolean;
 	} = $props();
 
 	const pressed = $derived(progress.special(weaponId, index));
@@ -42,10 +38,10 @@
 
 <button
 	type="button"
-	class="special-tick {chip ? 'st-chip' : 'st-row'}"
+	class="special-tick st-row"
 	aria-pressed={pressed}
 	disabled={locked}
-	title={locked ? t.sheet.preGoldLocked : chip ? `${name}: ${challenge.text}` : undefined}
+	title={locked ? t.sheet.preGoldLocked : undefined}
 	onclick={click}
 >
 	<span class="st-box" aria-hidden="true">
@@ -57,11 +53,7 @@
 			{/if}
 		{/key}
 	</span>
-	{#if chip}
-		<span class="st-name">{name}<span class="sr-only"> – {t.weapon.special(challenge.text, weaponName)}</span></span>
-	{:else}
-		<span class="min-w-0 flex-1 text-left"><b class="font-semibold">{name}:</b> <FactText fact={challenge} /></span>
-	{/if}
+	<span class="min-w-0 flex-1 text-left"><b class="font-semibold">{name}:</b> <FactText fact={challenge} /></span>
 	{#key ready}
 		{#if ready}<span class="st-ready" aria-hidden="true">{t.weapon.goldReady}</span>{/if}
 	{/key}
@@ -88,26 +80,6 @@
 	}
 	.st-row:hover:not(:disabled) {
 		background: color-mix(in srgb, var(--t-gold) 10%, transparent);
-	}
-	.st-chip {
-		gap: 0.35rem;
-		padding: 0.15rem 0.55rem 0.15rem 0.3rem;
-		border: 1px solid var(--t-tick-line);
-		background: var(--t-tick);
-		font-size: 12px;
-		font-weight: 600;
-		line-height: 1.2;
-	}
-	.st-chip .st-box {
-		width: 19px;
-		height: 19px;
-	}
-	.st-chip:hover:not(:disabled) {
-		border-color: var(--t-gold);
-	}
-	.st-chip[aria-pressed='true'] {
-		border-color: color-mix(in srgb, var(--t-gold) 70%, transparent);
-		background: color-mix(in srgb, var(--t-gold) 16%, var(--t-tick));
 	}
 	.special-tick:disabled {
 		cursor: default;
