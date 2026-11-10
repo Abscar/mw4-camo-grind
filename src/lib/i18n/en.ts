@@ -208,6 +208,20 @@ export const en = {
 		close: 'Close'
 	},
 
+	/** The meta list: the best guns per class in Multiplayer and Warzone (MetaSection). */
+	metaList: {
+		heading: 'Meta top 5',
+		sub: 'Best guns per class right now',
+		modeGroup: 'Game mode',
+		overall: 'Overall',
+		tier: (tier: string) => `${tier} tier`,
+		/** A class with fewer guns than the list's length. */
+		onlyN: (n: number) => `MW4 has only ${n} guns in this class so far.`,
+		openHint: 'open its meta class',
+		snapshot: (sources: string, date: string) =>
+			`A snapshot of ${sources} on ${date}. The meta moves with every balance patch. Tap a gun for its meta class.`
+	},
+
 	cls: {
 		number: (n: number) => String(n).padStart(2, '0'),
 		maxed: 'Class maxed',

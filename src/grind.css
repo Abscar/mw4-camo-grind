@@ -102,6 +102,59 @@
 	color: var(--t-fg);
 }
 
+/* ---------- "Meta top 5" (MetaSection, all themes) ---------- */
+.meta-mode {
+	border-color: var(--t-line);
+	background: var(--t-panel-2);
+	color: var(--t-fg);
+}
+.meta-mode[aria-pressed='true'] {
+	border-color: var(--t-accent);
+	background: var(--t-accent);
+	color: var(--t-on-accent);
+}
+.meta-pick:hover {
+	background: var(--t-panel);
+}
+.meta-pick:hover .weapon-name {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+.meta-pick .weapon-icon {
+	width: 58px;
+	height: 22px;
+}
+.meta-rank {
+	text-align: center;
+	color: var(--t-muted);
+}
+.meta-rank.first {
+	color: var(--t-gold-ink, var(--t-gold));
+}
+/* the tier letter: S filled, A outlined in the accent, the rest quiet */
+.meta-tier {
+	display: grid;
+	place-items: center;
+	min-width: 1.5rem;
+	height: 1.4rem;
+	padding: 0 0.3rem;
+	border: 1px solid var(--t-line);
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1;
+	color: var(--t-muted);
+}
+.meta-tier[data-tier='S'] {
+	border-color: var(--t-accent);
+	background: var(--t-accent);
+	color: var(--t-on-accent);
+}
+.meta-tier[data-tier='A'] {
+	border-color: var(--t-accent);
+	color: var(--t-fg);
+}
+
 /* ---------- Abscar: every weapon (name + its boxes) in its own white frame, with room between
    them so the list reads as sections (the user's ask, 2026-11-10: "start with white frames").
    The padding gives back the border's width, so the content stays where it was and still lines

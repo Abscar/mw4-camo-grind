@@ -21,6 +21,7 @@
 	import LoadoutDialog from '#lib/components/LoadoutDialog.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
+	import MetaSection from '#lib/components/MetaSection.svelte';
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
 	import SquadBanner from '#lib/components/SquadBanner.svelte';
 	import NukeBanner from '#lib/components/NukeBanner.svelte';
@@ -199,6 +200,8 @@
 		{/if}
 
 		<div class="mt-7"><MasterySection /></div>
+
+		<div class="mt-7"><MetaSection /></div>
 
 		<div class="abscar-only mt-7">
 			<div class="overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
