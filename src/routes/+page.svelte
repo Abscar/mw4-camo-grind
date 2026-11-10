@@ -10,6 +10,7 @@
 	import { THEMES } from '#lib/themes.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import AbscarFx from '#lib/components/AbscarFx.svelte';
+	import ClassMeta from '#lib/components/ClassMeta.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
@@ -202,6 +203,11 @@
 		<div id="weapons" class="mt-6 scroll-mt-4">
 			<Toolbar bind:query shown={shownCount} total={WEAPONS.length} onclear={clearFilters} />
 		</div>
+
+		<!-- the picked class's meta top 5, above its weapons -->
+		{#if progress.prefs.classFilter}
+			<div class="compact-hide mt-4"><ClassMeta classId={progress.prefs.classFilter} /></div>
+		{/if}
 
 		<!-- 5. the weapon list -->
 		{#if sections.length > 0}

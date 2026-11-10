@@ -361,6 +361,12 @@ export const en = {
 			`A snapshot of ${sources} on ${date}. The meta moves with every balance patch. Tap a gun for its meta class.`
 	},
 
+	/** The picked class's meta top 5 above its weapons (ClassMeta). */
+	classMeta: {
+		heading: (cls: string) => `${cls}: meta top 5`,
+		snapshot: (sources: string, date: string) => `Snapshot of ${sources}, ${date}. Tap a gun for its build.`
+	},
+
 	cls: {
 		number: (n: number) => String(n).padStart(2, '0'),
 		maxed: 'Class maxed',
