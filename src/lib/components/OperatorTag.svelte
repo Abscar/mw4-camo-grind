@@ -3,8 +3,10 @@
 	(after the in-game skin: red eyes, exposed teeth, hydraulic neck, a holk with smoke),
 	the callsign, and the ranked badge. Only shown in the Abscar theme (.abscar-only).
 	Next to it the same tag for his squadmate Phillestar (PhillestarEmblem: a hamburger, no holk; 2026-11-10).
-	The two tags share a row (stacked on phones) and the rank badge sits on its own row below them: all
-	three in one row made the header so wide that the news buddy dropped below the title at 1280 px.
+	Both tags and the rank badge share one row inside a "Squad" frame with an iridescent border, the badge
+	saying "Both ranked / Iridescent" (the user's ask, 2026-11-10: "Iridescent on the same row as the
+	operators, framed so it shows we're both in that rank"). It wraps on narrow screens (stacked on phones).
+	The news buddy moved next to the title at the same time, which freed the room for this row.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -51,10 +53,10 @@
 	</div>
 {/snippet}
 
-<div class="abscar-only mb-4">
-	<div class="flex flex-col items-start gap-3">
-		<div class="flex flex-wrap items-center gap-x-5 gap-y-3">
-			<div class="flex items-center gap-3.5">
+<div class="abscar-only mb-4 pt-1">
+	<div class="squad-frame relative inline-flex max-w-full flex-wrap items-center gap-x-5 gap-y-3 rounded-lg px-3 pt-4 pb-3">
+		<span class="squad-legend font-hud">{t.operator.squad}</span>
+			<div class="op-tag flex items-center gap-3.5">
 				<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" aria-hidden="true" focusable="false">
 					<defs>
 						<linearGradient id="{uid}-bronze" x1="0" y1="0" x2="0.4" y2="1">
@@ -193,12 +195,52 @@
 				{@render callsign(t.operator.callsign)}
 			</div>
 
-			<div class="flex items-center gap-3.5">
+			<div class="op-tag flex items-center gap-3.5">
 				<PhillestarEmblem />
 				{@render callsign(t.operator.mate)}
 			</div>
-		</div>
 
-		<RankBadge />
+		<RankBadge label={t.operator.bothRanked} />
 	</div>
 </div>
+
+<style>
+	/* one frame round both operators and the rank: an iridescent border that slowly shifts colour */
+	.squad-frame {
+		border: 1.5px solid transparent;
+		background:
+			linear-gradient(135deg, rgb(28 8 52 / 0.62), rgb(10 4 24 / 0.5)) padding-box,
+			linear-gradient(110deg, #7a3ff0, #ff6ad5, #4fe6ff, #b265ff, #7a3ff0) border-box;
+		background-size:
+			100% 100%,
+			300% 100%;
+		box-shadow:
+			0 0 20px rgb(190 90 255 / 0.3),
+			inset 0 0 16px rgb(255 95 216 / 0.1);
+		animation: squad-sheen 9s linear infinite;
+	}
+	@keyframes squad-sheen {
+		to {
+			background-position:
+				0 0,
+				300% 0;
+		}
+	}
+	/* the "Squad" label sitting on the frame's top edge */
+	.squad-legend {
+		position: absolute;
+		top: 0;
+		left: 14px;
+		transform: translateY(-50%);
+		padding: 1px 9px;
+		border: 1px solid rgb(255 106 213 / 0.6);
+		border-radius: 999px;
+		background: #1a0b33;
+		color: #f3e6ff;
+		font-size: 10px;
+		line-height: 1.5;
+		letter-spacing: 0.24em;
+		text-transform: uppercase;
+		box-shadow: 0 0 10px rgb(190 90 255 / 0.35);
+	}
+</style>

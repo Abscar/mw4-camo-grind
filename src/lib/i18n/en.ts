@@ -18,7 +18,10 @@ export const en = {
 		mate: 'Phillestar',
 		online: 'Online',
 		rank: 'Rank',
-		rankName: 'Iridescent'
+		rankName: 'Iridescent',
+		/** label on the frame round both operator tags + the rank badge (they're both Iridescent) */
+		squad: 'Squad',
+		bothRanked: 'Both ranked'
 	},
 	/** The news buddy's speech bubble: nerfs, buffs, movement and patch changes only. */
 	news: {

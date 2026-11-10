@@ -12,6 +12,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 
+	/** The small line above the rank name ("Rank"; "Both ranked" in the squad frame). */
+	let { label = t.operator.rank }: { label?: string } = $props();
+
 	const uid = $props.id();
 	const O = '#10041f'; // outline
 
@@ -202,7 +205,7 @@
 		</g>
 	</svg>
 	<div class="min-w-0">
-		<p class="font-hud text-[10px] tracking-[0.22em] text-band-muted uppercase">{t.operator.rank}</p>
+		<p class="font-hud text-[10px] tracking-[0.22em] text-band-muted uppercase">{label}</p>
 		<p class="rank-name font-head text-[17px] leading-tight font-bold tracking-[0.12em] uppercase">
 			{t.operator.rankName}
 		</p>
