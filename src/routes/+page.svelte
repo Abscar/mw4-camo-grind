@@ -194,7 +194,8 @@
 		<div class="mt-7"><MetaSection /></div>
 
 		<div class="abscar-only mt-7">
-			<div class="overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
+			<!-- top and bottom banner share one height (the user's ask: "same size so they look in proportion") -->
+			<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
 			<div class="mt-4 overflow-hidden rounded-card shadow-card"><SquadBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
 		</div>

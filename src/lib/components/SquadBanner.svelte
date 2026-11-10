@@ -2,9 +2,10 @@
 	Banner right above the cyborg banner (Abscar only): the user's own poster of their operator (the green,
 	moss-covered cyborg sniper "Abscar") next to their mate's (the red "Phillestar"), with the Iridescent
 	rank emblem and the MW4 logo (assets/squad-banner.webp, from their Pictures folder, 2026-11-10;
-	1672×941, webp q 0.8). The original spelled the mate "Philestar"; two l's is right (the user), so the
-	L was repeated in the picture (everything right of the gap L|E moved 35 px right inside a feathered
-	band around the name). Unlike the cyborg banner it is shown whole (the box keeps the picture's
+	1672×941, webp q 0.8). Since 2026-11-10 17:05 it's the user's comic-style version of the same poster
+	(they replaced the photo-real one in the same file). Both spelled the mate "Philestar"; two l's is right
+	(the user), so the L is repeated in the picture: everything right of the gap L|E (x = 1322 at y = 540,
+	slant 0.5) moved 42 px right inside a feathered band around the name. Unlike the cyborg banner it is shown whole (the box keeps the picture's
 	shape): it has names and a logo right up to its edges, and cropping would cut them off.
 	Our only extra: Abscar's two red eyes glow a little, drawn in picture coordinates so they stay on the
 	eyes at any width (prefers-reduced-motion freezes the pulse). Decoration only, so the alt text is empty.
@@ -16,8 +17,8 @@
 
 	/** Centres of Abscar's two red eyes in the picture. */
 	const EYES = [
-		[612, 134],
-		[666, 121]
+		[588, 124],
+		[644, 111]
 	];
 </script>
 
@@ -43,7 +44,7 @@
 				class="sb-eye"
 				{cx}
 				{cy}
-				r="38"
+				r="32"
 				fill="url(#{uid}-glow)"
 				style:animation-delay="{i * 0.2}s"
 			/>

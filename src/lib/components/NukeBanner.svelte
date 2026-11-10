@@ -1,36 +1,38 @@
 <!--
-	Banner right above the squad banner (Abscar only): the user's own picture of the nuke operator
-	(Phillestar's favourite, see NukeOperator) as a cracked black-chrome skull with glowing orange eyes in a
-	helmet with a headset, in front of a burning city with helicopters (assets/nuke-banner.webp, from their
-	Pictures folder, 2026-11-10; 1672×941, webp q 0.8). Shown whole like the squad banner (the box keeps the
-	picture's shape), so the helmet top and the radiation patch on the chest stay in.
+	Banner right above the squad banner (Abscar only): the user's own comic-style picture of the nuke
+	operator (Phillestar's favourite, see NukeOperator), a black-chrome skull with glowing orange eyes in a
+	helmet with a headset, in front of a wall of flames (assets/nuke-banner.webp, from their Pictures folder,
+	"SÅJa.png", 2026-11-10; 1983×793, webp q 0.8; it replaced a photo-real 1672×941 version the same day).
+	Its box is exactly as tall as the cyborg banner's (the user's ask, 2026-11-10: top and bottom picture
+	the same size, so they look in proportion): the picture fills it like object-fit: cover, which on
+	desktop shows almost all of it (2.5:1 in a ~2.55:1 box) and on phones trims the sides around the skull.
 	Our extras, drawn in picture coordinates so they stay put at any width: the eyes glow and flicker like
 	embers, and a few sparks drift up from the fire on both sides. prefers-reduced-motion freezes them
 	(the sparks are hidden). Decoration only, so the alt text is empty.
 -->
 <script lang="ts" module>
 	/** The picture's size in pixels. */
-	const W = 1672;
-	const H = 941;
+	const W = 1983;
+	const H = 793;
 
 	/** Centres of the two glowing eyes in the picture. */
 	const EYES = [
-		[745, 225],
-		[925, 222]
+		[897, 205],
+		[1042, 198]
 	];
 
 	/** Sparks over the fire on both sides: [x, y, radius, delay s, duration s, sideways drift px]. */
 	const SPARKS = [
-		[90, 820, 4, 0, 5.2, 26],
-		[220, 700, 3, 1.5, 6, -20],
-		[360, 860, 4.5, 2.8, 5.6, 18],
-		[150, 560, 2.5, 3.9, 6.6, 22],
-		[420, 620, 3, 0.8, 5.8, -16],
-		[1300, 760, 4, 0.4, 5.6, -24],
-		[1440, 860, 3, 2.2, 6.2, 18],
-		[1560, 640, 3.5, 3.4, 5.4, -20],
-		[1620, 820, 4.5, 1.2, 6.4, 22],
-		[1380, 560, 2.5, 4.4, 6.8, 16]
+		[110, 700, 4, 0, 5.2, 26],
+		[260, 600, 3, 1.5, 6, -20],
+		[430, 740, 4.5, 2.8, 5.6, 18],
+		[170, 460, 2.5, 3.9, 6.6, 22],
+		[520, 520, 3, 0.8, 5.8, -16],
+		[1560, 640, 4, 0.4, 5.6, -24],
+		[1720, 740, 3, 2.2, 6.2, 18],
+		[1860, 540, 3.5, 3.4, 5.4, -20],
+		[1930, 700, 4.5, 1.2, 6.4, 22],
+		[1650, 460, 2.5, 4.4, 6.8, 16]
 	];
 </script>
 
@@ -40,9 +42,10 @@
 	const uid = $props.id();
 </script>
 
-<div class="nuke-banner relative overflow-hidden" style:aspect-ratio="{W} / {H}">
+<div class="nuke-banner relative h-full w-full overflow-hidden">
 	<img src={picture} alt="" width={W} height={H} loading="lazy" decoding="async" />
-	<svg viewBox="0 0 {W} {H}" focusable="false" aria-hidden="true">
+	<!-- "slice" crops the overlay exactly like object-fit: cover crops the picture, so the glow stays on the eyes -->
+	<svg viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid slice" focusable="false" aria-hidden="true">
 		<defs>
 			<radialGradient id="{uid}-glow">
 				<stop offset="0" stop-color="#fff2c0" stop-opacity="0.85" />
@@ -56,7 +59,7 @@
 				class="nb-eye"
 				{cx}
 				{cy}
-				r="110"
+				r="95"
 				fill="url(#{uid}-glow)"
 				style:animation-delay="{i * 0.35}s"
 			/>
@@ -88,6 +91,9 @@
 		display: block;
 		width: 100%;
 		height: 100%;
+	}
+	.nuke-banner img {
+		object-fit: cover;
 	}
 	/* the same dark inner edge as the other banners, so the picture sinks into the page */
 	.nuke-banner::after {
