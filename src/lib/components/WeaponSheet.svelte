@@ -9,12 +9,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { BALANCE, BALANCE_PATCH } from '#lib/data/balance.ts';
-	import { LOADOUTS } from '#lib/data/loadouts.ts';
+	import { LOADOUTS, LOADOUTS_AS_OF } from '#lib/data/loadouts.ts';
 	import { META_RANKS } from '#lib/data/metaRanks.ts';
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
 	import { CLASSES, WEAPON_BY_ID } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
-	import { loadoutView } from '#lib/loadoutView.svelte.ts';
 	import { FOCUS_MAX, NOTE_MAX } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { stepsOf } from '#lib/steps.ts';
@@ -22,6 +21,7 @@
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import FactText from './FactText.svelte';
+	import MetaBuilds from './MetaBuilds.svelte';
 	import StepRow from './StepRow.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
@@ -61,12 +61,6 @@
 		full = progress.toggleFocus(weapon.id) === 'full';
 	}
 
-	function openBuilds() {
-		if (!weapon) return;
-		const weaponId = weapon.id;
-		weaponSheet.close();
-		loadoutView.show(weaponId);
-	}
 </script>
 
 <Dialog
@@ -135,6 +129,25 @@
 				{/if}
 			</section>
 
+			<!-- the meta build right here, under the camo challenges (the user's ask): MP + WZ -->
+			{#if hasBuilds || meta}
+				<section class="rounded-card border border-line bg-panel-2 p-3" aria-labelledby="{id}-meta">
+					<h3 id="{id}-meta" class="eyebrow">{t.sheet.metaHeading}</h3>
+					<p class="mt-1 text-[13px] text-fg">
+						{#if meta && cls}
+							{t.sheet.metaTier(meta.pick.tier, meta.rank, cls.name, shortDate(META_RANKS.mp.date))}{#if !meta.pick.verified}<span
+									class="unverified ml-1">({t.unverified}{meta.pick.note ? `: ${meta.pick.note}` : ''})</span
+								>{/if}
+						{:else}
+							{t.sheet.metaNone}
+						{/if}
+					</p>
+					{#if hasBuilds}
+						<div class="mt-2"><MetaBuilds weaponId={weapon.id} columns={false} /></div>
+						<p class="mt-2 text-[11px]">{t.loadout.snapshot(shortDate(LOADOUTS_AS_OF))}</p>
+					{/if}
+				</section>
+			{/if}
 			<section class="rounded-card border border-line bg-panel-2 p-3" aria-labelledby="{id}-balance">
 				<h3 id="{id}-balance" class="eyebrow">{t.sheet.balanceHeading}</h3>
 				{#if balance}
@@ -152,24 +165,6 @@
 					<p class="mt-1">{t.sheet.noBalance(BALANCE_PATCH.name)}</p>
 				{/if}
 			</section>
-
-			{#if hasBuilds || meta}
-				<section class="rounded-card border border-line bg-panel-2 p-3" aria-labelledby="{id}-meta">
-					<h3 id="{id}-meta" class="eyebrow">{t.loadout.tag}</h3>
-					<p class="mt-1 text-[13px] text-fg">
-						{#if meta && cls}
-							{t.sheet.metaTier(meta.pick.tier, meta.rank, cls.name, shortDate(META_RANKS.mp.date))}{#if !meta.pick.verified}<span
-									class="unverified ml-1">({t.unverified}{meta.pick.note ? `: ${meta.pick.note}` : ''})</span
-								>{/if}
-						{:else}
-							{t.sheet.metaNone}
-						{/if}
-					</p>
-					{#if hasBuilds}
-						<button type="button" class="btn mt-2" onclick={openBuilds}>{t.sheet.builds}</button>
-					{/if}
-				</section>
-			{/if}
 
 			<div>
 				<label for="{id}-note" class="eyebrow">{t.sheet.note}</label>

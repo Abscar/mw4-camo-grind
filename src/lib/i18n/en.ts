@@ -294,6 +294,7 @@ export const en = {
 		unlock: 'Unlock',
 		progress: 'Progress',
 		builds: 'Builds (Multiplayer & Warzone)',
+		metaHeading: 'Meta build',
 		metaTier: (tier: string, rank: number, cls: string, date: string) =>
 			`Multiplayer meta: ${tier} tier, #${rank} in ${cls} (snapshot ${date})`,
 		metaNone: 'Not in the Multiplayer meta lists right now.',
