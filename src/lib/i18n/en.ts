@@ -39,6 +39,9 @@ export const en = {
 	},
 	/** Abscar theme: the red terminal text for a moment when the page opens. */
 	boot: {
+		/** big greeting above the terminal text; `crew` is split where it may wrap on phones */
+		welcome: 'Welcome',
+		crew: ['Abscar', '& Phillestar'],
 		title: 'ABSCAR OS // CAMO GRIND MODULE',
 		hud: 'Booting HUD',
 		camos: 'Loading camo data',

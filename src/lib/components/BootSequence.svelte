@@ -1,6 +1,7 @@
 <!--
-	Abscar theme: for under a second when the page opens, red terminal text boots up over the page
-	("ABSCAR OS … OK"), then fades away. Pure CSS, in the prerendered page, so it starts at once.
+	Abscar theme: for about two seconds when the page opens, a big red "WELCOME ABSCAR & PHILLESTAR"
+	powers on like an old screen, red terminal text boots up under it ("ABSCAR OS … OK"), then it all
+	fades away. Pure CSS, in the prerendered page, so it starts at once.
 	Clicks go straight through it, and with reduced motion it isn't shown at all.
 -->
 <script lang="ts">
@@ -15,11 +16,19 @@
 </script>
 
 <div class="boot" aria-hidden="true">
-	<div class="boot-text font-hud">
-		<p class="boot-line boot-title">{t.boot.title}</p>
-		{#each lines as [what, result] (what)}
-			<p class="boot-line"><span>&gt; {what}</span><span class="boot-dots"></span><span>{result}</span></p>
-		{/each}
-		<p class="boot-line boot-go">{t.boot.go}<span class="boot-caret"></span></p>
+	<div class="boot-inner">
+		<p class="boot-welcome font-hud">
+			<span class="boot-welcome-small">{t.boot.welcome}</span>
+			<span class="boot-welcome-names">
+				{#each t.boot.crew as part, i (i)}{#if i > 0}{' '}{/if}<span class="boot-welcome-part">{part}</span>{/each}
+			</span>
+		</p>
+		<div class="boot-text font-hud">
+			<p class="boot-line boot-title">{t.boot.title}</p>
+			{#each lines as [what, result] (what)}
+				<p class="boot-line"><span>&gt; {what}</span><span class="boot-dots"></span><span>{result}</span></p>
+			{/each}
+			<p class="boot-line boot-go">{t.boot.go}<span class="boot-caret"></span></p>
+		</div>
 	</div>
 </div>
