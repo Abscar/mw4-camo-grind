@@ -7,6 +7,7 @@
 	import { DIVERGENCE, DIVERGENCE_REQUIRED, MASTERY } from '#lib/data/camos.ts';
 	import { feed } from '#lib/feed.svelte.ts';
 	import { t } from '#lib/i18n/en.ts';
+	import NukeOperator from './NukeOperator.svelte';
 
 	const id = $derived(feed.divergence?.id ?? 0);
 </script>
@@ -16,6 +17,8 @@
 		{#if id}
 			<div class="div-unlock" onanimationend={(e) => e.target === e.currentTarget && (feed.divergence = null)}>
 				<div class="div-unlock-box">
+					<!-- easter egg: the friend's operator in front of a mushroom cloud -->
+					<div class="div-unlock-op"><NukeOperator variant="meltdown" /></div>
 					<p class="div-unlock-kicker">▸ {DIVERGENCE.name.toUpperCase()} // {DIVERGENCE_REQUIRED}/{DIVERGENCE_REQUIRED}</p>
 					<p class="div-unlock-title">{t.unlock.title}</p>
 					<p class="div-unlock-sub">{t.unlock.sub(DIVERGENCE_REQUIRED, MASTERY[0].name)}</p>

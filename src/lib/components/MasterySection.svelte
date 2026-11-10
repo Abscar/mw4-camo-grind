@@ -5,6 +5,7 @@
 	import { progress } from '#lib/progress.svelte.ts';
 	import { percent } from '#lib/ui.ts';
 	import MasteryRow from './MasteryRow.svelte';
+	import NukeOperator from './NukeOperator.svelte';
 	import StatusPill from './StatusPill.svelte';
 
 	const shown = $derived(Math.min(progress.divergenceCount, DIVERGENCE_REQUIRED));
@@ -22,11 +23,13 @@
 	style:--twinkle={TWINKLE}
 	aria-labelledby="mastery-heading"
 >
-	<header class="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pt-4 pb-3 sm:px-5">
+	<header class="mastery-head relative flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pt-4 pb-3 sm:px-5">
 		<h2 id="mastery-heading" class="font-head text-base font-bold tracking-wide uppercase">
 			{t.mastery.heading}
 		</h2>
 		<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{t.mastery.sub}</span>
+		<!-- Abscar easter egg: the friend's operator as a round hazard patch -->
+		<div class="abscar-only mastery-badge"><NukeOperator variant="badge" /></div>
 	</header>
 
 	<div

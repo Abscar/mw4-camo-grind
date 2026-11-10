@@ -5,7 +5,11 @@
 	import { progress } from '#lib/progress.svelte.ts';
 	import { CAMO_INK, percent } from '#lib/ui.ts';
 	import FactText from './FactText.svelte';
+	import NukeOperator from './NukeOperator.svelte';
 	import WeaponCard from './WeaponCard.svelte';
+
+	/** The class box the nuke operator peeks out of (he carries an SMG). */
+	const PEEK_CLASS = 'smgs';
 
 	let {
 		cls,
@@ -58,7 +62,7 @@
 	</div>
 
 	<div
-		class="font-head grid items-center gap-1.5 border-t border-line px-4 pt-2 pb-1 text-[10.5px] font-bold tracking-[0.12em] text-muted uppercase"
+		class="font-head relative grid items-center gap-1.5 border-t border-line px-4 pt-2 pb-1 text-[10.5px] font-bold tracking-[0.12em] text-muted uppercase"
 		style:grid-template-columns={columns}
 		aria-hidden="true"
 	>
@@ -66,6 +70,10 @@
 		{#each LADDER as camo (camo.id)}
 			<span class="text-center {CAMO_INK[camo.id]}">{camo.short}</span>
 		{/each}
+		{#if cls.id === PEEK_CLASS}
+			<!-- Abscar easter egg: the friend's operator peeks over this line now and then (absolute, so no grid cell) -->
+			<div class="abscar-only op-peek" class:op-peek-maxed={maxed}><NukeOperator variant="peek" /></div>
+		{/if}
 	</div>
 
 	{#if visible.length > 0}
