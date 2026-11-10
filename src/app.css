@@ -724,25 +724,33 @@
 		#9aa0a6;
 }
 
-/* weapon-class boxes wear the Hot Rod picture the user made */
+/*
+ * Weapon-class boxes (+ the focus box) and the Meta top 5 list: gunmetal grey (2026-11-10, the
+ * user's ask: "remove the flames background and go with gunmetal grey for now", meta list "the same
+ * colour too"). The user's Hot Rod picture is only switched off: +page.svelte still sets
+ * --hotrod-tile; to bring it back on the class boxes use
+ *   background: var(--hotrod-tile) center top / 760px auto repeat, #5a0a0a;
+ * (and the reddish --t-muted #f6d2c8 / --t-tick rgb(28 4 4 / 0.72) / glass rgb(25 3 3 / 0.28)).
+ */
+[data-theme='blackout'] .weapon-class,
+[data-theme='blackout'] .meta-list {
+	background: linear-gradient(165deg, #4b555d 0%, #3a4248 34%, #2c3338 68%, #242a2e 100%), #2f363b;
+	/* the theme's colours re-tuned for the grey metal so text stays readable */
+	--t-muted: #d3dbe1;
+	--t-line: rgb(210 225 240 / 0.16);
+	--t-panel-2: rgb(0 0 0 / 0.22);
+	--t-tick: rgb(8 12 16 / 0.7);
+	--t-tick-line: rgb(205 220 235 / 0.3);
+}
 [data-theme='blackout'] .weapon-class {
-	/* the user's own Hot Rod picture (src/lib/assets/hotrod-camo.webp), filling the box */
-	background: var(--hotrod-tile) center top / 760px auto repeat, #5a0a0a;
 	box-shadow: var(--t-shadow);
 	border-left-width: 0;
-	/* re-tune the theme colours inside the red box so text stays readable */
-	--t-muted: #f6d2c8;
-	--t-line: rgb(255 220 200 / 0.16);
-	--t-panel-2: rgb(0 0 0 / 0.22);
-	--t-tick: rgb(28 4 4 / 0.72);
-	--t-tick-line: rgb(255 210 180 / 0.3);
 	--t-hb-ink: #e2ccff;
 	--t-new-ink: #ffd0b8;
 }
-/* a light dark-glass behind everything below the class name: the camo shows through,
-   the text keeps a strong shadow so it still reads over the flames */
+/* a light dark glass behind everything below the class name */
 [data-theme='blackout'] .weapon-class > :not(header) {
-	background: rgb(25 3 3 / 0.28);
+	background: rgb(6 9 12 / 0.2);
 }
 [data-theme='blackout'] .weapon-class li,
 [data-theme='blackout'] .weapon-class footer {
