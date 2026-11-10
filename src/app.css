@@ -1237,7 +1237,8 @@
 	border-color: #ffcc33;
 }
 
-/* ticked boxes: a little cartoon leaf instead of ✔ (Abscar only) */
+/* ticked boxes: a little cartoon from the stash instead of ✔ (Abscar only; StashTick.svelte —
+   leaf, bong, blunt, papers, pipe, joint, grinder, lighter, bud, brownie, mixed per box) */
 .tick-leaf {
 	display: none;
 	width: 30px;

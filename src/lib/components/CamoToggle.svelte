@@ -1,26 +1,8 @@
-<script lang="ts" module>
-	/**
-	 * Abscar theme: a ticked box shows a little cartoon leaf instead of ✔ (still a clear shape
-	 * change, so colour isn't the only signal). Seven leaflets fanned out from the stem:
-	 * [angle in degrees, length, width].
-	 */
-	const LEAFLETS: [number, number, number][] = [
-		[-96, 5.6, 2.8],
-		[96, 5.6, 2.8],
-		[-63, 8.6, 3.7],
-		[63, 8.6, 3.7],
-		[-31, 11.2, 4.3],
-		[31, 11.2, 4.3],
-		[0, 13.4, 4.8]
-	];
-	const leaflet = ([, l, w]: [number, number, number]) =>
-		`M0 0 C${w / 2} ${-l * 0.3} ${w / 2} ${-l * 0.72} 0 ${-l} C${-w / 2} ${-l * 0.72} ${-w / 2} ${-l * 0.3} 0 0 Z`;
-</script>
-
 <script lang="ts">
-	import type { LadderCamo } from '#lib/data/camos.ts';
+	import { LADDER, type LadderCamo } from '#lib/data/camos.ts';
 	import { t } from '#lib/i18n/en.ts';
-	import { CAMO_FILL } from '#lib/ui.ts';
+	import { CAMO_FILL, tickIcon } from '#lib/ui.ts';
+	import StashTick from './StashTick.svelte';
 
 	let {
 		camo,
@@ -68,15 +50,8 @@
 >
 	{#if pressed}
 		<span aria-hidden="true" class="tick-mark text-base leading-none">✔</span>
-		<svg class="tick-leaf" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-			<path d="M12 16.5 C12 19 11.6 21 10.6 22.6" class="tick-leaf-stem" />
-			{#each LEAFLETS as l (l[0])}
-				<g transform="translate(12 16.5) rotate({l[0]})">
-					<path d={leaflet(l)} class="tick-leaf-blade" />
-					<path d="M0 -0.5 L0 {-l[1] * 0.82}" class="tick-leaf-vein" />
-				</g>
-			{/each}
-		</svg>
+		<!-- Abscar: a little cartoon from the stash instead of ✔ (still a clear shape change) -->
+		<StashTick icon={tickIcon(weaponName, LADDER.findIndex((c) => c.id === camo.id))} />
 	{:else}
 		<span aria-hidden="true" class:lift={showPips}>{camo.short}</span>
 		{#if showPips && pips !== null}
