@@ -102,12 +102,33 @@
 	color: var(--t-fg);
 }
 
+/* ---------- Abscar: every weapon (name + its boxes) in its own white frame, with room between
+   them so the list reads as sections (the user's ask, 2026-11-10: "start with white frames").
+   The padding gives back the border's width, so the content stays where it was and still lines
+   up with the WEAPON / G / P / HB header. The thin dark edge keeps the white readable over the
+   bright parts of the Hot Rod flames. ---------- */
+[data-theme='blackout'] .weapon-row {
+	border: 1.5px solid rgb(255 255 255 / 0.92);
+	border-radius: 10px;
+	padding-inline: calc(0.5rem - 1.5px);
+	padding-block: 6px;
+	box-shadow:
+		0 0 0 1px rgb(0 0 0 / 0.45),
+		inset 0 0 0 1px rgb(0 0 0 / 0.25);
+}
+[data-theme='blackout'] .weapon-row + .weapon-row {
+	margin-top: 10px;
+}
+[data-theme='blackout'] .weapon-row:first-child {
+	margin-top: 4px;
+}
+
 /* ---------- Abscar: target lock — red corners snap onto the weapon under the mouse ---------- */
 @media (hover: hover) {
 	[data-theme='blackout'] .weapon-row::after {
 		content: '';
 		position: absolute;
-		inset: -1px;
+		inset: -5px;
 		pointer-events: none;
 		opacity: 0;
 		--l: #ff3a2a;
