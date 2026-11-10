@@ -61,7 +61,14 @@ self.addEventListener('fetch', (event) => {
 			}
 
 			try {
-				const response = await fetch(request);
+				// Pages always ask the server for the current version: GitHub Pages lets browsers reuse a
+				// page for 10 minutes, and that copy can point at build files a newer deployment deleted.
+				const page = request.mode === 'navigate';
+				const response = page
+					? await fetch(url.href, { cache: 'no-cache', credentials: 'same-origin' })
+					: await fetch(request);
+				// a navigation must not get a followed redirect back: hand the browser the redirect instead
+				if (page && response.redirected) return Response.redirect(response.url, 302);
 				if (response.ok && response.type === 'basic') void cache.put(request, response.clone());
 				return response;
 			} catch (error) {

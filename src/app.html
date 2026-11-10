@@ -23,6 +23,45 @@
 				if (typeof t === 'string') document.documentElement.setAttribute('data-theme', t);
 			} catch (e) {}
 		</script>
+		<script>
+			// Right after a new version goes live, a browser can still hold the previous page (GitHub Pages
+			// lets it reuse a page for 10 minutes) while that version's build files are already deleted: the
+			// page then shows up without its styles (seen 2026-11-10 after five deploys in 15 minutes). When
+			// one of our build files fails to load, reload once to get the current version. The flag stops a
+			// loop and is cleared 10 s after a good load, so a later deploy can recover the same way.
+			(function () {
+				var KEY = 'mw4-camo-grind:reloaded';
+				function recover() {
+					try {
+						if (sessionStorage.getItem(KEY)) return;
+						sessionStorage.setItem(KEY, '1');
+					} catch (e) {
+						return;
+					}
+					location.reload();
+				}
+				addEventListener(
+					'error',
+					function (e) {
+						var el = e.target;
+						var url = el && (el.href || el.src);
+						if (typeof url === 'string' && url.indexOf('/_app/immutable/') !== -1) recover();
+					},
+					true
+				);
+				addEventListener('unhandledrejection', function (e) {
+					var m = String((e.reason && e.reason.message) || e.reason || '');
+					if (/dynamically imported module|Importing a module script failed/i.test(m)) recover();
+				});
+				addEventListener('load', function () {
+					setTimeout(function () {
+						try {
+							sessionStorage.removeItem(KEY);
+						} catch (e) {}
+					}, 10000);
+				});
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
