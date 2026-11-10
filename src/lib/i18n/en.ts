@@ -62,6 +62,21 @@ export const en = {
 	},
 	/** Abscar theme: the cyborg banner is a just-for-fun button (its eyes flare and fire lasers). */
 	cyborg: { wake: 'Wake the cyborg' },
+	/** Abscar theme: the old TV in the header that plays classic CoD montages (RetroTv, data/montages.ts). */
+	tv: {
+		label: 'Old TV playing classic CoD montages',
+		frame: 'Classic Call of Duty montages (YouTube)',
+		/** the made-up maker's name on the plate under the screen while it's off */
+		brand: 'Abscarvision',
+		watch: 'Tap to watch',
+		noSignal: 'No signal',
+		watchOnYouTube: 'Watch on YouTube',
+		channel: (n: number) => `CH ${String(n).padStart(2, '0')}`,
+		prev: 'Previous channel',
+		next: 'Next channel',
+		sound: 'TV sound',
+		power: 'TV on / off'
+	},
 	/** The one-line news banner (green radar box) above the KPI tiles. */
 	banner: {
 		heading: 'COD news',

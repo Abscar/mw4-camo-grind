@@ -15,6 +15,7 @@
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
 	import NewsBanner from '#lib/components/NewsBanner.svelte';
+	import RetroTv from '#lib/components/RetroTv.svelte';
 	import hotrodCamo from '#lib/assets/hotrod-camo.webp';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import LoadoutDialog from '#lib/components/LoadoutDialog.svelte';
@@ -128,23 +129,32 @@
 		<header
 			class="relative mx-auto flex max-w-[1240px] flex-wrap items-stretch justify-between gap-4 px-4 pt-6 pb-5 sm:px-5 sm:pt-8"
 		>
-			<div class="absolute top-2 right-2 z-[3] sm:top-3 sm:right-3"><ThemePicker /></div>
-			<div class="relative z-[1] flex min-w-0 flex-col justify-between pr-10 sm:pr-0">
+			<!-- z above the TV, so the theme menu opens over it -->
+			<div class="absolute top-2 right-2 z-[32] sm:top-3 sm:right-3"><ThemePicker /></div>
+			<div class="relative z-[1] flex min-w-0 flex-col justify-between pr-10 sm:pr-0 max-xl:w-full xl:flex-1">
 				<div>
 					<OperatorTag />
-					<div class="mb-5"><HudReadout /></div>
 				</div>
-				<div>
-				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
-					<span class="brand-glow text-brand">{t.title.game}</span><span
-						class="mx-[0.3em] font-normal text-band-muted"
-						aria-hidden="true">//</span
-					><span class="sr-only"> </span><span class="title-skin">{t.title.app}</span>
-				</h1>
+				<!-- HUD + title; Abscar: the news buddy next to the title from 1024 px (the user's ask,
+				     2026-11-10), under it on smaller screens -->
+				<div class="lg:flex lg:items-end lg:gap-6">
+					<div class="flex-none">
+						<div class="mb-5"><HudReadout /></div>
+						<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
+							<span class="brand-glow text-brand">{t.title.game}</span><span
+								class="mx-[0.3em] font-normal text-band-muted"
+								aria-hidden="true">//</span
+							><span class="sr-only"> </span><span class="title-skin">{t.title.app}</span>
+						</h1>
+					</div>
+					<div class="abscar-only mt-5 min-w-0 lg:mt-0"><NewsBuddy /></div>
 				</div>
 			</div>
-			<div class="relative z-[1] flex flex-col items-start justify-between gap-4 sm:items-end">
-				<div class="abscar-only sm:pr-12"><NewsBuddy /></div>
+			<!-- Abscar: the old TV with CoD montages. Top right from 1280 px; below that in its own
+			     row under the rest (right-aligned; centred on phones).
+			     z above the fixed scanline layer (z 30), so nothing is drawn over the video. -->
+			<div class="abscar-only relative z-[31] max-sm:w-full sm:ml-auto xl:-mt-4 xl:pr-12">
+				<div class="flex justify-center"><RetroTv /></div>
 			</div>
 		</header>
 		<div class="abscar-only"><div class="damascus-floor"></div></div>
