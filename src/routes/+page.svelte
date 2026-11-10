@@ -18,6 +18,7 @@
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
 	import RetroTv from '#lib/components/RetroTv.svelte';
 	import hotrodCamo from '#lib/assets/hotrod-camo.webp';
+	import { WORN_METAL } from '#lib/kpiCamos.ts';
 	import KpiBar from '#lib/components/KpiBar.svelte';
 	import LoadoutDialog from '#lib/components/LoadoutDialog.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
@@ -183,7 +184,11 @@
 		<div class="abscar-only compact-hide"><div class="damascus-floor"></div></div>
 	</div>
 
-	<main class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5" style:--hotrod-tile="url({hotrodCamo})">
+	<main
+		class="mx-auto max-w-[1240px] px-4 pb-8 sm:px-5"
+		style:--hotrod-tile="url({hotrodCamo})"
+		style:--worn-metal={WORN_METAL}
+	>
 		<!-- the green radar with the latest COD news -->
 		<div class="compact-hide mt-5"><NewsBanner /></div>
 

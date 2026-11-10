@@ -401,6 +401,126 @@ export const RIPPLE = url(
 	})
 );
 
+/**
+ * Worn gunmetal (2026-11-10, the user's ask: the gunmetal grey "can have a few scuffs, like worn
+ * metal"): a see-through overlay for the weapon-class boxes and the Meta top 5 list, laid over the
+ * grey gradient in app.css. Noise gives fine brushed grain, dark grime and lighter rubbed-through
+ * patches; on top come scratches (a thin light sliver with its dark groove just below-right), fine
+ * scuff marks bunched where hands would rub, and a few dings. Tiles seamlessly.
+ */
+function wornMetal(): string {
+	const W = 640;
+	const H = 560;
+	const rand = random(1337);
+	const between = (a: number, b: number) => a + rand() * (b - a);
+	const pt = (x: number, y: number) => `${n1(x)} ${n1(y)}`;
+
+	/** a scratch as a thin spindle (wide in the middle, sharp ends), slightly bent */
+	const sliver = (x: number, y: number, angle: number, len: number, width: number) => {
+		const ex = x + Math.cos(angle) * len;
+		const ey = y + Math.sin(angle) * len;
+		const nx = -Math.sin(angle);
+		const ny = Math.cos(angle);
+		const bend = (rand() - 0.5) * 0.22 * len;
+		const cx = (x + ex) / 2 + nx * bend;
+		const cy = (y + ey) / 2 + ny * bend;
+		// drawn where it lies, and again one tile over wherever it crosses an edge
+		const xs = [Math.min(x, ex, cx), Math.max(x, ex, cx)];
+		const ys = [Math.min(y, ey, cy), Math.max(y, ey, cy)];
+		const dxs = [0, ...(xs[0] < 2 ? [W] : []), ...(xs[1] > W - 2 ? [-W] : [])];
+		const dys = [0, ...(ys[0] < 2 ? [H] : []), ...(ys[1] > H - 2 ? [-H] : [])];
+		let d = '';
+		for (const dx of dxs) {
+			for (const dy of dys) {
+				d +=
+					`M${pt(x + dx, y + dy)}Q${pt(cx + nx * width + dx, cy + ny * width + dy)} ${pt(ex + dx, ey + dy)}` +
+					`Q${pt(cx - nx * width + dx, cy - ny * width + dy)} ${pt(x + dx, y + dy)}Z`;
+			}
+		}
+		return d;
+	};
+	/** most scratches run roughly the same way (the way the gun gets pulled out and put back) */
+	const heading = () => (rand() < 0.7 ? -0.28 + (rand() - 0.5) * 0.7 : rand() * Math.PI * 2);
+
+	// one shape per opacity step, drawn twice through <use>: dark groove first, light edge on top
+	const steps: { id: string; d: string; light: number; dark: number }[] = [
+		{ id: 'a', d: '', light: 0.42, dark: 0.5 }, // long, clear scratches
+		{ id: 'b', d: '', light: 0.26, dark: 0.36 }, // medium ones
+		{ id: 'c', d: '', light: 0.15, dark: 0.22 }, // fine scuff marks
+		{ id: 'e', d: '', light: 0.09, dark: 0.14 } // the faintest wear
+	];
+	for (let i = 0; i < 16; i++) {
+		steps[0].d += sliver(rand() * W, rand() * H, heading(), between(70, 230), between(1.1, 2.1));
+	}
+	for (let i = 0; i < 46; i++) {
+		steps[1].d += sliver(rand() * W, rand() * H, heading(), between(18, 70), between(0.8, 1.4));
+	}
+	// fine scuffs bunched in a few worn spots, plus some everywhere
+	const spots = Array.from({ length: 7 }, () => [rand() * W, rand() * H]);
+	for (const [sx, sy] of spots) {
+		for (let i = 0; i < 26; i++) {
+			const x = (sx + (rand() + rand() - 1) * 95 + W) % W;
+			const y = (sy + (rand() + rand() - 1) * 70 + H) % H;
+			steps[i % 3 === 0 ? 2 : 3].d += sliver(x, y, rand() * Math.PI * 2, between(4, 16), between(0.5, 0.9));
+		}
+	}
+	for (let i = 0; i < 70; i++) {
+		steps[3].d += sliver(rand() * W, rand() * H, rand() * Math.PI * 2, between(4, 22), between(0.5, 0.8));
+	}
+
+	// dings: a dark pit with light catching its lower-right wall
+	let dings = '';
+	for (let i = 0; i < 14; i++) {
+		const x = between(6, W - 6);
+		const y = between(6, H - 6);
+		const r = between(0.9, 2.4);
+		dings +=
+			`<circle cx="${n1(x + 0.7)}" cy="${n1(y + 0.7)}" r="${n1(r)}" fill="#e9f0f6" fill-opacity="0.35"/>` +
+			`<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(r)}" fill="#05080a" fill-opacity="0.6"/>`;
+	}
+
+	const noise = (id: string, freq: string, octaves: number, seed: number, matrix: string) =>
+		`<filter id="${id}" x="0" y="0" width="100%" height="100%">` +
+		`<feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="${octaves}" seed="${seed}" stitchTiles="stitch"/>` +
+		`<feColorMatrix values="${matrix}"/></filter>`;
+
+	return (
+		`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}">` +
+		'<defs>' +
+		// brushed grain: fine horizontal streaks, dark
+		noise('g', '0.04 0.9', 3, 11, '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.8 -0.3') +
+		// grime: big soft dark patches
+		noise('m', '0.007', 4, 9, '0 0 0 0 0.03  0 0 0 0 0.03  0 0 0 0 0.025  1.9 0 0 0 -0.92') +
+		// rubbed-through spots where lighter bare metal shows: hard-edged patches, streaked like the grain
+		'<filter id="w" x="0" y="0" width="100%" height="100%">' +
+		'<feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="5" seed="23" stitchTiles="stitch"/>' +
+		'<feColorMatrix values="0 0 0 0 0.8  0 0 0 0 0.84  0 0 0 0 0.88  0 5 0 0 -3.2" result="p"/>' +
+		'<feTurbulence type="fractalNoise" baseFrequency="0.03 0.65" numOctaves="2" seed="5" stitchTiles="stitch"/>' +
+		'<feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.7 -0.35"/>' +
+		'<feComposite in="p" operator="in"/></filter>' +
+		steps.map((s) => `<path id="${s.id}" d="${s.d}"/>`).join('') +
+		'</defs>' +
+		'<rect width="100%" height="100%" filter="url(#g)" opacity="0.55"/>' +
+		'<rect width="100%" height="100%" filter="url(#m)" opacity="0.8"/>' +
+		'<rect width="100%" height="100%" filter="url(#w)" opacity="0.5"/>' +
+		steps
+			.map(
+				(s) =>
+					`<use xlink:href="#${s.id}" x="0.9" y="0.9" fill="#05080a" fill-opacity="${s.dark}"/>` +
+					`<use xlink:href="#${s.id}" fill="#e9f0f6" fill-opacity="${s.light}"/>`
+			)
+			.join('') +
+		dings +
+		'</svg>'
+	);
+}
+
+/** Lean data URL: only the characters a data URL can't hold are escaped (this texture is big). */
+const leanUrl = (svg: string) =>
+	`url("data:image/svg+xml,${svg.replace(/"/g, "'").replace(/[%#<>?\n]/g, encodeURIComponent)}")`;
+
+export const WORN_METAL = leanUrl(wornMetal());
+
 /** Helio: billowing red fire clouds; the creases between them glow white-hot. */
 export const HELIO = url(
 	noiseTile(520, 260, {
