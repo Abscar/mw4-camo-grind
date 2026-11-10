@@ -200,7 +200,8 @@
 				{@render callsign(t.operator.mate)}
 			</div>
 
-		<RankBadge label={t.operator.bothRanked} />
+		<!-- no small line above the rank name (the user asked to remove "Both ranked", 2026-11-10) -->
+		<RankBadge label="" />
 	</div>
 </div>
 

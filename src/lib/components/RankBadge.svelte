@@ -205,7 +205,7 @@
 		</g>
 	</svg>
 	<div class="min-w-0">
-		<p class="font-hud text-[10px] tracking-[0.22em] text-band-muted uppercase">{label}</p>
+		{#if label}<p class="font-hud text-[10px] tracking-[0.22em] text-band-muted uppercase">{label}</p>{/if}
 		<p class="rank-name font-head text-[17px] leading-tight font-bold tracking-[0.12em] uppercase">
 			{t.operator.rankName}
 		</p>
