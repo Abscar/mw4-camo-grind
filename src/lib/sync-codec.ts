@@ -7,7 +7,7 @@
  * Per device: theme, class filter, "hide maxed".
  */
 
-import { MASTERY } from './data/camos.ts';
+import { ALL_MASTERY } from './data/camos.ts';
 import {
 	APP_ID,
 	mergeStamps,
@@ -76,7 +76,7 @@ function later(a: string | null, b: string | null): string | null {
 export function sameDoc(a: SyncDoc, b: SyncDoc): boolean {
 	return (
 		keys(a.progress.weapons, b.progress.weapons).every((id) => (a.progress.weapons[id] ?? 0) === (b.progress.weapons[id] ?? 0)) &&
-		MASTERY.every((m) => (a.progress.mastery[m.id] ?? 0) === (b.progress.mastery[m.id] ?? 0)) &&
+		ALL_MASTERY.every((m) => (a.progress.mastery[m.id] ?? 0) === (b.progress.mastery[m.id] ?? 0)) &&
 		keys(specialsOf(a), specialsOf(b)).every((id) => (specialsOf(a)[id] ?? 0) === (specialsOf(b)[id] ?? 0)) &&
 		keys(a.notes, b.notes).every((id) => (a.notes[id] ?? '') === (b.notes[id] ?? '')) &&
 		sameList(a.focus, b.focus) &&
@@ -99,9 +99,11 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 	for (const id of keys(base.progress.weapons, local.progress.weapons, remote.progress.weapons)) {
 		weapons[id] = pickCount(base.progress.weapons[id] ?? 0, local.progress.weapons[id] ?? 0, remote.progress.weapons[id] ?? 0);
 	}
+	// A side without a count (a device still on the page from before Warzone/DMZ Mastery) changed nothing
 	const mastery: Record<string, number> = {};
-	for (const m of MASTERY) {
-		mastery[m.id] = pickCount(base.progress.mastery[m.id] ?? 0, local.progress.mastery[m.id] ?? 0, remote.progress.mastery[m.id] ?? 0);
+	for (const m of ALL_MASTERY) {
+		const b = base.progress.mastery[m.id] ?? 0;
+		mastery[m.id] = pickCount(b, local.progress.mastery[m.id] ?? b, remote.progress.mastery[m.id] ?? b);
 	}
 	// Special camos: one-sided changes win; both changed → every tick either side has
 	const specials: Record<string, number> = {};
@@ -137,7 +139,7 @@ export function combine(local: SyncDoc, remote: SyncDoc): SyncDoc {
 		weapons[id] = Math.max(local.progress.weapons[id] ?? 0, remote.progress.weapons[id] ?? 0);
 	}
 	const mastery: Record<string, number> = {};
-	for (const m of MASTERY) mastery[m.id] = Math.max(local.progress.mastery[m.id] ?? 0, remote.progress.mastery[m.id] ?? 0);
+	for (const m of ALL_MASTERY) mastery[m.id] = Math.max(local.progress.mastery[m.id] ?? 0, remote.progress.mastery[m.id] ?? 0);
 	const specials: Record<string, number> = {};
 	for (const id of keys(specialsOf(local), specialsOf(remote))) {
 		const mask = (specialsOf(local)[id] ?? 0) | (specialsOf(remote)[id] ?? 0);

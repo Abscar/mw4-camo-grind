@@ -4,11 +4,13 @@
  */
 
 import {
+	ALL_MASTERY,
 	DIVERGENCE_REQUIRED,
 	LADDER,
-	MASTERY,
+	MASTERY_TRACKS,
 	MAX_LEVEL,
 	SEASON_1_COUNTS_TOWARD_DIVERGENCE,
+	type MasteryMode,
 	type MasteryStatus
 } from './data/camos.ts';
 import { WEAPONS } from './data/weapons.ts';
@@ -98,19 +100,29 @@ class Progress {
 
 	divergenceUnlocked = $derived(this.divergenceCount >= DIVERGENCE_REQUIRED);
 
-	/** Mastery runs in order: each one is Active only once the previous one is Complete. */
-	masteryStatus = $derived.by((): MasteryStatus[] => {
-		let previousDone = this.divergenceUnlocked;
-		return MASTERY.map((m) => {
-			const status: MasteryStatus = !previousDone
-				? 'locked'
-				: (this.mastery[m.id] ?? 0) >= m.target
-					? 'complete'
-					: 'active';
-			previousDone = status === 'complete';
-			return status;
-		});
+	/**
+	 * Per mode (Multiplayer, Warzone, DMZ): Mastery runs in order, each one is Active only once the
+	 * previous one is Complete. Divergence opens the first camo of every mode.
+	 */
+	masteryByMode = $derived.by(() => {
+		const out = {} as Record<MasteryMode, MasteryStatus[]>;
+		for (const track of MASTERY_TRACKS) {
+			let previousDone = this.divergenceUnlocked;
+			out[track.mode] = track.camos.map((m) => {
+				const status: MasteryStatus = !previousDone
+					? 'locked'
+					: (this.mastery[m.id] ?? 0) >= m.target
+						? 'complete'
+						: 'active';
+				previousDone = status === 'complete';
+				return status;
+			});
+		}
+		return out;
 	});
+
+	/** Multiplayer's Mastery statuses (the HUD's next target). */
+	masteryStatus = $derived(this.masteryByMode.mp);
 
 	level(weaponId: string): number {
 		return this.weapons[weaponId] ?? 0;
@@ -220,7 +232,7 @@ class Progress {
 	}
 
 	setMastery(id: string, value: number): void {
-		const m = MASTERY.find((x) => x.id === id);
+		const m = ALL_MASTERY.find((x) => x.id === id);
 		if (!m) return;
 		this.mastery[id] = clampCount(value, m.target);
 		this.save();
@@ -231,8 +243,13 @@ class Progress {
 		this.save();
 	}
 
+	/** Every Mastery count of every mode (0 where nothing is saved yet). */
+	#masteryCounts(): Record<string, number> {
+		return Object.fromEntries(ALL_MASTERY.map((m) => [m.id, this.mastery[m.id] ?? 0]));
+	}
+
 	snapshot(): ProgressData {
-		return { weapons: { ...this.weapons }, mastery: { ...this.mastery }, specials: { ...this.specials } };
+		return { weapons: { ...this.weapons }, mastery: this.#masteryCounts(), specials: { ...this.specials } };
 	}
 
 	/** What automatic sync shares with your other devices (sync-codec.ts). */
@@ -252,7 +269,7 @@ class Progress {
 	 */
 	applySynced(doc: SyncDoc): void {
 		this.weapons = { ...doc.progress.weapons };
-		this.mastery = { ...doc.progress.mastery };
+		this.mastery = { ...this.#masteryCounts(), ...doc.progress.mastery };
 		if (doc.progress.specials) this.specials = { ...doc.progress.specials };
 		this.stamps = mergeStamps(this.weapons, doc.stamps);
 		this.notes = { ...doc.notes };
@@ -271,12 +288,12 @@ class Progress {
 
 	/**
 	 * Replace all progress (import, link, reset, undo). Returns what was there before, for Undo.
-	 * Data without Special camos (older backups and links) leaves those ticks alone.
+	 * Data without Special camos or Warzone/DMZ counts (older backups and links) leaves those alone.
 	 */
 	replace(next: ProgressData): ProgressData {
 		const before = this.snapshot();
 		this.weapons = { ...next.weapons };
-		this.mastery = { ...next.mastery };
+		this.mastery = { ...before.mastery, ...next.mastery };
 		if (next.specials) this.specials = { ...next.specials };
 		this.stamps = mergeStamps(this.weapons, this.stamps);
 		this.save();
@@ -291,7 +308,7 @@ class Progress {
 		const d = defaultProgress();
 		return (
 			WEAPONS.every((w) => this.level(w.id) === d.weapons[w.id]) &&
-			MASTERY.every((m) => (this.mastery[m.id] ?? 0) === 0) &&
+			ALL_MASTERY.every((m) => (this.mastery[m.id] ?? 0) === 0) &&
 			Object.keys(this.specials).length === 0
 		);
 	}
@@ -352,7 +369,7 @@ class Progress {
 
 	#apply(m: Migrated): void {
 		this.weapons = m.progress.weapons;
-		this.mastery = m.progress.mastery;
+		this.mastery = { ...this.#masteryCounts(), ...m.progress.mastery };
 		if (m.progress.specials) this.specials = m.progress.specials;
 		if (m.stamps) this.stamps = mergeStamps(m.progress.weapons, m.stamps);
 		if (m.prefs) this.prefs = m.prefs;

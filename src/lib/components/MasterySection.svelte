@@ -1,7 +1,19 @@
 <script lang="ts">
-	import { DIVERGENCE, DIVERGENCE_REQUIRED, MASTERY } from '#lib/data/camos.ts';
+	import { DIVERGENCE, DIVERGENCE_REQUIRED, MASTERY_TRACKS } from '#lib/data/camos.ts';
 	import { t } from '#lib/i18n/en.ts';
-	import { FACETS, GALAXY, RAINBOW, SHARDS, TWINKLE } from '#lib/kpiCamos.ts';
+	import {
+		CHIRAL,
+		DAMASCUS,
+		EMPYROS,
+		FACETS,
+		GALAXY,
+		HELIO,
+		PARALLAX,
+		RAINBOW,
+		RIPPLE,
+		SHARDS,
+		TWINKLE
+	} from '#lib/kpiCamos.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { percent } from '#lib/ui.ts';
 	import MasteryRow from './MasteryRow.svelte';
@@ -21,6 +33,12 @@
 	style:--shards={SHARDS}
 	style:--galaxy={GALAXY}
 	style:--twinkle={TWINKLE}
+	style:--parallax={PARALLAX}
+	style:--damascus={DAMASCUS}
+	style:--empyros={EMPYROS}
+	style:--chiral={CHIRAL}
+	style:--ripple={RIPPLE}
+	style:--helio={HELIO}
 	aria-labelledby="mastery-heading"
 >
 	<header class="mastery-head relative flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pt-4 pb-3 sm:px-5">
@@ -52,12 +70,22 @@
 		<div class="hidden justify-self-end md:block"><StatusPill status={divergenceStatus} /></div>
 	</div>
 
-	{#each MASTERY as camo, i (camo.id)}
-		<MasteryRow
-			{camo}
-			number={i + 1}
-			status={progress.masteryStatus[i]}
-			previousName={i === 0 ? DIVERGENCE.name : MASTERY[i - 1].name}
-		/>
+	<!-- one track per mode (Multiplayer, then Warzone and DMZ under it); Divergence opens all three -->
+	{#each MASTERY_TRACKS as track (track.mode)}
+		<div
+			class="mastery-mode flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-t border-line px-4 pt-3 pb-2.5 sm:px-5"
+			data-mode={track.mode}
+		>
+			<h3 class="font-head text-[13px] font-bold tracking-widest uppercase">{t.mastery.modes[track.mode].name}</h3>
+			<p class="text-xs text-muted">{t.mastery.modes[track.mode].note}</p>
+		</div>
+		{#each track.camos as camo, i (camo.id)}
+			<MasteryRow
+				{camo}
+				number={i + 1}
+				status={progress.masteryByMode[track.mode][i]}
+				previousName={i === 0 ? DIVERGENCE.name : track.camos[i - 1].name}
+			/>
+		{/each}
 	{/each}
 </section>

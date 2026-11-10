@@ -240,14 +240,20 @@ export const en = {
 
 	mastery: {
 		heading: 'Divergence & Mastery',
-		sub: 'Account-wide · unlocks in order',
+		sub: 'Account-wide · each mode unlocks in order',
 		fromTicks: 'Fills in from your Harmonic Break ticks',
 		decrease: (name: string) => `One less for ${name}`,
 		increase: (name: string) => `One more for ${name}`,
 		count: (name: string) => `${name}: times done`,
-		of: (target: number) => `/ ${target}`,
+		of: (target: string) => `/ ${target}`,
 		status: { locked: 'Locked', active: 'Active', complete: 'Complete' },
-		lockedBy: (prev: string) => `Unlocks when ${prev} is complete`
+		lockedBy: (prev: string) => `Unlocks when ${prev} is complete`,
+		/** One heading per mode's Mastery track (each opens with Divergence) and a short line about it. */
+		modes: {
+			mp: { name: 'Multiplayer', note: 'Any weapon · Multiplayer matches' },
+			wz: { name: 'Warzone', note: 'Any MW4 weapon · Warzone matches only' },
+			dmz: { name: 'DMZ', note: 'Any weapon · DMZ deployments only' }
+		}
 	},
 
 	sync: {
@@ -355,7 +361,7 @@ export const en = {
 		divergence: (n: number) =>
 			`Divergence unlocks at ${n} Harmonic Breaks. Whether Season 1 weapons count toward that is not confirmed yet.`,
 		sources:
-			'Challenges from the codmunity.gg MW4 camo guide, cross-checked with Destructoid, games.gg, GamerFuzion and CarrySquad. Weapon list from Gfinity, Dexerto and Destructoid. Multiplayer only.',
+			'Challenges from the codmunity.gg MW4 camo guide, cross-checked with Destructoid, games.gg, GamerFuzion and CarrySquad. Weapon list from Gfinity, Dexerto and Destructoid. Weapon challenges are Multiplayer’s; Mastery covers Multiplayer, Warzone and DMZ (DMZ also checked with codcentral).',
 		unverifiedLegend: 'Dotted underline = unconfirmed, double-check in game.'
 	}
 } as const;

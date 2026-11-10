@@ -827,6 +827,39 @@
 		transform: rotate(360deg);
 	}
 }
+/* Divergence & Mastery: a heading per mode's track (Multiplayer, Warzone, DMZ; 2026-11-10) */
+.mastery-mode h3 {
+	color: var(--c, var(--t-accent));
+}
+.mastery-mode h3::before {
+	content: '';
+	display: inline-block;
+	width: 0.55em;
+	height: 0.55em;
+	margin-right: 0.5em;
+	border-radius: 2px;
+	background: currentColor;
+	transform: rotate(45deg) translateY(-0.12em);
+}
+/* Abscar: a dark HUD strip with a red edge, like the red terminal box */
+[data-theme='blackout'] .mastery-mode {
+	background: linear-gradient(90deg, rgb(255 68 24 / 0.2), rgb(0 0 0 / 0.55) 45%, rgb(0 0 0 / 0.4));
+	border-top-color: rgb(0 0 0 / 0.6);
+	box-shadow:
+		inset 3px 0 0 #ff4418,
+		inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+[data-theme='blackout'] .mastery-mode h3 {
+	color: #fff;
+	text-shadow:
+		0 1px 2px rgb(0 0 0 / 0.95),
+		0 0 10px rgb(255 68 24 / 0.6);
+}
+[data-theme='blackout'] .mastery-mode h3::before {
+	background: #ff4418;
+	box-shadow: 0 0 6px #ff4418;
+}
+
 /* in the DIVERGENCE UNLOCKED flash: the mushroom cloud grows up behind him */
 .div-unlock-op {
 	width: clamp(104px, 26vw, 168px);

@@ -16,6 +16,8 @@
 	const count = $derived(progress.mastery[camo.id] ?? 0);
 	const pct = $derived(percent(count, camo.target));
 	const locked = $derived(status === 'locked');
+	/** 25000 → "25,000" (fixed locale, so the prerendered page and the browser agree) */
+	const target = $derived(camo.target.toLocaleString('en-US'));
 
 	function step(by: number) {
 		progress.setMastery(camo.id, count + by);
@@ -25,14 +27,14 @@
 <div
 	class="camo-row grid items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3.5 sm:px-5 md:grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.3fr)_auto_minmax(110px,1fr)_96px]"
 	style:--k="var(--mastery-{number}, var(--t-accent))"
-	data-camo={number}
+	data-camo={camo.id}
 >
 	<div class="flex items-center justify-between gap-3 md:block">
-		<h3 class="camo-row-name font-head text-[15px] font-bold text-(--k)">{camo.name}</h3>
+		<h4 class="camo-row-name font-head text-[15px] font-bold text-(--k)">{camo.name}</h4>
 		<div class="md:hidden"><StatusPill {status} /></div>
 	</div>
 	<p class="text-[13px] text-muted">
-		<FactText fact={camo.challenge} /> ×{camo.target}
+		<FactText fact={camo.challenge} /> ×{target}
 		{#if locked}<br /><span class="text-xs">{t.mastery.lockedBy(previousName)}</span>{/if}
 	</p>
 	<div class="flex items-center gap-1.5 tabular-nums">
@@ -68,7 +70,8 @@
 			aria-label={t.mastery.increase(camo.name)}
 			onclick={() => step(1)}>+</button
 		>
-		<span class="ml-1 text-[13px] whitespace-nowrap text-muted">{t.mastery.of(camo.target)}</span>
+		<!-- same width in every row (up to "/ 25,000"), so the bars line up across the modes -->
+		<span class="ml-1 inline-block min-w-[3.6rem] text-[13px] whitespace-nowrap text-muted">{t.mastery.of(target)}</span>
 	</div>
 	<div>
 		<div class="bar"><i style:width="{pct}%"></i></div>

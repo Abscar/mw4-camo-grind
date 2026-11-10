@@ -87,6 +87,27 @@ test('sync: Special camos and tick times travel and merge without losing a tick'
 	assert.deepEqual(stamped.stamps, { m4: [0, 50] });
 });
 
+test('sync: Warzone / DMZ Mastery merge; a device on the old page (no such counts) changes nothing', () => {
+	const withMastery = (mastery) => {
+		const d = doc();
+		Object.assign(d.progress.mastery, mastery);
+		return d;
+	};
+	const base = withMastery({ parallax: 10, chiral: 100 });
+	const merged = merge3(base, withMastery({ parallax: 12, chiral: 100 }), withMastery({ parallax: 10, chiral: 150 }));
+	assert.equal(merged.progress.mastery.parallax, 12);
+	assert.equal(merged.progress.mastery.chiral, 150);
+	// the other device's document has no Warzone/DMZ counts at all (read through fromWire, like the app)
+	const oldPage = fromWire({ app: 'mw4-camo-grind', sync: 1, progress: { weapons: {}, mastery: { mercurialDrift: 4 } }, notes: {}, focus: [] });
+	assert.ok(!('parallax' in oldPage.progress.mastery));
+	const kept = merge3(base, withMastery({ parallax: 10, chiral: 100 }), oldPage);
+	assert.equal(kept.progress.mastery.parallax, 10);
+	assert.equal(kept.progress.mastery.chiral, 100);
+	assert.equal(kept.progress.mastery.mercurialDrift, 4);
+	assert.equal(combine(withMastery({ helio: 900 }), withMastery({ helio: 20 })).progress.mastery.helio, 900);
+	assert.ok(!sameDoc(withMastery({ empyros: 1 }), withMastery({ empyros: 2 })));
+});
+
 test('sync: codes are long and random, links and pasted text are read', () => {
 	const a = makeSyncCode();
 	assert.equal(a.length, 22);

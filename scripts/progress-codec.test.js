@@ -1,7 +1,7 @@
 // Quick checks of the pure progress helpers: `npm test` (Node runs the .ts sources directly).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DIVERGENCE_REQUIRED, MASTERY, MAX_LEVEL } from '../src/lib/data/camos.ts';
+import { ALL_MASTERY, DIVERGENCE_REQUIRED, MASTERY, MASTERY_DMZ, MASTERY_EXTRA, MASTERY_TRACKS, MASTERY_WZ, MAX_LEVEL } from '../src/lib/data/camos.ts';
 import { WEAPON_LOOKS } from '../src/lib/data/weaponLooks.ts';
 import { CLASSES, NEXT_FREE_SLOT, WEAPONS } from '../src/lib/data/weapons.ts';
 import { BALANCE, BALANCE_PATCH } from '../src/lib/data/balance.ts';
@@ -27,6 +27,15 @@ test('data: ids and link slots are unique, slots below NEXT_FREE_SLOT', () => {
 	assert.ok(WEAPONS.every((w) => w.slot >= 0 && w.slot < NEXT_FREE_SLOT));
 	assert.equal(new Set(CLASSES.map((c) => c.id)).size, CLASSES.length);
 	assert.equal(new Set(MASTERY.map((m) => m.id)).size, MASTERY.length);
+});
+
+test('data: Mastery per mode: 3 each (MP, Warzone, DMZ), ids and names unique, links keep MP first', () => {
+	assert.deepEqual(MASTERY_TRACKS.map((t) => [t.mode, t.camos.length]), [['mp', 3], ['wz', 3], ['dmz', 3]]);
+	assert.equal(new Set(ALL_MASTERY.map((m) => m.id)).size, ALL_MASTERY.length);
+	assert.equal(new Set(ALL_MASTERY.map((m) => m.name)).size, ALL_MASTERY.length);
+	assert.deepEqual(MASTERY.map((m) => m.id), ['mercurialDrift', 'polyatomicReforged', 'orionReforged']);
+	assert.deepEqual(MASTERY_EXTRA.map((m) => m.id), ['parallax', 'damascusReforged', 'empyros', 'chiral', 'rippleTide', 'helio']);
+	assert.ok(ALL_MASTERY.every((m) => Number.isInteger(m.target) && m.target > 0 && m.challenge.text.trim()));
 });
 
 test('data: every weapon has a cartoon icon look, and no look is orphaned', () => {
@@ -124,6 +133,49 @@ test('link: Special camos (before Gold) ride along; older links without them lea
 	const old = code.split('.').slice(0, 2 + MASTERY.length).join('.');
 	assert.equal(decodeLink(old)?.specials, undefined);
 	assert.equal(decodeLink(`${old}.S!`), null);
+});
+
+test('link: Warzone and DMZ Mastery ride along; older links leave them alone; broken ones are rejected', () => {
+	const p = defaultProgress();
+	p.mastery.parallax = 300;
+	p.mastery.empyros = 12;
+	p.mastery.helio = 25000;
+	p.mastery.orionReforged = 499;
+	const code = encodeLink(p);
+	assert.ok(code.length < 50, code);
+	assert.deepEqual(decodeLink(code)?.mastery, p.mastery);
+	// all zero → just "M", still read as zeros (not "leave alone")
+	const zero = encodeLink(defaultProgress());
+	assert.ok(zero.endsWith('.M'), zero);
+	assert.equal(decodeLink(zero)?.mastery.helio, 0);
+	// a link from before 2026-11-10 (no M part) has no Warzone/DMZ counts at all
+	const old = code.split('.').slice(0, 3 + MASTERY.length).join('.');
+	const decodedOld = decodeLink(old);
+	assert.equal(decodedOld?.mastery.orionReforged, 499);
+	assert.ok(MASTERY_EXTRA.every((m) => !(m.id in (decodedOld?.mastery ?? {}))));
+	// too big counts are clamped, junk rejects the link
+	assert.equal(decodeLink(`${old}.Mzzzz`)?.mastery.parallax, 300);
+	assert.equal(decodeLink(`${old}.M1--2`), null);
+	assert.equal(decodeLink(`${old}.X1`), null);
+	// a newer page might add parts after M: ignored
+	assert.equal(decodeLink(`${code}.Zfuture`)?.mastery.helio, 25000);
+});
+
+test('Warzone / DMZ Mastery in saves: kept; data without a track leaves that track out', () => {
+	const p = defaultProgress();
+	p.mastery.chiral = 2500;
+	p.mastery.damascusReforged = 40;
+	const m = migrate(JSON.parse(JSON.stringify(toStored(p, normalisePrefs({})))));
+	assert.equal(m?.progress.mastery.chiral, 2500);
+	assert.equal(m?.progress.mastery.damascusReforged, 40);
+	assert.equal(m?.progress.mastery.helio, 0);
+	const old = migrate({ v: 2, progress: { weapons: {}, mastery: { mercurialDrift: 9 } } });
+	assert.equal(old?.progress.mastery.mercurialDrift, 9);
+	assert.ok(MASTERY_EXTRA.every((x) => !(x.id in (old?.progress.mastery ?? {}))));
+	// one Warzone id is enough to make the whole Warzone track known (missing ones = 0); DMZ stays out
+	const partial = migrate({ v: 2, progress: { weapons: {}, mastery: { empyros: 999 } } });
+	assert.deepEqual(MASTERY_WZ.map((x) => partial?.progress.mastery[x.id]), [0, 0, 75]);
+	assert.ok(MASTERY_DMZ.every((x) => !(x.id in (partial?.progress.mastery ?? {}))));
 });
 
 test('specials and tick times: kept in saves, cleaned up, older saves still load', () => {

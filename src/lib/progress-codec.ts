@@ -4,14 +4,17 @@
  * file can be tested directly with Node (`npm test`).
  */
 
-import { MAX_LEVEL, MASTERY } from './data/camos.ts';
+import { ALL_MASTERY, MASTERY, MASTERY_EXTRA, MASTERY_TRACKS, MAX_LEVEL } from './data/camos.ts';
 import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { DEFAULT_THEME, isThemeId, type ThemeId } from './themes.ts';
 
 export interface ProgressData {
 	/** Weapon id → ladder level (0 = nothing … 3 = Harmonic Break). Unknown ids are kept, never dropped. */
 	weapons: Record<string, number>;
-	/** Mastery id → how many times the challenge is done. */
+	/**
+	 * Mastery id → how many times the challenge is done. Warzone and DMZ (2026-11-10) can be
+	 * missing: data from before then (saves, backups, links) has none, and leaves yours alone.
+	 */
 	mastery: Record<string, number>;
 	/**
 	 * Weapon id → which of its 3 Special camos (the challenges before Gold) are ticked, as bits
@@ -91,8 +94,19 @@ export function defaultLevel(weaponId: string): number {
 export function defaultProgress(): ProgressData {
 	return {
 		weapons: Object.fromEntries(WEAPONS.map((w) => [w.id, defaultLevel(w.id)])),
-		mastery: Object.fromEntries(MASTERY.map((m) => [m.id, 0]))
+		mastery: Object.fromEntries(ALL_MASTERY.map((m) => [m.id, 0]))
 	};
+}
+
+/**
+ * A Warzone or DMZ track the source knows nothing about (none of its ids) is taken out, so
+ * applying the source leaves those counts alone (`Progress.replace` keeps what it doesn't get).
+ */
+function dropUnknownTracks(mastery: Record<string, number>, source: Record<string, unknown>): void {
+	for (const track of MASTERY_TRACKS) {
+		if (track.mode === 'mp' || track.camos.some((m) => m.id in source)) continue;
+		for (const m of track.camos) delete mastery[m.id];
+	}
 }
 
 export function defaultPrefs(): Prefs {
@@ -132,9 +146,10 @@ function levelFromOldTicks(t: unknown): number | null {
 function normaliseProgress(weapons: Record<string, unknown>, mastery: Record<string, unknown>): ProgressData {
 	const out = defaultProgress();
 	for (const [id, value] of Object.entries(weapons)) out.weapons[id] = clampLevel(value);
-	for (const m of MASTERY) {
+	for (const m of ALL_MASTERY) {
 		if (m.id in mastery) out.mastery[m.id] = clampCount(mastery[m.id], m.target);
 	}
+	dropUnknownTracks(out.mastery, mastery);
 	return out;
 }
 
@@ -309,27 +324,34 @@ export function toExport(progress: ProgressData, notes: Notes = {}): ExportV2 {
 	return file;
 }
 
-/** Same ticks and Mastery counts (Special camos too, when both sides have them). */
+/** Same ticks and Mastery counts (Special camos and Warzone/DMZ counts too, when both sides have them). */
 export function sameProgress(a: ProgressData, b: ProgressData): boolean {
 	const sa = a.specials;
 	const sb = b.specials;
+	const known = (p: ProgressData, id: string) => MASTERY.some((m) => m.id === id) || id in p.mastery;
 	return (
 		WEAPONS.every((w) => (a.weapons[w.id] ?? 0) === (b.weapons[w.id] ?? 0)) &&
-		MASTERY.every((m) => (a.mastery[m.id] ?? 0) === (b.mastery[m.id] ?? 0)) &&
+		ALL_MASTERY.every(
+			(m) => !known(a, m.id) || !known(b, m.id) || (a.mastery[m.id] ?? 0) === (b.mastery[m.id] ?? 0)
+		) &&
 		(!sa || !sb || WEAPONS.every((w) => (sa[w.id] ?? 0) === (sb[w.id] ?? 0)))
 	);
 }
 
 // ---------------------------------------------------------------------------------------------
-// Progress link: "#p=1.<levels>.<mastery counts>.S<specials>"
+// Progress link: "#p=1.<levels>.<mastery counts>.S<specials>.M<warzone + dmz counts>"
 //   levels   = base64url, 3 weapons per character (2 bits each), indexed by weapon `slot`
-//   mastery  = one base-36 number per Mastery camo, in MASTERY order
+//   mastery  = one base-36 number per Multiplayer Mastery camo, in MASTERY order
 //   specials = "S" + base64url, 2 weapons per character (3 bits each), trailing zeros ("A") cut;
 //              added 2026-11-08, so older links don't have it (and then leave the ticks alone)
-// e.g. 37 weapons + 3 mastery counts ≈ 27 characters.
+//   extra    = "M" + base-36 counts joined by "-", in MASTERY_EXTRA order (Warzone, then DMZ),
+//              trailing zeros cut ("M" alone = all zero); added 2026-11-10, older links don't
+//              have it and then leave those counts alone. Older pages ignore it.
+// e.g. 37 weapons + 3 mastery counts ≈ 30 characters.
 
 const LINK_FORMAT = '1';
 const SPECIALS_TAG = 'S';
+const EXTRA_TAG = 'M';
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 export function encodeLink(progress: ProgressData): string {
@@ -346,7 +368,15 @@ export function encodeLink(progress: ProgressData): string {
 	for (const w of WEAPONS) masks[w.slot] = cleanMask(progress.specials?.[w.id]);
 	let specials = '';
 	for (let i = 0; i < slots; i += 2) specials += B64[(masks[i] << 3) | (masks[i + 1] ?? 0)];
-	return [LINK_FORMAT, levels, ...mastery, SPECIALS_TAG + specials.replace(/A+$/, '')].join('.');
+	const extra = MASTERY_EXTRA.map((m) => clampCount(progress.mastery[m.id], m.target));
+	while (extra.length > 0 && extra[extra.length - 1] === 0) extra.pop();
+	return [
+		LINK_FORMAT,
+		levels,
+		...mastery,
+		SPECIALS_TAG + specials.replace(/A+$/, ''),
+		EXTRA_TAG + extra.map((n) => n.toString(36)).join('-')
+	].join('.');
 }
 
 /** Returns null when the code is not a valid progress link. Missing weapons get their defaults. */
@@ -377,6 +407,16 @@ export function decodeLink(code: string): ProgressData | null {
 			const n = Math.max(0, B64.indexOf(specials[1 + Math.floor(w.slot / 2)] ?? 'A'));
 			const mask = w.slot % 2 === 0 ? n >> 3 : n & SPECIALS_ALL;
 			if (mask) out.specials[w.id] = mask;
+		}
+	}
+	const extra = parts[3 + MASTERY.length];
+	if (extra === undefined) {
+		for (const m of MASTERY_EXTRA) delete out.mastery[m.id]; // older link: leave these alone
+	} else {
+		if (!/^M(?:[0-9a-z]+(?:-[0-9a-z]+)*)?$/.test(extra)) return null;
+		const counts = extra.length > 1 ? extra.slice(1).split('-') : [];
+		for (const [i, m] of MASTERY_EXTRA.entries()) {
+			out.mastery[m.id] = clampCount(Number.parseInt(counts[i] ?? '0', 36), m.target);
 		}
 	}
 	return out;

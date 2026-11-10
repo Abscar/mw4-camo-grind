@@ -1006,7 +1006,7 @@
 }
 
 /* Mercurial Drift: hot pink ↔ rose gold, colour-shifting, with lilac drifts and a gloss */
-[data-theme='blackout'] .camo-row[data-camo='1'] {
+[data-theme='blackout'] .camo-row[data-camo='mercurialDrift'] {
 	--glass: rgb(40 0 26 / 0.26);
 	--row-camo:
 		linear-gradient(176deg, rgb(255 255 255 / 0.38) 0%, transparent 30%, transparent 62%, rgb(70 0 40 / 0.4) 100%),
@@ -1030,7 +1030,7 @@
 		)
 		0 0 / 300% 100%;
 }
-[data-theme='blackout'] .camo-row[data-camo='1']::before {
+[data-theme='blackout'] .camo-row[data-camo='mercurialDrift']::before {
 	animation: mercurial-shift 14s ease-in-out infinite alternate;
 }
 @keyframes mercurial-shift {
@@ -1043,7 +1043,7 @@
 }
 
 /* Polyatomic Reforged: crystal shards, with a light glint sweeping across */
-[data-theme='blackout'] .camo-row[data-camo='2'] {
+[data-theme='blackout'] .camo-row[data-camo='polyatomicReforged'] {
 	--glass: rgb(6 4 30 / 0.3);
 	--row-camo:
 		linear-gradient(176deg, rgb(255 255 255 / 0.2) 0%, transparent 35%, transparent 65%, rgb(0 0 30 / 0.3) 100%),
@@ -1051,8 +1051,8 @@
 }
 
 /* Mercurial Drift and Polyatomic Reforged: a glossy glint now and then */
-[data-theme='blackout'] .camo-row[data-camo='1']::after,
-[data-theme='blackout'] .camo-row[data-camo='2']::after {
+[data-theme='blackout'] .camo-row[data-camo='mercurialDrift']::after,
+[data-theme='blackout'] .camo-row[data-camo='polyatomicReforged']::after {
 	background: linear-gradient(
 		105deg,
 		transparent 38%,
@@ -1063,7 +1063,7 @@
 	transform: translateX(-100%);
 	animation: camo-glint 8s ease-in-out infinite;
 }
-[data-theme='blackout'] .camo-row[data-camo='2']::after {
+[data-theme='blackout'] .camo-row[data-camo='polyatomicReforged']::after {
 	animation-delay: -3s;
 }
 @keyframes camo-glint {
@@ -1077,13 +1077,13 @@
 }
 
 /* Orion Reforged: deep space with nebulae; the brightest stars twinkle */
-[data-theme='blackout'] .camo-row[data-camo='3'] {
+[data-theme='blackout'] .camo-row[data-camo='orionReforged'] {
 	--glass: rgb(0 0 0 / 0.12);
 	--row-camo:
 		radial-gradient(ellipse 45% 120% at 72% 60%, rgb(220 30 90 / 0.28), transparent 70%),
 		var(--galaxy) 0 0 / 600px 300px;
 }
-[data-theme='blackout'] .camo-row[data-camo='3']::after {
+[data-theme='blackout'] .camo-row[data-camo='orionReforged']::after {
 	background: var(--twinkle) 0 0 / 600px 300px;
 	animation: twinkle 3.6s ease-in-out infinite alternate;
 }
@@ -1094,6 +1094,129 @@
 	to {
 		opacity: 1;
 	}
+}
+
+/*
+ * Warzone and DMZ Mastery (2026-11-10), drawn after codmunity's renders; textures in kpiCamos.ts.
+ * Parallax: rainbow tiger stripes, the rainbow drifting under the stripes
+ */
+[data-theme='blackout'] .camo-row[data-camo='parallax'] {
+	--glass: rgb(10 4 40 / 0.34);
+	--row-camo:
+		var(--parallax) 50% 50% / 1600px 420px no-repeat,
+		linear-gradient(
+			100deg,
+			#2340ff 0%,
+			#6c2cff 14%,
+			#ff3fd2 28%,
+			#ffcf3c 40%,
+			#3dff8a 52%,
+			#22d6ff 64%,
+			#2f4dff 76%,
+			#a52cff 88%,
+			#2340ff 100%
+		)
+		0 0 / 180% 100%;
+}
+[data-theme='blackout'] .camo-row[data-camo='parallax']::before {
+	animation: parallax-drift 18s linear infinite alternate;
+}
+@keyframes parallax-drift {
+	from {
+		background-position: 0 0, 50% 50%, 0% 50%;
+	}
+	to {
+		background-position: 0 0, 50% 50%, 100% 50%;
+	}
+}
+
+/* Damascus Reforged: liquid blue / violet / pink / copper swirls with a gloss */
+[data-theme='blackout'] .camo-row[data-camo='damascusReforged'] {
+	--glass: rgb(10 4 40 / 0.38);
+	--row-camo:
+		linear-gradient(176deg, rgb(255 255 255 / 0.26) 0%, transparent 32%, transparent 64%, rgb(0 0 30 / 0.35) 100%),
+		var(--damascus) 0 0 / 480px 240px;
+}
+
+/* Empyros: rounded blue digital blocks */
+[data-theme='blackout'] .camo-row[data-camo='empyros'] {
+	--glass: rgb(0 8 40 / 0.3);
+	--row-camo:
+		linear-gradient(176deg, rgb(255 255 255 / 0.14) 0%, transparent 35%, transparent 65%, rgb(0 0 30 / 0.3) 100%),
+		var(--empyros) 0 0 / 560px 252px;
+}
+
+/* Damascus Reforged, Empyros and Ripple Tide: the glossy glint now and then */
+[data-theme='blackout'] .camo-row[data-camo='damascusReforged']::after,
+[data-theme='blackout'] .camo-row[data-camo='empyros']::after,
+[data-theme='blackout'] .camo-row[data-camo='rippleTide']::after {
+	background: linear-gradient(
+		105deg,
+		transparent 38%,
+		rgb(255 255 255 / 0.28) 48%,
+		rgb(255 255 255 / 0.07) 54%,
+		transparent 62%
+	);
+	transform: translateX(-100%);
+	animation: camo-glint 8s ease-in-out infinite;
+}
+[data-theme='blackout'] .camo-row[data-camo='empyros']::after {
+	animation-delay: -5s;
+}
+[data-theme='blackout'] .camo-row[data-camo='rippleTide']::after {
+	background: linear-gradient(
+		105deg,
+		transparent 38%,
+		rgb(255 236 190 / 0.3) 48%,
+		rgb(255 200 120 / 0.08) 54%,
+		transparent 62%
+	);
+	animation-delay: -2s;
+}
+
+/* Chiral: glowing red veins on black smoke; the veins' glow pulses */
+[data-theme='blackout'] .camo-row[data-camo='chiral'] {
+	--glass: rgb(0 0 0 / 0.16);
+	--row-camo:
+		var(--chiral) 0 0 / 520px 260px,
+		radial-gradient(ellipse 40% 90% at 22% 40%, rgb(120 0 0 / 0.45), transparent 70%),
+		radial-gradient(ellipse 35% 80% at 78% 65%, rgb(90 0 0 / 0.4), transparent 70%),
+		#070000;
+}
+[data-theme='blackout'] .camo-row[data-camo='chiral']::after {
+	background: var(--chiral) 0 0 / 520px 260px;
+	filter: blur(3px) brightness(1.4);
+	mix-blend-mode: screen;
+	animation: chiral-pulse 3.2s ease-in-out infinite alternate;
+}
+@keyframes chiral-pulse {
+	from {
+		opacity: 0.2;
+	}
+	to {
+		opacity: 0.85;
+	}
+}
+
+/* Ripple Tide: glossy black liquid with molten gold */
+[data-theme='blackout'] .camo-row[data-camo='rippleTide'] {
+	--glass: rgb(0 0 0 / 0.22);
+	--row-camo:
+		linear-gradient(176deg, rgb(255 255 255 / 0.16) 0%, transparent 30%, transparent 66%, rgb(0 0 0 / 0.35) 100%),
+		var(--ripple) 0 0 / 520px 260px;
+}
+
+/* Helio: red fire clouds with white-hot seams; a second layer of fire drifts across */
+[data-theme='blackout'] .camo-row[data-camo='helio'] {
+	--glass: rgb(40 0 0 / 0.4);
+	--row-camo: var(--helio) 0 0 / 520px 260px;
+}
+[data-theme='blackout'] .camo-row[data-camo='helio']::after {
+	right: -520px;
+	background: var(--helio) 0 130px / 520px 260px;
+	opacity: 0.35;
+	mix-blend-mode: screen;
+	animation: camo-slide 30s linear infinite;
 }
 
 /* Abscar: weapon names sit on a little yellow label with green text */
