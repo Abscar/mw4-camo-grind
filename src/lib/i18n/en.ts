@@ -14,6 +14,8 @@ export const en = {
 	operator: {
 		label: 'Operator',
 		callsign: 'Abscar',
+		/** Abscar's squadmate, shown with his own emblem next to Abscar's */
+		mate: 'Phillestar',
 		online: 'Online',
 		rank: 'Rank',
 		rankName: 'Iridescent'
