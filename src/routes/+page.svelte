@@ -21,6 +21,7 @@
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
+	import SquadBanner from '#lib/components/SquadBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -189,7 +190,8 @@
 		<div class="mt-7"><MasterySection /></div>
 
 		<div class="abscar-only mt-7">
-			<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
+			<div class="overflow-hidden rounded-card shadow-card"><SquadBanner /></div>
+			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
 		</div>
 
 		<div class="mt-7"><SyncPanel /></div>
