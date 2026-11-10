@@ -97,8 +97,18 @@ const OLD_MASTERY_IDS: Record<string, string> = {
 	or: 'orionReforged'
 };
 
-/** Launch weapons start with Gold ticked; Season 1 weapons start empty. */
-export function defaultLevel(weaponId: string): number {
+/**
+ * A new tracker starts with nothing ticked (2026-11-10, the user's ask: "when I send it to someone,
+ * the tracker should be zeroed"). Until then launch weapons started with Gold ticked; that is now the
+ * "Gold on launch weapons" reset option. Saved data always lists every weapon, so this only decides
+ * what someone new sees (and fills weapons a save doesn't know yet).
+ */
+export function defaultLevel(_weaponId: string): number {
+	return 0;
+}
+
+/** The old starting point, kept as a reset option: Gold on every launch weapon. */
+function presetLevel(weaponId: string): number {
 	const w = WEAPONS.find((x) => x.id === weaponId);
 	return w && w.season === 'launch' ? 1 : 0;
 }
@@ -112,13 +122,13 @@ export function defaultProgress(): ProgressData {
 
 /**
  * The two kinds of reset (Backup & other devices → Reset…):
- * - 'preset': the starting preset, Gold ticked on every launch weapon (how a new tracker starts);
- * - 'zero':   nothing ticked at all, Gold cleared on the launch weapons too.
+ * - 'zero':   nothing ticked at all (how a new tracker starts);
+ * - 'preset': Gold ticked on every launch weapon (how the tracker used to start).
  * Both clear before-Gold ticks, counters and every Mastery count.
  */
 export function resetProgress(kind: 'preset' | 'zero'): ProgressData {
 	const p = defaultProgress();
-	if (kind === 'zero') for (const id of Object.keys(p.weapons)) p.weapons[id] = 0;
+	if (kind === 'preset') for (const id of Object.keys(p.weapons)) p.weapons[id] = presetLevel(id);
 	return { ...p, specials: {}, counts: {} };
 }
 

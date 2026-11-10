@@ -14,7 +14,7 @@
 	let fileInput = $state<HTMLInputElement>();
 	let linkOpen = $state(false);
 	let resetOpen = $state(false);
-	let resetKind = $state<'preset' | 'zero'>('preset');
+	let resetKind = $state<'preset' | 'zero'>('zero');
 	/** A backup file that passed the checks, waiting for you to confirm. */
 	let importOffer = $state<{ migrated: Migrated; exported: string | null } | null>(null);
 	let importOpen = $state(false);
@@ -253,7 +253,7 @@
 		<button type="button" class={plain} onclick={exportBackup}>{t.sync.exportFile}</button>
 		<button type="button" class={plain} onclick={() => fileInput?.click()}>{t.sync.importFile}</button>
 		<button type="button" class={danger} onclick={() => {
-				resetKind = 'preset';
+				resetKind = 'zero';
 				resetOpen = true;
 			}}>{t.sync.reset}</button>
 	</div>
@@ -371,7 +371,7 @@
 	<p>{t.reset.body}</p>
 	<fieldset class="mt-3 grid gap-2">
 		<legend class="sr-only">{t.reset.title}</legend>
-		{#each [{ kind: 'preset', label: t.reset.presetLabel, body: t.reset.presetBody(WEAPONS.filter((w) => w.season === 'launch').length) }, { kind: 'zero', label: t.reset.zeroLabel, body: t.reset.zeroBody }] as const as opt (opt.kind)}
+		{#each [{ kind: 'zero', label: t.reset.zeroLabel, body: t.reset.zeroBody }, { kind: 'preset', label: t.reset.presetLabel, body: t.reset.presetBody(WEAPONS.filter((w) => w.season === 'launch').length) }] as const as opt (opt.kind)}
 			<label class="reset-opt flex cursor-pointer items-start gap-2.5 rounded-lg border border-line bg-panel-2 p-3">
 				<input type="radio" name="reset-kind" value={opt.kind} bind:group={resetKind} class="mt-1 size-4 flex-none accent-(--t-accent)" />
 				<span><b class="font-semibold text-fg">{opt.label}</b><span class="mt-0.5 block text-[12.5px]">{opt.body}</span></span>

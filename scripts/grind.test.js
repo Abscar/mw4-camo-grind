@@ -104,7 +104,8 @@ test('prefs: status filter and compact mode, with safe defaults', () => {
 	assert.equal(normalisePrefs({ compact: 'yes' }).compact, false);
 });
 
-test('reset: starting preset vs from zero', () => {
+test('reset: Gold on launch weapons vs from zero (= a new tracker)', () => {
+	assert.deepEqual(resetProgress('zero').weapons, defaultProgress().weapons);
 	const preset = resetProgress('preset');
 	const zero = resetProgress('zero');
 	assert.equal(preset.weapons.m4, 1);
@@ -147,7 +148,7 @@ test('sync: counters merge per step, the higher wins, done steps drop theirs', (
 
 test('filters: status filters and suggestions from saved progress only', () => {
 	const s = {
-		weapons: { ...defaultProgress().weapons, m4: 3, oden: 2, 'csg-35': 0 },
+		weapons: { ...resetProgress('preset').weapons, m4: 3, oden: 2, 'csg-35': 0 },
 		specials: { 'csg-35': 0b111 },
 		counts: { 'han-86:p': 40, 'axion:p': 10 },
 		focus: ['mar-9']

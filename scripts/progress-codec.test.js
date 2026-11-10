@@ -61,9 +61,9 @@ test('data: counts match the known launch + Season 1 roster', () => {
 	assert.equal(DIVERGENCE_REQUIRED, 33);
 });
 
-test('defaults: launch weapons have Gold, Season 1 weapons start empty', () => {
+test('defaults: a new tracker starts with nothing ticked (2026-11-10)', () => {
 	const d = defaultProgress();
-	for (const w of WEAPONS) assert.equal(d.weapons[w.id], w.season === 'launch' ? 1 : 0, w.id);
+	for (const w of WEAPONS) assert.equal(d.weapons[w.id], 0, w.id);
 	for (const m of MASTERY) assert.equal(d.mastery[m.id], 0);
 });
 
@@ -94,7 +94,7 @@ test('migrate: old tracker export file (v1) works too', () => {
 	const m = migrate({ app: 'mw4-camo-grind', v: 1, exported: '2026-11-06T10:00:00Z', ticks: { oden: [1, 1, 1] }, mastery: { md: 3 } });
 	assert.ok(m);
 	assert.equal(m.progress.weapons.oden, 3);
-	assert.equal(m.progress.weapons.m4, 1); // missing → default
+	assert.equal(m.progress.weapons.m4, 0); // missing → default (nothing ticked)
 	assert.equal(m.progress.mastery.mercurialDrift, 3);
 	assert.equal(m.prefs, undefined);
 });

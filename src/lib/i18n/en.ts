@@ -488,11 +488,11 @@ export const en = {
 	reset: {
 		title: 'Reset progress?',
 		body: 'Pick what to reset to. Your notes and focus list stay. Export a backup first if you might want it back.',
-		presetLabel: 'Restore starting preset',
+		presetLabel: 'Gold on launch weapons',
 		presetBody: (launch: number) =>
-			`Gold ticked on the ${launch} launch weapons (how the tracker starts). Everything else cleared: Platinum, Harmonic Break, before-Gold ticks, counters and Mastery counts.`,
+			`Gold ticked on the ${launch} launch weapons, everything else cleared: Platinum, Harmonic Break, before-Gold ticks, counters and Mastery counts.`,
 		zeroLabel: 'Start from zero',
-		zeroBody: 'Nothing ticked at all, Gold cleared on the launch weapons too. Before-Gold ticks, counters and Mastery counts cleared.',
+		zeroBody: 'Nothing ticked at all, like a brand-new tracker. Before-Gold ticks, counters and Mastery counts cleared.',
 		exportFirst: 'Export backup first',
 		confirm: 'Reset',
 		cancel: 'Cancel'

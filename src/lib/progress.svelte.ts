@@ -410,8 +410,8 @@ class Progress {
 		return before;
 	}
 
-	/** 'preset' = Gold on every launch weapon (how the tracker starts); 'zero' = nothing at all. */
-	reset(kind: 'preset' | 'zero' = 'preset'): ProgressData {
+	/** 'zero' = nothing at all (how a new tracker starts); 'preset' = Gold on every launch weapon. */
+	reset(kind: 'preset' | 'zero' = 'zero'): ProgressData {
 		return this.replace(resetProgress(kind));
 	}
 
