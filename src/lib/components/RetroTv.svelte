@@ -21,6 +21,7 @@
 	import { FAVOURITE, MONTAGES } from '#lib/data/montages.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import {
+		CAPTIONS_OFF,
 		LISTENING,
 		PLAYING,
 		YT_ORIGIN,
@@ -73,6 +74,9 @@
 	let errors = 0;
 	/** Right after we (un)mute, the player may still report the old setting for a moment. */
 	let ignoreMutedUntil = 0;
+	/** The video the player is on, and the last one whose automatic captions were switched off. */
+	let playingId: string | null = null;
+	let captionsOffFor: string | null = null;
 	let tuneTimer: ReturnType<typeof setTimeout> | undefined;
 	let revealTimer: ReturnType<typeof setTimeout> | undefined;
 	let phaseTimer: ReturnType<typeof setTimeout> | undefined;
@@ -231,12 +235,18 @@
 			if (!pending) skipBroken(); // (not when it's the old channel's player, mid channel change)
 			return;
 		}
+		if (news.videoId) playingId = news.videoId;
 		if (news.state !== undefined) {
 			playerState = news.state;
 			if (news.state === PLAYING) {
 				tuning = false;
 				errors = 0;
 				clearTimeout(revealTimer);
+				// once per video: the captions module is loaded by the time it plays
+				if (playingId && playingId !== captionsOffFor) {
+					frame.contentWindow?.postMessage(CAPTIONS_OFF, YT_ORIGIN);
+					captionsOffFor = playingId;
+				}
 			}
 		}
 		// follows YouTube's own mute button too

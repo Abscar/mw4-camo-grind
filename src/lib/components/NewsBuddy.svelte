@@ -3,8 +3,8 @@
 	TTK, movement and patch changes (the user's ask, 2026-11-07; all other COD news is in the news
 	box). Headlines come from news.svelte.ts (`patches` in news.json, refreshed every hour on
 	GitHub, kept for 60 days). "Today" is worked out in the browser after load, so the prerendered
-	page and the first render match. Placed next to the header title (under it on phones; it moved
-	there from the top right on 2026-11-10 to make room for the old TV), Abscar theme only.
+	page and the first render match. Abscar theme only: under the header title on the left, beside
+	the old TV (the user's asks, 2026-11-10; it used to sit top right).
 	The buddy himself is a button: a poke makes him cough, blow smoke rings or laugh (~2 s).
 -->
 <script lang="ts">

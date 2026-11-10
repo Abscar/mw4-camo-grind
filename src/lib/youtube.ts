@@ -87,7 +87,13 @@ export function readPlayerMessage(data: unknown): PlayerNews | null {
 /** "Start talking to me": sent after the embed loads, until it answers. */
 export const LISTENING = JSON.stringify({ event: 'listening', id: 'tv', channel: 'widget' });
 
-export type PlayerCommand = 'playVideo' | 'pauseVideo' | 'mute' | 'unMute';
+export type PlayerCommand = 'playVideo' | 'pauseVideo' | 'mute' | 'unMute' | 'unloadModule';
 
-export const command = (func: PlayerCommand): string =>
-	JSON.stringify({ event: 'command', func, args: [], id: 'tv', channel: 'widget' });
+export const command = (func: PlayerCommand, args: readonly unknown[] = []): string =>
+	JSON.stringify({ event: 'command', func, args, id: 'tv', channel: 'widget' });
+
+/**
+ * Muted autoplay makes YouTube switch on its automatic sound captions ("[Music]", "[Applause]"):
+ * just noise over a montage, so the TV unloads the captions module for each video it plays.
+ */
+export const CAPTIONS_OFF = command('unloadModule', ['captions']);

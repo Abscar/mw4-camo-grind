@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { FAVOURITE, MONTAGE_GAMES, MONTAGES } from '../src/lib/data/montages.ts';
-import { VIDEO_ID, YT_ORIGIN, command, embedUrl, readPlayerMessage } from '../src/lib/youtube.ts';
+import { CAPTIONS_OFF, VIDEO_ID, YT_ORIGIN, command, embedUrl, readPlayerMessage } from '../src/lib/youtube.ts';
 
 test('montages: real-looking ids, no duplicates, every field filled in', () => {
 	assert.ok(MONTAGES.length >= 6, 'enough channels to flip through');
@@ -93,4 +93,6 @@ test('player commands are what the embed expects', () => {
 		id: 'tv',
 		channel: 'widget'
 	});
+	assert.deepEqual(JSON.parse(CAPTIONS_OFF).args, ['captions']);
+	assert.equal(JSON.parse(CAPTIONS_OFF).func, 'unloadModule');
 });
