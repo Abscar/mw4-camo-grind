@@ -152,7 +152,7 @@ export const en = {
 		nukeCount: (n: number) => `  ${n}...`,
 		nukeAfter: ['...', 'Just kidding. Your camos survived.', 'Phillestar says hi.'],
 		hackDone: ['ACCESS GRANTED.', 'Bad news: you still have to grind Harmonic Break yourself.'],
-		holk: ['      ( (', '       ) )', '  =========================*', '*puff puff* Tap the one in the ashtray for the real thing.'],
+		holk: ['      ( (', '       ) )', '  =========================*', '*puff puff*'],
 		blaze: 'Blaze it. The weed buddy approves.',
 		gg: 'gg ez',
 		sudo: 'Permission denied: even root has to grind the camos.',
@@ -265,9 +265,7 @@ export const en = {
 		},
 		results: (n: number, total: number) => `${n} of ${total} weapons`,
 		clear: 'Clear filters',
-		legend: 'G = Gold · P = Platinum · HB = Harmonic Break',
-		/** Abscar: the joint in the ashtray at the end of the search row is a just-for-fun button. */
-		holkTap: 'Tap the ash off'
+		legend: 'G = Gold · P = Platinum · HB = Harmonic Break'
 	},
 
 	weapon: {

@@ -12,7 +12,6 @@
 	// the user's own blunt picture (Abscar theme: every class button is drawn as this blunt)
 	import bluntPic from '#lib/assets/blunt.webp';
 	// the user's own white holk picture lying in an ashtray, end of the search row (Abscar only)
-	import HolkAshtray from './HolkAshtray.svelte';
 
 	let {
 		query = $bindable(''),
@@ -64,8 +63,6 @@
 			></span>
 			{t.toolbar.hideMaxed}
 		</label>
-
-		<span class="compact-hide contents"><HolkAshtray /></span>
 	</div>
 
 	<div

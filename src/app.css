@@ -1686,38 +1686,6 @@
 	transform: scale(1.06);
 }
 
-/* Abscar: the user's own white holk picture (assets/holk.webp), turned around and lying in a glass
-   ashtray (HolkAshtray.svelte), at the right end of the search row. A just-for-fun button (a tap
-   flicks the ash off; its own styles turn pointer events back on). The negative
-   top margin lets the smoke rise into the space above, so mostly the ashtray takes up room. The
-   widths keep the joint about as big as it was on its own (240 px wide at ≥1024). */
-.toolbar-holk {
-	--w: 132px;
-	width: var(--w);
-	height: auto;
-	flex: none;
-	margin-left: auto;
-	margin-top: calc(var(--w) * -0.12);
-	margin-bottom: calc(var(--w) * -0.03);
-	pointer-events: none;
-	user-select: none;
-}
-@media (min-width: 768px) {
-	.toolbar-holk {
-		--w: 212px;
-	}
-}
-@media (min-width: 1024px) {
-	.toolbar-holk {
-		--w: 284px;
-	}
-}
-@media (max-width: 359px) {
-	.toolbar-holk {
-		display: none;
-	}
-}
-
 /*
  * Abscar: a ticked box wears its camo (2026-11-11, the user's ask: "make the checkboxes the camo
  * instead of the cannabis things, the Gold box gold and so on"): brushed gold, brushed platinum,
