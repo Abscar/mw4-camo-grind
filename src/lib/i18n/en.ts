@@ -14,6 +14,16 @@ export const en = {
 		on: 'Compact mode: on. Focus weapons and quick updates first, less decoration.',
 		off: 'Compact mode: off'
 	},
+	/** The CS2 skin price search in the header's top row (BuffSearch): opens BUFF163's market search in a new tab. */
+	buff: {
+		label: 'Search CS2 skin prices on BUFF163',
+		placeholder: 'Skin → BUFF163',
+		heading: 'Skin prices · BUFF163',
+		go: 'Search BUFF163 (opens in a new tab)',
+		open: 'Search CS2 skin prices on BUFF163',
+		close: 'Close the BUFF163 search',
+		hint: 'Opens BUFF163 in a new tab. BUFF shows prices once you’re logged in there.'
+	},
 	/** The save / sync status in the header (truthful: "Synced" only after the sync service confirmed). */
 	saveStatus: {
 		saved: 'Saved in this browser',

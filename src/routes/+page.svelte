@@ -28,6 +28,7 @@
 	import MetaSection from '#lib/components/MetaSection.svelte';
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
 	import SaveStatus from '#lib/components/SaveStatus.svelte';
+	import BuffSearch from '#lib/components/BuffSearch.svelte';
 	import SquadBanner from '#lib/components/SquadBanner.svelte';
 	import NukeBanner from '#lib/components/NukeBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
@@ -169,6 +170,8 @@
 		<!-- the settings row: save status on the left; Compact, theme and sound on the right (2026-11-10) -->
 		<div class="hdr-bar relative z-[32] mx-auto flex max-w-[1240px] items-center justify-between gap-2 px-4 pt-2 sm:px-5 sm:pt-3">
 			<div class="min-w-0"><SaveStatus /></div>
+			<!-- CS2 skin prices: opens BUFF163's search (2026-11-11); a magnifier with a drop-down on phones -->
+			<BuffSearch />
 			<ThemePicker />
 		</div>
 		<!-- Abscar lays this out as a grid (style block below); the other themes only show the title.
