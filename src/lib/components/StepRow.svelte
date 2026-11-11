@@ -64,6 +64,7 @@
 		type="button"
 		class="step-tick"
 		style:--k={fill}
+		data-camo={step.kind === 'ladder' ? LADDER[step.index].id : undefined}
 		aria-pressed={pressed}
 		aria-label={label}
 		title={locked ? t.sheet.preGoldLocked : label}

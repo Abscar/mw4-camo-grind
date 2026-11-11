@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { LADDER, type LadderCamo } from '#lib/data/camos.ts';
+	import type { LadderCamo } from '#lib/data/camos.ts';
 	import { t } from '#lib/i18n/en.ts';
-	import { CAMO_FILL, tickIcon } from '#lib/ui.ts';
-	import StashTick from './StashTick.svelte';
+	import { CAMO_FILL } from '#lib/ui.ts';
 
 	let {
 		camo,
@@ -50,6 +49,7 @@
 	class:just-ticked={pop}
 	class:gold-ready={ready && !pressed}
 	style:--k={CAMO_FILL[camo.id]}
+	data-camo={camo.id}
 	aria-pressed={pressed}
 	aria-label={label}
 	title={label}
@@ -57,9 +57,8 @@
 	onanimationend={() => (pop = false)}
 >
 	{#if pressed}
+		<!-- Abscar: the ticked box wears its camo (brushed gold / platinum / Harmonic Break, grind.css) -->
 		<span aria-hidden="true" class="tick-mark text-base leading-none">✔</span>
-		<!-- Abscar: a little cartoon from the stash instead of ✔ (still a clear shape change) -->
-		<StashTick icon={tickIcon(weaponName, LADDER.findIndex((c) => c.id === camo.id))} />
 	{:else}
 		<span aria-hidden="true" class:lift={showPips}>{camo.short}</span>
 		{#if showPips && pips !== null}

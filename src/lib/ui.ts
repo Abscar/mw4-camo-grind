@@ -31,36 +31,6 @@ export const CAMO_INK: Record<LadderCamoId, string> = {
 	harmonicBreak: 'text-hb-ink'
 };
 
-/**
- * Abscar: what a ticked box shows instead of ✔ (StashTick.svelte). The user asked for "a good mix"
- * of weed things instead of only leaves (2026-11-10). Papers come in two looks without any brand.
- */
-export const TICK_ICONS = [
-	'leaf',
-	'bong',
-	'blunt',
-	'papersBrown',
-	'pipe',
-	'joint',
-	'grinder',
-	'lighter',
-	'nug',
-	'papersBlack',
-	'brownie'
-] as const;
-export type TickIcon = (typeof TICK_ICONS)[number];
-
-/**
- * The same icon for a box every time (worked out from the weapon's name, so the prerendered page
- * and the browser agree), and G / P / HB on one weapon are always three different ones (step 4,
- * which shares no factor with 11).
- */
-export function tickIcon(weaponName: string, ladderIndex: number): TickIcon {
-	let h = 0x811c9dc5;
-	for (let i = 0; i < weaponName.length; i++) h = Math.imul(h ^ weaponName.charCodeAt(i), 0x01000193) >>> 0;
-	return TICK_ICONS[(h + ladderIndex * 4) % TICK_ICONS.length];
-}
-
 export function percent(done: number, total: number): number {
 	return total > 0 ? Math.round((done * 100) / total) : 0;
 }

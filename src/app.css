@@ -1718,62 +1718,86 @@
 	}
 }
 
-/* Abscar: every ticked box is yellow (the leaf and the G/P/HB column say which camo it is) */
-[data-theme='blackout'] .camo-toggle[aria-pressed='true'] {
-	background: #ffcc33;
-	border-color: #ffcc33;
-	box-shadow: 0 0 12px rgb(255 204 51 / 0.55);
+/*
+ * Abscar: a ticked box wears its camo (2026-11-11, the user's ask: "make the checkboxes the camo
+ * instead of the cannabis things, the Gold box gold and so on"): brushed gold, brushed platinum,
+ * Harmonic Break's crimson streaks on black, like the KPI tiles; a ✔ stays on top so it isn't colour
+ * alone; a glint sweeps across when you tick it. Same on the weapon card's Gold / Platinum / HB ticks
+ * (.step-tick). Until then every ticked box was yellow with a stash cartoon (StashTick, deleted).
+ */
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo] {
+	--metal-ink: #241603;
+	position: relative;
+	overflow: hidden;
+	color: var(--metal-ink);
+	text-shadow: 0 1px 0 rgb(255 255 255 / 0.45);
+	background:
+		repeating-linear-gradient(0deg, rgb(255 255 255 / 0.1) 0 1px, transparent 1px 3px),
+		repeating-linear-gradient(0deg, rgb(0 0 0 / 0.07) 0 1px, transparent 1px 5px),
+		radial-gradient(ellipse at 28% 18%, rgb(255 255 255 / 0.55), transparent 55%),
+		var(--metal);
+	border-color: var(--metal-edge);
+	box-shadow:
+		inset 0 1px 0 rgb(255 255 255 / 0.5),
+		inset 0 -2px 3px rgb(0 0 0 / 0.35),
+		0 0 0 1px rgb(0 0 0 / 0.55),
+		0 0 12px var(--metal-glow);
 }
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo='gold'] {
+	--metal: linear-gradient(130deg, #8a5d12 0%, #f2cc66 30%, #b5852b 52%, #ffe7a0 74%, #7a520f 100%);
+	--metal-edge: #e0b24e;
+	--metal-glow: rgb(255 196 60 / 0.55);
+}
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo='platinum'] {
+	--metal: linear-gradient(130deg, #646c74 0%, #dfe5ea 30%, #8e969e 52%, #f7f9fb 74%, #555c63 100%);
+	--metal-edge: #d6dde3;
+	--metal-glow: rgb(220 232 242 / 0.5);
+	--metal-ink: #161b21;
+}
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo='harmonicBreak'] {
+	--metal:
+		repeating-linear-gradient(118deg, transparent 0 7px, rgb(240 30 60 / 0.6) 7px 9px, transparent 9px 15px),
+		radial-gradient(ellipse at 72% 30%, rgb(255 50 80 / 0.5), transparent 60%),
+		linear-gradient(118deg, #170306 0%, #7c0c1d 34%, #110204 56%, #b2152f 82%, #1a0408 100%);
+	--metal-edge: #ff3b5c;
+	--metal-glow: rgb(255 40 70 / 0.55);
+	--metal-ink: #fff;
+	text-shadow:
+		0 1px 2px rgb(0 0 0 / 0.9),
+		0 0 6px rgb(0 0 0 / 0.6);
+}
+/* the glint: one sweep when the box is ticked (the main list's boxes pop + glint) */
+[data-theme='blackout'] .camo-toggle[aria-pressed='true'][data-camo]::after {
+	content: '';
+	position: absolute;
+	inset: -40% -60%;
+	background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.75) 50%, transparent 60%);
+	transform: translateX(-70%);
+	pointer-events: none;
+}
+[data-theme='blackout'] .camo-toggle.just-ticked[aria-pressed='true'][data-camo]::after {
+	animation: metal-glint 0.6s ease-out;
+}
+@keyframes metal-glint {
+	to {
+		transform: translateX(70%);
+	}
+}
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo] > span:not(.unsure-mark) {
+	position: relative;
+	z-index: 1;
+}
+[data-theme='blackout'] .camo-toggle[aria-pressed='true'] .unsure-mark {
+	z-index: 1;
+	color: var(--metal-ink);
+}
+/* unticked: the edge lights up in the camo's colour on hover */
 [data-theme='blackout'] .camo-toggle:hover {
-	border-color: #ffcc33;
+	border-color: var(--k, #ffcc33);
 }
-
-/* ticked boxes: a little cartoon from the stash instead of ✔ (Abscar only; StashTick.svelte —
-   leaf, bong, blunt, papers, pipe, joint, grinder, lighter, bud, brownie, mixed per box) */
-.tick-leaf {
-	display: none;
-	width: 30px;
-	height: 30px;
-	overflow: visible;
-	filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.35));
-}
-[data-theme='blackout'] .camo-toggle .tick-leaf {
-	display: block;
-}
-[data-theme='blackout'] .camo-toggle .tick-mark {
-	display: none;
-}
-.tick-leaf-blade {
-	fill: #5fd04a;
-	stroke: #14420f;
-	stroke-width: 1.1;
-	stroke-linejoin: round;
-}
-.tick-leaf-vein {
-	fill: none;
-	stroke: #2c8a22;
-	stroke-width: 0.6;
-	stroke-linecap: round;
-}
-.tick-leaf-stem {
-	fill: none;
-	stroke: #14420f;
-	stroke-width: 1.6;
-	stroke-linecap: round;
-}
-[data-theme='blackout'] .camo-toggle.just-ticked .tick-leaf {
-	animation: leaf-wiggle 0.45s ease-out;
-	transform-origin: 50% 70%;
-}
-@keyframes leaf-wiggle {
-	0% {
-		transform: rotate(-18deg) scale(0.6);
-	}
-	55% {
-		transform: rotate(10deg) scale(1.1);
-	}
-	100% {
-		transform: rotate(0) scale(1);
+@media (prefers-reduced-motion: reduce) {
+	[data-theme='blackout'] .camo-toggle.just-ticked[aria-pressed='true'][data-camo]::after {
+		animation: none;
 	}
 }
 
