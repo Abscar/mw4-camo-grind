@@ -20,6 +20,7 @@
 	import { OFFLINE_FILE } from '#lib/browser.ts';
 	import { FAVOURITE, MONTAGES } from '#lib/data/montages.ts';
 	import { t } from '#lib/i18n/en.ts';
+	import TvGames from '#lib/components/TvGames.svelte';
 	import {
 		CAPTIONS_OFF,
 		LISTENING,
@@ -433,6 +434,8 @@
 		</div>
 	</div>
 	<div class="tv-feet" aria-hidden="true"><i></i><i></i></div>
+	<!-- a PS3, games and cases on the floor in front of it (the user's ask, 2026-11-11) -->
+	<TvGames on={power} />
 </div>
 
 <style>
