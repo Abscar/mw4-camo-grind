@@ -8,6 +8,10 @@
 	The buddy himself is a button: a poke makes him cough, blow smoke rings or laugh (~2 s).
 -->
 <script lang="ts">
+	import { untrack } from 'svelte';
+	import { growth, GROWTH_STAGES, type Growth } from '#lib/buddyGrowth.ts';
+	import { DIVERGENCE_REQUIRED, MASTERY_TRACKS, MAX_LEVEL } from '#lib/data/camos.ts';
+	import { WEAPONS } from '#lib/data/weapons.ts';
 	import { feed } from '#lib/feed.svelte.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { news, useNews } from '#lib/news.svelte.ts';
@@ -45,16 +49,54 @@
 		return dayKey(d) === dayKey(now) ? clock(d) : shortDate(d);
 	};
 
-	/** Cheers right after you max a weapon; otherwise sleeps after midnight, sulks after a quiet week. */
+	/**
+	 * He grows with your grind (buddyGrowth.ts, 2026-11-11): by the share of camo steps ticked, a
+	 * monster at Divergence, a legend once a Mastery camo is done. When a stage is reached while the
+	 * page is open he bounces, sparkles and says so for a few seconds (not on load).
+	 */
+	const STEPS_TOTAL = WEAPONS.length * MAX_LEVEL;
+	const GREW_MS = 6000;
+	const grow = $derived.by((): Growth => {
+		const steps = WEAPONS.reduce((n, w) => n + Math.min(MAX_LEVEL, progress.level(w.id)), 0);
+		const mastery = MASTERY_TRACKS.reduce((n, tr) => n + progress.masteryByMode[tr.mode].filter((s) => s === 'complete').length, 0);
+		return growth(steps, STEPS_TOTAL, DIVERGENCE_REQUIRED - progress.divergenceCount, mastery);
+	});
+	let grew = $state(false);
+	let shownStage: number | null = null;
+	let grewTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		if (!progress.ready) return;
+		const stage = grow.stage;
+		untrack(() => {
+			if (shownStage !== null && stage > shownStage) {
+				grew = true;
+				clearTimeout(grewTimer);
+				grewTimer = setTimeout(() => (grew = false), GREW_MS);
+			} else if (shownStage !== null && stage < shownStage) {
+				grew = false;
+			}
+			shownStage = stage;
+		});
+	});
+	$effect(() => () => clearTimeout(grewTimer));
+	const growthNext = $derived.by(() => {
+		const n = grow.next;
+		if (!n) return t.buddy.top;
+		if (n.kind === 'steps') return t.buddy.toSteps(n.left);
+		if (n.kind === 'divergence') return t.buddy.toDivergence(n.left);
+		return t.buddy.toMastery;
+	});
+
+	/** Cheers right after you max a weapon (or he grew); otherwise sleeps after midnight, sulks after a quiet week. */
 	const mood = $derived.by((): BuddyMood => {
-		if (feed.cheering) return 'cheer';
+		if (feed.cheering || grew) return 'cheer';
 		if (!now) return 'normal'; // the prerendered page and the first render match
 		if (now.getHours() < WAKE_HOUR) return 'sleep';
 		const last = progress.ready ? progress.lastActiveAt() : null;
 		if (last && now.getTime() - Date.parse(last) > SULK_MS) return 'sulk';
 		return 'normal';
 	});
-	const greeting = $derived(mood === 'normal' ? t.news.hello : t.news.mood[mood]);
+	const greeting = $derived(grew ? t.buddy.grew(t.buddy.stages[grow.name]) : mood === 'normal' ? t.news.hello : t.news.mood[mood]);
 
 	/** Just for fun: poke him and he coughs, blows smoke rings or laughs (never the same twice in a row). */
 	const REACT_MS = 2100;
@@ -76,7 +118,7 @@
 
 <div class="news-buddy flex items-start gap-1.5">
 	<button type="button" class="buddy-btn flex-none" aria-label={t.buddy.poke} title={t.buddy.poke} onclick={poke}>
-		<WeedCreature class="buddy block size-24 overflow-visible sm:size-28" {mood} {reaction} {run} />
+		<WeedCreature class="buddy block size-24 overflow-visible sm:size-28" {mood} {reaction} {run} stage={grow.stage} {grew} />
 	</button>
 
 	<div class="news-bubble relative max-w-[400px] min-w-0 rounded-xl px-3.5 pt-2 pb-2">
@@ -105,6 +147,16 @@
 				{/each}
 			</ul>
 		{/if}
+		<!-- how grown he is, and what the next stage needs -->
+		<p class="buddy-growth mt-1 flex items-start gap-1.5 border-t border-white/15 pt-1.5 text-[11.5px] leading-snug text-band-muted">
+			<svg viewBox="0 0 16 16" class="mt-px size-3.5 flex-none" aria-hidden="true" focusable="false">
+				<path d="M8 15V8M8 8C8 4 5 2 1.5 2 1.5 6 4 8 8 8ZM8 10c0-3.2 2.4-5 6.5-5 0 3.4-2.6 5-6.5 5Z" fill="#7ed957" stroke="#2f6522" stroke-width="0.8" stroke-linejoin="round" />
+			</svg>
+			<span
+				><b class="font-semibold text-[#b6f27a]">{t.buddy.growth}: {t.buddy.stages[grow.name]}</b>
+				({t.buddy.stageOf(grow.stage + 1, GROWTH_STAGES.length)}) · {growthNext}</span
+			>
+		</p>
 	</div>
 </div>
 

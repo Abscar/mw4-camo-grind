@@ -10,6 +10,7 @@
 	import { syncCodeFromText, type SyncDoc } from '#lib/sync-codec.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
+	import InstallApp from './InstallApp.svelte';
 
 	let fileInput = $state<HTMLInputElement>();
 	let linkOpen = $state(false);
@@ -247,6 +248,8 @@
 			</div>
 		</div>
 	{/if}
+
+	<InstallApp />
 
 	<div class="mt-4 flex flex-wrap gap-2">
 		<button type="button" class={sync.available ? plain : primary} onclick={openLink}>{t.sync.copyLink}</button>

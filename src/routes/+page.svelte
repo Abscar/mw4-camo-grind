@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { clearLinkFromAddress, linkCodeInAddress } from '#lib/browser.ts';
+	import { asset } from '$app/paths';
+	import { OFFLINE_FILE, clearLinkFromAddress, linkCodeInAddress } from '#lib/browser.ts';
 	import { DIVERGENCE_REQUIRED, LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
 	import { CLASSES, WEAPONS } from '#lib/data/weapons.ts';
 	import { matchesStatus } from '#lib/filters.ts';
@@ -34,10 +35,13 @@
 	import Toast from '#lib/components/Toast.svelte';
 	import Toolbar from '#lib/components/Toolbar.svelte';
 	import FocusSection from '#lib/components/FocusSection.svelte';
+	import DivergenceRoad from '#lib/components/DivergenceRoad.svelte';
+	import SeasonStrip from '#lib/components/SeasonStrip.svelte';
 	import WeaponSheet from '#lib/components/WeaponSheet.svelte';
 	import KillFeed from '#lib/components/KillFeed.svelte';
 	import DivergenceUnlock from '#lib/components/DivergenceUnlock.svelte';
 	import BootSequence from '#lib/components/BootSequence.svelte';
+	import AbscarTerminal from '#lib/components/AbscarTerminal.svelte';
 
 	let query = $state('');
 	const needle = $derived(query.trim().toLowerCase());
@@ -142,6 +146,12 @@
 
 <svelte:head>
 	<title>{t.pageTitle}</title>
+	<!-- "Get it as an app": the home-screen icon (not in the offline file, which can't be installed) -->
+	{#if !OFFLINE_FILE}
+		<link rel="manifest" href={asset('manifest.webmanifest')} />
+		<link rel="apple-touch-icon" href={asset('icons/apple-touch-icon.png')} />
+		<meta name="apple-mobile-web-app-title" content={t.installApp.appName} />
+	{/if}
 	<noscript><style>.app-gate { opacity: 1 !important; }</style></noscript>
 </svelte:head>
 
@@ -193,11 +203,17 @@
 		<!-- the green radar with the latest COD news -->
 		<div class="compact-hide mt-5"><NewsBanner /></div>
 
+		<!-- the season countdown: day of the season, its end, what's coming (2026-11-11) -->
+		<div class="compact-hide mt-3"><SeasonStrip /></div>
+
 		<!-- overall progress and the next milestone -->
 		<div class="mt-4"><KpiBar /></div>
 
 		<!-- 3. continue grinding: the focus list -->
 		<div class="mt-6"><FocusSection /></div>
+
+		<!-- the weapons closest to Harmonic Break, until Divergence is unlocked (2026-11-11) -->
+		<div class="mt-6 empty:hidden"><DivergenceRoad /></div>
 
 		<!-- 4. search and filters -->
 		<div id="weapons" class="mt-6 scroll-mt-4">
@@ -264,6 +280,8 @@
 <KillFeed />
 <DivergenceUnlock />
 <BootSequence />
+<!-- Abscar: the secret terminal (type "abscar", press §, or tap the red HUD box 5 times) -->
+<AbscarTerminal />
 
 <Dialog bind:open={linkDialogOpen} title={t.linkImport.title}>
 	{#if linkOffer}

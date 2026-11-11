@@ -48,6 +48,12 @@
 					addEventListener('keydown', skip, true);
 					setTimeout(skip, 2400);
 				}
+				// "Get it as an app": the browser's install offer can come before the page's code runs,
+				// so park it here for src/lib/install.svelte.ts
+				addEventListener('beforeinstallprompt', function (e) {
+					e.preventDefault();
+					window.__mw4InstallPrompt = e;
+				});
 				// pause the decoration while the tab is hidden
 				document.addEventListener('visibilitychange', function () {
 					if (document.hidden) html.setAttribute('data-page-hidden', '');

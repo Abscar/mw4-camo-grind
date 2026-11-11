@@ -20,6 +20,8 @@
 	export type BuddyReaction = 'cough' | 'ring' | 'laugh';
 	export const REACTIONS: BuddyReaction[] = ['cough', 'ring', 'laugh'];
 
+	import type { GrowthStage } from '#lib/buddyGrowth.ts';
+
 	type Pt = [number, number];
 
 	/** Cough puffs from the mouth: [dx, dy, final scale, delay s] (in step with the three coughs). */
@@ -123,6 +125,22 @@
 	const MID = LEAVES.filter((l) => l.tone === 1);
 	const FRONT = LEAVES.filter((l) => l.tone === 2);
 
+	/*
+	 * Growth (buddyGrowth.ts, 2026-11-11): he grows with your grind. Stage 2 is the look he always had.
+	 * 0 seedling: small, only the leaves on top, in a mound of soil; 1 sprout: bigger, half the back
+	 * leaves, still in the soil; 3 big bush: an outer ring of big dark leaves, brighter glow; 4 monster
+	 * (Divergence): bigger still, a tall crown, glowing veins, a green glow round him; 5 legend
+	 * (a Mastery camo done): the glow turns iridescent and twinkles.
+	 */
+	/** How big he is per stage (scaled from his feet, the bottom middle). */
+	const STAGE_SCALE = [0.58, 0.8, 1, 1.07, 1.13, 1.13];
+	/** Stage 0: the middle leaves a seedling has (the three on top of his head). */
+	const SEEDLING_MID = new Set([-38, -6, 26]);
+	/** Stage 3+: an outer ring of big dark leaves ("thicker"). */
+	const EXTRA = around([-160, -128, -96, -64, -32, 0, 32, 64, 96, 128, 160], 17, 1.5, 0, 0.1);
+	/** Stage 4+: a tall crown of leaves (the monster). */
+	const CROWN = around([-52, -26, 0, 26, 52], 21, 1.8, 1, 0.08);
+
 	/** Sharp teeth along the lips: upper lip y = 47 + 8t(1−t), lower lip y = 47 + 17t(1−t). */
 	const teeth = (lip: number, dir: 1 | -1, len: number) => {
 		const out: string[] = [];
@@ -153,7 +171,9 @@
 		class: klass = '',
 		mood = 'normal',
 		reaction = null,
-		run = 0
+		run = 0,
+		stage = 2,
+		grew = false
 	}: {
 		class?: string;
 		mood?: BuddyMood;
@@ -161,11 +181,23 @@
 		reaction?: BuddyReaction | null;
 		/** Bumped on every poke, so the smoke and "HA"s start over. */
 		run?: number;
+		/** How grown he is (buddyGrowth.ts); 2 = the classic look. */
+		stage?: GrowthStage;
+		/** He just grew a stage: a bounce and a burst of sparkles. */
+		grew?: boolean;
 	} = $props();
 	const uid = $props.id();
 	/** A poke wakes him up for the reaction. */
 	const awake = $derived(mood !== 'sleep' || reaction !== null);
 	const eye = $derived(mood === 'cheer' ? { rx: 2.9, ry: 1.7 } : { rx: 2.3, ry: 1.15 });
+	const back = $derived(stage === 0 ? [] : stage === 1 ? BACK.filter((_, i) => i % 2 === 0) : BACK);
+	const mid = $derived(stage === 0 ? MID.filter((l) => SEEDLING_MID.has(l.rot)) : MID);
+	const glowR = $derived(stage >= 4 ? 7.6 : stage >= 3 ? 6.5 : 5.5);
+	const tipR = $derived(stage >= 3 ? 6.2 : 5);
+	/** The monster's veins glow lime and his eyes burn orange. */
+	const veinGlow = $derived(stage >= 4);
+	const eyeGlow = $derived(stage >= 4 ? 'hot' : 'glow');
+	const eyeFill = $derived(stage >= 4 ? '#ffb347' : '#ffe86a');
 </script>
 
 {#snippet leaf(l: Leaf)}
@@ -173,7 +205,7 @@
 		{#each LEAF as p (p.a)}
 			<g transform="rotate({p.a})">
 				<path d={p.d} fill={TONES[l.tone][0]} stroke="#0f2a0b" stroke-width="0.35" stroke-linejoin="round" />
-				<path d={p.vein} stroke={TONES[l.tone][1]} stroke-width="0.45" stroke-linecap="round" />
+				<path d={p.vein} stroke={veinGlow ? '#e4ff7a' : TONES[l.tone][1]} stroke-width={veinGlow ? 0.6 : 0.45} stroke-linecap="round" />
 			</g>
 		{/each}
 	</g>
@@ -217,8 +249,36 @@
 			<stop offset="0" stop-color="#6fb24f" />
 			<stop offset="1" stop-color="#2d6322" />
 		</radialGradient>
+		<radialGradient id="{uid}-hot">
+			<stop offset="0" stop-color="#ffb347" stop-opacity="1" />
+			<stop offset="0.4" stop-color="#ff6a1a" stop-opacity="0.6" />
+			<stop offset="1" stop-color="#ff4a00" stop-opacity="0" />
+		</radialGradient>
+		<radialGradient id="{uid}-aura">
+			<stop offset="0" stop-color="#c8ff6a" stop-opacity="0.9" />
+			<stop offset="0.6" stop-color="#5fd13a" stop-opacity="0.5" />
+			<stop offset="1" stop-color="#5fd13a" stop-opacity="0" />
+		</radialGradient>
+		<radialGradient id="{uid}-aura-iri">
+			<stop offset="0" stop-color="#ffffff" stop-opacity="0.55" />
+			<stop offset="0.3" stop-color="#ff6ad5" stop-opacity="0.6" />
+			<stop offset="0.62" stop-color="#4fe6ff" stop-opacity="0.42" />
+			<stop offset="1" stop-color="#b265ff" stop-opacity="0" />
+		</radialGradient>
+		<radialGradient id="{uid}-soil" cx="0.5" cy="0.15" r="0.9">
+			<stop offset="0" stop-color="#7a5532" />
+			<stop offset="1" stop-color="#3a2614" />
+		</radialGradient>
 	</defs>
 
+	{#if stage >= 4}
+		<!-- monster: a green glow round him; legend: iridescent, slowly shifting colour -->
+		<circle class="buddy-aura" class:legend={stage >= 5} cx="46" cy="54" r="52" fill="url(#{uid}-{stage >= 5 ? 'aura-iri' : 'aura'})" />
+	{/if}
+
+	<!-- growth: the pop when he grows a stage (CSS), and his size per stage (attribute) -->
+	<g class="buddy-grow" class:grow-pop={grew}>
+	<g transform="translate(46 100) scale({STAGE_SCALE[stage]}) translate(-46 -100)">
 	<!-- everything that shakes, bounces or leans when he's poked -->
 	<g
 		class="buddy-body"
@@ -232,8 +292,10 @@
 		fill="url(#{uid}-face)"
 		filter="url(#{uid}-moss)"
 	/>
-	{#each BACK as l, i (i)}{@render leaf(l)}{/each}
-	{#each MID as l, i (i)}{@render leaf(l)}{/each}
+	{#if stage >= 4}{#each CROWN as l, i (i)}{@render leaf(l)}{/each}{/if}
+	{#if stage >= 3}{#each EXTRA as l, i (i)}{@render leaf(l)}{/each}{/if}
+	{#each back as l, i (i)}{@render leaf(l)}{/each}
+	{#each mid as l, i (i)}{@render leaf(l)}{/each}
 
 	<!-- gnarled vine arm (with the hand, drawn further down) waves when he cheers -->
 	<g class="buddy-arm">
@@ -266,14 +328,14 @@
 		<path d="M38 34.2 L43 35.9 L38 37.6 M54 34.2 L49 35.9 L54 37.6" fill="none" stroke="#ffe86a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" />
 	{:else if reaction === 'laugh'}
 		<!-- laughing: glowing eyes squinted into happy arcs -->
-		<circle class="buddy-glow" cx="40.6" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
-		<circle class="buddy-glow" cx="51.4" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
+		<circle class="buddy-glow" cx="40.6" cy="35.8" r={glowR} fill="url(#{uid}-{eyeGlow})" />
+		<circle class="buddy-glow" cx="51.4" cy="35.8" r={glowR} fill="url(#{uid}-{eyeGlow})" />
 		<path d="M37.8 37.4 Q40.6 32.6 43.6 37.4 M48.4 37.4 Q51.4 32.6 54.2 37.4" fill="none" stroke="#ffe86a" stroke-width="1.5" stroke-linecap="round" />
 	{:else if awake}
-		<circle class="buddy-glow" cx="40.6" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
-		<circle class="buddy-glow" cx="51.4" cy="35.8" r="5.5" fill="url(#{uid}-glow)" />
-		<ellipse cx="40.6" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(14 40.6 35.8)" fill="#ffe86a" />
-		<ellipse cx="51.4" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(-14 51.4 35.8)" fill="#ffe86a" />
+		<circle class="buddy-glow" cx="40.6" cy="35.8" r={glowR} fill="url(#{uid}-{eyeGlow})" />
+		<circle class="buddy-glow" cx="51.4" cy="35.8" r={glowR} fill="url(#{uid}-{eyeGlow})" />
+		<ellipse cx="40.6" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(14 40.6 35.8)" fill={eyeFill} />
+		<ellipse cx="51.4" cy="35.8" rx={eye.rx} ry={eye.ry} transform="rotate(-14 51.4 35.8)" fill={eyeFill} />
 		<ellipse cx="40.9" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
 		<ellipse cx="51.1" cy="35.9" rx="0.45" ry="1" fill="#3a2a00" />
 		{#if mood === 'sulk' || reaction === 'ring'}
@@ -334,7 +396,7 @@
 		{/each}
 		<g opacity={awake ? 1 : 0.35}>
 			{#each FINGERS as f, i (i)}
-				<circle class="buddy-glow" cx={f.tip[0]} cy={f.tip[1]} r="5" fill="url(#{uid}-glow)" />
+				<circle class="buddy-glow" cx={f.tip[0]} cy={f.tip[1]} r={tipR} fill="url(#{uid}-glow)" />
 				<circle cx={f.tip[0]} cy={f.tip[1]} r="1.6" fill="#ffe86a" />
 				<circle cx={f.tip[0] - 0.4} cy={f.tip[1] - 0.4} r="0.6" fill="#fffbe0" />
 			{/each}
@@ -424,6 +486,36 @@
 			{/each}
 		{/if}
 	{/key}
+	</g>
+	</g>
+
+	{#if stage <= 1}
+		<!-- seedling and sprout: still coming up out of a mound of soil -->
+		<g class="buddy-soil">
+			<path d="M10 101 Q17 88.5 46 87.5 Q75 88.5 82 101 Z" fill="url(#{uid}-soil)" stroke="#24170b" stroke-width="0.6" />
+			<path d="M20 92.5 Q32 89.6 44 89.4" fill="none" stroke="#a07a52" stroke-width="0.8" stroke-linecap="round" opacity="0.6" />
+			<ellipse cx="29" cy="96" rx="2.3" ry="1.4" fill="#8a6a48" />
+			<ellipse cx="61" cy="94.4" rx="1.7" ry="1.1" fill="#7a5c3c" />
+			<ellipse cx="52" cy="98.2" rx="2.7" ry="1.5" fill="#5a4028" />
+			<path d="M19 94.5 q1.4 -3.6 2.4 0 M21.5 94.2 q1.6 -2.8 3 0.2 M67 93 q1.3 -3 2.3 0 M69.4 93 q1.4 -2.4 2.8 0.3" fill="none" stroke="#5aa83f" stroke-width="0.8" stroke-linecap="round" />
+		</g>
+	{/if}
+
+	{#if grew || stage >= 5}
+		<!-- sparkles: a burst when he grows a stage, and the legend's twinkle -->
+		{#each [[14, 24, 0], [78, 12, 0.2], [8, 60, 0.45], [88, 52, 0.1], [40, 4, 0.33], [62, 30, 0.55]] as [x, y, delay], i (i)}
+			<!-- the position sits on a wrapper: the sparkle's own CSS animation replaces its transform -->
+			<g transform="translate({x} {y})">
+				<path
+					class="buddy-sparkle"
+					class:slow={!grew}
+					style:animation-delay="{delay}s"
+					d="M0 -4 L1 -1 L4 0 L1 1 L0 4 L-1 1 L-4 0 L-1 -1 Z"
+					fill={grew ? '#ffe86a' : '#f3e6ff'}
+				/>
+			</g>
+		{/each}
+	{/if}
 </svg>
 
 <style>
@@ -437,6 +529,56 @@
 		transform-box: fill-box;
 		transform-origin: center;
 		animation: buddy-pop 0.9s ease-out infinite;
+	}
+	.buddy-sparkle.slow {
+		animation-duration: 2.6s;
+	}
+	/* growth (2026-11-11): a bounce from his feet when he grows a stage, the monster's / legend's glow */
+	.buddy-grow {
+		transform-box: view-box;
+		transform-origin: 46px 100px;
+	}
+	.grow-pop {
+		animation: buddy-grow-pop 1.1s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+	}
+	.buddy-aura {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: buddy-aura 3.2s ease-in-out infinite alternate;
+	}
+	.buddy-aura.legend {
+		animation:
+			buddy-aura 3.2s ease-in-out infinite alternate,
+			buddy-iri 9s linear infinite;
+	}
+	@keyframes buddy-grow-pop {
+		0% {
+			transform: scale(0.82);
+		}
+		45% {
+			transform: scale(1.16);
+		}
+		70% {
+			transform: scale(0.96);
+		}
+		100% {
+			transform: none;
+		}
+	}
+	@keyframes buddy-aura {
+		from {
+			opacity: 0.6;
+			transform: scale(0.93);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1.04);
+		}
+	}
+	@keyframes buddy-iri {
+		to {
+			filter: hue-rotate(360deg);
+		}
 	}
 	.buddy-z {
 		animation: buddy-zzz 2.7s ease-in-out infinite;

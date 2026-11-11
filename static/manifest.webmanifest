@@ -1,0 +1,17 @@
+{
+	"name": "MW4 Camo Grind",
+	"short_name": "Camo Grind",
+	"description": "Tick off your Modern Warfare 4 Multiplayer camo grind: Gold, Platinum, Harmonic Break, Divergence and Mastery.",
+	"id": "./",
+	"start_url": "./",
+	"scope": "./",
+	"display": "standalone",
+	"orientation": "any",
+	"background_color": "#23160d",
+	"theme_color": "#23160d",
+	"icons": [
+		{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+		{ "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+		{ "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+	]
+}

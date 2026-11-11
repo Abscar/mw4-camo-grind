@@ -61,7 +61,23 @@ export const en = {
 	},
 	/** Abscar theme: tapping the news buddy (he coughs, blows a smoke ring or laughs). */
 	buddy: {
-		poke: 'Poke the weed buddy'
+		poke: 'Poke the weed buddy',
+		/** He grows with your grind (buddyGrowth.ts): the line under his speech bubble. */
+		growth: 'Growth',
+		stages: {
+			seedling: 'Seedling',
+			sprout: 'Sprout',
+			bush: 'Bush',
+			bigBush: 'Big bush',
+			monster: 'Monster',
+			legend: 'Legend'
+		},
+		stageOf: (n: number, total: number) => `${n}/${total}`,
+		toSteps: (n: number) => `${n} more camo${n === 1 ? '' : 's'} and he grows`,
+		toDivergence: (n: number) => `turns into a monster at Divergence (${n} Harmonic Break${n === 1 ? '' : 's'} to go)`,
+		toMastery: 'gets an aura when a Mastery camo is done',
+		top: 'fully grown',
+		grew: (stage: string) => `I GREW! ${stage} unlocked!`
 	},
 	/** Abscar theme: the red terminal text for a moment when the page opens. */
 	boot: {
@@ -80,6 +96,59 @@ export const en = {
 	unlock: {
 		title: 'Divergence unlocked',
 		sub: (n: number, next: string) => `${n} Harmonic Breaks · next target: ${next}`
+	},
+	/**
+	 * Abscar theme: the secret terminal (AbscarTerminal, 2026-11-11). Opens when you type "abscar" (or
+	 * press § / `) anywhere outside a text field, or tap the red HUD box 5 times. Just for fun.
+	 */
+	terminal: {
+		label: 'Abscar OS terminal',
+		title: 'ABSCAR OS // TERMINAL',
+		close: 'Close the terminal',
+		input: 'Command',
+		quick: 'Quick commands',
+		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar.', 'Type “help” for commands. “exit” or Esc closes.'],
+		help: [
+			'help              this list',
+			'status            your camo grind in numbers',
+			'next              what to grind next',
+			'weapon <name>     one gun, e.g. “weapon m4”',
+			'season            how long Season 1 has left',
+			'buddy             how grown the weed buddy is',
+			'whoami · squad    who’s online',
+			'nuke · hack · holk · 420',
+			'clear · exit'
+		],
+		statusRow: (label: string, value: string) => `${label.padEnd(16, ' ')}${value}`,
+		divergenceLeft: (n: number) => (n > 0 ? `(${n} to go)` : '(UNLOCKED)'),
+		buddyValue: (stage: string, n: number, total: number) => `${stage} (${n}/${total})`,
+		nextMilestone: (text: string) => `> Next milestone: ${text}`,
+		nextRoad: 'Closest to Harmonic Break:',
+		nextRow: (n: number, weapon: string, step: string) => `  ${n}. ${weapon}: ${step}`,
+		nextNone: 'Every weapon has Harmonic Break. Go grind Mastery, operator.',
+		weaponUsage: 'Usage: weapon <name>, e.g. “weapon kastov”',
+		weaponNotFound: (q: string) => `No weapon matches “${q}”.`,
+		weaponLine: (name: string, cls: string) => `${name} // ${cls}`,
+		weaponSteps: (steps: string) => `Steps: ${steps}`,
+		weaponNext: (step: string) => `Next: ${step}`,
+		weaponMaxed: 'Maxed. Every camo done. ◆',
+		weaponNotOut: 'Not out yet.',
+		seasonLine: (name: string, day: number, length: number) => `${name}: day ${day} of ≈ ${length}`,
+		seasonEnds: (date: string, days: number) => `Ends ≈ ${date} (${days} days left, estimate)`,
+		buddyLine: (stage: string, n: number, total: number, next: string) => `Weed buddy: ${stage} (${n}/${total}). ${next}.`,
+		whoami: ['abscar', 'Rank: Iridescent. Status: grinding. Holk: lit.'],
+		squad: ['ABSCAR ........ ONLINE', 'PHILLESTAR .... ONLINE (snack: hamburger, favourite reward: the nuke)'],
+		nuke: ['!!! TACTICAL NUKE INBOUND !!!'],
+		nukeCount: (n: number) => `  ${n}...`,
+		nukeAfter: ['...', 'Just kidding. Your camos survived.', 'Phillestar says hi.'],
+		hackDone: ['ACCESS GRANTED.', 'Bad news: you still have to grind Harmonic Break yourself.'],
+		holk: ['      ( (', '       ) )', '  =========================*', '*puff puff* Tap the one in the ashtray for the real thing.'],
+		blaze: 'Blaze it. The weed buddy approves.',
+		gg: 'gg ez',
+		sudo: 'Permission denied: even root has to grind the camos.',
+		rm: 'Nice try. Your ticks are safe.',
+		date: (when: string) => when,
+		notFound: (cmd: string) => `Command not found: ${cmd}. Type “help”.`
 	},
 	/** Abscar theme: the cyborg banner is a just-for-fun button (its eyes flare and fire lasers). */
 	cyborg: { wake: 'Wake the cyborg' },
@@ -343,6 +412,41 @@ export const en = {
 		suggestNote: 'Picked from your own progress only, not from how fast a grind is.'
 	},
 
+	/** The season countdown under the news radar (SeasonStrip, data/season.ts). */
+	season: {
+		day: (day: number, length: number, sure: boolean) => `Day ${day} of ${sure ? '' : '≈ '}${length}`,
+		ends: (date: string, sure: boolean) => (sure ? `ends ${date}` : `ends ≈ ${date}`),
+		daysLeft: (n: number) => (n === 0 ? 'last day' : `${n} day${n === 1 ? '' : 's'} left`),
+		estimate: 'estimate, not announced',
+		ended: 'is over. The next season’s dates are added when they’re announced.',
+		onNow: (date: string) => `on now (since ${date})`,
+		inDays: (n: number, date: string) => `in ${n} day${n === 1 ? '' : 's'} (${date})`,
+		sources: 'Where these dates come from',
+		endLabel: 'Season end',
+		checked: (date: string) => `Checked ${date}. Updated when Activision announces dates.`
+	},
+
+	/** "Road to Divergence": the weapons closest to Harmonic Break (road.ts, DivergenceRoad). */
+	road: {
+		heading: 'Road to Divergence',
+		count: (have: number, needed: number) => `${have}/${needed} Harmonic Breaks`,
+		show: 'Show',
+		hide: 'Hide',
+		intro: (toGo: number) =>
+			`Divergence needs ${toGo} more Harmonic Break${toGo === 1 ? '' : 's'}. These weapons are closest to theirs, by how many of their 6 steps you’ve done: 3 challenges before Gold, then Gold, Platinum and Harmonic Break.`,
+		track: (have: number, needed: number) => `${have} of ${needed} Harmonic Breaks for Divergence`,
+		stepsDone: (done: number, total: number) => `${done} of ${total} steps done`,
+		stepsLeft: (n: number) => `${n} step${n === 1 ? '' : 's'} left`,
+		next: 'Next',
+		preGold: (left: number) => `${left} challenge${left === 1 ? '' : 's'} before Gold`,
+		counter: (name: string, count: number, target: number) => `${name} ${count}/${target}`,
+		showAll: (n: number) => `Show all ${n}`,
+		showFewer: 'Show fewer',
+		spares: (n: number) => `Divergence needs ${n}. The ones below are extra:`,
+		s1: 'Season 1 (may not count)',
+		note: 'Sorted by your own progress only, not by how fast a grind is.'
+	},
+
 	loadout: {
 		tag: 'Meta',
 		open: (weapon: string) => `Meta class for ${weapon} (Multiplayer and Warzone)`,
@@ -492,6 +596,27 @@ export const en = {
 		toastOffline: 'You’re offline. Open the sync link again when you’re online.',
 		toastError: 'Couldn’t reach sync just now. Try the link again in a moment.',
 		resetNote: 'Sync is on, so this also resets your other devices.'
+	},
+
+	/** "Get it as an app": putting the tracker on the phone's home screen (InstallApp, in Backup & sync). */
+	installApp: {
+		heading: 'Get it as an app',
+		/** the name under the home-screen icon on iPhone (the manifest's short_name says the same) */
+		appName: 'Camo Grind',
+		body: 'Put the tracker on your home screen: it opens full screen like an app and works without internet.',
+		install: 'Install the app',
+		installed: 'Installed. You’ll find it on your home screen or with your apps.',
+		iosTitle: 'On iPhone (in Safari):',
+		iosSteps: [
+			'Tap Share (the square with an arrow) at the bottom of the screen.',
+			'Choose “Add to Home Screen”, then Add.'
+		],
+		iosSync:
+			'If the app opens without your ticks (iPhone can give it its own copy): in Safari, turn on sync and copy your sync link; in the app, tap “I have a sync link…” and paste it.',
+		androidTitle: 'On Android (in Chrome):',
+		androidSteps: ['Tap the ⋮ menu at the top right.', 'Choose “Install app” (or “Add to Home screen”).'],
+		otherTitle: 'On your phone:',
+		other: 'open this page there. iPhone (Safari): Share → Add to Home Screen. Android (Chrome): ⋮ → Install app.'
 	},
 
 	reset: {
