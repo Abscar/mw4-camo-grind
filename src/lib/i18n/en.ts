@@ -351,7 +351,7 @@ export const en = {
 		preGoldDone: 'Done',
 		preGoldDoneLong: 'Done: this weapon has Gold, so these are finished',
 		preGoldHint:
-			'Tick them off as you go. Each one opens at a set weapon level. Gold opens when all three are done and the weapon has its 8 level-up camos.',
+			'Each one opens at a set weapon level. Gold opens when all three are done and the weapon has its 8 level-up camos.',
 		preGoldCount: (n: number, total: number) => `${n}/${total} done`,
 		preGoldLocked: 'Done: this weapon has Gold. Untick Gold to change these.',
 		preGoldUnknown: 'Not out yet. Its challenges are added here when the weapon is released.',

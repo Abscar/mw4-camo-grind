@@ -29,7 +29,7 @@
 	import Dialog from './Dialog.svelte';
 	import FactText from './FactText.svelte';
 	import MetaBuilds from './MetaBuilds.svelte';
-	import StepRow from './StepRow.svelte';
+	import CamoStep from './CamoStep.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	const id = $props.id();
@@ -104,7 +104,7 @@
 {#snippet stepList(list: Tracked[])}
 	{#if weapon}
 		<ol class="wc-steps">
-			{#each list as x (x.s.key)}<li data-status={x.status}><StepRow weaponId={weapon.id} step={x.s} /></li>{/each}
+			{#each list as x (x.s.key)}<li data-status={x.status}><CamoStep weaponId={weapon.id} step={x.s} status={x.status} /></li>{/each}
 		</ol>
 	{/if}
 {/snippet}
@@ -179,9 +179,6 @@
 				<section class="pre-gold" aria-labelledby="{id}-pre">
 					<h3 id="{id}-pre" class="wc-h">
 						<span>{specials.length ? t.sheet.preGold : t.sheet.preGoldSoon}</span>
-						{#if specials.length && level === 0}
-							<span class="num wc-count">{t.sheet.preGoldCount(progress.specialsDone(weapon.id, specials.length), specials.length)}</span>
-						{/if}
 					</h3>
 					{#if specials.length}
 						{@render stepList(track.filter((x) => x.s.kind === 'special'))}
@@ -474,11 +471,6 @@
 	.wc-h > :first-child::before {
 		content: '▸ ';
 	}
-	.wc-count {
-		font-weight: 700;
-		color: var(--t-gold);
-		letter-spacing: 0.04em;
-	}
 	.wc-box {
 		padding: 12px;
 		border: 1px solid var(--t-line);
@@ -510,8 +502,8 @@
 	.wc-steps > li:not(:last-child)::before {
 		content: '';
 		position: absolute;
-		left: calc(1.375rem - 1px);
-		top: 2.9rem;
+		left: calc(1.875rem - 1px);
+		top: 4rem;
 		bottom: -8px;
 		width: 2px;
 		border-radius: 2px;
