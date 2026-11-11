@@ -299,7 +299,16 @@ export const en = {
 			`Multiplayer meta: ${tier} tier, #${rank} in ${cls} (snapshot ${date})`,
 		metaNone: 'Not in the Multiplayer meta lists right now.',
 		balanceHeading: 'Latest balance patch',
-		noteHeading: 'Note'
+		noteHeading: 'Note',
+		/** the card's progress track, header and tabs (2026-11-11) */
+		trackDone: (n: number, total: number) => `${n} of ${total} steps done`,
+		trackNext: (step: string) => `Next up: ${step}`,
+		trackAll: 'Every camo done ◆',
+		trackShort: { g: 'G', p: 'P', hb: 'HB' },
+		closeCard: 'Close',
+		file: 'Weapon file',
+		tabs: { camos: 'Camos', meta: 'Meta', info: 'Info' },
+		tabsLabel: 'Weapon details'
 	},
 
 	/** "Continue grinding": the focus list, right under the progress overview. */
