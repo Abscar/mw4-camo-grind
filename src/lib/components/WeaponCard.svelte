@@ -8,7 +8,6 @@
 	import { META_RANKS } from '#lib/data/metaRanks.ts';
 	import { BALANCE, BALANCE_PATCH } from '#lib/data/balance.ts';
 	import { feed } from '#lib/feed.svelte.ts';
-	import { bestCounter } from '#lib/filters.ts';
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
 	import { shortDate } from '#lib/ui.ts';
 	import CamoToggle from './CamoToggle.svelte';
@@ -37,15 +36,6 @@
 	const specialsTotal = $derived(weapon.specials.length);
 	const pips = $derived(specialsTotal && level === 0 ? progress.specialsDone(weapon.id, specialsTotal) : null);
 	const goldReady = $derived(pips !== null && pips === specialsTotal);
-	/** The furthest counter on a step you're on, shown as a small line under the name. */
-	const counter = $derived(
-		maxed
-			? null
-			: bestCounter(
-					{ weapons: progress.weapons, specials: progress.specials, counts: progress.counts, focus: progress.prefs.focus },
-					weapon
-				)
-	);
 
 	/** Abscar: a shine + smoke puff runs over the row when this tick maxed the weapon. */
 	const shine = $derived(feed.lastMaxed?.weaponId === weapon.id ? feed.lastMaxed.id : 0);
@@ -114,9 +104,7 @@
 				>
 			{/if}
 		</span>
-		{#if counter}
-			<span class="progress-line num block text-[12px] leading-tight">{t.weapon.progressLine(counter.step.name, counter.count, counter.step.target)}</span>
-		{:else if pips !== null && pips > 0}
+		{#if pips !== null && pips > 0}
 			<span class="progress-line num block text-[12px] leading-tight">{t.weapon.preGoldLine(pips, specialsTotal)}</span>
 		{/if}
 		<span class="sr-only"

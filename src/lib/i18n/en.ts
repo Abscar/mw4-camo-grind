@@ -257,8 +257,8 @@ export const en = {
 			available: 'Available now'
 		},
 		statusHelp: {
-			started: 'At least one camo or before-Gold challenge done or counted, not maxed yet.',
-			near: 'A challenge you’re on is at least 75% done by its own counter, or all 3 challenges before Gold are done. Each challenge only counts against its own target.',
+			started: 'At least one camo or before-Gold challenge done, not maxed yet.',
+			near: 'All 3 challenges before Gold are done, so Gold is next.',
 			focus: 'The weapons on your focus list.',
 			done: 'Gold, Platinum and Harmonic Break all ticked.',
 			available: 'Out now with a next camo to earn (leaves out maxed weapons and weapons that aren’t released yet).'
@@ -402,7 +402,7 @@ export const en = {
 		unpin: 'Unpin',
 		emptyTitle: 'Pin the weapons you’re grinding',
 		emptyBody: (max: number) =>
-			`Pin up to ${max} weapons and they show up here with the challenge you’re on, a counter and quick ticks, so you can update between matches without scrolling.`,
+			`Pin up to ${max} weapons and they show up here with the challenge you’re on and quick ticks, so you can update between matches without scrolling.`,
 		emptyHow: 'Open any weapon (tap its name) and choose “Add to focus list”, or pin one of these:',
 		emptyNone: 'Open any weapon (tap its name) and choose “Add to focus list”.',
 		pin: 'Pin',
@@ -611,9 +611,9 @@ export const en = {
 		body: 'Pick what to reset to. Your notes and focus list stay. Export a backup first if you might want it back.',
 		presetLabel: 'Gold on launch weapons',
 		presetBody: (launch: number) =>
-			`Gold ticked on the ${launch} launch weapons, everything else cleared: Platinum, Harmonic Break, before-Gold ticks, counters and Mastery counts.`,
+			`Gold ticked on the ${launch} launch weapons, everything else cleared: Platinum, Harmonic Break, before-Gold ticks and Mastery counts.`,
 		zeroLabel: 'Start from zero',
-		zeroBody: 'Nothing ticked at all, like a brand-new tracker. Before-Gold ticks, counters and Mastery counts cleared.',
+		zeroBody: 'Nothing ticked at all, like a brand-new tracker. Before-Gold ticks and Mastery counts cleared.',
 		exportFirst: 'Export backup first',
 		confirm: 'Reset',
 		cancel: 'Cancel'

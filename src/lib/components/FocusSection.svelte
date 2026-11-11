@@ -26,7 +26,7 @@
 	const ideas = $derived(
 		progress.ready && weapons.length === 0
 			? suggestions(
-					{ weapons: progress.weapons, specials: progress.specials, counts: progress.counts, focus: progress.prefs.focus },
+					{ weapons: progress.weapons, specials: progress.specials, counts: {}, focus: progress.prefs.focus },
 					progress.divergenceCount
 				)
 			: []

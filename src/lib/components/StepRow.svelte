@@ -1,7 +1,8 @@
 <!--
 	One step of a weapon's grind (a challenge before Gold, or Gold / Platinum / Harmonic Break) in the
 	weapon card and the "Continue grinding" cards: a tick box, its name and exact challenge, its status
-	as icon + word (Done / On it / Locked, never colour alone), and a counter while you're on it.
+	as icon + word (Done / On it / Locked, never colour alone). Tick boxes only: the − / + counters were removed 2026-11-11
+	at the user's ask ("bara bockrutor"; StepCounter.svelte is in git history).
 	Ladder ticks follow the ladder rule (an untick that clears camos above says so, with Undo).
 	Before-Gold ticks are locked while the weapon has Gold (untick Gold first; the ticks are kept).
 -->
@@ -14,7 +15,6 @@
 	import { stepStatus, type StepInfo } from '#lib/steps.ts';
 	import { CAMO_FILL } from '#lib/ui.ts';
 	import FactText from './FactText.svelte';
-	import StepCounter from './StepCounter.svelte';
 	import StatusIcon from './StatusIcon.svelte';
 
 	let {
@@ -83,9 +83,6 @@
 		<p class="text-[13px] leading-snug text-muted"><FactText fact={step.fact} />{#if !step.fact.verified && !compact}<span class="block text-[11.5px]">({t.unverified}: {step.fact.note ?? t.unverifiedHint})</span>{/if}</p>
 		{#if lockedWhy && !compact}<p class="mt-0.5 text-[12px] text-muted">{lockedWhy}</p>{/if}
 	</div>
-	{#if status === 'active'}
-		<div class="col-start-2 -mt-0.5"><StepCounter {weaponId} {step} {compact} /></div>
-	{/if}
 </div>
 
 <style>

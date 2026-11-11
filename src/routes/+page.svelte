@@ -49,7 +49,7 @@
 	const grind = $derived({
 		weapons: progress.weapons,
 		specials: progress.specials,
-		counts: progress.counts,
+		counts: {}, // counters are no longer shown (2026-11-11), so old saved ones don't steer the filters
 		focus: progress.prefs.focus
 	});
 
