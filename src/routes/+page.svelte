@@ -29,7 +29,6 @@
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
 	import SaveStatus from '#lib/components/SaveStatus.svelte';
 	import BuffSearch from '#lib/components/BuffSearch.svelte';
-	import SquadBanner from '#lib/components/SquadBanner.svelte';
 	import NukeBanner from '#lib/components/NukeBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
@@ -255,7 +254,6 @@
 		<div class="abscar-only compact-hide mt-7">
 			<!-- top and bottom banner share one height (the user's ask: "same size so they look in proportion") -->
 			<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
-			<div class="mt-4 overflow-hidden rounded-card shadow-card"><SquadBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
 		</div>
 
