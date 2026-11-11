@@ -601,7 +601,7 @@
 	display: none;
 }
 
-/* the welcome screen: once a day, any tap or key skips it (app.html sets data-boot) */
+/* the welcome screen: every page load (not in compact mode), any tap or key skips it (app.html sets data-boot) */
 [data-boot='off'] .boot {
 	display: none !important;
 }

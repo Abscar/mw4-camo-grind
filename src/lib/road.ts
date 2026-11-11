@@ -1,4 +1,6 @@
 /**
+ * (Its "Road to Divergence" box was removed from the page 2026-11-11 at the user's ask; the secret
+ * terminal's `next` command still uses this.)
  * "Road to Divergence" (2026-11-11, the user's pick from a brainstorm): which weapons are closest to
  * Harmonic Break, and how many more Harmonic Breaks Divergence needs. Worked out only from what is
  * saved (ticks, before-Gold ticks, counters), never a guess at which grind is quickest. Pure, tested

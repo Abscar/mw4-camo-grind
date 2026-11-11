@@ -28,15 +28,9 @@
 					if (typeof t === 'string') html.setAttribute('data-theme', t);
 				} catch (e) {}
 				if (compact) html.setAttribute('data-compact', '');
-				// The welcome screen shows once a day (never in compact mode); any tap or key skips it.
-				var boot = 'off';
-				try {
-					var day = new Date().toDateString();
-					if (!compact && localStorage.getItem('mw4-camo-grind:boot') !== day) {
-						localStorage.setItem('mw4-camo-grind:boot', day);
-						boot = 'on';
-					}
-				} catch (e) {}
+				// The welcome screen shows every time the page opens (the user's ask 2026-11-11; it was once
+				// a day), never in compact mode; any tap or key skips it.
+				var boot = compact ? 'off' : 'on';
 				html.setAttribute('data-boot', boot);
 				if (boot === 'on') {
 					var skip = function () {

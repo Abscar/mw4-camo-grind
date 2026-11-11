@@ -35,7 +35,6 @@
 	import Toast from '#lib/components/Toast.svelte';
 	import Toolbar from '#lib/components/Toolbar.svelte';
 	import FocusSection from '#lib/components/FocusSection.svelte';
-	import DivergenceRoad from '#lib/components/DivergenceRoad.svelte';
 	import SeasonStrip from '#lib/components/SeasonStrip.svelte';
 	import WeaponSheet from '#lib/components/WeaponSheet.svelte';
 	import KillFeed from '#lib/components/KillFeed.svelte';
@@ -211,9 +210,6 @@
 
 		<!-- 3. continue grinding: the focus list -->
 		<div class="mt-6"><FocusSection /></div>
-
-		<!-- the weapons closest to Harmonic Break, until Divergence is unlocked (2026-11-11) -->
-		<div class="mt-6 empty:hidden"><DivergenceRoad /></div>
 
 		<!-- 4. search and filters -->
 		<div id="weapons" class="mt-6 scroll-mt-4">

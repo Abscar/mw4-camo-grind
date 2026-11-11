@@ -426,27 +426,6 @@ export const en = {
 		checked: (date: string) => `Checked ${date}. Updated when Activision announces dates.`
 	},
 
-	/** "Road to Divergence": the weapons closest to Harmonic Break (road.ts, DivergenceRoad). */
-	road: {
-		heading: 'Road to Divergence',
-		count: (have: number, needed: number) => `${have}/${needed} Harmonic Breaks`,
-		show: 'Show',
-		hide: 'Hide',
-		intro: (toGo: number) =>
-			`Divergence needs ${toGo} more Harmonic Break${toGo === 1 ? '' : 's'}. These weapons are closest to theirs, by how many of their 6 steps you’ve done: 3 challenges before Gold, then Gold, Platinum and Harmonic Break.`,
-		track: (have: number, needed: number) => `${have} of ${needed} Harmonic Breaks for Divergence`,
-		stepsDone: (done: number, total: number) => `${done} of ${total} steps done`,
-		stepsLeft: (n: number) => `${n} step${n === 1 ? '' : 's'} left`,
-		next: 'Next',
-		preGold: (left: number) => `${left} challenge${left === 1 ? '' : 's'} before Gold`,
-		counter: (name: string, count: number, target: number) => `${name} ${count}/${target}`,
-		showAll: (n: number) => `Show all ${n}`,
-		showFewer: 'Show fewer',
-		spares: (n: number) => `Divergence needs ${n}. The ones below are extra:`,
-		s1: 'Season 1 (may not count)',
-		note: 'Sorted by your own progress only, not by how fast a grind is.'
-	},
-
 	loadout: {
 		tag: 'Meta',
 		open: (weapon: string) => `Meta class for ${weapon} (Multiplayer and Warzone)`,
@@ -509,7 +488,7 @@ export const en = {
 		videoNote: 'The TV only loads its videos while this panel is open.'
 	},
 
-	/** The boot screen: once a day, any tap or key skips it. */
+	/** The boot screen: every page load, any tap or key skips it. */
 	bootSkip: 'Tap to skip',
 
 	mastery: {
