@@ -10,16 +10,20 @@
 	  only loads once the TV has been on screen (phones: below the fold), never while it's hidden
 	  (the other themes).
 	- Off stays off on this device (`mw4-camo-grind:tv`). No autoplay with reduced motion or data saver.
+	- "Pause animations" (the header's pause button, motion.svelte.ts) switches it off without
+	  remembering that, and back on when you press play; it doesn't switch on by itself while paused.
+	  A knob pressed while paused still plays (you asked for it).
 	- The offline file (file://) can't play YouTube embeds: "No signal" + a "Watch on YouTube" link.
 	- Nothing is drawn over the playing video (YouTube's embed rules): static, the channel OSD and the
 	  warm-up flash only show while the video is hidden.
 	Channel changes make a new <iframe> (changing `src` would add browser history entries).
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { OFFLINE_FILE } from '#lib/browser.ts';
 	import { FAVOURITE, MONTAGES } from '#lib/data/montages.ts';
 	import { t } from '#lib/i18n/en.ts';
+	import { motion } from '#lib/motion.svelte.ts';
 	import TvGames from '#lib/components/TvGames.svelte';
 	import {
 		CAPTIONS_OFF,
@@ -72,6 +76,8 @@
 	/** A channel change is waiting: ignore what the old player says about its video. */
 	let pending = false;
 	let pausedByUs = false;
+	/** Off (or kept off) because animations are paused: comes back on when they play again. */
+	let offByStill = false;
 	let errors = 0;
 	/** Right after we (un)mute, the player may still report the old setting for a moment. */
 	let ignoreMutedUntil = 0;
@@ -170,8 +176,12 @@
 		tuneTo(ch, reduced ? 0 : 450);
 	}
 
-	function turnOff() {
-		saveOn(false);
+	/** `remember`: a tap on the power knob (stays off on this device); not when pausing animations. */
+	function turnOff(remember = true) {
+		if (remember) {
+			saveOn(false);
+			offByStill = false;
+		}
 		clearTimeout(tuneTimer);
 		clearTimeout(revealTimer);
 		clearInterval(handshake);
@@ -270,8 +280,24 @@
 		}
 	});
 
+	// animations paused: off (not remembered); playing again: back on if pausing switched it off
+	$effect(() => {
+		const still = motion.still;
+		if (!mounted) return;
+		untrack(() => {
+			if (still && power) {
+				offByStill = true;
+				turnOff(false);
+			} else if (!still && offByStill) {
+				offByStill = false;
+				if (!power) turnOn();
+			}
+		});
+	});
+
 	onMount(() => {
 		mounted = true;
+		motion.load();
 		reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
 		signal = !OFFLINE_FILE && navigator.onLine;
@@ -285,7 +311,10 @@
 		} catch {
 			// no storage: start as if new
 		}
-		if (!wasOff && !reduced && !saveData) turnOn(channel);
+		if (!wasOff && !reduced && !saveData) {
+			if (motion.still) offByStill = true;
+			else turnOn(channel);
+		}
 
 		const onVisibility = () => (pageVisible = document.visibilityState === 'visible');
 		const onOnline = () => {

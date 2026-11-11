@@ -52,7 +52,54 @@
 				document.addEventListener('visibilitychange', function () {
 					if (document.hidden) html.setAttribute('data-page-hidden', '');
 					else html.removeAttribute('data-page-hidden');
+					if (!document.hidden) soon();
 				});
+				// "Pause animations" (the header's pause button, saved per device; src/lib/motion.svelte.ts
+				// switches data-still): every endless animation is frozen where it is, also ones that start
+				// later, so the page stops costing CPU. One-off feedback (a tick, the kill feed) still plays.
+				// Here rather than in the page's code so nothing moves before that code has loaded.
+				var frozen = new Set();
+				var queued = false;
+				function endless(a) {
+					var e = a.effect;
+					return !!(e && e.getTiming && e.getTiming().iterations === Infinity);
+				}
+				function freeze() {
+					queued = false;
+					if (!html.hasAttribute('data-still') || !document.getAnimations) return;
+					var all = document.getAnimations();
+					var live = new Set();
+					for (var i = 0; i < all.length; i++) {
+						var a = all[i];
+						if (frozen.has(a)) live.add(a);
+						else if (a.playState === 'running' && endless(a)) {
+							a.pause();
+							live.add(a);
+						}
+					}
+					frozen = live;
+				}
+				function thaw() {
+					frozen.forEach(function (a) {
+						if (a.playState === 'paused') a.play();
+					});
+					frozen = new Set();
+				}
+				function soon() {
+					if (queued || !html.hasAttribute('data-still')) return;
+					queued = true;
+					requestAnimationFrame(freeze);
+				}
+				try {
+					if (localStorage.getItem('mw4-camo-grind:still') === '1') html.setAttribute('data-still', '');
+				} catch (e) {}
+				// once the page's HTML is in (before anything is drawn), then for every animation that starts
+				document.addEventListener('DOMContentLoaded', freeze);
+				document.addEventListener('animationstart', soon, true);
+				new MutationObserver(function () {
+					if (html.hasAttribute('data-still')) freeze();
+					else thaw();
+				}).observe(html, { attributes: true, attributeFilter: ['data-still'] });
 			})();
 		</script>
 		<script>

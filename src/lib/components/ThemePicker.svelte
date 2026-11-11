@@ -3,16 +3,21 @@
 	menu with the four looks. Closes on pick, outside click or Escape.
 	The menu stays in the page while closed (just `hidden`), so its buttons always exist.
 	In one row with it (2026-11-10): the Compact mode button and the sound-effects on/off button
-	(sound.svelte.ts; sound never starts by itself).
+	(sound.svelte.ts; sound never starts by itself). Since 2026-11-11 also the pause button
+	(motion.svelte.ts): pauses every animation on the page to save CPU; ⏸ while things move, ▶ while
+	paused. Hidden with prefers-reduced-motion (nothing moves then anyway).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
+	import { motion } from '#lib/motion.svelte.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { sound } from '#lib/sound.svelte.ts';
 	import { THEMES } from '#lib/themes.ts';
+	import { toast } from '#lib/toast.svelte.ts';
 
-	// the on/off setting is read after load, so the prerendered page and the first render match
+	// the on/off settings are read after load, so the prerendered page and the first render match
 	$effect(() => sound.load());
+	$effect(() => motion.load());
 
 	const menuId = $props.id();
 	let open = $state(false);
@@ -55,7 +60,8 @@
 			<path d="M2.5 4h11M2.5 8h11M2.5 12h11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 			{#if progress.prefs.compact}<path d="M2.5 4h11" stroke="currentColor" stroke-width="3" stroke-linecap="round" />{/if}
 		</svg>
-		<span class="max-[420px]:sr-only">{t.compact.short}</span>
+		<!-- the word only from 768 px: below that the row needs the room (icon + tooltip + label stay) -->
+		<span class="max-md:sr-only">{t.compact.short}</span>
 	</button>
 
 	<button
@@ -96,6 +102,27 @@
 		</svg>
 	</button>
 
+	<button
+		type="button"
+		class="grid size-11 place-items-center rounded-full text-band-muted opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 aria-pressed:text-band-fg aria-pressed:opacity-100 motion-reduce:hidden"
+		aria-pressed={motion.still}
+		aria-label={t.motion.label}
+		title={motion.still ? t.motion.on : t.motion.off}
+		onclick={() => {
+			motion.set(!motion.still);
+			toast.show(motion.still ? t.motion.pausedToast : t.motion.playingToast);
+		}}
+	>
+		<svg class="sound-icon size-5" viewBox="0 0 24 24" aria-hidden="true">
+			{#if motion.still}
+				<path d="M8 5.2v13.6a.9.9 0 0 0 1.37.77l10.6-6.8a.9.9 0 0 0 0-1.54L9.37 4.43A.9.9 0 0 0 8 5.2z" fill="currentColor" />
+			{:else}
+				<rect x="5.5" y="4.5" width="4.6" height="15" rx="1.2" fill="currentColor" />
+				<rect x="13.9" y="4.5" width="4.6" height="15" rx="1.2" fill="currentColor" />
+			{/if}
+		</svg>
+	</button>
+
 	<div
 		id={menuId}
 		class="absolute top-12 right-0 z-40 grid min-w-44 gap-1 rounded-card border border-line bg-panel p-1.5 text-fg shadow-[0_14px_34px_rgb(0_0_0/0.4)]"
@@ -129,7 +156,7 @@
 </div>
 
 <style>
-	/* Abscar: a dark halo so the speaker stays readable on the busy Damascus header */
+	/* Abscar: a dark halo so the speaker and pause icons stay readable on the busy Damascus header */
 	:global([data-theme='blackout']) .sound-icon {
 		filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.9)) drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
 	}

@@ -3,6 +3,9 @@
 	browser", or with automatic sync on: "Syncing…", "Synced" (only once the sync service has
 	confirmed it), "Couldn't sync" (your changes stay here and go out on the next try). A tap goes to
 	Backup & other devices. Icon + words, never colour alone.
+	Up to 420 px wide it says the same in fewer words ("Saved here"), since the settings row is full
+	there (the pause button joined it on 2026-11-11). Two spans switched by CSS, so the prerendered
+	page matches; only the visible one is announced.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -18,11 +21,12 @@
 		return { key: 'syncing', tone: 'busy' };
 	});
 	const text = $derived(t.saveStatus[state.key]);
+	const short = $derived(t.saveStatus.short[state.key]);
 </script>
 
 <a
 	href="#sync"
-	class="save-status font-head inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold"
+	class="save-status font-head inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold max-[340px]:gap-1 max-[340px]:px-2"
 	data-tone={state.tone}
 	title={t.saveStatus.open}
 	onclick={(e) => {
@@ -45,7 +49,8 @@
 			/>
 		{/if}
 	</svg>
-	<span class="truncate" role="status">{text}</span>
+	<span class="truncate max-[421px]:hidden" role="status">{text}</span>
+	<span class="truncate min-[421px]:hidden" role="status">{short}</span>
 </a>
 
 <style>

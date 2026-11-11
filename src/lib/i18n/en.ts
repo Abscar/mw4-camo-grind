@@ -32,7 +32,16 @@ export const en = {
 		synced: 'Synced',
 		offline: 'Couldn’t sync (offline). Saved here',
 		error: 'Couldn’t sync. Saved here',
-		open: 'Backup & sync settings'
+		open: 'Backup & sync settings',
+		/** Phones up to 420 px: the same states in fewer words (the settings row is full there). */
+		short: {
+			saved: 'Saved here',
+			notSaving: 'Not saving',
+			syncing: 'Syncing…',
+			synced: 'Synced',
+			offline: 'Not synced',
+			error: 'Not synced'
+		}
 	},
 	/** Skip link + section names for the page's main parts. */
 	nav: {
@@ -40,6 +49,14 @@ export const en = {
 	},
 	/** Sound effects for your own ticks (button next to the theme picker; off by default). */
 	sound: { label: 'Sound effects', on: 'Sound effects: on', off: 'Sound effects: off' },
+	/** The header's pause button (motion.svelte.ts): stops every animation on the page to save CPU. */
+	motion: {
+		label: 'Pause animations',
+		off: 'Pause animations (saves CPU)',
+		on: 'Animations paused. Tap to play them again',
+		pausedToast: 'Animations paused. Tap ▶ at the top to play them again.',
+		playingToast: 'Animations playing again.'
+	},
 
 	/** The Abscar theme's header extras. */
 	operator: {
