@@ -9,6 +9,7 @@
 	import { fetchRemote, sync } from '#lib/sync.svelte.ts';
 	import { syncCodeFromText, type SyncDoc } from '#lib/sync-codec.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import AbscarOperator from './AbscarOperator.svelte';
 	import Dialog from './Dialog.svelte';
 	import InstallApp from './InstallApp.svelte';
 
@@ -217,7 +218,11 @@
 </script>
 
 <section id="sync" class="rounded-card bg-panel px-4 py-4 shadow-card sm:px-5" aria-labelledby="sync-heading">
-	<h2 id="sync-heading" tabindex="-1" class="font-head text-base font-bold tracking-wide uppercase outline-none">{t.sync.heading}</h2>
+	<div class="flex items-center gap-3">
+		<h2 id="sync-heading" tabindex="-1" class="font-head flex-1 text-base font-bold tracking-wide uppercase outline-none">{t.sync.heading}</h2>
+		<!-- Abscar: his operator in a night-vision helmet (2026-11-11, one of three around the page) -->
+		<div class="abscar-only compact-hide section-op -my-1 flex-none"><AbscarOperator variant="nvg" smoke={0.45} class="size-[68px]" /></div>
+	</div>
 	<p class="mt-1.5 max-w-3xl text-sm text-muted">{sync.available ? t.sync.introSync : t.sync.intro}</p>
 
 	{#if sync.available}

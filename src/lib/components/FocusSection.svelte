@@ -17,6 +17,7 @@
 	import { progress } from '#lib/progress.svelte.ts';
 	import { activeSteps } from '#lib/steps.ts';
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
+	import AbscarOperator from './AbscarOperator.svelte';
 	import CamoToggle from './CamoToggle.svelte';
 	import StepRow from './StepRow.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
@@ -60,6 +61,8 @@
 		{#if weapons.length > 0}
 			<span class="font-head num text-xs font-bold">{t.focus.sub(weapons.length, FOCUS_MAX)}</span>
 		{/if}
+		<!-- Abscar: his operator lighting the holk with his thumb (2026-11-11, one of three around the page) -->
+		<div class="abscar-only compact-hide section-op -my-2 flex-none"><AbscarOperator variant="lighter" smoke={0.45} class="size-[68px]" /></div>
 	</header>
 
 	{#if weapons.length > 0}

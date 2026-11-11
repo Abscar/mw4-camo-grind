@@ -12,6 +12,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { loadoutView } from '#lib/loadoutView.svelte.ts';
 	import { shortDate } from '#lib/ui.ts';
+	import AbscarOperator from './AbscarOperator.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	const STORE_KEY = 'mw4-camo-grind:meta';
@@ -51,6 +52,8 @@
 			<h2 id="meta-heading" class="font-head text-base font-bold tracking-wide uppercase">{t.metaList.heading}</h2>
 			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{t.metaList.sub}</span>
 		</div>
+		<!-- Abscar: his operator with a sniper rifle on the shoulder (2026-11-11, one of three around the page) -->
+		<div class="abscar-only compact-hide section-op -my-2 flex-none"><AbscarOperator variant="sniper" smoke={0.45} class="size-[68px]" /></div>
 		<!-- phones: the switch gets its own row, two equal halves -->
 		<div class="flex gap-1.5 max-sm:w-full" role="group" aria-label={t.metaList.modeGroup}>
 			{#each MODES as m (m)}

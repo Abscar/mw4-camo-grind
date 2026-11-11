@@ -904,6 +904,14 @@
 		transform: rotate(360deg);
 	}
 }
+/* Abscar's operator figures in three section headings (2026-11-11): Continue grinding, Meta top 5, Backup & sync */
+.section-op {
+	pointer-events: none;
+}
+.section-op .abscar-op {
+	display: block;
+	filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.75));
+}
 /*
  * Divergence & Mastery: one framed box per mode's track (Multiplayer, Warzone, DMZ; 2026-11-10),
  * with space between them, each opening with a heading strip.
