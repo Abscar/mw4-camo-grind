@@ -1353,7 +1353,7 @@
 		0 0 / 180% 100%;
 }
 [data-theme='blackout'] .camo-row[data-camo='parallax']::before {
-	animation: parallax-drift 18s linear infinite alternate;
+	animation: parallax-drift 9s ease-in-out infinite alternate;
 }
 @keyframes parallax-drift {
 	from {
@@ -1380,7 +1380,38 @@
 		var(--empyros) 0 0 / 560px 252px;
 }
 
-/* Damascus Reforged, Empyros and Ripple Tide: the glossy glint now and then */
+/*
+ * Always moving (2026-11-11, the user's ask: every Mastery camo a little animated like the MP three):
+ * Damascus and Ripple Tide flow diagonally like liquid metal, Empyros' blocks scroll sideways.
+ * Each moves exactly one tile, so the loop has no jump. Layer 1 is the glass, layer 2 the gloss.
+ */
+[data-theme='blackout'] .camo-row[data-camo='damascusReforged']::before {
+	animation: damascus-flow 32s linear infinite;
+}
+@keyframes damascus-flow {
+	to {
+		background-position: 0 0, 0 0, 480px 240px;
+	}
+}
+[data-theme='blackout'] .camo-row[data-camo='empyros']::before {
+	animation: empyros-scroll 36s linear infinite;
+}
+@keyframes empyros-scroll {
+	to {
+		background-position: 0 0, 0 0, -560px 0;
+	}
+}
+[data-theme='blackout'] .camo-row[data-camo='rippleTide']::before {
+	animation: ripple-flow 30s linear infinite;
+}
+@keyframes ripple-flow {
+	to {
+		background-position: 0 0, 0 0, -520px 260px;
+	}
+}
+
+/* Parallax, Damascus Reforged, Empyros and Ripple Tide: the glossy glint now and then */
+[data-theme='blackout'] .camo-row[data-camo='parallax']::after,
 [data-theme='blackout'] .camo-row[data-camo='damascusReforged']::after,
 [data-theme='blackout'] .camo-row[data-camo='empyros']::after,
 [data-theme='blackout'] .camo-row[data-camo='rippleTide']::after {
@@ -1393,6 +1424,10 @@
 	);
 	transform: translateX(-100%);
 	animation: camo-glint 8s ease-in-out infinite;
+}
+[data-theme='blackout'] .camo-row[data-camo='parallax']::after {
+	animation-duration: 6s;
+	animation-delay: -1s;
 }
 [data-theme='blackout'] .camo-row[data-camo='empyros']::after {
 	animation-delay: -5s;
@@ -1417,18 +1452,34 @@
 		radial-gradient(ellipse 35% 80% at 78% 65%, rgb(90 0 0 / 0.4), transparent 70%),
 		#070000;
 }
+/* the veins creep slowly upwards (the glowing copy moves with them: same time, same distance) */
+[data-theme='blackout'] .camo-row[data-camo='chiral']::before {
+	animation: chiral-rise 24s linear infinite;
+}
+@keyframes chiral-rise {
+	to {
+		background-position: 0 0, 0 -260px, 0 0, 0 0;
+	}
+}
 [data-theme='blackout'] .camo-row[data-camo='chiral']::after {
 	background: var(--chiral) 0 0 / 520px 260px;
 	filter: blur(3px) brightness(1.4);
 	mix-blend-mode: screen;
-	animation: chiral-pulse 3.2s ease-in-out infinite alternate;
+	animation:
+		chiral-pulse 2.6s ease-in-out infinite alternate,
+		chiral-rise-glow 24s linear infinite;
 }
 @keyframes chiral-pulse {
 	from {
 		opacity: 0.2;
 	}
 	to {
-		opacity: 0.85;
+		opacity: 0.9;
+	}
+}
+@keyframes chiral-rise-glow {
+	to {
+		background-position: 0 -260px;
 	}
 }
 
@@ -1445,12 +1496,31 @@
 	--glass: rgb(40 0 0 / 0.4);
 	--row-camo: var(--helio) 0 0 / 520px 260px;
 }
+/* the fire rises and flickers */
+[data-theme='blackout'] .camo-row[data-camo='helio']::before {
+	animation:
+		helio-rise 18s linear infinite,
+		helio-flicker 1.9s ease-in-out infinite alternate;
+}
+@keyframes helio-rise {
+	to {
+		background-position: 0 0, 0 -260px;
+	}
+}
+@keyframes helio-flicker {
+	from {
+		filter: brightness(1);
+	}
+	to {
+		filter: brightness(1.18) saturate(1.1);
+	}
+}
 [data-theme='blackout'] .camo-row[data-camo='helio']::after {
 	right: -520px;
 	background: var(--helio) 0 130px / 520px 260px;
-	opacity: 0.35;
+	opacity: 0.45;
 	mix-blend-mode: screen;
-	animation: camo-slide 30s linear infinite;
+	animation: camo-slide 16s linear infinite;
 }
 
 /* Abscar: weapon names sit on a little yellow label with green text */
