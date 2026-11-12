@@ -11,8 +11,12 @@
 	Every build with a code has a small copy button; the codes themselves only show with "Show codes"
 	(codeView, the same switch as above the weapon list). A modal dialog covers the page's toasts, so
 	the button itself says how it went.
+	Every attachment line shows its slot's cartoon (AttachmentIcon, drawn after the user's own icon
+	sheet; `bare` = no pastel tile behind it, the user's ask 2026-11-12), the slot name small above
+	the part's name; the same `parts` snippet in the build cards and the Apex box.
 -->
 <script lang="ts">
+	import AttachmentIcon from './AttachmentIcon.svelte';
 	import { copyCode } from '#lib/browser.ts';
 	import { codeView } from '#lib/codeView.svelte.ts';
 	import { APEX } from '#lib/data/apex.ts';
@@ -99,6 +103,18 @@
 	</button>
 {/snippet}
 
+<!-- a build's attachments: tile, slot name, part (the tile sits inside the <dt>, so <dt>/<dd> stay plain) -->
+{#snippet parts(l: Loadout)}
+	<dl class="mb-parts">
+		{#each l.attachments as a (a.slot)}
+			<div class="mb-part" class:apex={a.slot === 'Apex'}>
+				<dt><span class="mb-part-icon"><AttachmentIcon slot={a.slot} bare /></span>{a.slot}</dt>
+				<dd>{a.name}</dd>
+			</div>
+		{/each}
+	</dl>
+{/snippet}
+
 <!-- one build card: title (+ small tags) and copy button on top, the parts, a note, the source -->
 {#snippet card(title: string, l: Loadout, opts: { code?: string; tags?: string[]; role?: boolean; apex?: boolean })}
 	<section class="mb-card rounded-card border border-line bg-panel-2 p-3" aria-label={title}>
@@ -121,12 +137,7 @@
 		{#if opts.code && copied?.code === opts.code && !copied.ok}
 			<p class="mt-1 text-xs text-fg" role="status">{t.loadout.copyFailed}</p>
 		{/if}
-		<dl class="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[13px]">
-			{#each l.attachments as a (a.slot)}
-				<dt class="text-muted" class:apex-slot={a.slot === 'Apex'}>{a.slot}</dt>
-				<dd class="font-semibold break-words text-fg" class:apex-part={a.slot === 'Apex'}>{a.name}</dd>
-			{/each}
-		</dl>
+		{@render parts(l)}
 		{#if l.note}
 			<p class="mt-2.5 flex gap-1.5 text-xs text-fg">
 				<!-- ⚠ when the build is unconfirmed, ⓘ when it's just a tip -->
@@ -202,12 +213,7 @@
 							<span class="tracking-[0.12em] text-fg uppercase">{t.loadout.modes[mode]}</span>
 							{@render roleText(l)}
 						</h5>
-						<dl class="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[13px]">
-							{#each l.attachments as a (a.slot)}
-								<dt class="text-muted" class:apex-slot={a.slot === 'Apex'}>{a.slot}</dt>
-								<dd class="font-semibold break-words text-fg" class:apex-part={a.slot === 'Apex'}>{a.name}</dd>
-							{/each}
-						</dl>
+						{@render parts(l)}
 						{#if l.note}
 							<p class="mt-2.5 flex gap-1.5 text-xs text-fg">
 								<span class="text-accent" aria-hidden="true">{l.verified ? 'ⓘ' : '⚠'}</span><span>{l.note}</span>
@@ -356,11 +362,46 @@
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 	}
-	.apex-slot {
+
+	/* attachment lines: the 52 × 31 cartoon on the left, slot name small on top, the part below */
+	.mb-parts {
+		display: grid;
+		gap: 8px;
+		margin-top: 10px;
+	}
+	.mb-part {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		min-height: 31px;
+		padding-left: 62px;
+	}
+	.mb-part-icon {
+		position: absolute;
+		top: 50%;
+		left: 0;
+		translate: 0 -50%;
+	}
+	.mb-part dt {
+		font-size: 11px;
+		line-height: 1.25;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--t-muted);
+	}
+	.mb-part dd {
+		font-size: 13px;
+		line-height: 1.3;
+		font-weight: 600;
+		color: var(--t-fg);
+		overflow-wrap: break-word;
+	}
+	.mb-part.apex dt {
 		color: color-mix(in srgb, var(--apex, #b9a3f0) 80%, var(--t-fg));
 		font-weight: 700;
 	}
-	.apex-part {
+	.mb-part.apex dd {
 		color: color-mix(in srgb, var(--apex, #b9a3f0) 45%, var(--t-fg));
 	}
 </style>

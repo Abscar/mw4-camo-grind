@@ -1,13 +1,17 @@
 <!--
 	A little cartoon tile per gunsmith slot, shown next to each attachment in the meta builds
-	(MetaBuilds). Redrawn as inline SVG after the user's own icon sheet (2026-11-11: pastel tiles
-	cycling peach / blue / green / pink / lavender, flat parts with a dark outline). Decoration only:
-	the slot name is written right next to it, so it's aria-hidden.
+	(MetaBuilds) and in the Ranked tab. Redrawn as inline SVG after the user's own icon sheet
+	(2026-11-11: pastel tiles cycling peach / blue / green / pink / lavender, flat parts with a dark
+	outline). `bare` (the meta builds, since 2026-11-12: the user asked for "grey backgrounds … or
+	rather no backgrounds") draws only the part, with a faint halo in the theme's text colour so the
+	dark outline still reads on the dark themes; the Ranked tab keeps the tiles (its crossed-out,
+	greyed parts and the equipment pictures next to them need them). Decoration only: the slot name
+	is written right next to it, so it's aria-hidden.
 -->
 <script lang="ts">
 	import type { AttachmentSlot } from '#lib/data/loadouts.ts';
 
-	let { slot }: { slot: AttachmentSlot } = $props();
+	let { slot, bare = false }: { slot: AttachmentSlot; bare?: boolean } = $props();
 
 	const TILE: Record<AttachmentSlot, string> = {
 		Optic: '#fde3b8',
@@ -42,8 +46,10 @@
 	}
 </script>
 
-<svg class="att-icon" viewBox="0 0 100 60" aria-hidden="true" focusable="false">
-	<rect x="1.5" y="1.5" width="97" height="57" rx="9" fill={TILE[slot]} stroke="#1d2129" stroke-width="2.5" />
+<svg class="att-icon" class:bare viewBox="0 0 100 60" aria-hidden="true" focusable="false">
+	{#if !bare}
+		<rect x="1.5" y="1.5" width="97" height="57" rx="9" fill={TILE[slot]} stroke="#1d2129" stroke-width="2.5" />
+	{/if}
 	<g stroke="#1d2129" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
 		{#if slot === 'Optic'}
 			<rect x="30" y="34" width="8" height="8" fill="#8a909b" />
@@ -142,5 +148,11 @@
 		width: 52px;
 		height: 31px;
 		flex: none;
+	}
+	/* no tile behind the part: a thin halo in the text colour keeps the dark outline (and the
+	   stroke-only lines: muzzle blast, Apex sparkles) visible on dark backgrounds */
+	.att-icon.bare {
+		overflow: visible;
+		filter: drop-shadow(0 0 0.6px color-mix(in srgb, var(--t-fg) 70%, transparent));
 	}
 </style>
