@@ -591,12 +591,11 @@ export const en = {
 		endedLong: (day: string) => `Ended ${day}: it can\u2019t be earned any more.`,
 		drawnAfter: (after: string) => `The picture is our own drawing, made after ${after}. It\u2019s close, not exact.`,
 		noArt: 'No picture of this one found yet, so it isn\u2019t drawn: a made-up look would pass for the real thing.',
-		noCharmArt: 'Charms aren\u2019t drawn yet: the symbol only shows the kind of item.',
 		close: 'Close',
 		none: 'Nothing matches.',
 		clear: 'Clear search',
 		honest:
-			'Nobody publishes a complete list, so this is every large sticker, sticker and charm we found a source for. Stickers and large stickers we have seen a picture of are drawn (our own drawings); a plain symbol means no picture found yet. Tap an item for where to get it.',
+			'Nobody publishes a complete list, so this is every large sticker, sticker and charm we found a source for. Items we have seen a picture of are drawn (our own drawings); a plain symbol means no picture found yet. Tap an item for where to get it.',
 		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
 

@@ -253,7 +253,7 @@
 				</p>
 			{/if}
 			<p class="text-xs">
-				{#if pickedArt}{t.cosmetics.drawnAfter(pickedArt.after)}{:else if picked.type === 'charm'}{t.cosmetics.noCharmArt}{:else}{t.cosmetics.noArt}{/if}
+				{#if pickedArt}{t.cosmetics.drawnAfter(pickedArt.after)}{:else}{t.cosmetics.noArt}{/if}
 			</p>
 		</div>
 	{/if}
@@ -319,7 +319,8 @@
 		width: 102px;
 		height: 68px;
 	}
-	.cos-art[data-type='sticker'] {
+	.cos-art[data-type='sticker'],
+	.cos-art[data-type='charm'] {
 		width: 68px;
 		height: 68px;
 	}
@@ -335,7 +336,8 @@
 		aspect-ratio: 3 / 2;
 		justify-self: center;
 	}
-	.cos-art-big[data-type='sticker'] {
+	.cos-art-big[data-type='sticker'],
+	.cos-art-big[data-type='charm'] {
 		width: min(100%, 220px);
 		height: auto;
 		aspect-ratio: 1;

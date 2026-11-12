@@ -1,5 +1,5 @@
 /**
- * Our own drawings of the stickers and large decals on the Cosmetics tab (the user's ask,
+ * Our own drawings of the stickers, large decals and (since the user's next ask the same day) charms on the Cosmetics tab (the user's ask,
  * 2026-11-12: "draw the stickers and decals as carefully and close to the real ones as you can").
  * Cartoon vector redraws made while looking at pictures of the real items; never the game's files.
  * References (kept out of the repo): Activision's Progression/Prestige blog (Prestige 1 + Prestige
@@ -11,7 +11,7 @@
  * picture found yet": a made-up look would pass for the real thing.
  *
  * Plain SVG markup without ids (no gradients, patterns or filters), so the same drawing can be on
- * screen twice. Large decals: viewBox 0 0 120 80. Stickers: 0 0 80 80.
+ * screen twice. Large decals: viewBox 0 0 120 80. Stickers and charms: 0 0 80 80.
  */
 
 export interface CosmeticArt {
@@ -25,6 +25,10 @@ const DECAL = '0 0 120 80';
 const STICKER = '0 0 80 80';
 const INK = '#16181a';
 const SKIN = '#e0b48c';
+
+/** The ring and chain link a charm hangs from; x = where the charm's top is. */
+const HANG = (x: number) =>
+	`<circle cx="${x}" cy="4.600" r="3" fill="none" stroke="#c9ced4" stroke-width="1.700"/><path d="M${x} 7.600v4.400" stroke="#8d939a" stroke-width="2.600" stroke-linecap="round"/>`;
 
 /** A cartoon soldier bust for "Men of Service": x = centre, hat = helmet | beret | cap. */
 function serviceman(x: number, hat: 'helmet' | 'beret' | 'cap', tunic: string, hair: string): string {
@@ -434,6 +438,253 @@ export const COSMETIC_ART: Record<string, CosmeticArt> = {
 			// forked tongue curling down-left
 			`<path d="M40 52c-6 4-12 8-16 12-3 3-8 3-10 0" stroke="#8f2f3a" stroke-width="3" fill="none" stroke-linecap="round"/>` +
 			`<path d="M14 64c-3-1-5-3-5-6M14 64c-2 2-2 5 0 7" stroke="#8f2f3a" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
+	},
+
+	// ===== Charms (viewBox 0 0 80 80; a ring and a chain link on top, the charm hanging under it) =====
+
+	// Prestige 1: a tan plastic toy soldier, kneeling with a bazooka on his shoulder
+	'charm-engage': {
+		viewBox: STICKER,
+		after: 'Activision’s Prestige 1 reward picture',
+		svg:
+			HANG(40) +
+			'<g stroke="#7a5326" stroke-width="1.4" stroke-linejoin="round" fill="#dba25c">' +
+			'<path d="M22 70h38l3 5H19z" fill="#c98f4a"/>' +
+			'<path d="M34 44l12-2 4 12-2 8 8 4-1 5-13-2-3-10-6 2-3 10h-7l2-14z"/>' +
+			'<path d="M35 30c0-5 4-8 8-8s8 3 8 8l-1 6c-4 3-10 3-14 0z"/>' +
+			'<path d="M33 30c1-7 6-10 10-10s9 3 10 10z" fill="#c98f4a"/>' +
+			'<path d="M12 34l42-9 2 6-42 10z" fill="#c98f4a"/><path d="M52 24l8-3 3 8-8 3z" fill="#c98f4a"/><path d="M12 33l-4 2 1 5 5-1z" fill="#b57c3c"/>' +
+			'<path d="M36 40l-8 4 2 6 9-4zM46 40l6-8 5 3-5 10z"/>' +
+			'</g>' +
+			'<path d="M40 30h7M38 48l8-1M30 62l6-2" stroke="#7a5326" stroke-width="1.1" stroke-linecap="round" fill="none"/>'
+	},
+
+	// Prestige 2: a shabby golden-brown teddy bear, arms out
+	'charm-beary-sorry': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 2 rewards',
+		svg:
+			HANG(44) +
+			'<g transform="rotate(-8 40 44)" stroke="#5e4320" stroke-width="1.5" stroke-linejoin="round" fill="#b98c48">' +
+			'<circle cx="30" cy="16" r="5"/><circle cx="50" cy="16" r="5"/>' +
+			'<path d="M22 42l-8 10c-2 4 3 7 6 4l8-8zM58 42l8 10c2 4-3 7-6 4l-8-8z"/>' +
+			'<path d="M30 60l-3 12c0 5 9 5 10 0l1-10zM50 60l3 12c0 5-9 5-10 0l-1-10z"/>' +
+			'<ellipse cx="40" cy="48" rx="14" ry="16"/>' +
+			'<circle cx="40" cy="24" r="12.600"/>' +
+			'<ellipse cx="40" cy="28" rx="5.600" ry="4.400" fill="#d6b272"/>' +
+			'</g>' +
+			'<g transform="rotate(-8 40 44)"><circle cx="35" cy="21.600" r="1.700" fill="#2a1c0c"/><path d="M43.600 20l3 3M46.600 20l-3 3" stroke="#2a1c0c" stroke-width="1.400" stroke-linecap="round"/><path d="M38.600 26.600h2.800l-1.400 2z" fill="#2a1c0c"/><path d="M37 31q3 1.600 6 0" stroke="#2a1c0c" stroke-width="1.100" fill="none" stroke-linecap="round"/>' +
+			'<path d="M40 36v22M34 42l3 2M44 50l3-2M33 54l4 1" stroke="#8a6630" stroke-width="1.200" stroke-linecap="round" stroke-dasharray="2 2.400"/><path d="M28 30l4 3M50 60l4-2" stroke="#d6b272" stroke-width="1.600" stroke-linecap="round"/></g>'
+	},
+
+	// Prestige 3: a steel helmet over a gas mask, two round lenses, a filter in front and one on the side
+	'charm-gas-guys': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 3 rewards',
+		svg:
+			HANG(40) +
+			'<g stroke="#1e2124" stroke-width="1.5" stroke-linejoin="round">' +
+			'<path d="M22 44c0-10 8-16 18-16s18 6 18 16c0 10-4 20-10 24H32c-6-4-10-14-10-24z" fill="#8f959b"/>' +
+			'<path d="M16 34c0-13 10-21 24-21s24 8 24 21l2 5H14z" fill="#b4babf"/>' +
+			'<path d="M14 39h52" stroke-width="2"/>' +
+			'<circle cx="31" cy="44" r="7.600" fill="#2a2e32"/><circle cx="49" cy="44" r="7.600" fill="#2a2e32"/>' +
+			'<circle cx="31" cy="44" r="5" fill="#cfd6dc"/><circle cx="49" cy="44" r="5" fill="#cfd6dc"/>' +
+			'<circle cx="40" cy="60" r="8.400" fill="#a3a9af"/><circle cx="40" cy="60" r="4.600" fill="#5b6066"/>' +
+			'<g transform="rotate(-24 58 60)"><path d="M50 54h14v12H50z" fill="#a3a9af"/><path d="M53 54v12M57 54v12M61 54v12" stroke-width="1"/></g>' +
+			'</g>' +
+			'<path d="M24 22c5-5 12-7 20-6" stroke="#e6eaee" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M28.600 42c1-2 3-3 5-2.600M46.600 42c1-2 3-3 5-2.600" stroke="#fff" stroke-width="1.400" fill="none" stroke-linecap="round"/><path d="M40 55.400v9.200M35.400 60h9.200" stroke="#1e2124" stroke-width="1.100"/>'
+	},
+
+	// Prestige 4: a rider on a red-and-white snowmobile with packs on the back
+	'charm-cliffhanger': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 4 rewards',
+		svg:
+			HANG(38) +
+			'<g transform="rotate(14 40 46)" stroke="#1e2124" stroke-width="1.400" stroke-linejoin="round">' +
+			// track and ski
+			'<path d="M10 54h34l4 5-4 5H12c-5 0-6-10-2-10z" fill="#34383c"/><path d="M14 59h28" stroke="#6b7076" stroke-width="2" stroke-dasharray="2 3"/>' +
+			'<path d="M50 68h22l4-3" fill="none" stroke-width="2.400" stroke-linecap="round"/><path d="M60 58l2 10" stroke-width="2"/>' +
+			// body: seat, red hood, white panel
+			'<path d="M12 44h26l6 10H12z" fill="#4a4f55"/>' +
+			'<path d="M38 44l14-4 16 12 2 8H46l-6-8z" fill="#b8382f"/><path d="M48 46l12 8H48z" fill="#f0ece4"/><path d="M52 40l4-8 3 1-2 9z" fill="#2a2e32"/>' +
+			// packs
+			'<path d="M8 34h14v10H8z" fill="#8a8f6a"/><path d="M10 28h10v6H10z" fill="#a39a6a"/><circle cx="13" cy="31" r="1.400" fill="#1e2124"/>' +
+			// rider
+			'<path d="M26 44l2-14 10-2 4 10-4 6z" fill="#c9ccd0"/><circle cx="34" cy="22" r="5.600" fill="#e6e8ea"/><path d="M31 21h7v3h-7z" fill="#2a2e32"/>' +
+			'<path d="M38 32l12 2 4 4-2 2-14-2z" fill="#aeb2b6"/><path d="M30 44l8 2 2 8h-6z" fill="#8f949a"/>' +
+			'</g>'
+	},
+
+	// Prestige 5: a silver Eiffel Tower with a dusty pink blast cloud behind its middle
+	'charm-eiffel-down': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 5 rewards',
+		svg:
+			HANG(40) +
+			'<g fill="#e8b8a4" stroke="#b07e6c" stroke-width="1.200"><circle cx="50" cy="34" r="9"/><circle cx="58" cy="44" r="8"/><circle cx="30" cy="42" r="9"/><circle cx="24" cy="50" r="6"/><circle cx="46" cy="46" r="9"/><circle cx="36" cy="34" r="6"/></g>' +
+			'<path d="M52 30c3-1 6 1 6 4M28 38c2-2 5-2 7 0" stroke="#f6dcd0" stroke-width="1.600" fill="none" stroke-linecap="round"/>' +
+			'<g stroke="#3a3e44" stroke-width="1.300" stroke-linejoin="round" fill="#c4c8ce">' +
+			'<path d="M38.600 12h2.800l1.600 20h-6z"/><path d="M36 32h8l3 14H33z"/><path d="M32 46h16l8 26h-8c0-8-3-12-8-12s-8 4-8 12h-8z"/>' +
+			'<path d="M34 32h12v2.600H34zM30 46h20v3H30z" fill="#9a9ea6"/>' +
+			'</g>' +
+			'<path d="M37 36l6 8M43 36l-6 8M34 52l12 6M46 52l-12 6M39 16h2M38.600 22h2.800M38 27h4" stroke="#3a3e44" stroke-width=".9"/>'
+	},
+
+	// Prestige 6: a German shepherd sitting upright in a tactical harness, goggles pushed up on his head
+	'charm-riley': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 6 rewards',
+		svg:
+			HANG(40) +
+			'<g stroke="#2a1e14" stroke-width="1.400" stroke-linejoin="round">' +
+			'<path d="M52 66c8 0 12-4 12-9" fill="none" stroke="#3a2a1c" stroke-width="4" stroke-linecap="round"/>' +
+			'<path d="M28 42c0-8 5-12 12-12s12 4 12 12l2 22c0 6-4 8-8 8H34c-4 0-8-2-8-8z" fill="#c9a06a"/>' +
+			'<path d="M30 44c3 4 17 4 20 0l2 14c-6 4-18 4-24 0z" fill="#6b6a4a"/><path d="M34 48h12M33 54h14" stroke-width="1"/><path d="M38 46h4v10h-4z" fill="#8a8960"/>' +
+			'<path d="M30 60l-2 12h8l1-10zM50 60l2 12h-8l-1-10z" fill="#d6b07a"/>' +
+			'<path d="M30 14l-3-9 8 5zM50 14l3-9-8 5z" fill="#3a2a1c"/>' +
+			'<path d="M28 22c0-7 5-11 12-11s12 4 12 11c0 5-3 9-6 11l-2 6h-8l-2-6c-3-2-6-6-6-11z" fill="#c9a06a"/>' +
+			'<path d="M30 16c3-4 17-4 20 0l-2 5c-4-2-12-2-16 0z" fill="#3a2a1c"/>' +
+			'<path d="M35 28c1-3 9-3 10 0l-1 9c-2 2-6 2-8 0z" fill="#3a2a1c"/>' +
+			'</g>' +
+			'<path d="M30 13h20" stroke="#1e2124" stroke-width="3.400" stroke-linecap="round"/><path d="M33 13h5M42 13h5" stroke="#7fb6e0" stroke-width="1.800" stroke-linecap="round"/>' +
+			'<circle cx="34.600" cy="24" r="1.500" fill="#1e1410"/><circle cx="45.400" cy="24" r="1.500" fill="#1e1410"/><path d="M38.400 30h3.200l-1.600 2z" fill="#0e0a08"/><path d="M38 35q2 1.400 4 0" stroke="#e08a8a" stroke-width="1.600" fill="none" stroke-linecap="round"/>'
+	},
+
+	// Prestige 7: a little trooper in a navy and tan space-combat suit with a blue visor
+	'charm-infinite': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 7 rewards',
+		svg:
+			HANG(40) +
+			'<g stroke="#14181e" stroke-width="1.400" stroke-linejoin="round">' +
+			'<path d="M30 28l-9 16 5 3 8-11zM50 28l9 16-5 3-8-11z" fill="#2c3a55"/><path d="M19 43l7 4-1 4-7-3zM61 43l-7 4 1 4 7-3z" fill="#b89a6a"/>' +
+			'<path d="M33 50l-3 20h8l2-16 2 16h8l-3-20z" fill="#2c3a55"/><path d="M29 68h10v5H29zM41 68h10v5H41z" fill="#b89a6a"/><path d="M31 56h7v6h-7zM42 56h7v6h-7z" fill="#b89a6a"/>' +
+			'<path d="M30 28c2-3 18-3 20 0l1 22c-6 3-16 3-22 0z" fill="#33435f"/><path d="M33 31h14l-1 11H34z" fill="#b89a6a"/><path d="M30 47h20v4H30z" fill="#8a744e"/>' +
+			'<path d="M32 18c0-6 4-9 8-9s8 3 8 9c0 5-3 8-8 8s-8-3-8-8z" fill="#2c3a55"/><path d="M34 17c1-3 11-3 12 0l-1 5c-3 2-7 2-10 0z" fill="#5fb0ea"/>' +
+			'</g>' +
+			'<path d="M36 17.600c1-1 3-1.400 5-1" stroke="#d6efff" stroke-width="1.300" fill="none" stroke-linecap="round"/><path d="M36 35h8M36 38h8" stroke="#8a744e" stroke-width="1.100"/>'
+	},
+
+	// Prestige 8: a milky jade pendant carved as a helmet with four night-vision tubes
+	'charm-gone-dark': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 8 rewards',
+		svg:
+			HANG(40) +
+			'<g stroke="#3f8a4c" stroke-width="1.500" stroke-linejoin="round" fill="#9fdca4">' +
+			'<path d="M14 40c0-16 11-26 26-26s26 10 26 26c0 6-2 10-4 12l-6 16c-6 6-26 6-32 0l-6-16c-2-2-4-6-4-12z"/>' +
+			'<path d="M28 22h24l-4 6H32zM26 30h28l-3 5H29z" fill="#c4eec6"/><path d="M40 22v13" />' +
+			'<path d="M16 44h48v6H16z" fill="#86cf8e"/>' +
+			'<circle cx="23" cy="56" r="6.400"/><circle cx="35" cy="58" r="6.400"/><circle cx="47" cy="58" r="6.400"/><circle cx="59" cy="56" r="6.400"/>' +
+			'</g>' +
+			'<g fill="#5fb06c"><circle cx="23" cy="56" r="3"/><circle cx="35" cy="58" r="3"/><circle cx="47" cy="58" r="3"/><circle cx="59" cy="56" r="3"/></g>' +
+			'<path d="M20 28c4-7 10-10 18-11" stroke="#e8fbe8" stroke-width="2.200" fill="none" stroke-linecap="round"/><path d="M21 54c1-1.600 2.600-2 4-1.600M33 56c1-1.600 2.600-2 4-1.600" stroke="#e8fbe8" stroke-width="1.200" fill="none" stroke-linecap="round"/>'
+	},
+
+	// Prestige 9: a polished steel skull with dark straps over the crown
+	'charm-the-ghost': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 9 rewards',
+		svg:
+			HANG(40) +
+			'<g stroke="#1a1c1f" stroke-width="1.500" stroke-linejoin="round">' +
+			'<path d="M16 38c0-16 10-25 24-25s24 9 24 25c0 8-3 13-7 16l-1 8-6 2-2 8H32l-2-8-6-2-1-8c-4-3-7-8-7-16z" fill="#b9bec4"/>' +
+			'<path d="M29 14l3 16h-6l-4-12zM51 14l-3 16h6l4-12z" fill="#2a2d31"/>' +
+			'<path d="M22 40c2-5 12-5 14 1 0 6-10 8-14 4zM58 40c-2-5-12-5-14 1 0 6 10 8 14 4z" fill="#15171a"/>' +
+			'<path d="M37 54l3-8 3 8-3 3z" fill="#15171a"/>' +
+			'<path d="M30 62h20v10H30z" fill="#d6dade"/>' +
+			'</g>' +
+			'<path d="M34 62v10M38 62v10M42 62v10M46 62v10M30 67h20" stroke="#1a1c1f" stroke-width="1.100"/>' +
+			'<path d="M36 18c2-1 6-1 8 0M22 30c1-5 4-9 8-11" stroke="#eef1f4" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M24 50c2 3 4 4 7 5M56 50c-2 3-4 4-7 5" stroke="#7d838a" stroke-width="1.500" fill="none" stroke-linecap="round"/>'
+	},
+
+	// Prestige 10: a cup of instant noodles, cream-yellow with bold black Korean lettering, a red
+	// chilli and a bowl of noodles printed on it
+	'charm-meal-prep': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige 10 rewards',
+		svg:
+			HANG(40) +
+			'<g stroke="#3a2c14" stroke-width="1.500" stroke-linejoin="round">' +
+			'<path d="M18 18h44l-6 54H24z" fill="#f0d68a"/>' +
+			'<path d="M15 14h50v6H15z" fill="#f6e6b0"/>' +
+			'<path d="M25 52c6-6 24-6 30 0l-1.600 14H26.600z" fill="#3a2c14"/><path d="M28 54c5-4 19-4 24 0l-1 8H29z" fill="#e8b25a"/>' +
+			'</g>' +
+			'<path d="M31 57c3-2 5 2 8 0s5 2 8 0M31 60c3-2 5 2 8 0s5 2 8 0" stroke="#fbe9b6" stroke-width="1.300" fill="none" stroke-linecap="round"/><circle cx="46" cy="56" r="1.600" fill="#c63b2e"/><path d="M33 55l3 1" stroke="#4f8a3a" stroke-width="1.600" stroke-linecap="round"/>' +
+			'<g font-family="\'Malgun Gothic\', \'Apple SD Gothic Neo\', \'Noto Sans KR\', sans-serif" font-weight="900" fill="#1e1608"><text x="24" y="30" font-size="6.400" textLength="26" lengthAdjust="spacingAndGlyphs">극한의 매운맛</text><text x="24" y="46" font-size="15" textLength="27" lengthAdjust="spacingAndGlyphs">매운!</text></g>' +
+			'<path d="M53 30c3 4 3 10-1 15-1-5-2-10 1-15z" fill="#c63b2e" stroke="#7a1f18" stroke-width=".9"/><path d="M53 30l1.600-3" stroke="#4f8a3a" stroke-width="1.600" stroke-linecap="round"/>'
+	},
+
+	// Prestige Master level 70: a red star-burst medal with a gold rim and a round red gem
+	'charm-pinnacle': {
+		viewBox: STICKER,
+		after: 'Activision’s Prestige Master reward picture',
+		svg:
+			HANG(40) +
+			'<g transform="translate(40 46)">' +
+			'<g fill="#e3b53c" stroke="#7a5a12" stroke-width="1.300" stroke-linejoin="round">' + STAR(0, 0, 27, 0) + STAR(0, 0, 27, 36) + '</g>' +
+			'<g fill="#c22e2a" stroke="#6e1512" stroke-width="1" stroke-linejoin="round">' + STAR(0, 0, 21, 0) + STAR(0, 0, 21, 36) + '</g>' +
+			'<circle r="11" fill="#e3b53c" stroke="#7a5a12" stroke-width="1.300"/><circle r="7.600" fill="#d8322c" stroke="#6e1512" stroke-width="1.100"/>' +
+			'<path d="M-4-3c1.600-2.600 5-3 7-1" stroke="#ffb4a8" stroke-width="1.700" fill="none" stroke-linecap="round"/>' +
+			'</g>'
+	},
+
+	// Prestige Master level 1,000: a pale lilac demon mask with tall ivory horns, a carved gold brow,
+	// glowing red eyes and long tusks curling outwards
+	'charm-prestige-master-1000': {
+		viewBox: STICKER,
+		after: 'Dexerto’s screenshot of the Prestige Master rewards',
+		svg:
+			HANG(40) +
+			'<g stroke="#2a2433" stroke-width="1.400" stroke-linejoin="round">' +
+			'<path d="M24 30c-9-5-12-12-10-20 3 7 8 10 16 12zM56 30c9-5 12-12 10-20-3 7-8 10-16 12z" fill="#e8e2d0"/>' +
+			'<path d="M26 26c2-8 8-12 14-12s12 4 14 12c-4-2-9-3-14-3s-10 1-14 3z" fill="#c9a04e"/>' +
+			'<path d="M22 34c2-7 10-10 18-10s16 3 18 10c1 8-1 16-5 22l-5 12c-3 4-13 4-16 0l-5-12c-4-6-6-14-5-22z" fill="#a79bc0"/>' +
+			'<path d="M25 37c4-4 9-4 13 0-2 4-9 5-13 0zM55 37c-4-4-9-4-13 0 2 4 9 5 13 0z" fill="#2a1418"/>' +
+			'<path d="M36 44c1-3 7-3 8 0l1 5c-3 2-7 2-10 0z" fill="#8a7ea6"/>' +
+			'<path d="M28 54c4-3 20-3 24 0l-2 9c-4 3-16 3-20 0z" fill="#3a1418"/>' +
+			'<path d="M27 52c-8 2-14 0-17-6-1 9 6 16 17 13zM53 52c8 2 14 0 17-6 1 9-6 16-17 13z" fill="#e8e2d0"/>' +
+			'</g>' +
+			'<circle cx="31.600" cy="38" r="2.200" fill="#ff5a3c"/><circle cx="48.400" cy="38" r="2.200" fill="#ff5a3c"/>' +
+			'<path d="M31 54.600l2 5 2.400-5 2.400 5 2.200-5 2.200 5 2.400-5 2.400 5 2-5" fill="#f2ecdc" stroke="#2a2433" stroke-width=".8" stroke-linejoin="round"/>' +
+			'<path d="M30 20c3-3 6-4 10-4s7 1 10 4M34 18.600q6 3 12 0" stroke="#7a5a1e" stroke-width="1.100" fill="none"/><path d="M24 34c4-5 10-6 15-3M56 34c-4-5-10-6-15-3" stroke="#2a2433" stroke-width="2.200" fill="none" stroke-linecap="round"/>' +
+			'<path d="M30 68c3 5 17 5 20 0M34 72q6 3 12 0" stroke="#6f6490" stroke-width="1.300" fill="none" stroke-linecap="round"/>'
+	},
+
+	// Battle Pass tier 93: a bronze falcon, wings spread, on a blue-green ring of thorns with a spear
+	// point hanging below
+	'charm-falcon-thorn': {
+		viewBox: STICKER,
+		after: 'Activision’s Season 1 Battle Pass picture',
+		svg:
+			HANG(40) +
+			'<g fill="none" stroke="#2f8f86" stroke-width="3.200"><circle cx="40" cy="50" r="18"/></g>' +
+			'<g stroke="#1f6a62" stroke-width="1.600" stroke-linecap="round"><path d="M22 46l-5-3M24 60l-5 3M34 67l-2 6M46 67l2 6M56 60l5 3M58 46l5-3M28 36l-3-5M52 36l3-5"/></g>' +
+			'<path d="M40 44v30l-4-6M40 74l4-6" stroke="#8a8f96" stroke-width="2.200" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+			'<g stroke="#4a3210" stroke-width="1.300" stroke-linejoin="round" fill="#b8843a">' +
+			'<path d="M36 34C28 24 16 22 6 26c6 2 8 5 9 9 4-1 7 0 9 3 3-2 7-2 10 1zM44 34c8-10 20-12 30-8-6 2-8 5-9 9-4-1-7 0-9 3-3-2-7-2-10 1z"/>' +
+			'<path d="M34 34c0-6 3-10 6-10s6 4 6 10l-2 14c-2 3-6 3-8 0z"/>' +
+			'<path d="M36 22c0-4 2-6 4-6s5 2 5 5l4 2-5 2c-1 2-3 3-5 2s-3-3-3-5z" fill="#d6a04e"/>' +
+			'<path d="M36 48l-3 8M40 49v8M44 48l3 8" fill="none"/>' +
+			'</g>' +
+			'<circle cx="41" cy="20.600" r="1" fill="#1a1206"/><path d="M12 28l8 4M68 28l-8 4M20 30l6 5M60 30l-6 5" stroke="#4a3210" stroke-width="1" stroke-linecap="round"/>'
+	},
+
+	// Wager Match event: a pale bronze coin with a ridged rim and a coiled snake
+	'charm-writhing-coin': {
+		viewBox: STICKER,
+		after: 'Detonated’s picture of the Wager Match reward board',
+		svg:
+			HANG(40) +
+			'<circle cx="40" cy="47" r="27" fill="#cdbb94" stroke="#5e5234" stroke-width="1.600"/>' +
+			'<circle cx="40" cy="47" r="23" fill="none" stroke="#8a7a52" stroke-width="1.200" stroke-dasharray="1.600 2"/>' +
+			'<circle cx="40" cy="47" r="20" fill="#bfae86" stroke="#5e5234" stroke-width="1.100"/>' +
+			'<path d="M46 34c-8-4-18 1-18 9 0 9 18 6 18 13 0 4-6 6-11 3" fill="none" stroke="#5e5234" stroke-width="6.400" stroke-linecap="round"/>' +
+			'<path d="M46 34c-8-4-18 1-18 9 0 9 18 6 18 13 0 4-6 6-11 3" fill="none" stroke="#e6d8b4" stroke-width="3.800" stroke-linecap="round"/>' +
+			'<path d="M44 31c4-1 8 1 9 4-2 3-7 3-10 0z" fill="#e6d8b4" stroke="#5e5234" stroke-width="1.300" stroke-linejoin="round"/><circle cx="48.600" cy="33.600" r=".9" fill="#5e5234"/><path d="M53 35l4 1M53 35l3 3" stroke="#8f2f3a" stroke-width="1.100" stroke-linecap="round"/>' +
+			'<path d="M33 40l2 2M36 49l3 1M44 53l1 3M40 59l-2 2" stroke="#8a7a52" stroke-width="1.100" stroke-linecap="round"/>' +
+			'<path d="M22 36c3-6 8-10 14-11" stroke="#efe6cc" stroke-width="1.800" fill="none" stroke-linecap="round"/>'
 	}
 };
 

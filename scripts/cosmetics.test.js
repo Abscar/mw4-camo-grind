@@ -49,12 +49,11 @@ test('cosmeticEnded: the last day still counts', () => {
 	assert.equal(cosmeticEnded(COSMETICS[0], '2030-01-01'), false);
 });
 
-test('cosmetic drawings: only for stickers and large decals that exist, plain SVG without ids, says what it was drawn after', () => {
+test('cosmetic drawings: only for cosmetics that exist, plain SVG without ids, says what it was drawn after', () => {
 	const byId = new Map(COSMETICS.map((c) => [c.id, c]));
 	for (const [id, art] of Object.entries(COSMETIC_ART)) {
 		const c = byId.get(id);
 		assert.ok(c, `${id}: no such cosmetic`);
-		assert.notEqual(c.type, 'charm', id);
 		assert.equal(art.viewBox, c.type === 'decal' ? '0 0 120 80' : '0 0 80 80', id);
 		assert.ok(art.after.length > 10, id);
 		assert.ok(!/\sid=|url\(|<script|href=|NaN|undefined/.test(art.svg), `${id}: ids, links or broken numbers in the markup`);
@@ -64,5 +63,5 @@ test('cosmetic drawings: only for stickers and large decals that exist, plain SV
 		const close = (art.svg.match(/<\/(g|text)>/g) ?? []).length;
 		assert.equal(open, close, id);
 	}
-	assert.ok(Object.keys(COSMETIC_ART).length >= 15);
+	assert.ok(Object.keys(COSMETIC_ART).length >= 29);
 });
