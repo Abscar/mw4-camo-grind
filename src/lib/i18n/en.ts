@@ -47,6 +47,112 @@ export const en = {
 	nav: {
 		skip: 'Skip to the weapon list'
 	},
+	/** The page's two big tabs (2026-11-12): the camo tracker and Ranked prep. */
+	/** The Camo list / Ranked prep switch above the weapon list (PageTabs.svelte). */
+	rankTabs: {
+		label: 'Camo list or Ranked prep',
+		tabs: {
+			grind: { name: 'Camo list', sub: 'Your camos, weapon by weapon' },
+			ranked: { name: 'Ranked prep', sub: 'CDL rules, bans and ranked classes' }
+		}
+	},
+	/** The Ranked prep tab (RankedSection; data in data/ranked.ts). */
+	ranked: {
+		heading: 'Ranked prep',
+		sub: 'Get ready before Ranked Play opens',
+		jump: 'Jump to',
+		sections: {
+			weapons: 'Weapons',
+			attachments: 'Attachments',
+			gear: 'Equipment & perks',
+			classes: 'Ranked classes',
+			maps: 'Maps & modes',
+			hp: 'Hardpoint rotations',
+			info: 'About Ranked',
+			prep: 'Prep list'
+		},
+		tiles: {
+			ranked: 'Ranked Play',
+			rankedValue: 'Season 2',
+			rankedSub: 'No date yet',
+			cdl: 'CDL 2027 starts',
+			cdlIn: (days: number) => (days <= 0 ? 'Live now' : days === 1 ? 'Tomorrow' : `In ${days} days`),
+			rules: 'Ruleset',
+			rulesSub: (date: string) => `Official, posted ${date}`
+		},
+		trust: {
+			official: 'Official',
+			pro: 'Pros',
+			guide: 'Guides',
+			community: 'Community',
+			estimate: 'Estimate',
+			lastYear: 'Last year (BO7)'
+		},
+		trustHint: {
+			official: 'From the Call of Duty League or Activision',
+			pro: 'What pros used at the launch-week tournaments',
+			guide: 'From guide sites that track pro scrims, not official',
+			community: 'A community ladder’s own rules, not official',
+			estimate: 'A guess from news sites, not announced',
+			lastYear: 'How Black Ops 7’s Ranked worked last year, for reference'
+		},
+		rulesIntro: (name: string) =>
+			`Ranked has used the pro rules in past CoDs, so these are the rules to prepare for: the Call of Duty League’s ${name}. It lists what’s restricted; everything else is allowed.`,
+		rulesLink: 'Read the CDL rules',
+		allowed: 'Allowed',
+		restricted: 'Restricted',
+		bannedTag: 'Banned',
+		allClass: (name: string) => `All ${name}`,
+		weaponsHint: 'Tap a gun to open its card.',
+		attachments: {
+			slotAll: (slot: string) => `${slot}s: all of them`,
+			apexAll: 'Every Apex attachment',
+			laserAll: 'Every laser',
+			rest: 'Every attachment not listed here is allowed. The CDL doesn’t restrict ammo types.'
+		},
+		gearNote: 'Big pictures are allowed; the greyed, crossed-out ones are restricted.',
+		classes: {
+			intro: 'Attachments only. Pro builds first, then a build for every other gun that’s allowed in ranked.',
+			proHeading: 'What the pros run',
+			restHeading: 'Every other ranked-legal gun',
+			publicBuild: 'Public MP build',
+			bannedPart: 'Banned in CDL: leave it off or pick another',
+			cleanPart: 'CDL-legal',
+			noBuild: 'No published build yet.',
+			pros: (names: string) => `Seen on: ${names}`,
+			secondary: (name: string) => `Secondary: most comp players carry the ${name}, usually with no attachments.`,
+			openCard: 'Open the weapon card'
+		},
+		maps: {
+			shared: 'In every mode'
+		},
+		hp: {
+			heading: 'Hardpoint rotations',
+			intro: 'The hills come up in this order every game, 60 s each, and loop back to P1 after the last one. The next hill shows 10 s before it goes live, so rotate early.',
+			hills: (n: number) => `${n} hills`,
+			loop: 'Back to P1',
+			longest: (from: number, to: number) => `Longest run: P${from} → P${to}`,
+			shortest: (from: number, to: number, s: number) => `Shortest: P${from} → P${to}, ${s} s`,
+			seconds: (s: number) => `${s} s`,
+			disputed: 'Name differs between guides',
+			mapLabel: (map: string, n: number) => `Rough minimap of ${map}: where hills P1 to P${n} are and the order they come up in`,
+			mapNote: 'Rough spots, north up. Our own sketch, not the game’s minimap.',
+			mapLink: 'Real map on Scout Drop'
+		},
+		info: {
+			status: 'What we know',
+			lastYear: 'Last year’s Ranked (Black Ops 7), for reference',
+			ranksHeading: 'Skill divisions last year',
+			ranksNote: 'SR each tier starts at in Black Ops 7 (Activision doesn’t publish them; G FUEL’s list). MW4’s may differ.',
+			tier: (n: number) => ['I', 'II', 'III'][n] ?? ''
+		},
+		prepHeading: 'Do this before Ranked opens',
+		community: {
+			summary: 'Stricter community ladders (not official)',
+			intro: 'Some ladders ban more than the CDL. Handy if you play their matches:'
+		},
+		snapshot: (date: string) => `Checked ${date}. The CDL says its rules will change during the season; this tab gets updated when they do.`
+	},
 	/** Sound effects for your own ticks (button next to the theme picker; off by default). */
 	sound: { label: 'Sound effects', on: 'Sound effects: on', off: 'Sound effects: off' },
 	/** The header's pause button (motion.svelte.ts): stops every animation on the page to save CPU. */

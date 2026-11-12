@@ -42,6 +42,9 @@
 	import DivergenceUnlock from '#lib/components/DivergenceUnlock.svelte';
 	import BootSequence from '#lib/components/BootSequence.svelte';
 	import AbscarTerminal from '#lib/components/AbscarTerminal.svelte';
+	import PageTabs from '#lib/components/PageTabs.svelte';
+	import RankedSection from '#lib/components/RankedSection.svelte';
+	import { pageTab } from '#lib/pageTab.svelte.ts';
 
 	/** The two page tabs under the header (2026-11-12). Both stay mounted; the other one is only hidden. */
 	const PAGE_TABS = ['grind', 'cosmetics'] as const;
@@ -131,6 +134,7 @@
 
 	onMount(() => {
 		const result = progress.load();
+		pageTab.load();
 		if (result === 'migrated-v1') toast.show(t.toast.importedOld, undefined, 7000);
 		else if (result === 'unreadable') toast.show(t.toast.corruptSave, undefined, 10000);
 		if (!progress.canSave) toast.show(t.toast.notSaving, undefined, 10000);
@@ -247,8 +251,16 @@
 		<!-- 3. continue grinding: the focus list -->
 		<div class="mt-6"><FocusSection /></div>
 
+		<!-- the two big tabs right above the weapon list (2026-11-12, the user's ask): the camo
+		     checklist or Ranked prep -->
+		<div class="mt-6"><PageTabs panelId="page-panel" /></div>
+
+		<div id="page-panel" role="tabpanel" aria-labelledby="page-tab-{pageTab.current}">
+		{#if pageTab.current === 'ranked'}
+			<div class="mt-4"><RankedSection /></div>
+		{:else}
 		<!-- 4. search and filters -->
-		<div id="weapons" class="mt-6 scroll-mt-4">
+		<div id="weapons" class="mt-4 scroll-mt-4">
 			<Toolbar bind:query shown={shownCount} total={WEAPONS.length} onclear={clearFilters} />
 		</div>
 
@@ -284,6 +296,8 @@
 
 		<!-- 7. news and everything else -->
 		<div class="compact-hide mt-7"><MetaSection /></div>
+		{/if}
+		</div>
 
 		<div class="abscar-only compact-hide mt-7">
 			<!-- top and bottom banner share one height (the user's ask: "same size so they look in proportion") -->
