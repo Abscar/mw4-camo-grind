@@ -3,7 +3,7 @@
  * brainstorm). A dated SNAPSHOT: refresh it when Activision posts a date (the Season 1 Reloaded blog
  * should bring the mid-season dates), or when the user asks ("uppdatera").
  *
- * Checked 2026-11-11. Only the Season 1 start is official. callofduty.com couldn't be read directly,
+ * Checked 2026-11-11, re-checked 2026-11-12 (Wager Match started; nothing else moved). Only the Season 1 start is official. callofduty.com couldn't be read directly,
  * so "official" = Activision's own wording as quoted by Impulse Gamer, timesaver.gg and GamerFuzion.
  * Everything not announced is `verified: false` with where the guess comes from, so the page marks it.
  * Dates are whole days ("YYYY-MM-DD", the viewer's calendar): no source gives times for the guesses.
@@ -11,7 +11,7 @@
 
 import type { Fact } from './weapons.ts';
 
-export const SEASON_CHECKED = '2026-11-11';
+export const SEASON_CHECKED = '2026-11-12';
 
 export interface SeasonInfo {
 	name: string;
@@ -52,9 +52,9 @@ export const SEASON_EVENTS: SeasonEvent[] = [
 		name: 'Wager Match event',
 		on: '2026-11-11',
 		fact: {
-			text: 'Starts 11 Nov',
+			text: 'Started 11 Nov',
 			verified: false,
-			note: 'Reported by Dot Esports and Gamelevate (7 Nov) from the in-game timer; no time or end date given. The launch blog first said it was live at launch, the 5 Nov patch notes said “coming soon”.'
+			note: 'Live since 11 Nov according to Skycoach (11 Nov), as Dot Esports and Gamelevate had reported from the in-game timer (7 Nov). Activision hasn’t confirmed it or given an end date.'
 		}
 	},
 	{

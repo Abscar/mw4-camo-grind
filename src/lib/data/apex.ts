@@ -18,7 +18,7 @@ export interface ApexInfo {
 	name: string;
 	/** One short line on what it does. */
 	effect: string;
-	/** Normal slots it closes. */
+	/** Normal slots it closes (the main Apex only; an `alt` part may leave them open). */
 	blocks: AttachmentSlot[];
 	/** Season 1 event Apex parts for the same gun (an Apex build may use one of these instead). */
 	alt?: string[];

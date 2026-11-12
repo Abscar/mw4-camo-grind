@@ -11,6 +11,11 @@
  * those sites list exactly the same attachments. Attachment names are spelled as on each
  * weapon's attachment list (codmunity.gg).
  *
+ * Re-checked 2026-11-12 (no weapon patch since Season 1): new MP build for .50 GS; new WZ builds
+ * for Han 86, Cronen Osprey and VEL 46 (wzstats); where one site moved on and another still lists
+ * our build (WZ M4, Kastov, Striga, Astaroth, Signal 50), the source now names only the sites that
+ * still list it. Dates updated where a site re-confirmed a build.
+ *
  * `verified: false` = the build is built around something that was nerfed after it was
  * published, or the sites disagree about whether the gun is any good. The `note` says why, and
  * the popup shows it as text. A build from a single site is normal and is not flagged.
@@ -116,8 +121,8 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			Stock: 'Meiko L9P-Fold',
 			Laser: 'Schlager Visiv-5'
 		}),
-		wz: build('Long range', WZSTATS, S1, {
-			Optic: 'Cronen R808',
+		wz: build('Long range', WZSTATS, '2026-11-10', {
+			Optic: 'Locus PX3 Canted',
 			Muzzle: 'FSS IS300',
 			Barrel: 'Hanbit Lightning-7 465mm',
 			Magazine: '60 Round Drum',
@@ -125,14 +130,15 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		})
 	},
 	m4: {
-		mp: build('Versatile', CODMUNITY, S1, {
+		mp: build('Versatile', CODMUNITY, '2026-11-10', {
 			Muzzle: 'FSS IS300',
 			Barrel: 'FT Cannonade 7"',
 			'Rear Grip': 'Schlager STB Grip',
 			Ammunition: '5.56 NATO Overpressured',
 			Underbarrel: 'FSS Tac90 Grip'
 		}),
-		wz: build('Long range', WZ2, S1, {
+		// wzstats moved to another build on 7 Nov; codmunity (11 Nov) still lists this one
+		wz: build('Long range', CODMUNITY, '2026-11-11', {
 			Optic: 'Cronen R808',
 			Muzzle: 'FSS IS300',
 			Barrel: '16" Highmark Barrel',
@@ -190,14 +196,15 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		})
 	},
 	'kastov-762': {
-		mp: build('Versatile', CODMUNITY, S1, {
+		mp: build('Versatile', CODMUNITY, '2026-11-10', {
 			Barrel: 'FJX Ghostfire 16.3"',
 			'Rear Grip': 'Hanbit TechGrip',
 			Ammunition: '7.62 Soviet Overpressured',
 			Magazine: '45 Round Mag 7.62',
 			Underbarrel: 'FSS Tac90 Grip'
 		}),
-		wz: build('Long range', WZ3, S1, {
+		// wzstats moved to another build on 7 Nov; codmunity (11 Nov) and Dexerto still list this one
+		wz: build('Long range', `${CODMUNITY} + ${DEXERTO}`, '2026-11-11', {
 			Optic: 'Cronen R808',
 			Muzzle: 'Gauge-12 Mono',
 			Barrel: 'BCS-K 589mm Barrel',
@@ -270,12 +277,12 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				note: 'Brand new gun: codmunity rates it top tier in Multiplayer, wzstats near the bottom.'
 			}
 		),
-		wz: build('Long range', WZSTATS, S1, {
+		wz: build('Long range', WZSTATS, '2026-11-09', {
 			Optic: 'Locus PX3 Canted',
 			Muzzle: 'FSS IS300',
 			Barrel: 'IO-556 Tac 18"',
 			Magazine: '60 Round Mag',
-			Ammunition: '5.56 NATO High Velocity'
+			Stock: 'XR-9 Tac V2'
 		})
 	},
 
@@ -304,10 +311,10 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			Laser: 'Schlager Visiv-5',
 			Stock: 'VEL 46 Extended'
 		}),
-		wz: build('Close range', WZSTATS, S1, {
-			Muzzle: '212 LC40 Comp',
-			Barrel: 'VB-46 Series 11',
+		wz: build('Close range', WZSTATS, '2026-11-10', {
+			Muzzle: 'TA Lightning R3M',
 			Underbarrel: 'FSS Tac90 Grip',
+			Laser: 'XRK Clutch-LS',
 			Magazine: '60 Round Drum',
 			Stock: 'EXP U-Turn Stock'
 		})
@@ -320,7 +327,8 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			'Rear Grip': 'Matuzek 532-L Grip',
 			Magazine: '35 Round Mag'
 		}),
-		wz: build('Close range', WZ3, S1, {
+		// codmunity swapped the grip for an optic on 11 Nov; wzstats and Dexerto still list this one
+		wz: build('Close range', `${WZSTATS} + ${DEXERTO}`, S1, {
 			Muzzle: 'Full Port Comp',
 			Barrel: 'GW Sender 500',
 			Magazine: '50 Round Drum Mag',
@@ -538,7 +546,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 
 	// ---------- Sniper Rifles ----------
 	'kg-7-vulcan': {
-		mp: build('Sniper', CODMUNITY, S1, {
+		mp: build('Sniper', CODMUNITY, '2026-11-11', {
 			Muzzle: 'Ivanov QR600',
 			Barrel: 'TT Baem 12"',
 			Stock: 'Bruen KG-7 Mk. IV',
@@ -568,9 +576,10 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			Stock: 'Usenko V8-LKR',
 			'Rear Grip': 'FJX S-TAC Grip'
 		}),
+		// codmunity swapped the laser on 11 Nov; wzstats and Dexerto still list this one
 		wz: build(
 			'Sniper',
-			WZ3,
+			`${WZSTATS} + ${DEXERTO}`,
 			S1,
 			{
 				Muzzle: 'Usenko 900 BL-X',
@@ -590,9 +599,10 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			Stock: 'Cronen SN-Pad50',
 			'Rear Grip': 'GL Zero Drop 6'
 		}),
+		// codmunity swapped the rear grip for a scope on 11 Nov; wzstats still lists this one
 		wz: build(
 			'Sniper',
-			WZ2,
+			WZSTATS,
 			S1,
 			{
 				Muzzle: 'FSS HOC-30',
@@ -641,13 +651,21 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		})
 	},
 	'50-gs': {
-		mp: build('Secondary', CODMUNITY, S1, {
-			Muzzle: 'TA SVG-50K',
-			Magazine: '14 Round Mag',
-			Ammunition: '.50 Pistol Overpressured',
-			'Rear Grip': 'ZLR Tact-99 Grip',
-			'Trigger Action': 'Corio Lightning N6'
-		}),
+		// codmunity's #1 MP build changed on 11 Nov (re-check 2026-11-12); the 6 Nov one was
+		// TA SVG-50K / 14 Round Mag / .50 Pistol Overpressured / ZLR Tact-99 Grip / Corio Lightning N6
+		mp: build(
+			'Versatile',
+			CODMUNITY,
+			'2026-11-11',
+			{
+				Optic: 'FJX 708 PRO',
+				Muzzle: 'FTAC HVY-S50',
+				Laser: 'XT-100',
+				'Rear Grip': 'TT Iron Guard Kit',
+				'Trigger Action': 'Corio Lightning N6'
+			},
+			{ note: 'The TT Iron Guard Kit is an event reward, not a level unlock, so you may not have it yet.' }
+		),
 		wz: build(
 			'Secondary',
 			WZ2,
@@ -663,7 +681,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		)
 	},
 	'mojave-357': {
-		mp: build('Secondary', CODMUNITY, S1, {
+		mp: build('Secondary', CODMUNITY, '2026-11-11', {
 			Barrel: 'Bryson Snub 2"',
 			Ammunition: '.357 Magnum Overpressured',
 			'Rear Grip': 'SA Tyrant Grip',

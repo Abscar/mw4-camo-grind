@@ -59,8 +59,10 @@ export const META_RANKS: Record<LoadoutMode, MetaBoard> = {
 	// Multiplayer, 2026-11-10: codmunity.gg/mw4 (updated 10 Nov, tiers + pick rates), wzstats.gg/mw4/meta
 	// (10 Nov, tier + rank per class), Dexerto's tier list (9 Nov). Tie-breakers: GameRant's AR ranking
 	// (6 Nov) and metaradar.gg (10 Nov). Scored S/META 3, A 2, B 1 per site; pick rate breaks ties.
+	// Re-checked 2026-11-12 (codmunity 11 Nov, wzstats 12 Nov, Dexerto 9 Nov): every tier and class
+	// rank the same; no weapon patch since Season 1.
 	mp: {
-		date: '2026-11-10',
+		date: '2026-11-12',
 		sources: 'codmunity.gg, wzstats.gg and Dexerto',
 		overall: [
 			p('cronen-osprey', 'S'),
@@ -114,13 +116,16 @@ export const META_RANKS: Record<LoadoutMode, MetaBoard> = {
 	// tier + rank per role), codmunity.gg/warzone (10 Nov, tiers + pick rates), wzhub.gg (8 Nov, its two
 	// top tiers). Dexerto's Season 1 list (6 Nov, day one) only breaks ties. Same scoring as above;
 	// "unconfirmed" where the sites are 3 tiers or more apart. No Warzone weapon tuning since 6 Nov.
+	// Re-checked 2026-11-12 (wzstats 12 Nov: unchanged; wzhub 8 Nov; codmunity 11 Nov moved four):
+	// ISO S → A on codmunity, so VEL (S on all three) now ranks above ISO; Striga A → S (still #3 SMG,
+	// #6 overall on pick rate); FiNN D → B (sites now within one tier); Squall C → B (passes Patriot).
 	wz: {
-		date: '2026-11-10',
+		date: '2026-11-12',
 		sources: 'wzstats.gg, codmunity.gg and wzhub.gg',
 		overall: [
 			p('cronen-osprey', 'S', LR),
-			p('iso-nightshade', 'S', CR),
 			p('vel-46', 'S', CR),
+			p('iso-nightshade', 'S', CR),
 			p('han-86', 'A', LR),
 			p('kg-7-vulcan', 'A', SN)
 		],
@@ -132,13 +137,13 @@ export const META_RANKS: Record<LoadoutMode, MetaBoard> = {
 				p('kastov-762', 'B', LR),
 				p('axion', 'B', LR),
 				p('hyeon-burst', 'B', LR),
+				p('cronen-squall', 'B', LR),
 				p('patriot-xmr', 'B', LR),
-				p('cronen-squall', 'C', LR),
 				p('oden', 'C', LR)
 			],
 			smgs: [
-				p('iso-nightshade', 'S', CR),
 				p('vel-46', 'S', CR),
+				p('iso-nightshade', 'S', CR),
 				p('wz-55-striga', 'A', CR),
 				p('x-58-nyx', 'A', CR),
 				p('csg-35', 'B', CR),
@@ -146,7 +151,7 @@ export const META_RANKS: Record<LoadoutMode, MetaBoard> = {
 			],
 			shotguns: [p('rezi-12', 'B', CR), p('warlord', 'C', CR)],
 			lmgs: [
-				p('finn-lmg', 'B', { ...LR, verified: false, note: 'wzstats rates it A, codmunity only D.' }),
+				p('finn-lmg', 'B', LR),
 				p('apoc-338', 'C', {
 					...LR,
 					verified: false,

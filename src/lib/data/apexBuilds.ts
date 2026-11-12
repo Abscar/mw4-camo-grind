@@ -12,8 +12,9 @@
  * lists spell them. The Apex itself is always spelled as in apex.ts (codmunity varies:
  * "Sang Breach", "APOC 338 Praetor", "Cronen Helix Mk.II", wzstats "Signal 50 Inferno").
  *
- * Only two guns have a Warzone build with the Apex (Hyeon Burst, CSG-35): the sites put the
- * rest of the Apex parts only in Multiplayer and DMZ builds.
+ * Only three guns have a Warzone build with the Apex (Hyeon Burst, CSG-35, and since codmunity's
+ * 11 Nov update Kastov 762 with the event Apex Kastov 545): the sites put the rest of the Apex
+ * parts only in Multiplayer and DMZ builds. Re-checked 2026-11-12: no other Apex build changed.
  */
 import { build, type WeaponLoadouts } from './loadouts.ts';
 
@@ -110,6 +111,23 @@ export const APEX_BUILDS: Record<string, WeaponLoadouts> = {
 				Apex: 'Kastov ARC'
 			},
 			{ note: 'codmunity’s newest builds (11 Nov) use the Season 1 event Apex Kastov 545 instead.' }
+		),
+		// added on the 2026-11-12 re-check: codmunity's #2 Warzone build (11 Nov)
+		wz: build(
+			'Sniper support',
+			CM,
+			'2026-11-11',
+			{
+				Optic: 'SZ Helios Holo',
+				Barrel: 'FJX Ghostfire 16.3"',
+				Magazine: '45 Round Mag 7.62',
+				'Rear Grip': 'FJX Kastov Grip',
+				Stock: 'Kastov Dogfighter 27',
+				Apex: 'Kastov 545'
+			},
+			{
+				note: 'Uses the Season 1 event Apex Kastov 545, which keeps the barrel slot open. codmunity rates this build average, not top tier.'
+			}
 		)
 	},
 	oden: {

@@ -30,7 +30,9 @@ test('apex builds: use the gun’s own Apex, skip the slots it closes, 5 + Apex,
 			assert.ok([a.name, ...(a.alt ?? [])].includes(apexPart.name), `${where}: Apex ${apexPart.name} isn't ${a.name}`);
 			assert.equal(new Set(slots).size, slots.length, `${where}: duplicate slot`);
 			assert.ok(slots.length - 1 <= MAX_ATTACHMENTS, `${where}: too many attachments`);
-			for (const s of a.blocks) assert.ok(!slots.includes(s), `${where}: ${s} is closed by the Apex`);
+			// `blocks` belongs to the main Apex; an event Apex (alt) may leave those slots open
+			// (Kastov 545 keeps the barrel the Kastov ARC closes)
+			if (apexPart.name === a.name) for (const s of a.blocks) assert.ok(!slots.includes(s), `${where}: ${s} is closed by the Apex`);
 			const order = slots.map((s) => SLOT_ORDER.indexOf(s));
 			assert.ok(!order.includes(-1), `${where}: unknown slot`);
 			assert.deepEqual(order, [...order].sort((x, y) => x - y), `${where}: not in SLOT_ORDER`);
