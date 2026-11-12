@@ -13,6 +13,7 @@
 	import AbscarFx from '#lib/components/AbscarFx.svelte';
 	import ClassMeta from '#lib/components/ClassMeta.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
+	import CosmeticsSection from '#lib/components/CosmeticsSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
@@ -41,6 +42,17 @@
 	import DivergenceUnlock from '#lib/components/DivergenceUnlock.svelte';
 	import BootSequence from '#lib/components/BootSequence.svelte';
 	import AbscarTerminal from '#lib/components/AbscarTerminal.svelte';
+
+	/** The two page tabs under the header (2026-11-12). Both stay mounted; the other one is only hidden. */
+	const PAGE_TABS = ['grind', 'cosmetics'] as const;
+	let view = $state<(typeof PAGE_TABS)[number]>('grind');
+
+	function tabKey(e: KeyboardEvent) {
+		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+		e.preventDefault();
+		view = view === 'grind' ? 'cosmetics' : 'grind';
+		document.getElementById(`tab-${view}`)?.focus();
+	}
 
 	let query = $state('');
 	const needle = $derived(query.trim().toLowerCase());
@@ -201,6 +213,28 @@
 		style:--hotrod-tile="url({hotrodCamo})"
 		style:--worn-metal={WORN_METAL}
 	>
+		<!-- page tabs: the tracker, or the Cosmetics list -->
+		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label}>
+			{#each PAGE_TABS as tab (tab)}
+				<button
+					type="button"
+					id="tab-{tab}"
+					role="tab"
+					class="page-tab font-head"
+					aria-selected={view === tab}
+					aria-controls="panel-{tab}"
+					tabindex={view === tab ? 0 : -1}
+					onclick={() => (view = tab)}
+					onkeydown={tabKey}>{t.pageTabs[tab]}</button
+				>
+			{/each}
+		</div>
+
+		<div id="panel-cosmetics" role="tabpanel" aria-labelledby="tab-cosmetics" hidden={view !== 'cosmetics'}>
+			<div class="mt-5"><CosmeticsSection /></div>
+		</div>
+
+		<div id="panel-grind" role="tabpanel" aria-labelledby="tab-grind" hidden={view !== 'grind'}>
 		<!-- the green radar with the latest COD news -->
 		<div class="compact-hide mt-5"><NewsBanner /></div>
 
@@ -258,6 +292,7 @@
 		</div>
 
 		<div class="mt-7"><SyncPanel /></div>
+		</div>
 
 		<footer class="compact-hide mt-7 grid gap-1.5 text-xs text-muted">
 			<p>{t.help.howTo}</p>
@@ -291,6 +326,34 @@
 </Dialog>
 
 <style>
+	/* the two page tabs under the header */
+	.page-tabs {
+		border-bottom: 2px solid var(--t-line);
+	}
+	.page-tab {
+		min-height: 2.75rem;
+		margin-bottom: -2px;
+		padding: 0 1.1rem;
+		border: 2px solid transparent;
+		border-bottom-color: var(--t-line);
+		border-radius: 10px 10px 0 0;
+		color: var(--t-muted);
+		font-size: 14px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	.page-tab:hover {
+		color: var(--t-fg);
+	}
+	.page-tab[aria-selected='true'] {
+		border-color: var(--t-accent);
+		border-bottom-color: var(--t-bg);
+		background: var(--t-panel);
+		color: var(--t-fg);
+		box-shadow: inset 0 3px 0 var(--t-accent);
+	}
+
 	/*
 	 * The Abscar header (the user's asks, 2026-11-10): on the left the squad frame, right under it the
 	 * HUD box + title, and under those the news buddy; the old TV on the right beside them. A grid

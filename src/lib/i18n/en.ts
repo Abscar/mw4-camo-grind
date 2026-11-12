@@ -541,6 +541,65 @@ export const en = {
 		challenges: 'Challenges'
 	},
 
+	/** The two page tabs under the header: the tracker itself and the Cosmetics list (2026-11-12). */
+	pageTabs: {
+		label: 'Pages',
+		grind: 'Camo grind',
+		cosmetics: 'Cosmetics'
+	},
+	/** The Cosmetics tab (CosmeticsSection; data/cosmetics.ts). */
+	cosmetics: {
+		heading: 'Cosmetics',
+		sub: (n: number) => `${n} large stickers, stickers and charms`,
+		typeGroup: 'Kind of item',
+		types: { decal: 'Large stickers', sticker: 'Stickers', charm: 'Charms' },
+		typeHelp: {
+			decal: 'Large stickers (“Large Decals” in game): the big one along the side of your weapon.',
+			sticker: 'Stickers (“Weapon Stickers” in game): the small ones you place on your weapon.',
+			charm: 'Charms (“Weapon Charms” in game): hang from your weapon. Gun Screens use the same slot.'
+		},
+		search: 'Search cosmetics',
+		searchPlaceholder: 'Search name, bundle, tier…',
+		results: (shown: number, total: number) => (shown === total ? `${total} items` : `${shown} of ${total} items`),
+		sourceGroup: 'Where it comes from',
+		allSources: 'All',
+		sources: {
+			prestige: 'Prestige',
+			battlepass: 'Battle Pass',
+			event: 'Events',
+			store: 'Store bundles',
+			promo: 'Promotions',
+			unknown: 'Source unknown'
+		},
+		gunScreen: 'Gun Screen',
+		until: (day: string) => `Until ${day}`,
+		ended: (day: string) => `Ended ${day}`,
+		unconfirmed: 'Unconfirmed.',
+		unconfirmedShort: 'Unconfirmed',
+		openHint: 'opens where to get it',
+		kind: { decal: 'Large sticker (Large Decal)', sticker: 'Sticker', charm: 'Charm' },
+		whereHeading: 'Where to get it',
+		sourceHelp: {
+			prestige: 'Reach level 55, enter Prestige, then level up again: the reward unlocks at the level shown. Prestige Master starts after Prestige 10.',
+			battlepass: 'Earn Battle Pass tiers by playing during Season 1. Tiers past the free ones need the paid pass.',
+			event: 'Play during the event and spend what you earn on the event\u2019s reward board. Gone when the event ends.',
+			store: 'Bought with COD Points in the in-game Store; comes with everything else in the bundle. Bundles rotate, so it may not be listed every day.',
+			promo: 'A code from a real-world promotion, redeemed at callofduty.com/redeem. Most are limited to certain countries or shops.',
+			unknown: 'Its name is known, but no source says how you get it yet.'
+		},
+		untilLong: (day: string) => `Available until ${day}.`,
+		endedLong: (day: string) => `Ended ${day}: it can\u2019t be earned any more.`,
+		drawnAfter: (after: string) => `The picture is our own drawing, made after ${after}. It\u2019s close, not exact.`,
+		noArt: 'No picture of this one found yet, so it isn\u2019t drawn: a made-up look would pass for the real thing.',
+		noCharmArt: 'Charms aren\u2019t drawn yet: the symbol only shows the kind of item.',
+		close: 'Close',
+		none: 'Nothing matches.',
+		clear: 'Clear search',
+		honest:
+			'Nobody publishes a complete list, so this is every large sticker, sticker and charm we found a source for. Stickers and large stickers we have seen a picture of are drawn (our own drawings); a plain symbol means no picture found yet. Tap an item for where to get it.',
+		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
+	},
+
 	unverified: 'unconfirmed',
 	unverifiedHint: 'Only one source says this so far, or sources disagree. Double-check in game.',
 
