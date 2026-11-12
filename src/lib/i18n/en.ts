@@ -460,6 +460,15 @@ export const en = {
 			mp: 'No Multiplayer meta class published for this gun yet.',
 			wz: 'No Warzone meta class published for this gun yet.'
 		},
+		/** The gun's own Apex attachment and builds that use it (MetaBuilds). */
+		apex: {
+			tag: 'Apex',
+			heading: (name: string) => `Apex attachment: ${name}`,
+			unlock: 'Unlocks at the gun’s max level, in its own slot next to the five attachments.',
+			blocks: (slots: string) => `Closes: ${slots}.`,
+			build: (mode: string) => `${mode} Apex build`,
+			none: 'No meta site has published a build with this Apex yet.'
+		},
 		snapshot: (date: string) =>
 			`A snapshot of the meta sites on ${date}. The meta moves with every balance patch, so double-check after big updates.`,
 		close: 'Close'

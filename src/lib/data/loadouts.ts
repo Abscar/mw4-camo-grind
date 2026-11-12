@@ -81,7 +81,7 @@ export type WeaponLoadouts = Partial<Record<LoadoutMode, Loadout>>;
 type Parts = Partial<Record<AttachmentSlot, string>>;
 type Extras = { note?: string; verified?: boolean };
 
-const build = (role: string, source: string, date: string, parts: Parts, extras: Extras = {}): Loadout => {
+export const build = (role: string, source: string, date: string, parts: Parts, extras: Extras = {}): Loadout => {
 	const { verified = true, note } = extras;
 	return {
 		role,
