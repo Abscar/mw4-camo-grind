@@ -14,6 +14,7 @@
 	import ClassMeta from '#lib/components/ClassMeta.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import CosmeticsSection from '#lib/components/CosmeticsSection.svelte';
+	import ExtraCamosSection from '#lib/components/ExtraCamosSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
@@ -46,14 +47,15 @@
 	import RankedSection from '#lib/components/RankedSection.svelte';
 	import { pageTab } from '#lib/pageTab.svelte.ts';
 
-	/** The two page tabs under the header (2026-11-12). Both stay mounted; the other one is only hidden. */
-	const PAGE_TABS = ['grind', 'cosmetics'] as const;
+	/** The page tabs under the header (2026-11-12). All stay mounted; the others are only hidden. */
+	const PAGE_TABS = ['grind', 'cosmetics', 'extras'] as const;
 	let view = $state<(typeof PAGE_TABS)[number]>('grind');
 
 	function tabKey(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
 		e.preventDefault();
-		view = view === 'grind' ? 'cosmetics' : 'grind';
+		const step = e.key === 'ArrowRight' ? 1 : PAGE_TABS.length - 1;
+		view = PAGE_TABS[(PAGE_TABS.indexOf(view) + step) % PAGE_TABS.length];
 		document.getElementById(`tab-${view}`)?.focus();
 	}
 
@@ -217,7 +219,7 @@
 		style:--hotrod-tile="url({hotrodCamo})"
 		style:--worn-metal={WORN_METAL}
 	>
-		<!-- page tabs: the tracker, or the Cosmetics list -->
+		<!-- page tabs: the tracker, the Cosmetics list, or Extra camos -->
 		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label}>
 			{#each PAGE_TABS as tab (tab)}
 				<button
@@ -236,6 +238,10 @@
 
 		<div id="panel-cosmetics" role="tabpanel" aria-labelledby="tab-cosmetics" hidden={view !== 'cosmetics'}>
 			<div class="mt-5"><CosmeticsSection /></div>
+		</div>
+
+		<div id="panel-extras" role="tabpanel" aria-labelledby="tab-extras" hidden={view !== 'extras'}>
+			<div class="mt-5"><ExtraCamosSection /></div>
 		</div>
 
 		<div id="panel-grind" role="tabpanel" aria-labelledby="tab-grind" hidden={view !== 'grind'}>
@@ -359,6 +365,19 @@
 	}
 	.page-tab:hover {
 		color: var(--t-fg);
+	}
+	/* phones: three tabs share the row equally */
+	@media (max-width: 639px) {
+		.page-tabs {
+			gap: 4px;
+		}
+		.page-tab {
+			flex: 1 1 0;
+			min-width: 0;
+			padding: 0 0.35rem;
+			font-size: 12.5px;
+			letter-spacing: 0.04em;
+		}
 	}
 	.page-tab[aria-selected='true'] {
 		border-color: var(--t-accent);

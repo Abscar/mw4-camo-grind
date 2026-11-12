@@ -647,11 +647,82 @@ export const en = {
 		challenges: 'Challenges'
 	},
 
-	/** The two page tabs under the header: the tracker itself and the Cosmetics list (2026-11-12). */
+	/** The page tabs under the header: the tracker itself, the Cosmetics list and Extra camos (2026-11-12). */
 	pageTabs: {
 		label: 'Pages',
 		grind: 'Camo grind',
-		cosmetics: 'Cosmetics'
+		cosmetics: 'Cosmetics',
+		extras: 'Extra camos'
+	},
+	/** The Extra camos tab (ExtraCamosSection; data/extraCamos.ts). */
+	extraCamos: {
+		heading: 'Extra camos',
+		sub: (n: number) => `${n} camos outside the weapon grind`,
+		statusGroup: 'Show',
+		statuses: { now: 'Available now', upcoming: 'Upcoming', expired: 'Expired' },
+		statusHelp: {
+			now: 'Camos you can earn right now: events, hidden challenges, other challenges, BlackCell, Prestige and account rewards. Ending soonest first.',
+			upcoming: 'Announced or leaked, not out yet. Starting soonest first; no date means nobody has given one.',
+			expired: 'Can’t be earned any more. If you got one, it stays yours.'
+		},
+		empty: {
+			now: 'Nothing available right now.',
+			upcoming: 'Nothing announced yet.',
+			expired: 'Nothing has ended yet.'
+		},
+		search: 'Search extra camos',
+		searchPlaceholder: 'Search camo, event, weapon…',
+		results: (shown: number, total: number) => (shown === total ? `${total} camos` : `${shown} of ${total} camos`),
+		kindGroup: 'Where it comes from',
+		allKinds: 'All',
+		kinds: {
+			event: 'Events',
+			easterEgg: 'Secrets & hidden challenges',
+			challenge: 'Challenges',
+			blackcell: 'BlackCell (paid)',
+			prestige: 'Prestige',
+			edition: 'Pre-order & beta',
+			promo: 'Account & promotions'
+		},
+		modes: { mp: 'Multiplayer', dmz: 'DMZ', wz: 'Warzone' },
+		modesShort: { mp: 'MP', dmz: 'DMZ', wz: 'WZ' },
+		modesLabel: (list: string) => `Earned in: ${list}`,
+		animated: 'Animated',
+		until: (day: string, left: number) => `Until ${day} · ${left} ${left === 1 ? 'day' : 'days'} left`,
+		lastDay: 'Last day today',
+		from: (day: string) => `From ${day}`,
+		noDate: 'No date yet',
+		ended: (day: string) => `Ended ${day}`,
+		gone: 'No longer available',
+		everyWeapon: 'Every weapon',
+		perWeapon: 'Per weapon',
+		onlyWeapon: (w: string) => `Only ${w}`,
+		everyWeaponLong: 'A universal camo: once earned it goes on every weapon.',
+		perWeaponLong: 'Earned on each weapon separately, and only that weapon gets it.',
+		onlyWeaponLong: (w: string) => `Only for the ${w}.`,
+		openHint: 'opens the details',
+		howHeading: 'How to get it',
+		whenHeading: 'When',
+		since: (day: string) => `Since ${day}.`,
+		untilLong: (day: string, left: number) =>
+			left === 0 ? `Last day today (${day}).` : `Until ${day}: ${left} ${left === 1 ? 'day' : 'days'} left.`,
+		noEnd: 'No end date announced.',
+		fromLong: (day: string, more?: string) => `Starts ${day}.${more ? ` ${more}` : ''}`,
+		endedLong: (day: string) => `Ended ${day}: it can’t be earned any more.`,
+		trust: {
+			official: 'Official.',
+			guides: 'Several guides agree.',
+			one: 'Unconfirmed: only one source so far.',
+			leak: 'Leak: datamined or leaked, not announced.'
+		},
+		trustShort: { official: 'Official', guides: 'Guides agree', one: 'One source', leak: 'Leak' },
+		sourcesLine: (sources: string) => `Sources: ${sources}.`,
+		close: 'Close',
+		none: 'Nothing matches.',
+		clear: 'Clear search',
+		honest:
+			'The weapon grind (Military, Special, Gold, Platinum, Harmonic Break, Divergence, Mastery) is on the Camo grind tab; this is every other camo we found a source for. Paid store bundles are left out; the Season 1 Battle Pass, the campaign, DMZ secrets, Twitch drops and the partner promotions were checked and give no camos. Lists move along by themselves as dates pass; ≈ marks an estimated date. Tap a camo for the details.',
+		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
 	/** The Cosmetics tab (CosmeticsSection; data/cosmetics.ts). */
 	cosmetics: {
