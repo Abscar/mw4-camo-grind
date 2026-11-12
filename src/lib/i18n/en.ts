@@ -475,6 +475,22 @@ export const en = {
 			build: (mode: string) => `${mode} Apex build`,
 			none: 'No meta site has published a build with this Apex yet.'
 		},
+		/** The meta class card (loadouts.ts) and the published subclasses (siteBuilds.ts) per mode. */
+		metaTitle: 'Meta class',
+		ourPick: 'Our pick',
+		rank: (n: number) => `#${n}`,
+		pro: 'Pro favorite',
+		/** Stat builds under the subclasses (data/extraBuilds.ts). */
+		extra: {
+			heading: 'Stat builds',
+			sub: 'Worked out from the attachment stats. Same in Multiplayer and Warzone; no code, build it by hand.',
+			kinds: { ads: 'Min ADS speed', sprint: 'Max sprint speed', range: 'Max range', velocity: 'Max bullet velocity' }
+		},
+		code: 'Build code',
+		copy: 'Copy',
+		copied: 'Copied',
+		copyLabel: (code: string) => `Copy build code ${code}`,
+		copyFailed: 'Couldn’t copy by itself: the code is selected, copy it by hand.',
 		snapshot: (date: string) =>
 			`A snapshot of the meta sites on ${date}. The meta moves with every balance patch, so double-check after big updates.`,
 		close: 'Close'
@@ -498,6 +514,24 @@ export const en = {
 	classMeta: {
 		heading: (cls: string) => `${cls}: meta top 5`,
 		snapshot: (sources: string, date: string) => `Snapshot of ${sources}, ${date}. Tap a gun for its build.`
+	},
+
+	/** Loadout codes: the META copy button in every weapon row (WeaponCode), the copy buttons on the
+	    builds in the weapon card (MetaBuilds) and the "Show codes" switch (codeView). */
+	codes: {
+		/** The small sign on the row button. */
+		tag: 'Meta',
+		copied: 'Copied',
+		copyLabel: (weapon: string, apex?: string) =>
+			`Copy the meta loadout code for ${weapon}${apex ? ` (with the Apex ${apex}: all its Multiplayer builds use it)` : ''}`,
+		toastCopied: (weapon: string, code: string, apex?: string) =>
+			`Meta code for ${weapon} copied (${code}).${apex ? ` It has the Apex ${apex}: swap it out in the gunsmith if you don’t have it yet.` : ' Paste it in the gunsmith.'}`,
+		toastFailed: (code: string) => `Couldn’t copy by itself. The code is ${code}: copy it by hand.`,
+		/** The switch above the weapon list and in the weapon card's Meta tab. */
+		show: 'Show codes',
+		/** Copy button on a build in the weapon card. */
+		copyBuild: (build: string) => `Copy the loadout code for the ${build} build`,
+		copyShort: 'Copy code'
 	},
 
 	cls: {

@@ -30,6 +30,55 @@
 .weapon-open {
 	border-radius: 3px;
 }
+
+/* phones: beside the name there's no room for the META button (the longest names, "ISO Nightshade",
+   need the whole line), so it sits on the right under the name, beside the cartoon and badges,
+   which keep clear of it */
+@media (max-width: 639px) {
+	.weapon-main.has-code {
+		position: relative;
+		grid-template-columns: minmax(0, 1fr);
+		min-height: 70px;
+	}
+	.weapon-main.has-code > .meta-class-btn {
+		position: absolute;
+		top: 24px;
+		right: 0;
+	}
+	.weapon-main.has-code .weapon-badges,
+	.weapon-main.has-code .progress-line,
+	.weapon-main.has-code > .row-code {
+		padding-right: 48px;
+	}
+}
+
+/* "Show codes" on: the meta loadout code as a small line under the weapon (WeaponCard) */
+.row-code {
+	display: flex;
+	align-items: baseline;
+	gap: 5px;
+	margin: 1px 0 2px;
+	font-size: 10.5px;
+	line-height: 1.2;
+}
+.row-code-tag {
+	font: 700 9px var(--t-font-head);
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--t-accent);
+}
+.row-code-text {
+	font: 700 11px var(--font-hud);
+	letter-spacing: 0.03em;
+	color: var(--t-fg);
+	user-select: all;
+}
+[data-theme='blackout'] .row-code-text {
+	color: #ffd2c2;
+	text-shadow:
+		0 0 6px rgb(255 68 24 / 0.45),
+		0 1px 1px #000;
+}
 .weapon-open:hover .weapon-name {
 	text-decoration: underline;
 	text-underline-offset: 2px;

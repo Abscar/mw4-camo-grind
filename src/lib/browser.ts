@@ -49,3 +49,27 @@ export async function copyText(text: string): Promise<boolean> {
 		return false;
 	}
 }
+
+/**
+ * Copy a code shown on screen in `el`. Tries the clipboard first, then the old copy command on the
+ * selected element (some embedded browsers block the clipboard). When both fail the code stays
+ * selected so it can be copied by hand. `el` should sit inside any open modal dialog (everything
+ * outside one is inert, so a hidden textarea on <body> wouldn't work).
+ */
+export async function copyCode(text: string, el: HTMLElement | null): Promise<boolean> {
+	if (await copyText(text)) return true;
+	if (!el) return false;
+	const range = document.createRange();
+	range.selectNodeContents(el);
+	const sel = window.getSelection();
+	sel?.removeAllRanges();
+	sel?.addRange(range);
+	let ok = false;
+	try {
+		ok = document.execCommand('copy');
+	} catch {
+		ok = false;
+	}
+	if (ok) sel?.removeAllRanges();
+	return ok;
+}

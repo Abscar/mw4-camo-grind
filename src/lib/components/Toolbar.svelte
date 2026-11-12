@@ -9,6 +9,7 @@
 	import { STATUS_FILTERS } from '#lib/filters.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
+	import { codeView } from '#lib/codeView.svelte.ts';
 	// the user's own blunt picture (Abscar theme: every class button is drawn as this blunt)
 	import bluntPic from '#lib/assets/blunt.webp';
 	// the user's own white holk picture lying in an ashtray, end of the search row (Abscar only)
@@ -62,6 +63,16 @@
 				aria-hidden="true"
 			></span>
 			{t.toolbar.hideMaxed}
+		</label>
+
+		<!-- the META buttons copy without showing the code; this writes the codes out (per device) -->
+		<label class="flex min-h-11 items-center gap-2.5 text-sm text-muted select-none">
+			<input type="checkbox" class="peer sr-only" checked={codeView.show} onchange={(e) => codeView.set(e.currentTarget.checked)} />
+			<span
+				class="relative h-6 w-10 flex-none rounded-full bg-track transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent after:absolute after:top-1 after:left-1 after:size-4 after:rounded-full after:bg-panel after:shadow after:transition-transform peer-checked:after:translate-x-4"
+				aria-hidden="true"
+			></span>
+			{t.codes.show}
 		</label>
 	</div>
 

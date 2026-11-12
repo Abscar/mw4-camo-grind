@@ -7,10 +7,13 @@
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
 	import { META_RANKS } from '#lib/data/metaRanks.ts';
 	import { BALANCE, BALANCE_PATCH } from '#lib/data/balance.ts';
+	import { LOADOUT_CODES } from '#lib/data/loadoutCodes.ts';
+	import { codeView } from '#lib/codeView.svelte.ts';
 	import { feed } from '#lib/feed.svelte.ts';
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
 	import { shortDate } from '#lib/ui.ts';
 	import CamoToggle from './CamoToggle.svelte';
+	import WeaponCode from './WeaponCode.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	let {
@@ -32,6 +35,9 @@
 	 * so only guns in the Multiplayer overall top list (metaRanks.ts) that the sites agree on.
 	 */
 	const metaPick = $derived(META_RANKS.mp.overall.find((p) => p.id === weapon.id && p.verified));
+	/** The meta loadout code the META button copies (loadoutCodes.ts); none for launchers / melee. */
+	const codeEntry = $derived(LOADOUT_CODES[weapon.id]);
+	const hasCode = $derived(!!codeEntry);
 	/** The 3 challenges before Gold (ticked in the weapon card): diamonds on the G box while no Gold. */
 	const specialsTotal = $derived(weapon.specials.length);
 	const pips = $derived(specialsTotal && level === 0 ? progress.specialsDone(weapon.id, specialsTotal) : null);
@@ -56,7 +62,10 @@
 	style:grid-template-columns={columns}
 >
 	<!-- name + cartoon: one button that opens the weapon's card (details); the boxes beside it change
-	     progress. Nothing tappable sits inside anything else. -->
+	     progress. Nothing tappable sits inside anything else. The META button (copies the meta loadout
+	     code) in its own column on the right, level with the name, so all the buttons in a box line up;
+	     with "Show codes" on, the code itself as a small line underneath. -->
+	<div class="weapon-main grid min-w-0 items-start gap-x-1 {hasCode ? 'has-code grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)]'}">
 	<button
 		type="button"
 		class="weapon-open block min-w-0 text-left"
@@ -73,7 +82,7 @@
 				><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg
 			>
 		</span>
-		<span class="flex flex-wrap items-center gap-1">
+		<span class="weapon-badges flex flex-wrap items-center gap-1">
 			{#if look}
 				<span class="relative flex-none">
 					<WeaponIcon {look} />
@@ -111,6 +120,13 @@
 			>{#if focused}({t.weapon.focused}){/if} – {t.weapon.openHint}</span
 		>
 	</button>
+	<WeaponCode weaponId={weapon.id} weaponName={weapon.name} />
+	{#if codeEntry && codeView.show}
+		<p class="row-code col-span-full" title={codeEntry.note}>
+			<span class="row-code-tag">{t.codes.tag}</span><span class="row-code-text">{codeEntry.code}</span>
+		</p>
+	{/if}
+	</div>
 	{#each LADDER as camo, i (camo.id)}
 		<CamoToggle
 			{camo}
