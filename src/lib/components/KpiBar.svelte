@@ -15,6 +15,7 @@
 	const total = WEAPONS.length;
 	const divergenceShown = $derived(Math.min(progress.divergenceCount, DIVERGENCE_REQUIRED));
 	const divergencePct = $derived(percent(divergenceShown, DIVERGENCE_REQUIRED));
+	const divergenceLeft = $derived(DIVERGENCE_REQUIRED - divergenceShown);
 </script>
 
 <section aria-labelledby="overview-heading">
@@ -45,14 +46,20 @@
 			data-camo="divergence"
 		>
 			<h3 class="font-head text-[11px] font-bold tracking-[0.12em] text-div-ink uppercase">{DIVERGENCE.name}</h3>
-			<p class="font-head num mt-0.5 text-[24px] leading-tight font-bold sm:text-[28px]">
-				{divergenceShown}<small class="text-[15px] font-semibold text-muted"> / {DIVERGENCE_REQUIRED}</small>
+			<!-- counts down: "32 left" (the user's ask, 2026-11-12); done / total stays in the tooltip + for screen readers -->
+			<p
+				class="font-head num mt-0.5 text-[24px] leading-tight font-bold sm:text-[28px]"
+				title={t.kpi.divergenceDone(divergenceShown, DIVERGENCE_REQUIRED)}
+			>
+				{divergenceLeft}{' '}<small class="text-[15px] font-semibold text-muted">{t.kpi.left}</small><span class="sr-only"
+					>, {t.kpi.divergenceDone(divergenceShown, DIVERGENCE_REQUIRED)}</span
+				>
 			</p>
 			<p class="mb-2 text-[11.5px] text-muted">
 				{#if progress.divergenceUnlocked}
 					<span class="font-bold text-div-ink"><span aria-hidden="true">✔ </span>{t.kpi.divergenceUnlocked}</span>
 				{:else}
-					{t.kpi.divergenceUnit}
+					{t.kpi.divergenceLeftUnit(divergenceLeft)}
 				{/if}
 			</p>
 			<div class="bar"><i style:width="{divergencePct}%"></i></div>

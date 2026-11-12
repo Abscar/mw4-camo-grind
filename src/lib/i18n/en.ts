@@ -224,6 +224,10 @@ export const en = {
 		/** what the number under each tile counts */
 		weaponsUnit: 'weapons',
 		divergenceUnit: 'Harmonic Breaks needed',
+		/** the Divergence tile counts down (2026-11-12, the user's ask: "32 left" instead of "1 / 33") */
+		left: 'left',
+		divergenceLeftUnit: (n: number) => `Harmonic Break${n === 1 ? '' : 's'} to go`,
+		divergenceDone: (done: number, total: number) => `${done} of ${total} done`,
 		/** the small line under the tiles: catalogue size and camo steps */
 		steps: (done: number, total: number) => `${done} / ${total} camo steps`,
 		catalogue: (weapons: number, camos: number) => `${weapons} weapons × ${camos} camos`,
