@@ -455,6 +455,8 @@ export const en = {
 		tag: 'Meta',
 		open: (weapon: string) => `Meta class for ${weapon} (Multiplayer and Warzone)`,
 		title: (weapon: string) => `${weapon} meta class`,
+		/** The popup's small line above the gun's name. */
+		file: 'Meta class',
 		modes: { mp: 'Multiplayer', wz: 'Warzone' },
 		none: {
 			mp: 'No Multiplayer meta class published for this gun yet.',
