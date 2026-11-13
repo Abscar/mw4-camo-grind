@@ -181,8 +181,10 @@ export const en = {
 		certified: 'Certified grinder',
 		recordTitle: 'BO6 + BO7',
 		record: ['Prestige Master', 'Max level', 'All calling cards'],
-		grinds: 'Ranked, MP, WZ grinder',
-		noCampaign: 'Refuses to play campaign mode',
+		/** fun sticker(s) under Abscar's boxes, not ticks (the user, 2026-11-13: "under Abscar, not as checkpoints, just
+		 *  at the side a bit for fun"; they first sat as ticked lines in Da Jeeven's record). "Ranked, MP, WZ grinder"
+		 *  was removed the same day at the user's ask; don't bring it back. */
+		abscarStickers: ['Refuses to play campaign mode'],
 		recordOf: (who: string) => `${who}: Black Ops 6 and 7 record`,
 		online: 'Online',
 		/** the three small Mastery camo boxes under each squad member's tag */

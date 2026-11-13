@@ -8,6 +8,10 @@
 	Åke (LarsAkeEmblem: helmet, lime goggles and a big cold beer; 2026-11-13, the user's friend Robin) and
 	Da Jeeven (DaJeevenEmblem: the gold Ghost skull with a big holk; 2026-11-13), who also gets a gold
 	"Certified grinder" sticker and his Black Ops 6 + 7 record (Prestige Master, max level, all calling cards).
+	Fun stickers under the boxes: Phillestar "Ranked or nothing", Drängen "Held back by randoms", and Abscar
+	"Refuses to play campaign mode" in moss green (2026-11-13: the user wanted it "under Abscar, not as checkpoints,
+	just at the side a bit for fun"; it first sat as a ticked line in Da Jeeven's record; a second Abscar sticker,
+	"Ranked, MP, WZ grinder", was removed the same day at their ask).
 	The four share the "Squad" frame, laid out by its width (a container query on the wrapper): four in a row
 	(emblems 64 px, names a bit smaller) when the column is wide enough (≥ 1280 px pages and 820–1139 px, where
 	the frame gets the full width), two by two in between (1140–1279 px, beside the TV), one under the other on
@@ -77,7 +81,7 @@
 	</div>
 {/snippet}
 
-{#snippet mastery(who: string, statuses: Status[], isSlacker = false, motto = '', tone = 'purple')}
+{#snippet mastery(who: string, statuses: Status[], isSlacker = false, motto: string | readonly string[] = '', tone = 'purple')}
 	<div class="sq-boxes">
 	<ul class="squad-mastery font-hud" aria-label={t.operator.masteryOf(who)}>
 		{#each camos as camo, i (camo.id)}
@@ -101,9 +105,9 @@
 		<span class="sq-slacker font-head">{t.operator.slacker}</span>
 	{/if}
 	</div>
-	{#if motto}
-		<span class="sq-motto font-head" data-tone={tone}>{motto}</span>
-	{/if}
+	{#each [motto].flat().filter(Boolean) as line, i (line)}
+		<span class="sq-motto font-head" data-tone={tone} data-n={i}>{line}</span>
+	{/each}
 {/snippet}
 
 <div class="squad-wrap abscar-only mb-4 pt-1">
@@ -114,7 +118,7 @@
 				<AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" />
 				{@render callsign(t.operator.callsign)}
 			</div>
-			{@render mastery(t.operator.callsign, SQUAD_MASTERY.abscar, slacker === 'abscar')}
+			{@render mastery(t.operator.callsign, SQUAD_MASTERY.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss')}
 		</div>
 
 		<div class="op-member">
@@ -149,15 +153,6 @@
 							<span class="sq-name">{line}</span>
 						</li>
 					{/each}
-					<!-- what he grinds, and what he won't touch (the user, 2026-11-13) -->
-					<li class="sq-camo sq-gap" data-status="done">
-						<span class="sq-box" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.6 6.4 5 8.8 9.6 3.6" /></svg></span>
-						<span class="sq-name">{t.operator.grinds}</span>
-					</li>
-					<li class="sq-camo" data-status="no">
-						<span class="sq-box" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M3.6 3.6 8.4 8.4 M8.4 3.6 3.6 8.4" /></svg></span>
-						<span class="sq-name">{t.operator.noCampaign}</span>
-					</li>
 				</ul>
 				<span class="sq-certified font-head">{t.operator.certified}</span>
 			</div>
@@ -264,14 +259,6 @@
 		align-items: flex-start;
 		white-space: normal;
 	}
-	.sq-record .sq-gap {
-		margin-top: 4px;
-	}
-	/* "Refuses to play campaign mode": a red box with a white cross */
-	.sq-record .sq-camo[data-status='no'] .sq-box {
-		background: linear-gradient(135deg, #ff5a4f, #b3121b);
-		box-shadow: 0 0 6px rgb(255 60 60 / 0.6);
-	}
 	/* a member's motto sticker (the user, 2026-11-13, "just for fun": Phillestar "Ranked or nothing", Drängen
 	   Lars Åke "Held back by randoms"): purple-pink, slapped on at the right under their boxes. In the flow
 	   (not on top of the boxes), so it never covers a line; their columns are shorter than Da Jeeven's, so
@@ -310,6 +297,27 @@
 		box-shadow:
 			0 2px 5px rgb(0 0 0 / 0.55),
 			0 0 10px rgb(140 255 60 / 0.45);
+	}
+	/* Abscar's is moss green like his ghillie and a bit smaller; a second one in the list would be slapped on
+	   the other way and a little further left, so they read as loose stickers, not a list */
+	.sq-motto[data-tone='moss'] {
+		max-width: 15em;
+		font-size: 10px;
+		background: linear-gradient(135deg, #7d9c3c, #4f6f26 55%, #2f4716);
+		text-shadow: 0 1px 0 rgb(15 30 5 / 0.85);
+		transform: rotate(-5deg);
+		box-shadow:
+			0 2px 5px rgb(0 0 0 / 0.55),
+			0 0 10px rgb(130 180 60 / 0.4);
+	}
+	/* whoever wears the Slacker sticker: their first motto sticker moves down a little so the two don't collide */
+	.sq-boxes:has(.sq-slacker) + .sq-motto {
+		margin-top: 12px;
+	}
+	.sq-motto[data-tone='moss'][data-n='1'] {
+		margin-top: -2px;
+		margin-right: 12px;
+		transform: rotate(4deg);
 	}
 	/* the gold "Certified grinder" sticker, slapped on at an angle at the top right of his record
 	   (beside the short title and "Prestige Master", clear of the longer last line) */
