@@ -1601,8 +1601,11 @@
 		inset 0 -1px 0 rgb(0 0 0 / 0.12);
 }
 
-/* Abscar: class titles (ASSAULT RIFLES, SMGS…) in big, bold chrome steel, Terminator style:
-   a bevelled steel gradient, a dark edge, a hard drop shadow and a cold blue glow */
+/* Abscar: class titles (ASSAULT RIFLES, SMGS…) big and bold, glowing hot like metal straight out of
+   the forge (2026-11-13, the user's ask: "glowing warm instead of metallic blue"): a white-hot top
+   turning yellow → orange with a deep red seam, a dark ember edge, a hard drop shadow and an orange glow
+   that rises like heat (the same fire family as the boxes' outline). Until then it was chrome steel with
+   a cold blue glow. */
 [data-theme='blackout'] .weapon-class .class-title {
 	font-size: 23px;
 	font-weight: 800;
@@ -1610,20 +1613,21 @@
 	letter-spacing: 0.07em;
 	background: linear-gradient(
 		180deg,
-		#ffffff 0%,
-		#d7dee6 30%,
-		#8a95a2 47%,
-		#3e4752 52%,
-		#9aa6b3 64%,
-		#e8eef4 82%,
-		#8d98a5 100%
+		#fffdf2 0%,
+		#ffeaa0 26%,
+		#ffb63a 45%,
+		#d8350a 52%,
+		#ff6a14 63%,
+		#ffd166 82%,
+		#ff8a1c 100%
 	);
 	-webkit-background-clip: text;
 	background-clip: text;
 	color: transparent;
-	-webkit-text-stroke: 0.7px rgb(16 20 26 / 0.9);
+	-webkit-text-stroke: 0.7px rgb(58 10 0 / 0.9);
 	text-shadow: none;
-	filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.9)) drop-shadow(0 0 7px rgb(110 170 255 / 0.45));
+	filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.9)) drop-shadow(0 0 6px rgb(255 128 30 / 0.8))
+		drop-shadow(0 -3px 10px rgb(255 54 0 / 0.5));
 }
 @media (max-width: 639px) {
 	[data-theme='blackout'] .weapon-class .class-title {
