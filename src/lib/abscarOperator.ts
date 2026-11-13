@@ -82,8 +82,11 @@ const S = 0.8, TX = 6.4, TY = -2.4;
 const headAt = (u: string) => `<g transform="translate(${TX} ${TY}) scale(${S})">${head(u)}</g>`;
 const MOUTH: [number, number] = [f(TX + S * 40), f(TY + S * 40.6)]; // the holk's tip, between the teeth
 
-/** A cone joint from the narrow filter tip P to the wide burning end Q. */
-function holk(u: string, px: number, py: number, qx: number, qy: number, w1 = 2.2, w2 = 7, glowR?: number): string {
+/**
+ * A cone joint from the narrow filter tip P to the wide burning end Q. Exported for Da Jeeven's emblem
+ * (DaJeevenEmblem.svelte, "a big smoking thing in his mouth like Abscar"); needs `${u}-ember` in defs.
+ */
+export function holk(u: string, px: number, py: number, qx: number, qy: number, w1 = 2.2, w2 = 7, glowR?: number): string {
 	const dx = qx - px, dy = qy - py, L = Math.hypot(dx, dy);
 	const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
 	const a = f((Math.atan2(dy, dx) * 180) / Math.PI);
@@ -102,10 +105,11 @@ function holk(u: string, px: number, py: number, qx: number, qy: number, w1 = 2.
 	<ellipse cx="${ex}" cy="${ey}" rx="${f(ashR * 0.62)}" ry="${f(w2 * 0.37)}" transform="rotate(${a} ${ex} ${ey})" fill="#ff8a1a"/>`;
 }
 
-/* the old emblem's thick smoke (13 puffs + 6 wisps), moved to (x, y) and scaled by k */
+/* the old emblem's thick smoke (13 puffs + 6 wisps), moved to (x, y) and scaled by k
+   (exported for Da Jeeven's emblem; needs `${u}-puff-blur` and `${u}-blur` in defs) */
 const PUFFS = [[0, 5.2, 9, -10, 7], [0.4, 4.6, -8, 6, 6.2], [0.8, 5.6, 10, -20, 7.6], [1.2, 4.9, -9, -4, 6.6], [1.6, 5.4, 8, -15, 7.2], [2, 4.7, -10, 7, 6.4], [2.4, 5.8, 9, -22, 7.8], [2.8, 5, -8, -8, 7], [3.2, 5.3, 10, 3, 6.6], [3.6, 5.5, -9, -16, 7.4], [4, 4.8, 8, -3, 6.4], [4.4, 5.6, -10, -12, 7.5], [4.8, 5.1, 9, -18, 7]];
 const WISPS = ['M62 41 C58 33 66 27 61 19 C57 12 64 6 60 -2', 'M63 41 C67 33 59 26 64 18 C68 11 61 5 65 -3', 'M62 41 C60 35 65 30 62 24 C59 18 63 13 61 7', 'M63 42 C64 36 60 31 63 25 C66 19 62 14 64 8', 'M62 42 C57 36 61 29 57 22 C54 16 58 10 55 3', 'M63 41 C66 35 62 29 66 22 C69 16 64 10 67 4'];
-function smoke(u: string, x: number, y: number, k: number): string {
+export function smoke(u: string, x: number, y: number, k: number): string {
 	if (k <= 0) return '';
 	return `<g transform="translate(${f(x)} ${f(y)}) scale(${f(k)})">
 	<g filter="url(#${u}-puff-blur)" fill="#e2e7e2">${PUFFS.map(([st, dur, sway, dx, r]) => `<circle class="op-puff" cx="0" cy="0" r="${r}" style="animation-delay:-${st}s;animation-duration:${dur}s;--sway:${sway}px;--dx:${dx}px"/>`).join('')}</g>

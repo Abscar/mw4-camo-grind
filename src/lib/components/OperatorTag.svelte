@@ -4,16 +4,21 @@
 	Abscar's emblem (2026-11-11, the user's pick "6B" from a draft sheet) is the bronze skull with red eyes and
 	the holk in its teeth, on armoured shoulders, wearing a moss ghillie poncho with weed leaves and buds woven
 	in; drawn by AbscarOperator / abscarOperator.ts (variant "ghillie").
-	Next to it his squadmates: Phillestar (PhillestarEmblem: a hamburger, no holk; 2026-11-10) and Drängen Lars
-	Åke (LarsAkeEmblem: helmet, lime goggles and a big cold beer; 2026-11-13, the user's friend Robin).
-	All three share one row inside the "Squad" frame (stacked on phones). The frame stays at most 716 px wide
-	from 768 px up, so the old TV still fits beside it from 1140 px (+page.svelte).
+	Next to it his squadmates: Phillestar (PhillestarEmblem: a hamburger, no holk; 2026-11-10), Drängen Lars
+	Åke (LarsAkeEmblem: helmet, lime goggles and a big cold beer; 2026-11-13, the user's friend Robin) and
+	Da Jeeven (DaJeevenEmblem: the gold Ghost skull with a big holk; 2026-11-13), who also gets a gold
+	"Certified grinder" sticker and his Black Ops 6 + 7 record (Prestige Master, max level, all calling cards).
+	The four share the "Squad" frame, laid out by its width (a container query on the wrapper): four in a row
+	(emblems 64 px, names a bit smaller) when the column is wide enough (≥ 1280 px pages and 820–1139 px, where
+	the frame gets the full width), two by two in between (1140–1279 px, beside the TV), one under the other on
+	phones. The TV keeps its place beside the frame from 1140 px (+page.svelte).
 	History: an Iridescent rank badge (RankBadge) sat in the frame from 2026-11-10 ("both ranked"); the user
 	asked to remove it entirely when Lars Åke joined (2026-11-13). The component is deleted (git history).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
+	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
 	import { MASTERY } from '#lib/data/camos.ts';
@@ -29,16 +34,23 @@
 	const SQUAD_MASTERY = {
 		abscar: ['todo', 'todo', 'todo'],
 		phillestar: ['done', 'done', 'active'],
-		lars: ['done', 'active', 'todo']
+		lars: ['done', 'active', 'todo'],
+		/** none of the MW4 Mastery camos yet (the user, 2026-11-13) */
+		jeeven: ['todo', 'todo', 'todo']
 	} satisfies Record<string, Status[]>;
 	/**
 	 * Whoever is furthest behind gets a red "Slacker" sticker next to their boxes (the user's ask,
 	 * 2026-11-13). Worked out from SQUAD_MASTERY (done = 2, in progress = 1), so it moves by itself
-	 * when the statuses change; nobody gets it while the last place is shared.
+	 * when the statuses change; nobody gets it while the last place is shared. Da Jeeven is a
+	 * "Certified grinder" and never gets it (the user, 2026-11-13: "don't forget the slacker sticker on
+	 * Abscar", when Da Jeeven joined with no Mastery camos either).
 	 */
+	const SLACKER_EXEMPT = ['jeeven'];
 	const points = (statuses: Status[]) =>
 		statuses.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
-	const scores = Object.entries(SQUAD_MASTERY).map(([who, statuses]) => ({ who, n: points(statuses) }));
+	const scores = Object.entries(SQUAD_MASTERY)
+		.filter(([who]) => !SLACKER_EXEMPT.includes(who))
+		.map(([who, statuses]) => ({ who, n: points(statuses) }));
 	const lowest = Math.min(...scores.map((s) => s.n));
 	const last = scores.filter((s) => s.n === lowest);
 	const slacker = last.length === 1 ? last[0].who : null;
@@ -57,7 +69,7 @@
 			{t.operator.label} <span class="text-accent" aria-hidden="true">//</span>
 		</p>
 		<!-- a long callsign breaks into two lines where its text allows (min-content), never wider -->
-		<p class="font-head text-xl leading-tight font-bold tracking-[0.2em] uppercase" class:op-wrap={wrap}>{name}</p>
+		<p class="op-name font-head text-xl leading-tight font-bold tracking-[0.2em] uppercase" class:op-wrap={wrap}>{name}</p>
 		<p class="font-hud flex items-center gap-1.5 text-[10.5px] tracking-[0.2em] text-accent uppercase">
 			<span class="op-online-dot size-1.5 rounded-full bg-accent" aria-hidden="true"></span>
 			{t.operator.online}
@@ -65,7 +77,8 @@
 	</div>
 {/snippet}
 
-{#snippet mastery(who: string, statuses: Status[], isSlacker = false)}
+{#snippet mastery(who: string, statuses: Status[], isSlacker = false, motto = '', tone = 'purple')}
+	<div class="sq-boxes">
 	<ul class="squad-mastery font-hud" aria-label={t.operator.masteryOf(who)}>
 		{#each camos as camo, i (camo.id)}
 			{@const status = statuses[i] ?? 'todo'}
@@ -87,10 +100,14 @@
 	{#if isSlacker}
 		<span class="sq-slacker font-head">{t.operator.slacker}</span>
 	{/if}
+	</div>
+	{#if motto}
+		<span class="sq-motto font-head" data-tone={tone}>{motto}</span>
+	{/if}
 {/snippet}
 
-<div class="abscar-only mb-4 pt-1">
-	<div class="squad-frame relative inline-flex max-w-full flex-wrap items-center gap-x-3.5 gap-y-3 rounded-lg px-3 pt-4 pb-3">
+<div class="squad-wrap abscar-only mb-4 pt-1">
+	<div class="squad-frame relative max-w-full rounded-lg px-3 pt-4 pb-3">
 		<span class="squad-legend font-hud">{t.operator.squad}</span>
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
@@ -105,7 +122,7 @@
 				<PhillestarEmblem />
 				{@render callsign(t.operator.mate)}
 			</div>
-			{@render mastery(t.operator.mate, SQUAD_MASTERY.phillestar, slacker === 'phillestar')}
+			{@render mastery(t.operator.mate, SQUAD_MASTERY.phillestar, slacker === 'phillestar', t.operator.mateMotto)}
 		</div>
 
 		<div class="op-member">
@@ -113,12 +130,75 @@
 				<LarsAkeEmblem />
 				{@render callsign(t.operator.lars, true)}
 			</div>
-			{@render mastery(t.operator.lars, SQUAD_MASTERY.lars, slacker === 'lars')}
+			{@render mastery(t.operator.lars, SQUAD_MASTERY.lars, slacker === 'lars', t.operator.larsMotto, 'lime')}
+		</div>
+
+		<div class="op-member">
+			<div class="op-tag flex items-center gap-3.5">
+				<DaJeevenEmblem />
+				{@render callsign(t.operator.jeeven)}
+			</div>
+			{@render mastery(t.operator.jeeven, SQUAD_MASTERY.jeeven, slacker === 'jeeven')}
+			<!-- his Black Ops 6 + 7 record (the user, 2026-11-13) and the gold "Certified grinder" sticker -->
+			<div class="sq-record-wrap">
+				<p class="sq-record-title font-hud">{t.operator.recordTitle}</p>
+				<ul class="squad-mastery sq-record font-hud" aria-label={t.operator.recordOf(t.operator.jeeven)}>
+					{#each t.operator.record as line (line)}
+						<li class="sq-camo" data-status="done">
+							<span class="sq-box" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.6 6.4 5 8.8 9.6 3.6" /></svg></span>
+							<span class="sq-name">{line}</span>
+						</li>
+					{/each}
+					<!-- what he grinds, and what he won't touch (the user, 2026-11-13) -->
+					<li class="sq-camo sq-gap" data-status="done">
+						<span class="sq-box" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.6 6.4 5 8.8 9.6 3.6" /></svg></span>
+						<span class="sq-name">{t.operator.grinds}</span>
+					</li>
+					<li class="sq-camo" data-status="no">
+						<span class="sq-box" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M3.6 3.6 8.4 8.4 M8.4 3.6 3.6 8.4" /></svg></span>
+						<span class="sq-name">{t.operator.noCampaign}</span>
+					</li>
+				</ul>
+				<span class="sq-certified font-head">{t.operator.certified}</span>
+			</div>
 		</div>
 	</div>
 </div>
 
 <style>
+	/* the frame lays the members out by the width it gets (see the header comment) */
+	.squad-wrap {
+		container: squad / inline-size;
+	}
+	.squad-frame {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: 14px;
+	}
+	@container squad (min-width: 470px) {
+		.squad-frame {
+			display: inline-grid;
+			grid-template-columns: repeat(2, auto);
+			column-gap: 24px;
+		}
+	}
+	@container squad (min-width: 860px) {
+		.squad-frame {
+			grid-template-columns: repeat(4, auto);
+			column-gap: 14px;
+		}
+		.op-tag > :global(svg) {
+			width: 64px;
+			height: 64px;
+		}
+		.op-member > .op-tag {
+			min-height: 64px;
+		}
+		.op-name {
+			font-size: 18px;
+		}
+	}
 	/* one frame round the squad: an iridescent border that slowly shifts colour */
 	.squad-frame {
 		border: 1.5px solid transparent;
@@ -153,6 +233,108 @@
 		gap: 7px;
 		align-self: flex-start;
 		position: relative;
+	}
+	/* the boxes and (for whoever is last) the Slacker sticker beside them */
+	.sq-boxes {
+		position: relative;
+	}
+	/* Da Jeeven's Black Ops 6 + 7 record: gold-ticked lines under a small title, like the Mastery boxes */
+	.sq-record-wrap {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding-top: 6px;
+		border-top: 1px solid rgb(255 204 90 / 0.35);
+	}
+	.sq-record-title {
+		width: fit-content;
+		margin: 0;
+		color: #ffd75a;
+		font-size: 9px;
+		line-height: 1.2;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+	}
+	.sq-record .sq-camo {
+		--glow: rgb(255 200 60 / 0.6);
+		--fill: linear-gradient(135deg, #fff1a8, #f1c23a 50%, #a8730c);
+		/* a long line may wrap when the column is tight, instead of widening the frame */
+		align-items: flex-start;
+		white-space: normal;
+	}
+	.sq-record .sq-gap {
+		margin-top: 4px;
+	}
+	/* "Refuses to play campaign mode": a red box with a white cross */
+	.sq-record .sq-camo[data-status='no'] .sq-box {
+		background: linear-gradient(135deg, #ff5a4f, #b3121b);
+		box-shadow: 0 0 6px rgb(255 60 60 / 0.6);
+	}
+	/* a member's motto sticker (the user, 2026-11-13, "just for fun": Phillestar "Ranked or nothing", Drängen
+	   Lars Åke "Held back by randoms"): purple-pink, slapped on at the right under their boxes. In the flow
+	   (not on top of the boxes), so it never covers a line; their columns are shorter than Da Jeeven's, so
+	   the frame doesn't grow in the four-in-a-row and two-by-two layouts. */
+	.sq-motto {
+		position: relative;
+		align-self: flex-end;
+		margin-right: -4px;
+		width: max-content;
+		max-width: 12em;
+		text-wrap: balance;
+		padding: 3px 7px 2px;
+		border: 2px solid #fff;
+		border-radius: 5px;
+		background: linear-gradient(135deg, #7a3ff0, #c43fd6 55%, #ff5fae);
+		color: #fff;
+		font-size: 11px;
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: 0.12em;
+		text-align: center;
+		text-transform: uppercase;
+		text-shadow: 0 1px 0 rgb(40 0 60 / 0.8);
+		transform: rotate(-7deg);
+		box-shadow:
+			0 2px 5px rgb(0 0 0 / 0.55),
+			0 0 10px rgb(200 90 255 / 0.5);
+		pointer-events: none;
+	}
+	/* Drängen's is lime like his goggles */
+	.sq-motto[data-tone='lime'] {
+		background: linear-gradient(135deg, #c8ff80, #7ee236 55%, #3e9f1a);
+		color: #10260a;
+		text-shadow: 0 1px 0 rgb(230 255 200 / 0.6);
+		transform: rotate(5deg);
+		box-shadow:
+			0 2px 5px rgb(0 0 0 / 0.55),
+			0 0 10px rgb(140 255 60 / 0.45);
+	}
+	/* the gold "Certified grinder" sticker, slapped on at an angle at the top right of his record
+	   (beside the short title and "Prestige Master", clear of the longer last line) */
+	.sq-certified {
+		position: absolute;
+		right: -4px;
+		top: 4px;
+		width: min-content;
+		padding: 3px 7px 2px;
+		border: 2px solid #fff;
+		border-radius: 5px;
+		background: linear-gradient(180deg, #ffe48a, #e0a420 60%, #b57a0c);
+		color: #3a2400;
+		font-size: 11px;
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: 0.12em;
+		text-align: center;
+		text-transform: uppercase;
+		text-shadow: 0 1px 0 rgb(255 245 200 / 0.6);
+		transform: rotate(6deg);
+		box-shadow:
+			0 2px 5px rgb(0 0 0 / 0.55),
+			0 0 10px rgb(255 190 40 / 0.45);
+		pointer-events: none;
 	}
 	/* the red "Slacker" sticker, slapped on at an angle beside the boxes of whoever is last */
 	.sq-slacker {

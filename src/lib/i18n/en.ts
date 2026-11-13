@@ -170,8 +170,20 @@ export const en = {
 		callsign: 'Abscar',
 		/** Abscar's squadmates, each shown with his own emblem next to Abscar's */
 		mate: 'Phillestar',
+		/** sticker by Phillestar's Mastery boxes (the user, 2026-11-13, "just for fun") */
+		mateMotto: 'Ranked or nothing',
 		/** Robin's callsign (2026-11-13). The no-break space keeps "Lars Åke" together: the tag breaks after "Drängen". */
 		lars: 'Drängen Lars Åke',
+		/** the fourth squad member (2026-11-13), with his gold sticker and his Black Ops 6 + 7 record */
+		/** sticker by Drängen Lars Åke's boxes (the user, 2026-11-13; their wording used a slur, softened) */
+		larsMotto: 'Held back by randoms',
+		jeeven: 'Da Jeeven',
+		certified: 'Certified grinder',
+		recordTitle: 'BO6 + BO7',
+		record: ['Prestige Master', 'Max level', 'All calling cards'],
+		grinds: 'Ranked, MP, WZ grinder',
+		noCampaign: 'Refuses to play campaign mode',
+		recordOf: (who: string) => `${who}: Black Ops 6 and 7 record`,
 		online: 'Online',
 		/** the three small Mastery camo boxes under each squad member's tag */
 		masteryOf: (who: string) => `${who}: Mastery camos`,
@@ -180,7 +192,7 @@ export const en = {
 		masteryTodo: 'not started',
 		/** sticker next to the squad member who is furthest behind on the Mastery camos */
 		slacker: 'Slacker',
-		/** label on the frame round the three operator tags */
+		/** label on the frame round the four operator tags */
 		squad: 'Squad'
 	},
 	/** The news buddy's speech bubble: nerfs, buffs, movement and patch changes only. */
@@ -249,7 +261,7 @@ export const en = {
 		close: 'Close the terminal',
 		input: 'Command',
 		quick: 'Quick commands',
-		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke.', 'Type “help” for commands. “exit” or Esc closes.'],
+		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke, Da Jeeven.', 'Type “help” for commands. “exit” or Esc closes.'],
 		help: [
 			'help              this list',
 			'status            your camo grind in numbers',
@@ -282,7 +294,8 @@ export const en = {
 		squad: [
 			'ABSCAR ............ ONLINE',
 			'PHILLESTAR ........ ONLINE (snack: hamburger, favourite reward: the nuke)',
-			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)'
+			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)',
+			'DA JEEVEN ......... ONLINE (certified grinder: Prestige Master in BO6 + BO7, holk: lit)'
 		],
 		nuke: ['!!! TACTICAL NUKE INBOUND !!!'],
 		nukeCount: (n: number) => `  ${n}...`,

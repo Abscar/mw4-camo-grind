@@ -33,7 +33,7 @@
 	let historyAt = 0;
 	const timers = new Set<ReturnType<typeof setTimeout>>();
 
-	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'phillestar', 'lars', 'nuke', 'hack', 'holk', 'clear', 'exit'];
+	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'phillestar', 'lars', 'jeeven', 'nuke', 'hack', 'holk', 'clear', 'exit'];
 	const QUICK = ['status', 'next', 'buddy', 'nuke', 'holk', 'help'];
 
 	const abscar = () => document.documentElement.getAttribute('data-theme') === 'blackout';
@@ -228,6 +228,7 @@
 			case 'lars':
 			case 'drängen':
 			case 'drangen':
+			case 'jeeven':
 				return print('out', ...t.terminal.squad);
 			case 'nuke':
 				return nuke();
