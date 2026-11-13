@@ -31,6 +31,18 @@
 		phillestar: ['done', 'done', 'active'],
 		lars: ['done', 'active', 'todo']
 	} satisfies Record<string, Status[]>;
+	/**
+	 * Whoever is furthest behind gets a red "Slacker" sticker next to their boxes (the user's ask,
+	 * 2026-11-13). Worked out from SQUAD_MASTERY (done = 2, in progress = 1), so it moves by itself
+	 * when the statuses change; nobody gets it while the last place is shared.
+	 */
+	const points = (statuses: Status[]) =>
+		statuses.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
+	const scores = Object.entries(SQUAD_MASTERY).map(([who, statuses]) => ({ who, n: points(statuses) }));
+	const lowest = Math.min(...scores.map((s) => s.n));
+	const last = scores.filter((s) => s.n === lowest);
+	const slacker = last.length === 1 ? last[0].who : null;
+
 	const camos = MASTERY.map((camo) => ({ id: camo.id, name: camo.name.replace(' Reforged', '') }));
 	const STATUS_TEXT: Record<Status, string> = {
 		done: t.operator.masteryDone,
@@ -53,7 +65,7 @@
 	</div>
 {/snippet}
 
-{#snippet mastery(who: string, statuses: Status[])}
+{#snippet mastery(who: string, statuses: Status[], isSlacker = false)}
 	<ul class="squad-mastery font-hud" aria-label={t.operator.masteryOf(who)}>
 		{#each camos as camo, i (camo.id)}
 			{@const status = statuses[i] ?? 'todo'}
@@ -72,6 +84,9 @@
 			</li>
 		{/each}
 	</ul>
+	{#if isSlacker}
+		<span class="sq-slacker font-head">{t.operator.slacker}</span>
+	{/if}
 {/snippet}
 
 <div class="abscar-only mb-4 pt-1">
@@ -82,7 +97,7 @@
 				<AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" />
 				{@render callsign(t.operator.callsign)}
 			</div>
-			{@render mastery(t.operator.callsign, SQUAD_MASTERY.abscar)}
+			{@render mastery(t.operator.callsign, SQUAD_MASTERY.abscar, slacker === 'abscar')}
 		</div>
 
 		<div class="op-member">
@@ -90,7 +105,7 @@
 				<PhillestarEmblem />
 				{@render callsign(t.operator.mate)}
 			</div>
-			{@render mastery(t.operator.mate, SQUAD_MASTERY.phillestar)}
+			{@render mastery(t.operator.mate, SQUAD_MASTERY.phillestar, slacker === 'phillestar')}
 		</div>
 
 		<div class="op-member">
@@ -98,7 +113,7 @@
 				<LarsAkeEmblem />
 				{@render callsign(t.operator.lars, true)}
 			</div>
-			{@render mastery(t.operator.lars, SQUAD_MASTERY.lars)}
+			{@render mastery(t.operator.lars, SQUAD_MASTERY.lars, slacker === 'lars')}
 		</div>
 	</div>
 </div>
@@ -137,6 +152,29 @@
 		flex-direction: column;
 		gap: 7px;
 		align-self: flex-start;
+		position: relative;
+	}
+	/* the red "Slacker" sticker, slapped on at an angle beside the boxes of whoever is last */
+	.sq-slacker {
+		position: absolute;
+		right: -4px;
+		bottom: 1px;
+		padding: 3px 8px 2px;
+		border: 2px solid #fff;
+		border-radius: 5px;
+		background: linear-gradient(180deg, #ff3b30, #c4111a);
+		color: #fff;
+		font-size: 12px;
+		font-weight: 800;
+		line-height: 1.15;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		text-shadow: 0 1px 0 rgb(90 0 0 / 0.8);
+		transform: rotate(-9deg);
+		box-shadow:
+			0 2px 5px rgb(0 0 0 / 0.55),
+			0 0 10px rgb(255 40 40 / 0.45);
+		pointer-events: none;
 	}
 	.op-member > .op-tag {
 		min-height: 80px;

@@ -178,6 +178,8 @@ export const en = {
 		masteryDone: 'done',
 		masteryInProgress: 'In progress',
 		masteryTodo: 'not started',
+		/** sticker next to the squad member who is furthest behind on the Mastery camos */
+		slacker: 'Slacker',
 		/** label on the frame round the three operator tags */
 		squad: 'Squad'
 	},
