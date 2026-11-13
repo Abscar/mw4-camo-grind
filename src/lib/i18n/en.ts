@@ -173,6 +173,11 @@ export const en = {
 		/** Robin's callsign (2026-11-13). The no-break space keeps "Lars Åke" together: the tag breaks after "Drängen". */
 		lars: 'Drängen Lars Åke',
 		online: 'Online',
+		/** the three small Mastery camo boxes under each squad member's tag */
+		masteryOf: (who: string) => `${who}: Mastery camos`,
+		masteryDone: 'done',
+		masteryInProgress: 'In progress',
+		masteryTodo: 'not started',
 		/** label on the frame round the three operator tags */
 		squad: 'Squad'
 	},
