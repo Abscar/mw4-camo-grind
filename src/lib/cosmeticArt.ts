@@ -30,34 +30,30 @@ const SKIN = '#e0b48c';
 const HANG = (x: number) =>
 	`<circle cx="${x}" cy="4.600" r="3" fill="none" stroke="#c9ced4" stroke-width="1.700"/><path d="M${x} 7.600v4.400" stroke="#8d939a" stroke-width="2.600" stroke-linecap="round"/>`;
 
-/** A cartoon soldier bust for "Men of Service": x = centre, hat = helmet | beret | cap. */
-function serviceman(x: number, hat: 'helmet' | 'beret' | 'cap', tunic: string, hair: string): string {
-	const head =
-		`<path d="M${x - 9} 62c0-9 4-13 9-13s9 4 9 13l3 12h-24z" fill="${tunic}" stroke="${INK}" stroke-width="1.4"/>` +
-		`<path d="M${x - 3} 50l3 5 3-5" fill="none" stroke="${INK}" stroke-width="1.1"/>` +
-		`<ellipse cx="${x}" cy="40" rx="7.2" ry="8.6" fill="${SKIN}" stroke="${INK}" stroke-width="1.4"/>` +
-		`<path d="M${x - 4} 39.5h2.6M${x + 1.4} 39.5h2.6" stroke="${INK}" stroke-width="1.5" stroke-linecap="round"/>` +
-		`<path d="M${x - 2.6} 44.6q2.6 1.6 5.2 0" fill="none" stroke="${INK}" stroke-width="1.1" stroke-linecap="round"/>` +
-		`<path d="M${x - 5.4} 36.6l3.4-.8M${x + 2} 35.8l3.4.8" stroke="${hair}" stroke-width="1.3" stroke-linecap="round"/>`;
-	const top =
-		hat === 'helmet'
-			? `<path d="M${x - 9.4} 37c-.6-9 3.6-13.6 9.4-13.6s10 4.6 9.4 13.6z" fill="#5d6b3a" stroke="${INK}" stroke-width="1.4"/><path d="M${x - 9.4} 37h18.8" stroke="${INK}" stroke-width="1.6"/><path d="M${x - 5} 28q5-3 10 0" fill="none" stroke="#7d8b55" stroke-width="1.2"/>`
-			: hat === 'beret'
-				? `<path d="M${x - 8.6} 34.6c-2-7 4-11.4 9.6-11 6.4.4 10.6 3.6 9 9.6-5 1.6-12 2-18.6 1.4z" fill="#a8322c" stroke="${INK}" stroke-width="1.4"/><circle cx="${x - 3.6}" cy="29.6" r="1.7" fill="#e6d28a" stroke="${INK}" stroke-width=".7"/>`
-				: `<path d="M${x - 8.4} 35c-1-7 3-11 8.4-11s9.4 4 8.4 11z" fill="${hair}" stroke="${INK}" stroke-width="1.4"/><path d="M${x - 9.6} 35.4h14l5 2.2" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>`;
-	return head + top;
-}
-
-/** A helmeted trooper silhouette for "The Squad". */
-function trooper(x: number, y: number, s: number, body: string, light: string): string {
+/**
+ * One soldier of "The Squad" (Prestige 10), pop-art style like the decal: navy-purple with lime and
+ * pale-blue light, a red-orange outline. x, y = the face's centre; `turn` shifts the face's shadow side.
+ */
+function squadMember(x: number, y: number, s: number, turn: 1 | -1 = 1): string {
+	const sh = turn === 1 ? 'M0-3c3.4 0 6 3 6 8.6 0 5-2.2 9-6 10.4z' : 'M0-3c-3.4 0-6 3-6 8.6 0 5 2.2 9 6 10.4z';
 	return (
 		`<g transform="translate(${x} ${y}) scale(${s})">` +
-		`<path d="M-11 34c0-11 4-17 11-17s11 6 11 17z" fill="${body}" stroke="#ff7a3c" stroke-width="1.3"/>` +
-		`<ellipse cx="0" cy="8" rx="6.6" ry="7.6" fill="${light}" stroke="${INK}" stroke-width="1"/>` +
-		`<path d="M-8.4 5.6c-.6-8 3.2-12 8.4-12s9 4 8.4 12z" fill="${body}" stroke="#ff7a3c" stroke-width="1.3"/>` +
-		`<path d="M-8.4 5.6h16.8" stroke="${INK}" stroke-width="1.3"/>` +
-		`<path d="M-4.4 8.6h8.8" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>` +
-		`<path d="M-4.6 20h9.2v8h-9.2z" fill="${light}" opacity=".45"/>` +
+		// shoulders + gear
+		`<path d="M-15 42c0-15 6-23 15-24 9 1 15 9 15 24z" fill="#2a2459" stroke="#ff6a4a" stroke-width="1.2"/>` +
+		`<path d="M-9.6 24.6l6 17M9.6 24.6l-6 17" stroke="#9fd85a" stroke-width="1.2" fill="none"/>` +
+		`<path d="M-7 31h14v7h-14z" fill="#4b3f8a" stroke="#17142e" stroke-width=".8"/><path d="M-7 34.4h14" stroke="#7fb8e8" stroke-width=".8"/>` +
+		`<path d="M-4.6 16.4c1.4 2.4 7.8 2.4 9.2 0v4c-2.6 1.6-6.6 1.6-9.2 0z" fill="#3a3270"/>` +
+		// face, shadow side, eyes in the brim's shadow, nose, mouth
+		`<path d="M-6 5.6C-6 0-3-3 0-3s6 3 6 8.6c0 5-2.2 9-6 10.4-3.8-1.4-6-5.4-6-10.4z" fill="#9cc4ee" stroke="#17142e" stroke-width=".9"/>` +
+		`<path d="${sh}" fill="#5a68b8"/>` +
+		`<path d="M-5.2 3.6h10.4v2.6H-5.2z" fill="#221e4e"/>` +
+		`<path d="M0 6.6l1.2 3.2h-2.2z" fill="#3b3a7a"/><path d="M-2.2 11.6h4.4" stroke="#221e4e" stroke-width="1.1" stroke-linecap="round"/>` +
+		// helmet, brim, light on top, a strap
+		`<path d="M-9.4 2c-1-9.4 4-14.4 9.4-14.4S10.4-7.4 9.4 2z" fill="#4b3f8a" stroke="#ff6a4a" stroke-width="1.2"/>` +
+		`<path d="M-11 2.2h22" stroke="#17142e" stroke-width="2" stroke-linecap="round"/>` +
+		`<path d="M-6.4-7.2q6.4-5 12.8 0" stroke="#b9e86a" stroke-width="1.3" fill="none" stroke-linecap="round"/>` +
+		`<path d="M-3.4-10.6l1.4 1.2M2.4-10.8l1.2 1.4M-6.6-4l1.4.8M5.4-4.2l1.4-.6" stroke="#7fb8e8" stroke-width=".8"/>` +
+		`<path d="M7 3l-1.6 9" stroke="#9fd85a" stroke-width=".8"/>` +
 		`</g>`
 	);
 }
@@ -112,20 +108,46 @@ function goblinMask(face: string, shade: string, horn: string, hair: string, acc
 export const COSMETIC_ART: Record<string, CosmeticArt> = {
 	// ===== Large decals =====
 
-	// Prestige 1: three cartoon WW2 servicemen side by side (US helmet, British red beret, Soviet cap + PPSh)
+	// Prestige 1: three WW2 soldiers mid-action in muted olive and khaki, a pale die-cut edge around the
+	// group (redrawn 2026-11-13 after Dexerto's screenshot; the first version had three smiling busts in
+	// front of an arch). Left: a US soldier in an M1 helmet, shouting to the left, carbine raised across
+	// his chest. Middle: a British soldier in a maroon beret looking down, rifle upright at his side.
+	// Right: a young Soviet soldier in a side cap with a red star, drum-fed SMG held low.
 	'decal-men-of-service': {
 		viewBox: DECAL,
-		after: 'Activision’s Prestige 1 reward picture',
+		after: 'Activision’s Prestige 1 reward picture and Dexerto’s screenshot of it',
 		svg:
-			`<path d="M10 76c-3-22 6-52 22-56 8-3 16-2 22 2 6-5 16-6 24-2 7-4 16-3 22 3 12 10 14 34 10 53z" fill="#efe6cf" stroke="${INK}" stroke-width="1.6"/>` +
-			// rifles behind
-			`<path d="M44 74l14-50 2.4.8-12 49.6z" fill="#7a5632" stroke="${INK}" stroke-width="1"/>` +
-			`<path d="M70 74l10-40 2.4.6-8.6 39.6z" fill="#7a5632" stroke="${INK}" stroke-width="1"/>` +
-			serviceman(33, 'helmet', '#6f7d45', '#4a3a26') +
-			serviceman(60, 'beret', '#8a7f52', '#7a4a22') +
-			serviceman(88, 'cap', '#59663a', '#3c2f20') +
-			// the Soviet's drum-fed SMG
-			`<path d="M72 66l26-5 .6 3-26 5z" fill="#3a3a3a" stroke="${INK}" stroke-width="1"/><circle cx="86" cy="68" r="4.4" fill="#4a4a4a" stroke="${INK}" stroke-width="1.1"/><path d="M73 68l-6 5 3 1 6-4z" fill="#7a5632" stroke="${INK}" stroke-width=".9"/>`
+			// die-cut around the group
+			`<path d="M7 77c-2-11 2-20 9-25-2-9 1-19 8-25 7-7 18-6 22 2l6-8c6-6 17-6 21 2l4-6 4 1c7 0 13 4 16 10 9 1 15 8 15 18 4 8 6 19 4 31z" fill="#e4d9bf" stroke="#a89c80" stroke-width="1.2"/>` +
+			// --- US soldier (left) ---
+			`<path d="M13 76c0-13 6-21 17-23 11 2 17 10 17 23z" fill="#b3a274" stroke="${INK}" stroke-width="1.1"/>` +
+			`<path d="M22 58l5 18M38 58l-4 18" stroke="#7d6f48" stroke-width="1.4"/>` +
+			`<path d="M26 33c5-3 11 0 11 7 0 6-3 10-8 10-3 0-5-2-5.5-4h-1.4c-.6-1.4-.2-2.8.8-3.2l-.6-2c.6-4 1.7-6.2 3.7-7.8z" fill="#d6a47c" stroke="${INK}" stroke-width="1.1"/>` +
+			`<path d="M23.4 45.4l3.2.5-.8 2z" fill="#5a2620"/><path d="M26.2 39.2l2.6-.8" stroke="${INK}" stroke-width="1.3" stroke-linecap="round"/><path d="M33 39.6c1.6 0 2.2 2.4.6 3.4" fill="none" stroke="${INK}" stroke-width=".9"/>` +
+			`<path d="M19.6 38.4c-1-9.6 5-14.4 11.4-14.4s10.6 5 9.4 13.2c-6.8-2-14.2-1.6-20.8 1.2z" fill="#5f6b3c" stroke="${INK}" stroke-width="1.1"/><path d="M24 28q6-3.4 12 0" fill="none" stroke="#7f8b58" stroke-width="1.2"/><path d="M36.4 38l-3 9" stroke="#3d4526" stroke-width=".9"/>` +
+			// his carbine, raised across the chest
+			`<path d="M21 71l4-4.4 19-27 3.6-6.8 3 1.6-3.6 6.6-18 27.6-2.6 4.4z" fill="#6e4a2a" stroke="${INK}" stroke-width="1"/><path d="M46 37.6l5.6-8.4" stroke="#2c2c2c" stroke-width="2" stroke-linecap="round"/>` +
+			`<circle cx="30.6" cy="60.4" r="3.2" fill="#d6a47c" stroke="${INK}" stroke-width="1"/><circle cx="42.4" cy="45" r="3" fill="#d6a47c" stroke="${INK}" stroke-width="1"/>` +
+			// --- British soldier (middle) ---
+			`<path d="M45 76c0-13 6-21 17-23 11 2 17 10 17 23z" fill="#6b7044" stroke="${INK}" stroke-width="1.1"/>` +
+			`<path d="M53 56l9 7 9-7" fill="none" stroke="#4c5030" stroke-width="1.3"/>` +
+			`<path d="M55 39c0-6 3.6-9.6 7.8-9.6 5 0 8 4 7.2 10.6-.6 5.6-3.6 9.6-7.6 9.6s-7.4-4.4-7.4-10.6z" fill="#d3a07a" stroke="${INK}" stroke-width="1.1"/>` +
+			`<path d="M57.6 40.6l3.2.6M64.6 41.2l3-.6" stroke="${INK}" stroke-width="1.3" stroke-linecap="round"/><path d="M62.6 42l-.8 3.4h1.8" fill="none" stroke="#8a5a40" stroke-width=".9"/><path d="M60.6 47.2h3.6" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>` +
+			`<path d="M52.6 35c-1.4-7.6 4.6-12.4 12.2-12.4 7.4 0 10.8 4.2 8.6 9.4-7-1.8-14-1.2-20.8 3z" fill="#7a2430" stroke="${INK}" stroke-width="1.1"/><circle cx="57.4" cy="30.6" r="1.7" fill="#e4d49a" stroke="${INK}" stroke-width=".6"/>` +
+			// his rifle, upright at his side
+			`<path d="M70.4 75l2.6-.2 7-50.4 1.8-6 2.6.8-1.6 6-7 50z" fill="#6e4a2a" stroke="${INK}" stroke-width="1"/><path d="M81.6 22l1.6-6" stroke="#2c2c2c" stroke-width="1.8" stroke-linecap="round"/>` +
+			`<circle cx="76" cy="52" r="3.1" fill="#d3a07a" stroke="${INK}" stroke-width="1"/>` +
+			// --- Soviet soldier (right) ---
+			`<path d="M78 76c0-12 6-20 16-22 10 2 16 10 16 22z" fill="#5e6a42" stroke="${INK}" stroke-width="1.1"/>` +
+			`<path d="M90 55v8M98 55v8" stroke="#434c2e" stroke-width="1.2"/>` +
+			`<path d="M87 43c0-6 3.2-9 7.8-9 4.8 0 7.6 3.4 7 9.4-.6 5.2-3.4 9-7.4 9s-7.4-4-7.4-9.4z" fill="#dcae86" stroke="${INK}" stroke-width="1.1"/>` +
+			`<path d="M89.6 44.4l3-.2M96.4 44.4l2.6.4" stroke="${INK}" stroke-width="1.2" stroke-linecap="round"/><path d="M94.4 45.6l-.6 2.8h1.6" fill="none" stroke="#8a5a40" stroke-width=".8"/><path d="M92.6 50h3" stroke="${INK}" stroke-width=".9" stroke-linecap="round"/>` +
+			`<path d="M86 37.6c1.6-5 7.4-7.6 13.6-6.6 3 .6 4.4 2.6 3.6 5.6-5.8-1.6-11.4-1.4-17.2 1z" fill="#6d7448" stroke="${INK}" stroke-width="1.1"/>${STAR(92.4, 34.6, 1.7)
+				.replace('<path', '<path fill="#c8322a"')}` +
+			// his drum-fed SMG, held low
+			`<path d="M77 62.4l30 3.4v3.4l-11-1-2.4 4.6h-4l1-4.8-13.6-1.6z" fill="#2e2e2e" stroke="${INK}" stroke-width="1"/><path d="M105.4 65.6l7 1.4-1 4-6.4-1.6z" fill="#6e4a2a" stroke="${INK}" stroke-width="1"/>` +
+			`<circle cx="95" cy="71" r="4" fill="#3c3c3c" stroke="${INK}" stroke-width="1"/><path d="M80 63.2v2.6M83 63.6v2.6M86 64v2.6" stroke="#5a5a5a" stroke-width=".9"/>` +
+			`<circle cx="88" cy="65" r="3" fill="#dcae86" stroke="${INK}" stroke-width="1"/><circle cx="103" cy="68" r="2.9" fill="#dcae86" stroke="${INK}" stroke-width="1"/>`
 	},
 
 	// Prestige 2: a red slanted sign with mock-Cyrillic shouting, a grumpy officer with crossed arms
@@ -315,22 +337,28 @@ export const COSMETIC_ART: Record<string, CosmeticArt> = {
 			QUESTION(44, 36, 0.9)
 	},
 
-	// Prestige 10: four helmeted soldiers shoulder to shoulder in purple-navy with a hot orange
-	// outline, rifles low, a yellow brushed "사" (four) top right
+	// Prestige 10: four helmeted soldiers shoulder to shoulder in a pop-art palette (navy and purple
+	// with lime and pale-blue light, faces lit blue, a red-orange outline), the front one holding his
+	// rifle across to the right, a lime-yellow brushed "사" (four) top right (redrawn 2026-11-13 after
+	// a closer look at Dexerto's screenshot; the first version had faceless purple blobs)
 	'decal-the-squad': {
 		viewBox: DECAL,
 		after: 'Dexerto’s screenshot of the Prestige 10 rewards',
 		svg:
-			`<path d="M6 70c-4-16 2-34 14-40 8-10 22-12 30-6 8-6 22-6 30 2 12 0 22 10 24 24l10 6-4 8-12-2-6 8z" fill="#1c1830" stroke="#ff7a3c" stroke-width="1.6"/>` +
-			trooper(24, 36, 0.95, '#3a3166', '#8f86c8') +
-			trooper(84, 36, 0.9, '#2e2a58', '#7c75b4') +
-			trooper(44, 28, 1.12, '#4a3f86', '#a69ee0') +
-			trooper(66, 30, 1.08, '#40377a', '#9890d4') +
-			// rifles across the front
-			`<path d="M30 60l40-8 1 3 20-3 1 3-20 5-2 8-5 1v-7l-34 7z" fill="#17142a" stroke="#ff7a3c" stroke-width="1.2"/>` +
-			`<path d="M70 62l34 8-1 4-34-7z" fill="#17142a" stroke="#ff7a3c" stroke-width="1.2"/>` +
-			// 사, brushed in yellow
-			`<g fill="none" stroke="#f2d03c" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M96 8c-1 8-5 14-11 18M97 12c2 6 6 10 11 12"/><path d="M112 4v26M112 16h6"/></g>`
+			// die-cut silhouette behind the group
+			`<path d="M5 74c-3-12 0-24 8-30 0-12 8-20 18-20 5-9 16-13 26-9 8-8 22-8 30 0 10 0 18 8 18 18 8 4 12 12 12 22l4 8-4 10z" fill="#17142e" stroke="#ff8a4a" stroke-width="1.8"/>` +
+			squadMember(20, 36, 0.92) +
+			squadMember(40, 28, 1, 1) +
+			squadMember(88, 32, 0.95, -1) +
+			squadMember(63, 24, 1.12, -1) +
+			// the front soldier's rifle, across to the right, hands on it
+			`<path d="M44 58l32 2.4 2-3.2 20 2.6 15 4.2-1 3.4-15-2.4-19.6.8-2.8 6.4-6 1 .8-6.2-25.6-3.4z" fill="#1b1838" stroke="#ff6a4a" stroke-width="1.1"/>` +
+			`<path d="M48 58.4l48 3.6" stroke="#9fd85a" stroke-width=".9"/>` +
+			`<circle cx="57" cy="60.6" r="3" fill="#9cc4ee" stroke="#17142e" stroke-width=".8"/><circle cx="83" cy="61.6" r="2.8" fill="#9cc4ee" stroke="#17142e" stroke-width=".8"/>` +
+			// the right one's rifle, lower
+			`<path d="M92 66l24 4.6-.8 3.2-24-4z" fill="#1b1838" stroke="#ff6a4a" stroke-width="1"/>` +
+			// 사, brushed in lime-yellow
+			`<g fill="none" stroke="#dfe86a" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M97 7c-1 8-5 14-11 18M98 12c2 6 6 10 11 12"/><path d="M113 3v26M113 15h5"/></g>`
 	},
 
 	// Prestige Master 1000: a blue-grey goblin mask with red accents and a big salmon "1000"
@@ -343,70 +371,128 @@ export const COSMETIC_ART: Record<string, CosmeticArt> = {
 			`<g transform="translate(28 43) scale(1.04)">${goblinMask('#7f8ea4', '#56637a', '#d8dce4', '#c63b3b', '#c63b3b')}</g>`
 	},
 
-	// Battle Pass tier 27: a red three-eyed goblin mask with white hair, cream horns and tusks, a gold
-	// nose ring, blue flames with yellow edges curling behind it, on a white die-cut
+	// Battle Pass tier 27: a red three-eyed oni mask (redrawn 2026-11-13 after a closer look at
+	// Activision's picture): dark red horns sweeping out, a white tuft between them, three eyes with
+	// orange-yellow irises in blue rings, a blue band over the brow and round the chin, a wide open mouth
+	// with big cream teeth, two ivory tusks curling outwards, a gold ring in its right ear, and teal-blue
+	// flames with yellow rims flowing out on its right side only, on a white die-cut
 	'decal-dokkaebi': {
 		viewBox: DECAL,
 		after: 'Activision’s Season 1 Battle Pass picture',
 		svg:
-			`<path d="M4 34c-2-14 8-26 24-24 6-6 16-8 24-6 8-2 18 0 24 6 16-4 30 8 28 22 6 12 2 26-10 30-6 10-18 14-28 10-8 6-22 6-30 0-12 4-24-2-28-12-6-8-6-18-4-26z" fill="#f6f3ec" stroke="#b9b4a8" stroke-width="1"/>` +
-			// blue flames with yellow rims, licking out behind the mask on both sides
-			`<g fill="#2f66b8" stroke="#f0c63a" stroke-width="1.700" stroke-linejoin="round">` +
-			`<path d="M74 12c8-2 14 2 14 8 6-4 14 0 14 8-3-2-6-1-7 2 6 0 10 6 6 12-2-3-5-3-7-1 5 4 4 12-2 14-1-4-4-5-6-3 2 6-2 12-9 11-6-10-8-36-3-51z"/>` +
-			`<path d="M30 14c-8-2-13 3-12 9-6-3-12 2-11 9 3-2 6-1 7 2-6 1-9 8-4 13 1-3 4-4 6-2-4 5-2 12 4 13 1-4 3-5 6-3-1 5 3 10 9 8 5-10 3-36-5-49z"/>` +
+			`<path d="M9 30C7 18 17 6 30 8 38 1 56 1 63 10 68 3 80 0 89 .6 95 0 104 1 106 8c6 4 8 12 5 20 5 8 3 20-5 24 1 12-7 22-18 21-6 5-18 5-26 0-10 5-25 3-31-6-11-1-17-12-12-21C3 44 4 36 9 30z" fill="#f6f3ec" stroke="#c4bdb0" stroke-width="1"/>` +
+			// flames on the right side, behind the mask
+			`<g fill="#25688c" stroke="#f0c63a" stroke-width="1.8" stroke-linejoin="round">` +
+			`<path d="M62 21C65 13 72 8 79 10 77 5 81 1 87 1 84 5 85 10 90 12 90 6 95 3 101 4 97 7 96 12 99 16 105 15 110 20 108 27 105 24 101 24 99 27 105 30 109 37 105 44 103 40 99 40 97 43 102 47 103 55 97 59 96 55 92 54 90 57 94 62 92 69 85 71 85 67 82 64 78 66 79 71 75 75 69 74 70 70 67 68 63 69z"/>` +
 			`</g>` +
-			`<g fill="#6aa8ea"><path d="M84 24c4 2 5 8 1 11 5 3 4 10-1 12-2-6-3-16 0-23zM22 26c-4 2-5 8-1 11-5 3-4 10 1 12 2-6 3-16 0-23z"/></g>` +
-			`<g transform="translate(52 42) scale(1.16)">${goblinMask('#d23a30', '#8f1f1c', '#f3ead2', '#f4f2ee', '#e8a020')}` +
-			// gold nose ring and cheek studs
-			`<circle cx="0" cy="9" r="3.4" fill="none" stroke="#e8b830" stroke-width="1.6"/><circle cx="-15" cy="6" r="1.3" fill="#e8b830"/><circle cx="15" cy="6" r="1.3" fill="#e8b830"/><path d="M-4-19q4-2 8 0" stroke="#e8b830" stroke-width="1.4" fill="none"/></g>`
+			`<path d="M81 17c5 1 7 6 4 10M93 22c4 3 4 8 0 11M90 45c3 3 2 7-1 9M76 54c4 2 4 7 1 9" fill="none" stroke="#6ec0ea" stroke-width="1.5" stroke-linecap="round"/>` +
+			`<path d="M86 4c-2 3-1 6 2 8M100 6c-3 2-3 6-1 9M107 21c-3-1-6 0-7 3" fill="none" stroke="#f0c63a" stroke-width="1" stroke-linecap="round"/>` +
+			// horns
+			`<path d="M23 24C14 20 9 10 13 2c2 9 9 13 17 14z" fill="#b5241c" stroke="${INK}" stroke-width="1.3"/>` +
+			`<path d="M55 18c6-6 12-10 16-16 2 9-3 17-11 22z" fill="#b5241c" stroke="${INK}" stroke-width="1.3"/>` +
+			`<path d="M16 9c3 4 7 6 11 7M62 14c3-3 6-6 8-10" fill="none" stroke="#e05a44" stroke-width="1.1" stroke-linecap="round"/>` +
+			// white tuft
+			`<path d="M28 18c0-6 6-11 12-9 4-5 11-4 12 2 4 0 6 4 4 8-8-4-19-4-28 1z" fill="#f2f0ea" stroke="${INK}" stroke-width="1.1"/>` +
+			// ear + gold ring (its right ear, our right)
+			`<path d="M59 31c6-3 9 3 7 9-1 3-4 4-6 2z" fill="#c42e24" stroke="${INK}" stroke-width="1.1"/>` +
+			`<circle cx="65.4" cy="45" r="4.2" fill="none" stroke="#a87818" stroke-width="3.2"/><circle cx="65.4" cy="45" r="4.2" fill="none" stroke="#f0c43a" stroke-width="1.8"/>` +
+			// face, its shadow side
+			`<path d="M18 31c0-10 10-17 22-17s22 7 22 18c0 8-2 14-4 20l-2 11c-4 8-28 8-32 0l-3-11c-2-6-3-13-3-21z" fill="#d8382c" stroke="${INK}" stroke-width="1.5"/>` +
+			`<path d="M50 16c7 4 12 9 12 16 0 8-2 14-4 20l-2 11c-2 4-6 6-10 6 6-11 8-31 4-53z" fill="#a82a22"/>` +
+			// blue brow band, forehead eye
+			`<path d="M19 31c8-7 34-7 42-1l-1 3.6c-9-5-31-5-40 1z" fill="#3a9ad6" stroke="${INK}" stroke-width=".8"/>` +
+			`<ellipse cx="40" cy="23" rx="5.6" ry="4.4" fill="#3a9ad6" stroke="${INK}" stroke-width=".8"/><ellipse cx="40" cy="23" rx="4" ry="3" fill="#fffbe8"/><circle cx="40" cy="23" r="2.3" fill="#f2b21e" stroke="#c0281c" stroke-width=".6"/><circle cx="40" cy="23" r=".9" fill="#c0281c"/>` +
+			// eyes
+			`<g stroke="${INK}" stroke-width=".9"><ellipse cx="29.6" cy="38.6" rx="7" ry="6" fill="#3a9ad6"/><ellipse cx="50.4" cy="38.6" rx="6.6" ry="5.8" fill="#3a9ad6"/></g>` +
+			`<ellipse cx="29.6" cy="38.6" rx="5.2" ry="4.4" fill="#fffbe8"/><ellipse cx="50.4" cy="38.6" rx="4.8" ry="4.2" fill="#fffbe8"/>` +
+			`<g stroke="#c0281c" stroke-width=".7"><circle cx="30.4" cy="38.8" r="3.3" fill="#f2b21e"/><circle cx="49.8" cy="38.8" r="3.1" fill="#f2b21e"/></g>` +
+			`<circle cx="30.4" cy="38.8" r="1.3" fill="#c0281c"/><circle cx="49.8" cy="38.8" r="1.2" fill="#c0281c"/><circle cx="29.2" cy="37.4" r=".8" fill="#fff"/><circle cx="48.8" cy="37.4" r=".8" fill="#fff"/>` +
+			// nose, blue cheek strokes
+			`<path d="M36.6 47c1-3.4 5.8-3.4 6.8 0-1 2-5.8 2-6.8 0z" fill="#a82a22" stroke="${INK}" stroke-width=".9"/>` +
+			`<path d="M21 46c4 4 8 4.6 11.6 2.6M59 46c-4 4-8 4.6-11.6 2.6" fill="none" stroke="#3a9ad6" stroke-width="2.2" stroke-linecap="round"/>` +
+			// open mouth, tongue, teeth
+			`<path d="M23.6 52c6-4.4 26.8-4.4 32.8 0l-2 10.4c-6 6-22.8 6-28.8 0z" fill="#5a0f14" stroke="${INK}" stroke-width="1.4"/>` +
+			`<path d="M31.6 62c4-4 12.8-4 16.8 0-4 3-12.8 3-16.8 0z" fill="#e2687a"/>` +
+			`<path d="M24.4 52.6l3.2 5.8 3.4-6.8 3.4 7.4 3.6-7.6 3.6 7.6 3.6-7.4 3.4 6.8 3.4-6 2 .4c-6.6-3.8-25.8-3.8-29.6-.2z" fill="#f4ead0" stroke="${INK}" stroke-width=".8" stroke-linejoin="round"/>` +
+			`<path d="M29.4 62.6l2.6-3 2.6 3.4 2.6-3.4 2.8 3.6 2.8-3.6 2.6 3.4 2.6-3.4 2.6 3" fill="#f4ead0" stroke="${INK}" stroke-width=".7" stroke-linejoin="round"/>` +
+			// blue chin band
+			`<path d="M23 63c6 11 28 11 34 0l.6 3.4c-6 12-29 12-35 0z" fill="#3a9ad6" stroke="${INK}" stroke-width=".8"/>` +
+			// ivory tusks curling outwards
+			`<path d="M26 59c-9 .6-15-4-17-13 4 4 10 6.6 16 6z" fill="#f1e6c6" stroke="${INK}" stroke-width="1.2"/>` +
+			`<path d="M54 59c9 .6 15-4 17-13-4 4-10 6.6-16 6z" fill="#f1e6c6" stroke="${INK}" stroke-width="1.2"/>`
 	},
 
 	// ===== Stickers =====
 
-	// Battle Pass (yours on purchase): a black shield-shaped sticker with a white edge, blocky yellow
-	// Korean letters top left, a teal horned demon skull bottom right
+	// Battle Pass (yours on purchase), redrawn 2026-11-13 after a closer look at Activision's picture
+	// (the first version had Latin-looking letters and a horned skull): a black die-cut sticker with a
+	// white edge, 킬 ("kill") in chunky extruded yellow blocks down the left, and a grinning cyan skull
+	// with purple shading inside a dark hood on the right
 	'sticker-killing-demon': {
 		viewBox: STICKER,
 		after: 'Activision’s Season 1 Battle Pass picture',
 		svg:
-			`<g transform="rotate(-8 40 40)">` +
-			`<path d="M12 12h56l4 6v30c-4 12-16 20-32 22-16-2-28-10-32-22V18z" fill="#f4f2ec" stroke="#b9b4a8" stroke-width=".8"/>` +
-			`<path d="M15 15h50l3 4.600v27.400c-3.600 10.400-14 17.400-28 19.400-14-2-24.400-9-28-19.400V19.600z" fill="#15171a"/>` +
-			// 킬 (kill) in chunky yellow blocks
-			`<g fill="#f2c81e"><path d="M19 19h17v4.400H23.400v3H36v4.400H23.400V36H19zM39 19h4.600v17H39zM19 39h24.600v4.400H23.400v2.600h20.200v4.400H23.400v2.800h20.200v4.400H19v-9.600h0z"/></g>` +
-			`<path d="M23.400 43.400h15.800v2.600H23.400zM23.400 50.400h15.800v2.800H23.400z" fill="#15171a"/>` +
-			// the teal demon skull
-			`<g fill="#2fc4b0" stroke="#0d5a52" stroke-width=".9" stroke-linejoin="round">` +
-			`<path d="M43 30c2-6 4-9 8-11-1 5 0 8 3 10zM67 30c-2-6-4-9-8-11 1 5 0 8-3 10z"/>` +
-			`<path d="M44 38c0-7 5-11 11-11s11 4 11 11c0 4-1 6-3 8l-1 8c-3 3-11 3-14 0l-1-8c-2-2-3-4-3-8z"/>` +
-			`</g>` +
-			`<path d="M47 37c2-2 5-2 6 1-1 3-4 3-6 1zM63 37c-2-2-5-2-6 1 1 3 4 3 6 1z" fill="#15171a"/><path d="M53.800 43l1.200-3 1.200 3-1.200 1.400z" fill="#15171a"/>` +
-			`<path d="M49 48h12M51 48v5M53.600 48v6M56.400 48v6M59 48v5" stroke="#0d5a52" stroke-width="1"/>` +
-			`<path d="M46 33l4 2M64 33l-4 2" stroke="#0d5a52" stroke-width="1.3" stroke-linecap="round"/>` +
+			`<g transform="rotate(-9 40 40)" stroke-linejoin="round">` +
+			// white die-cut, then the black shape
+			`<path d="M9 10l31-5 4 13c4-2 9-3 14-2 11 2 18 12 18 25 0 13-6 23-17 30l-15 3-4-6-27 4z" fill="#f4f2ec" stroke="#c2bcb0" stroke-width="7"/>` +
+			`<path d="M9 10l31-5 4 13c4-2 9-3 14-2 11 2 18 12 18 25 0 13-6 23-17 30l-15 3-4-6-27 4z" fill="#14161a" stroke="#f4f2ec" stroke-width="4.4"/>` +
+			// 킬: the darker side faces first, then the yellow fronts
+			`<g fill="#a87a0e" transform="translate(1.3 1.3)"><path d="M14 14H31V36H26V28H14V23H26V19H14Z"/><path d="M34 12H39V38H34Z"/><path d="M14 41H39V54.5H18.5V59.5H39V64H14V50H34.5V45.5H14Z"/></g>` +
+			`<g fill="#f2c81e"><path d="M14 14H31V36H26V28H14V23H26V19H14Z"/><path d="M34 12H39V38H34Z"/><path d="M14 41H39V54.5H18.5V59.5H39V64H14V50H34.5V45.5H14Z"/></g>` +
+			`<path d="M15 15.2h14M35 13.2v6M15 42.2h22" stroke="#fff3b0" stroke-width=".9" stroke-linecap="round"/>` +
+			// the hood
+			`<path d="M40 41c0-14 8-23 18-23 11 0 18 10 18 22 0 12-4 22-12 30H47c-4-8-7-18-7-29z" fill="#2a2d36" stroke="#0b0c10" stroke-width="1"/>` +
+			`<path d="M44 34c3-8 8-12 14-12 7 0 12 5 14 12" fill="none" stroke="#4a5062" stroke-width="1.4" stroke-linecap="round"/>` +
+			// the skull: cyan, purple shading, light shards
+			`<path d="M46 41c0-9 5-14 12-14s12 5 12 14c0 5-2 8-4 10l-1 8c-3 4-11 4-14 0l-1-8c-2-2-4-5-4-10z" fill="#3ee6cf" stroke="#0b3b38" stroke-width=".9"/>` +
+			`<path d="M46 41c0-9 5-14 12-14-6 4-9 10-8 18 0 6 2 10 1 14l-1-8c-2-2-4-5-4-10z" fill="#7b4fc0"/>` +
+			`<path d="M60 29l4 1-2 3zM66 34l2 3-3 0z" fill="#c8fff6"/>` +
+			// angry eye sockets, nose, grin
+			`<path d="M49 39l7 2-1 5-6-1zM67 39l-7 2 1 5 6-1z" fill="#14161a"/>` +
+			`<path d="M57 47.6h2.4l-.4 3h-1.6z" fill="#14161a"/>` +
+			`<path d="M50.6 52.6h14.8l-1.6 5H52.2z" fill="#14161a"/>` +
+			`<path d="M51.6 53h12.8v1.6H51.6zM53 56h10v1.2H53z" fill="#3ee6cf"/>` +
+			`<path d="M54 53v4M56.4 53v4M58.8 53v4M61.2 53v4" stroke="#14161a" stroke-width=".8"/>` +
 			`</g>`
 	},
 
-	// Prestige Master level 80: a teal-and-purple gas mask with big magenta lenses and a grey filter
-	// can at the lower right, dark die-cut edge
+	// Prestige Master level 80, redrawn 2026-11-13 after a closer look at Activision's picture (the
+	// first version looked like a cartoon alien): a dark teal rubber gas mask turned a little to the
+	// left, two big dark lenses with magenta and purple glare and a yellow glint, a round ridged speech
+	// valve in the middle, a dark grey filter canister at the lower right, pink / yellow / blue halftone
+	// speckles, on a white die-cut
 	'sticker-containment-breach': {
 		viewBox: STICKER,
 		after: 'Activision’s Prestige Master reward picture',
 		svg:
-			`<g transform="rotate(-10 40 40)">` +
-			`<path d="M16 34c0-16 10-26 24-26s24 10 24 26c0 6-1 10-3 14l9 6c4 3 4 9 1 12l-6 6c-3 3-8 3-11 0l-6-6c-3 2-5 3-8 3-12 0-24-12-24-35z" fill="#121418" stroke="#2a2d34" stroke-width="1"/>` +
-			`<path d="M19 34c0-14 9-23 21-23s21 9 21 23c0 7-2 13-5 18-4 6-10 10-16 10-11 0-21-10-21-28z" fill="#1f7f78"/>` +
-			`<path d="M19 34c0-9 4-16 10-20-3 6-4 14-3 22 1 10 6 20 14 26-11 0-21-10-21-28z" fill="#5a2f86"/>` +
-			`<path d="M52 13c5 4 9 11 9 21 0 7-2 13-5 18-2-10-2-26-4-39z" fill="#17605c"/>` +
-			`<path d="M28 14q12-6 24 0" stroke="#7fe0d6" stroke-width="1.6" fill="none" stroke-linecap="round"/>` +
-			// lenses
-			`<circle cx="30" cy="32" r="9" fill="#121418"/><circle cx="50" cy="32" r="9" fill="#121418"/>` +
-			`<circle cx="30" cy="32" r="6.800" fill="#e23aa6"/><circle cx="50" cy="32" r="6.800" fill="#e23aa6"/>` +
-			`<path d="M25.600 30c1-3 4-4.600 7-3.600M45.600 30c1-3 4-4.600 7-3.600" stroke="#ffc2ea" stroke-width="1.8" fill="none" stroke-linecap="round"/>` +
-			`<circle cx="33" cy="35" r="1.600" fill="#8a1f6a"/><circle cx="53" cy="35" r="1.600" fill="#8a1f6a"/>` +
-			// nose piece and mouth grille
-			`<path d="M36 42h8l3 8c-2 4-12 4-14 0z" fill="#121418"/><path d="M36.600 45h6.800M36 48h8M36.600 51h6.800" stroke="#7fe0d6" stroke-width="1.1" stroke-linecap="round"/>` +
-			// the filter can
-			`<g transform="rotate(38 58 58)"><path d="M49 52h18v13H49z" fill="#8a9098" stroke="#121418" stroke-width="1.4"/><path d="M49 55.600h18M49 61.400h18" stroke="#121418" stroke-width="1.1"/><path d="M52 52v13M64 52v13" stroke="#c6ccd4" stroke-width="1"/></g>` +
+			`<g transform="rotate(-12 40 40)" stroke-linejoin="round">` +
+			// die-cut (grey edge, white border)
+			`<path d="M17 31c0-14 10-23 23-23 13 0 22 9 22 23 0 6-1 11-3 15l9 5c5 3 6 10 2 14l-6 7c-4 4-10 4-13 0l-5-6c-3 2-6 3-9 3-12 0-20-17-20-38z" fill="#f4f2ec" stroke="#c2bcb0" stroke-width="7"/>` +
+			`<path d="M17 31c0-14 10-23 23-23 13 0 22 9 22 23 0 6-1 11-3 15l9 5c5 3 6 10 2 14l-6 7c-4 4-10 4-13 0l-5-6c-3 2-6 3-9 3-12 0-20-17-20-38z" fill="#f4f2ec" stroke="#f4f2ec" stroke-width="4"/>` +
+			// the filter canister (behind the mask's edge)
+			`<g transform="rotate(34 60 60)"><path d="M50 53h16a3.4 7 0 0 1 0 14H50z" fill="#3a3f46" stroke="#0c1416" stroke-width="1.3"/><ellipse cx="66" cy="60" rx="3.4" ry="7" fill="#4e555e" stroke="#0c1416" stroke-width="1.1"/><path d="M53.4 53v14M57 53v14M60.6 53v14" stroke="#262a30" stroke-width="1"/><path d="M51 55h13" stroke="#6a727c" stroke-width=".9"/></g>` +
+			// rubber face piece, its shadow side, a purple rim light
+			`<path d="M19 31c0-13 9-21 21-21s20 8 20 21c0 10-3 18-7 25-4 7-9 11-15 11-11 0-19-17-19-36z" fill="#1f6b66" stroke="#0c1a1c" stroke-width="1.4"/>` +
+			`<path d="M19 31c0-9 4-16 10-19-4 7-5 16-3 25 2 12 6 22 12 30-11 0-19-17-19-36z" fill="#154947"/>` +
+			`<path d="M52 13c5 5 8 11 8 18 0 8-2 15-5 21 0-11 0-25-3-39z" fill="#6a3a8a" opacity=".85"/>` +
+			// head harness
+			`<path d="M22 19c7-6 29-7 36-1M20 36l-3-2M60 34l3-3" fill="none" stroke="#0f2a2c" stroke-width="2.4" stroke-linecap="round"/>` +
+			// lenses: dark rim, dark glass, magenta + purple glare, a yellow glint
+			`<circle cx="30.6" cy="30.4" r="10" fill="#0e1316" stroke="#0c1a1c" stroke-width="1"/><circle cx="50" cy="29.6" r="9" fill="#0e1316" stroke="#0c1a1c" stroke-width="1"/>` +
+			`<circle cx="30.6" cy="30.4" r="7.8" fill="#1a1f33"/><circle cx="50" cy="29.6" r="7" fill="#1a1f33"/>` +
+			`<path d="M23.4 30.6c0-4.6 3.4-8 7.8-8-3 2-4.8 5.4-4.6 9.6zM43.6 29.8c0-4 3-7.2 7-7.2-2.6 1.8-4.2 4.8-4 8.6z" fill="#d63aa0"/>` +
+			`<path d="M33 37.4c2.6-1 4.6-3.4 5-6.6M51.6 35.6c2.4-1 4.2-3 4.6-6" fill="none" stroke="#9a4fd0" stroke-width="2" stroke-linecap="round"/>` +
+			`<path d="M27 33.4q2.6 1.6 5 0M46.6 32.4q2.4 1.4 4.6 0" fill="none" stroke="#f2d23c" stroke-width="1" stroke-linecap="round"/>` +
+			`<circle cx="34.4" cy="26" r="1.1" fill="#ffd6f0"/><circle cx="53.4" cy="25.4" r="1" fill="#ffd6f0"/>` +
+			// nose bridge, round speech valve with ridges
+			`<path d="M37 39c1 3.4 5 3.4 6 0" fill="#18564f" stroke="#0c1a1c" stroke-width=".9"/>` +
+			`<circle cx="40" cy="50" r="8.6" fill="#11181a" stroke="#0c1a1c" stroke-width="1.2"/>` +
+			`<circle cx="40" cy="50" r="6.4" fill="none" stroke="#2e3a3c" stroke-width="1.3"/><circle cx="40" cy="50" r="4.2" fill="none" stroke="#2e3a3c" stroke-width="1.2"/><circle cx="40" cy="50" r="2" fill="#2e3a3c"/>` +
+			`<path d="M33.6 45.4a8 8 0 0 1 7-3.8" fill="none" stroke="#d63aa0" stroke-width="1.1" stroke-linecap="round"/>` +
+			// halftone speckles: pink, yellow, blue
+			`<g fill="#e05ab0" opacity=".75"><circle cx="24" cy="44" r=".8"/><circle cx="26.4" cy="47" r=".7"/><circle cx="28.6" cy="50" r=".8"/><circle cx="46" cy="44" r=".7"/><circle cx="49" cy="47" r=".8"/><circle cx="51" cy="51" r=".7"/><circle cx="36" cy="58" r=".7"/><circle cx="44" cy="58.6" r=".7"/><circle cx="40" cy="14" r=".7"/><circle cx="45" cy="15.6" r=".6"/></g>` +
+			`<g fill="#f2d23c" opacity=".7"><circle cx="25.6" cy="41" r=".6"/><circle cx="29.4" cy="46" r=".6"/><circle cx="48" cy="50" r=".6"/><circle cx="54" cy="44" r=".6"/><circle cx="38" cy="61" r=".6"/></g>` +
+			`<g fill="#5ab4f0" opacity=".7"><circle cx="22.6" cy="47.6" r=".6"/><circle cx="27.4" cy="53" r=".7"/><circle cx="52.6" cy="47.6" r=".6"/><circle cx="42" cy="62" r=".6"/><circle cx="35" cy="15" r=".6"/></g>` +
 			`</g>`
 	},
 
