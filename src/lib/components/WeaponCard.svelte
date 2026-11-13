@@ -28,7 +28,6 @@
 	const maxed = $derived(level >= MAX_LEVEL);
 	const look = $derived(WEAPON_LOOKS[weapon.id]);
 	const balance = $derived(BALANCE[weapon.id]);
-	const focused = $derived(progress.isFocused(weapon.id));
 	const note = $derived(progress.note(weapon.id));
 	/**
 	 * "MP meta" only where there's a clear basis in the right mode: the weapon list is Multiplayer's,
@@ -86,10 +85,7 @@
 			{#if look}
 				<span class="relative flex-none">
 					<WeaponIcon {look} camo={progress.wears(weapon.id)} />
-					{#if focused}<span class="focus-pin" aria-hidden="true">★</span>{/if}
 				</span>
-			{:else if focused}
-				<span class="focus-star-big text-xs" aria-hidden="true">★</span>
 			{/if}
 			{#if weapon.season === 'season1'}
 				<span
@@ -117,7 +113,7 @@
 			<span class="progress-line num block text-[12px] leading-tight">{t.weapon.preGoldLine(pips, specialsTotal)}</span>
 		{/if}
 		<span class="sr-only"
-			>{#if focused}({t.weapon.focused}){/if} – {t.weapon.openHint}</span
+			> – {t.weapon.openHint}</span
 		>
 	</button>
 	<WeaponCode weaponId={weapon.id} weaponName={weapon.name} />

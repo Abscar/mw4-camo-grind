@@ -21,7 +21,7 @@
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
 	import { CLASSES, WEAPON_BY_ID } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
-	import { FOCUS_MAX, NOTE_MAX } from '#lib/progress-codec.ts';
+	import { NOTE_MAX } from '#lib/progress-codec.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { stepStatus, stepsOf, type StepInfo, type StepStatus } from '#lib/steps.ts';
 	import { CAMO_FILL, shortDate, unlockFact } from '#lib/ui.ts';
@@ -37,7 +37,6 @@
 	const cls = $derived(weapon ? CLASSES.find((c) => c.id === weapon.classId) : undefined);
 	const look = $derived(weapon ? WEAPON_LOOKS[weapon.id] : undefined);
 	const balance = $derived(weapon ? BALANCE[weapon.id] : undefined);
-	const focused = $derived(weapon ? progress.isFocused(weapon.id) : false);
 	const steps = $derived(weapon ? stepsOf(weapon.id) : []);
 	const specials = $derived(steps.filter((s) => s.kind === 'special'));
 	const hasBuilds = $derived(weapon ? weapon.id in LOADOUTS : false);
@@ -70,7 +69,6 @@
 
 	/** The text box keeps its own copy while you type; every change is saved straight away. */
 	let draft = $state('');
-	let full = $state(false);
 	type Tab = 'camos' | 'meta' | 'info';
 	const TABS: Tab[] = ['camos', 'meta', 'info'];
 	let tab = $state<Tab>('camos');
@@ -79,15 +77,9 @@
 			const weaponId = weapon.id;
 			// untracked: saving a keystroke must not reset the box (the saved note is trimmed)
 			draft = untrack(() => progress.note(weaponId));
-			full = false;
 			tab = 'camos';
 		}
 	});
-
-	function toggleFocus() {
-		if (!weapon) return;
-		full = progress.toggleFocus(weapon.id) === 'full';
-	}
 
 	/** Arrow keys, Home and End move between the tabs (the usual tablist keyboard pattern). */
 	function tabKeys(e: KeyboardEvent) {
@@ -119,16 +111,6 @@
 				</div>
 				{#if look}<div class="wc-gun"><WeaponIcon {look} camo={progress.wears(weapon.id)} /></div>{/if}
 				<div class="flex">
-					<button
-						type="button"
-						class="icon-btn wc-star"
-						aria-pressed={focused}
-						aria-label={focused ? t.sheet.focusRemove : t.sheet.focusAdd}
-						title={focused ? t.sheet.focusRemove : t.sheet.focusAdd}
-						onclick={toggleFocus}
-					>
-						<span aria-hidden="true">{focused ? '★' : '☆'}</span>
-					</button>
 					<button type="button" class="icon-btn wc-x" aria-label={t.sheet.closeCard} title={t.sheet.closeCard} onclick={() => weaponSheet.close()}>
 						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
 							><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg
@@ -136,7 +118,6 @@
 					</button>
 				</div>
 			</div>
-			{#if full}<p class="wc-alert" role="alert">{t.sheet.focusFull(FOCUS_MAX)}</p>{/if}
 
 			<!-- the progress track: one segment per step, labels under it, the same in words next to it -->
 			<div class="wc-track">
@@ -344,21 +325,11 @@
 			display: none;
 		}
 	}
-	.wc-star {
-		font-size: 22px;
-		color: var(--t-gold);
-	}
 	.wc-x {
 		color: var(--t-fg);
 	}
-	.wc-star:hover,
 	.wc-x:hover {
 		background: color-mix(in srgb, var(--t-fg) 8%, transparent);
-	}
-	.wc-alert {
-		margin-top: 6px;
-		font-size: 12px;
-		color: var(--t-fg);
 	}
 
 	.wc-track {

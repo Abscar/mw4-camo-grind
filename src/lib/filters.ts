@@ -7,7 +7,6 @@
  * - Near done: a challenge you're on is at least 75% done by its own counter, or all 3 challenges
  *              before Gold are done. Every challenge is measured against its own target only;
  *              "45/50 Headshots" and "12/15 streaks" are never compared with each other.
- * - Focus:     on your focus list.
  * - Done:      every ladder camo (Gold, Platinum, Harmonic Break) ticked.
  * - Available: out now, with a next camo to earn (leaves out maxed guns and guns not released yet).
  */
@@ -16,7 +15,7 @@ import { DIVERGENCE_REQUIRED, MAX_LEVEL } from './data/camos.ts';
 import { WEAPONS, type Weapon } from './data/weapons.ts';
 import { activeSteps, countKey, isReleased, specialsComplete, type StepInfo } from './steps.ts';
 
-export const STATUS_FILTERS = ['started', 'near', 'focus', 'done', 'available'] as const;
+export const STATUS_FILTERS = ['started', 'near', 'done', 'available'] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export function isStatusFilter(x: unknown): x is StatusFilter {
@@ -56,8 +55,6 @@ export function matchesStatus(filter: StatusFilter, s: GrindState, w: Weapon): b
 	switch (filter) {
 		case 'done':
 			return level >= MAX_LEVEL;
-		case 'focus':
-			return s.focus.includes(w.id);
 		case 'available':
 			return isReleased(w) && level < MAX_LEVEL;
 		case 'started':

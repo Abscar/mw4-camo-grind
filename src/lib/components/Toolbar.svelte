@@ -104,7 +104,7 @@
 				aria-pressed={on}
 				title={t.toolbar.statusHelp[f]}
 				onclick={() => progress.setPref('status', on ? null : f)}
-				>{#if f === 'focus'}<span aria-hidden="true">★</span>{/if}{t.toolbar.status[f]}</button
+				>{t.toolbar.status[f]}</button
 			>
 		{/each}
 	</div>

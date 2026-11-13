@@ -162,7 +162,6 @@ test('filters: status filters and suggestions from saved progress only', () => {
 	assert.ok(matchesStatus('near', s, W('csg-35')), 'all 3 before Gold done');
 	assert.ok(matchesStatus('started', s, W('csg-35')));
 	assert.ok(!matchesStatus('started', s, W('cronen-osprey')));
-	assert.ok(matchesStatus('focus', s, W('mar-9')));
 	const sug = suggestions(s, 1);
 	assert.deepEqual(sug.map((x) => [x.weaponId, x.reason.kind]), [
 		['csg-35', 'goldReady'],

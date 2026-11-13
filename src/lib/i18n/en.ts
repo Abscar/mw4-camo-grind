@@ -11,7 +11,7 @@ export const en = {
 	compact: {
 		label: 'Compact mode',
 		short: 'Compact',
-		on: 'Compact mode: on. Focus weapons and quick updates first, less decoration.',
+		on: 'Compact mode: on. Less decoration.',
 		off: 'Compact mode: off'
 	},
 	/** The CS2 skin price search in the header's top row (BuffSearch): opens BUFF163's market search in a new tab. */
@@ -388,14 +388,12 @@ export const en = {
 		status: {
 			started: 'Started',
 			near: 'Near done',
-			focus: 'Focus',
 			done: 'Done',
 			available: 'Available now'
 		},
 		statusHelp: {
 			started: 'At least one camo or before-Gold challenge done, not maxed yet.',
 			near: 'All 3 challenges before Gold are done, so Gold is next.',
-			focus: 'The weapons on your focus list.',
 			done: 'Gold, Platinum and Harmonic Break all ticked.',
 			available: 'Out now with a next camo to earn (leaves out maxed weapons and weapons that aren’t released yet).'
 		},
@@ -414,7 +412,7 @@ export const en = {
 		maxed: 'Maxed',
 		toggle: (camo: string, weapon: string) => `${camo}: ${weapon}`,
 		/** Read out after the weapon's name on the button that opens its card. */
-		openHint: 'open its card: challenges before Gold, focus list, note, buffs and nerfs',
+		openHint: 'open its card: challenges before Gold, note, buffs and nerfs',
 		focused: 'on your focus list',
 		buff: 'Buff',
 		nerf: 'Nerf',
@@ -863,7 +861,7 @@ export const en = {
 	autoSync: {
 		heading: 'Automatic sync',
 		offText:
-			'Keep your ticks, notes and focus list the same on this browser and your phone, automatically. No account or password: a private sync link connects your devices.',
+			'Keep your ticks and notes the same on this browser and your phone, automatically. No account or password: a private sync link connects your devices.',
 		onText:
 			'On. Open your sync link once on your phone or another computer. After that, your ticks follow you both ways.',
 		turnOn: 'Turn on sync',
@@ -881,7 +879,7 @@ export const en = {
 		syncedAt: (time: string) => `Synced at ${time}`,
 		linkTitle: 'Your sync link',
 		linkBody:
-			'Open this link once on your phone (or another computer). After that, your ticks, notes and focus list stay the same everywhere. Anyone with the link can see and change your ticks, so send it only to yourself.',
+			'Open this link once on your phone (or another computer). After that, your ticks and notes stay the same everywhere. Anyone with the link can see and change your ticks, so send it only to yourself.',
 		pasteTitle: 'Use a sync link',
 		pasteBody: 'Paste the sync link from your other device.',
 		pasteLabel: 'Sync link',
@@ -926,7 +924,7 @@ export const en = {
 
 	reset: {
 		title: 'Reset progress?',
-		body: 'Pick what to reset to. Your notes and focus list stay. Export a backup first if you might want it back.',
+		body: 'Pick what to reset to. Your notes stay. Export a backup first if you might want it back.',
 		presetLabel: 'Gold on launch weapons',
 		presetBody: (launch: number) =>
 			`Gold ticked on the ${launch} launch weapons, everything else cleared: Platinum, Harmonic Break, before-Gold ticks and Mastery counts.`,
@@ -974,7 +972,7 @@ export const en = {
 
 	help: {
 		howTo:
-			'Tap a box to tick it. Ticking a higher camo fills in the ones below it; unticking a lower one clears the ones above. Tap a weapon’s name to pin it to your focus list, write a note or see its latest buff or nerf.',
+			'Tap a box to tick it. Ticking a higher camo fills in the ones below it; unticking a lower one clears the ones above. Tap a weapon’s name to write a note or see its latest buff or nerf.',
 		divergence: (n: number) =>
 			`Divergence unlocks at ${n} Harmonic Breaks. Whether Season 1 weapons count toward that is not confirmed yet.`,
 		sources:
