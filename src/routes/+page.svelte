@@ -36,7 +36,6 @@
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
 	import Toolbar from '#lib/components/Toolbar.svelte';
-	import FocusSection from '#lib/components/FocusSection.svelte';
 	import SeasonStrip from '#lib/components/SeasonStrip.svelte';
 	import WeaponSheet from '#lib/components/WeaponSheet.svelte';
 	import KillFeed from '#lib/components/KillFeed.svelte';
@@ -253,9 +252,6 @@
 
 		<!-- overall progress and the next milestone -->
 		<div class="mt-4"><KpiBar /></div>
-
-		<!-- 3. continue grinding: the focus list -->
-		<div class="mt-6"><FocusSection /></div>
 
 		<!-- the two big tabs right above the weapon list (2026-11-12, the user's ask): the camo
 		     checklist or Ranked prep -->
