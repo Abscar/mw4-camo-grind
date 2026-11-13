@@ -14,12 +14,15 @@ import {
 	linkCodeFromHash,
 	mergeStamps,
 	migrate,
+	normaliseExtraCamos,
 	normalisePrefs,
 	normaliseSpecials,
 	normaliseStamps,
+	resetProgress,
 	toExport,
 	toStored
 } from '../src/lib/progress-codec.ts';
+import { EXTRA_CAMOS } from '../src/lib/data/extraCamos.ts';
 
 test('data: ids and link slots are unique, slots below NEXT_FREE_SLOT', () => {
 	assert.equal(new Set(WEAPONS.map((w) => w.id)).size, WEAPONS.length);
@@ -191,6 +194,21 @@ test('specials and tick times: kept in saves, cleaned up, older saves still load
 	assert.equal(old?.progress.specials, undefined);
 	assert.equal(old?.stamps, undefined);
 	assert.equal(toStored(p, normalisePrefs({})).stamps, undefined);
+});
+
+test('Extra camos ticks: in saves and backups, cleaned up; links and older data leave them alone; reset clears them', () => {
+	const p = defaultProgress();
+	p.extraCamos = { 'event-venom-pile': 1, 'prestige-pyroclast': 1 };
+	const saved = migrate(JSON.parse(JSON.stringify(toStored(p, normalisePrefs({})))));
+	assert.deepEqual(saved?.progress.extraCamos, { 'event-venom-pile': 1, 'prestige-pyroclast': 1 });
+	const backup = migrate(JSON.parse(JSON.stringify(toExport(p))));
+	assert.deepEqual(backup?.progress.extraCamos, { 'event-venom-pile': 1, 'prestige-pyroclast': 1 });
+	assert.deepEqual(normaliseExtraCamos({ ok: 1, yes: true, no: 0, 'Bad Id': 1, x: 'y' }), { ok: 1, yes: 1 });
+	assert.equal(migrate({ v: 2, progress: { weapons: {}, mastery: {} } })?.progress.extraCamos, undefined);
+	assert.equal(decodeLink(encodeLink(p))?.extraCamos, undefined);
+	assert.deepEqual(resetProgress('zero').extraCamos, {});
+	// every extra camo id fits what saves keep
+	for (const c of EXTRA_CAMOS) assert.deepEqual(normaliseExtraCamos({ [c.id]: 1 }), { [c.id]: 1 }, c.id);
 });
 
 test('tick times: only for camos the weapon still has; the earliest known time wins', () => {

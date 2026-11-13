@@ -85,7 +85,7 @@
 		<span class="weapon-badges flex flex-wrap items-center gap-1">
 			{#if look}
 				<span class="relative flex-none">
-					<WeaponIcon {look} />
+					<WeaponIcon {look} camo={progress.wears(weapon.id)} />
 					{#if focused}<span class="focus-pin" aria-hidden="true">★</span>{/if}
 				</span>
 			{:else if focused}

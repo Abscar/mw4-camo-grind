@@ -45,6 +45,11 @@ export const EXTRA_TRUST = ['official', 'guides', 'one', 'leak'] as const;
 export type ExtraTrust = (typeof EXTRA_TRUST)[number];
 
 export interface ExtraCamo {
+	/**
+	 * What the "Got it" ticks are saved (and synced) by, since 2026-11-13. Made from kind + name
+	 * (+ weapon) by `camo()`: never change an existing entry's id. When an entry is renamed (real
+	 * camo names came out), pass its old id as `id` so nobody's tick is lost.
+	 */
 	id: string;
 	name: string;
 	kind: ExtraKind;
@@ -104,9 +109,10 @@ function camo(
 	how: string,
 	trust: ExtraTrust,
 	sources: string,
-	extra: Partial<Omit<ExtraCamo, 'id' | 'name' | 'kind' | 'modes' | 'how' | 'trust' | 'sources'>> = {}
+	extra: Partial<Omit<ExtraCamo, 'name' | 'kind' | 'modes' | 'how' | 'trust' | 'sources'>> = {}
 ): ExtraCamo {
-	return { id: slug(`${kind}-${name}${extra.weapon ? `-${extra.weapon}` : ''}`), name, kind, modes, how, trust, sources, ...extra };
+	const { id, ...rest } = extra;
+	return { id: id ?? slug(`${kind}-${name}${extra.weapon ? `-${extra.weapon}` : ''}`), name, kind, modes, how, trust, sources, ...rest };
 }
 
 const ALL: ExtraMode[] = ['mp', 'dmz', 'wz'];

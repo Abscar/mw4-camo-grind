@@ -82,6 +82,21 @@ export function mergeHeadlines(fresh: Headline[], old: Headline[], max = MAX_HEA
 	return [...byUrl.values()].sort((a, b) => Date.parse(b.date) - Date.parse(a.date)).slice(0, max);
 }
 
+/** How old a nerf/buff headline may be and still interrupt the old TV as "breaking news". */
+export const BREAKING_MAX_AGE_DAYS = 14;
+
+/**
+ * The old TV's breaking news (2026-11-13, the user's pick): the newest nerf / buff headline, if it
+ * is at most BREAKING_MAX_AGE_DAYS old and this device hasn't shown it yet (`shownUrl`). Once per
+ * headline per device; a headline dated in the future (clock skew) counts as new.
+ */
+export function breakingNews(patches: Headline[], nowMs: number, shownUrl: string | null): Headline | null {
+	const newest = patches[0];
+	if (!newest || newest.url === shownUrl) return null;
+	const age = nowMs - Date.parse(newest.date);
+	return age <= BREAKING_MAX_AGE_DAYS * 86_400_000 ? newest : null;
+}
+
 /** True when two lists show the same headlines in the same order. */
 export function sameHeadlines(a: Headline[], b: Headline[]): boolean {
 	return a.length === b.length && a.every((x, i) => x.url === b[i].url && x.title === b[i].title && x.date === b[i].date);

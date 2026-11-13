@@ -21,7 +21,7 @@
 			{#if weapon && camo}
 				<div class="kill-row" data-camo={camo.id}>
 					<span class="kill-player">{t.operator.callsign}</span>
-					{#if look}<span class="kill-gun"><WeaponIcon {look} /></span>{/if}
+					{#if look}<span class="kill-gun"><WeaponIcon {look} camo={camo.id} /></span>{/if}
 					<span class="kill-camo">{camo.name}{#if row.level >= MAX_LEVEL}&nbsp;◆{/if}</span>
 					<span class="kill-weapon">{weapon.name}</span>
 				</div>

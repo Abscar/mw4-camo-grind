@@ -117,7 +117,7 @@
 					<p class="wc-kicker"><span aria-hidden="true">▸ </span>{t.sheet.file} // {cls?.name} · {season}</p>
 					<h2 id={titleId} class="wc-title">{weapon.name}</h2>
 				</div>
-				{#if look}<div class="wc-gun"><WeaponIcon {look} /></div>{/if}
+				{#if look}<div class="wc-gun"><WeaponIcon {look} camo={progress.wears(weapon.id)} /></div>{/if}
 				<div class="flex">
 					<button
 						type="button"

@@ -3,8 +3,8 @@
  * the sync service stores, merging two devices' changes, and sync codes/links. No browser APIs
  * and no runes, so Node tests it directly (scripts/sync.test.js).
  *
- * Shared: ticks, Mastery counts, before-Gold ticks, counters (2026-11-10), notes, the focus list and
- * when you last ticked.
+ * Shared: ticks, Mastery counts, before-Gold ticks, counters (2026-11-10), the Extra camos tab's
+ * "Got it" ticks (2026-11-13), notes, the focus list and when you last ticked.
  * Per device: theme, class filter, status filter, "hide maxed", compact mode.
  */
 
@@ -66,6 +66,7 @@ export function fromWire(raw: unknown): SyncDoc | null {
 
 const specialsOf = (d: SyncDoc) => d.progress.specials ?? {};
 const countsOf = (d: SyncDoc) => d.progress.counts ?? {};
+const extrasOf = (d: SyncDoc) => d.progress.extraCamos ?? {};
 
 const keys = (...objects: Record<string, unknown>[]) => [...new Set(objects.flatMap((o) => Object.keys(o)))];
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -82,6 +83,7 @@ export function sameDoc(a: SyncDoc, b: SyncDoc): boolean {
 		ALL_MASTERY.every((m) => (a.progress.mastery[m.id] ?? 0) === (b.progress.mastery[m.id] ?? 0)) &&
 		keys(specialsOf(a), specialsOf(b)).every((id) => (specialsOf(a)[id] ?? 0) === (specialsOf(b)[id] ?? 0)) &&
 		keys(countsOf(a), countsOf(b)).every((k) => (countsOf(a)[k] ?? 0) === (countsOf(b)[k] ?? 0)) &&
+		keys(extrasOf(a), extrasOf(b)).every((id) => (extrasOf(a)[id] ?? 0) === (extrasOf(b)[id] ?? 0)) &&
 		keys(a.notes, b.notes).every((id) => (a.notes[id] ?? '') === (b.notes[id] ?? '')) &&
 		sameList(a.focus, b.focus) &&
 		(a.lastTickAt ?? '') === (b.lastTickAt ?? '') &&
@@ -128,6 +130,15 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 		const n = pickCount(bc[k] ?? 0, lc[k] ?? 0, rc[k] ?? 0);
 		if (n > 0) counts[k] = n;
 	}
+	// Extra camos ticks: one-sided changes win (a tick is on or off, so two sides that both changed
+	// one changed it the same way). A side without them (an older page) changed nothing.
+	const extraCamos: Record<string, number> = {};
+	const bx = extrasOf(base);
+	const lx = local.progress.extraCamos ?? bx;
+	const rx = remote.progress.extraCamos ?? bx;
+	for (const id of keys(bx, lx, rx)) {
+		if (pick(bx[id] ?? 0, lx[id] ?? 0, rx[id] ?? 0) === 1) extraCamos[id] = 1;
+	}
 	const notes: Notes = {};
 	for (const id of keys(base.notes, local.notes, remote.notes)) {
 		const note = pick(base.notes[id] ?? '', local.notes[id] ?? '', remote.notes[id] ?? '');
@@ -135,7 +146,7 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 	}
 	const focus = sameList(local.focus, base.focus) ? [...remote.focus] : [...local.focus];
 	return {
-		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials) },
+		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials), extraCamos },
 		notes,
 		focus,
 		lastTickAt: later(local.lastTickAt, remote.lastTickAt),
@@ -164,8 +175,10 @@ export function combine(local: SyncDoc, remote: SyncDoc): SyncDoc {
 	for (const k of keys(countsOf(local), countsOf(remote))) {
 		counts[k] = Math.max(countsOf(local)[k] ?? 0, countsOf(remote)[k] ?? 0);
 	}
+	const extraCamos: Record<string, number> = {};
+	for (const id of keys(extrasOf(local), extrasOf(remote))) extraCamos[id] = 1;
 	return {
-		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials) },
+		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials), extraCamos },
 		notes: { ...local.notes, ...remote.notes },
 		focus: remote.focus.length > 0 ? [...remote.focus] : [...local.focus],
 		lastTickAt: later(local.lastTickAt, remote.lastTickAt),

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { mergeHeadlines, readNews, sameHeadlines } from '../src/lib/news-codec.ts';
+import { BREAKING_MAX_AGE_DAYS, breakingNews, mergeHeadlines, readNews, sameHeadlines } from '../src/lib/news-codec.ts';
 import { PATCH_TITLE, SOURCES, parseFeed, pickPatches } from './news-feeds.js';
 
 const NOW = Date.parse('2026-11-07T12:00:00Z');
@@ -119,6 +119,19 @@ test('news buddy: nerf/buff headlines are newest first, at most 60 days old, old
 		pickPatches(fresh, old, NOW).map((i) => i.title),
 		['Sniper nerfs are live', 'SMG buffs coming']
 	);
+});
+
+test('old TV breaking news: the newest nerf/buff headline, once per device, only while it is fresh', () => {
+	const now = Date.parse('2026-11-13T12:00:00Z');
+	const h = (url, date) => ({ title: 'Han 86 nerfed', url, date, source: 'Dexerto' });
+	const fresh = h('https://www.dexerto.com/a', '2026-11-12T08:00:00.000Z');
+	const older = h('https://www.dexerto.com/b', '2026-11-01T08:00:00.000Z');
+	assert.equal(breakingNews([fresh, older], now, null), fresh);
+	assert.equal(breakingNews([fresh, older], now, fresh.url), null); // already shown here
+	assert.equal(breakingNews([], now, null), null);
+	const stale = h('https://www.dexerto.com/c', new Date(now - (BREAKING_MAX_AGE_DAYS + 1) * 86_400_000).toISOString());
+	assert.equal(breakingNews([stale], now, null), null);
+	assert.equal(breakingNews([h('https://www.dexerto.com/d', '2026-11-14T08:00:00.000Z')], now, null)?.url, 'https://www.dexerto.com/d');
 });
 
 test('news file: the committed news.json is readable and only uses the listed sites', () => {

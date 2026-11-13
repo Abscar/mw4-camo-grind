@@ -2,16 +2,28 @@
 	A miniature cartoon of one weapon (thick dark outline, flat colours, a highlight), built from
 	parts described in weaponLooks.ts. Muzzle points right. Decorative: the name is next to it.
 	The CS2 easter eggs are drawn by Cs2Gun.svelte in the same style.
+	`camo` (2026-11-13, the user's pick): the weapon wears its best camo — the main parts (body,
+	furniture, grip) are painted brushed gold, brushed platinum, Harmonic Break's crimson streaks or
+	Divergence's chrome with a rainbow sheen; dark parts (magazine, optics) stay dark so the shape
+	still reads. The CS2 skins keep their skin (the user: "except the ones with the CS2 skins").
 -->
 <script lang="ts">
+	import type { IconCamo } from '#lib/data/camos.ts';
 	import type { GunLook } from '#lib/data/weaponLooks.ts';
 	import Cs2Gun from './Cs2Gun.svelte';
 
-	let { look }: { look: GunLook } = $props();
+	let { look, camo = null }: { look: GunLook; camo?: IconCamo | null } = $props();
 
 	const INK = '#14110d';
 	const DARK = '#23262b';
 	const STEEL = '#3a3f46';
+
+	// ids are per instance: the same weapon can be on screen twice (list + focus list)
+	const uid = $props.id();
+	const pid = `wpaint-${uid}`;
+	const worn = $derived(look.kind === 'cs2' ? null : camo);
+	/** A main part's fill: the camo when the weapon wears one, else its own colour. */
+	const paint = (colour: string) => (worn ? `url(#${pid})` : colour);
 
 	// rifle geometry (viewBox 0 0 64 24)
 	const r = $derived(look.kind === 'rifle' ? look : null);
@@ -24,34 +36,75 @@
 	const magX = $derived(r?.bullpup ? 12 : 32.5);
 </script>
 
-<svg viewBox="0 0 64 24" class="weapon-icon" aria-hidden="true" focusable="false">
+<svg viewBox="0 0 64 24" class="weapon-icon" data-camo={worn} aria-hidden="true" focusable="false">
 	{#if look.kind === 'cs2'}
 		<Cs2Gun model={look.model} skin={look.skin} />
 	{:else}
+		{#if worn}
+			<defs>
+				{#if worn === 'gold'}
+					<!-- brushed gold: bands at the same angle as the ticked Gold box -->
+					<linearGradient id={pid} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="13" y2="9" spreadMethod="reflect">
+						<stop offset="0" stop-color="#8a5d12" />
+						<stop offset="0.3" stop-color="#f2cc66" />
+						<stop offset="0.52" stop-color="#b5852b" />
+						<stop offset="0.74" stop-color="#ffe7a0" />
+						<stop offset="1" stop-color="#7a520f" />
+					</linearGradient>
+				{:else if worn === 'platinum'}
+					<linearGradient id={pid} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="13" y2="9" spreadMethod="reflect">
+						<stop offset="0" stop-color="#646c74" />
+						<stop offset="0.3" stop-color="#dfe5ea" />
+						<stop offset="0.52" stop-color="#8e969e" />
+						<stop offset="0.74" stop-color="#f7f9fb" />
+						<stop offset="1" stop-color="#555c63" />
+					</linearGradient>
+				{:else if worn === 'harmonicBreak'}
+					<!-- crimson streaks on near-black -->
+					<pattern id={pid} patternUnits="userSpaceOnUse" width="9" height="9" patternTransform="rotate(-32)">
+						<rect width="9" height="9" fill="#1c0408" />
+						<rect width="2.4" height="9" fill="#8e0f22" />
+						<rect x="2.4" width="0.7" height="9" fill="#ff3b5c" />
+						<rect x="5.8" width="0.45" height="9" fill="#e8203f" opacity="0.85" />
+					</pattern>
+				{:else}
+					<!-- Divergence: chrome with a rainbow oil-slick sheen -->
+					<linearGradient id={pid} gradientUnits="userSpaceOnUse" x1="0" y1="1" x2="19" y2="13" spreadMethod="reflect">
+						<stop offset="0" stop-color="#eef3ff" />
+						<stop offset="0.18" stop-color="#97a5c2" />
+						<stop offset="0.34" stop-color="#ffc4ee" />
+						<stop offset="0.5" stop-color="#a3f5e6" />
+						<stop offset="0.66" stop-color="#5d6d90" />
+						<stop offset="0.82" stop-color="#ffefae" />
+						<stop offset="1" stop-color="#f4f7ff" />
+					</linearGradient>
+				{/if}
+			</defs>
+		{/if}
 		<g stroke={INK} stroke-width="0.8" stroke-linejoin="round" stroke-linecap="round">
 			{#if r}
 				<!-- stock -->
 				{#if r.bullpup}
 					<rect x="5" y="8" width="3" height="8.5" rx="1" fill={DARK} />
 				{:else if r.stock === 'fixed'}
-					<path d="M18 9 L6 9.6 L5 16.2 L9.2 16.2 L18 13.6 Z" fill={r.furniture} />
+					<path d="M18 9 L6 9.6 L5 16.2 L9.2 16.2 L18 13.6 Z" fill={paint(r.furniture)} />
 				{:else if r.stock === 'skeleton'}
 					<path
 						d="M18 9 L6 9.5 L5.5 16 L9.5 16 L18 13.5 Z M15 10.6 L8 10.9 L7.8 14.2 L9.4 14.2 L15 12.6 Z"
-						fill={r.furniture}
+						fill={paint(r.furniture)}
 						fill-rule="evenodd"
 					/>
 				{:else if r.stock === 'wood'}
-					<path d="M18 9 C12 9.2 6 9.6 2 10.4 L2 16.8 C6 16.1 11 14.9 18 13.7 Z" fill={r.furniture} />
+					<path d="M18 9 C12 9.2 6 9.6 2 10.4 L2 16.8 C6 16.1 11 14.9 18 13.7 Z" fill={paint(r.furniture)} />
 				{:else}
 					<rect x="15" y="9" width="3" height="4" rx="0.6" fill={DARK} />
 				{/if}
 
 				<!-- receiver -->
 				{#if r.bullpup}
-					<rect x="7.5" y="8" width="27" height="7.5" rx="2" fill={r.body} />
+					<rect x="7.5" y="8" width="27" height="7.5" rx="2" fill={paint(r.body)} />
 				{:else}
-					<rect x="17" y="8" width="19.5" height="6" rx="1.5" fill={r.body} />
+					<rect x="17" y="8" width="19.5" height="6" rx="1.5" fill={paint(r.body)} />
 				{/if}
 
 				<!-- carry handle (Type 73) -->
@@ -61,19 +114,19 @@
 
 				<!-- handguard -->
 				{#if r.guard === 'rail'}
-					<rect x={gs} y="8.5" width={gl} height="5" rx="0.8" fill={r.body} />
+					<rect x={gs} y="8.5" width={gl} height="5" rx="0.8" fill={paint(r.body)} />
 					{#each Array.from({ length: Math.floor(gl / 3) }, (_, i) => gs + 2 + i * 3) as x (x)}
 						<line x1={x} y1="9.4" x2={x} y2="12.6" stroke="rgb(0 0 0 / 0.45)" stroke-width="0.6" />
 					{/each}
 				{:else if r.guard === 'wood'}
-					<rect x={gs} y="9" width={gl} height="4.2" rx="1.6" fill={r.furniture} />
+					<rect x={gs} y="9" width={gl} height="4.2" rx="1.6" fill={paint(r.furniture)} />
 				{:else if r.guard === 'shroud'}
-					<rect x={gs} y="9" width={gl} height="4" rx="1" fill={r.body} />
+					<rect x={gs} y="9" width={gl} height="4" rx="1" fill={paint(r.body)} />
 					{#each Array.from({ length: Math.floor(gl / 2.6) }, (_, i) => gs + 1.6 + i * 2.6) as x (x)}
 						<circle cx={x} cy="11" r="0.6" fill={INK} stroke="none" />
 					{/each}
 				{:else}
-					<rect x={gs} y="9.4" width={gl} height="3.6" rx="1" fill={r.body} />
+					<rect x={gs} y="9.4" width={gl} height="3.6" rx="1" fill={paint(r.body)} />
 				{/if}
 
 				<!-- barrel + muzzle -->
@@ -91,7 +144,7 @@
 					<rect x={gs + 1} y="13" width={gl + bl - 3} height="1.8" rx="0.8" fill={STEEL} />
 				{/if}
 				{#if r.pump}
-					<rect x={gs + 2} y="12.6" width="8" height="2.8" rx="1" fill={r.furniture} />
+					<rect x={gs + 2} y="12.6" width="8" height="2.8" rx="1" fill={paint(r.furniture)} />
 				{/if}
 				{#if r.bipod}
 					<path d="M{ge - 1.5} 13 L{ge - 4.5} 21.5 M{ge - 1.5} 13 L{ge + 1.5} 21.5" fill="none" stroke={INK} stroke-width="1.1" />
@@ -99,10 +152,10 @@
 
 				<!-- grip -->
 				{#if r.mag === 'grip'}
-					<path d="M{gripX + 1} 14 L{gripX - 1} 21.8 L{gripX + 2.8} 21.8 L{gripX + 4.6} 14 Z" fill={r.furniture} />
+					<path d="M{gripX + 1} 14 L{gripX - 1} 21.8 L{gripX + 2.8} 21.8 L{gripX + 4.6} 14 Z" fill={paint(r.furniture)} />
 					<rect x={gripX - 1.4} y="21.2" width="4.6" height="1.4" rx="0.4" fill={DARK} />
 				{:else}
-					<path d="M{gripX + 1} 14 L{gripX - 0.8} 20.5 L{gripX + 2.6} 20.5 L{gripX + 4.4} 14 Z" fill={r.furniture} />
+					<path d="M{gripX + 1} 14 L{gripX - 0.8} 20.5 L{gripX + 2.6} 20.5 L{gripX + 4.4} 14 Z" fill={paint(r.furniture)} />
 				{/if}
 				<path d="M{gripX + 4.4} 14 Q{gripX + 4.9} 17 {gripX + 7.4} 17 L{gripX + 7.4} 14" fill="none" stroke={INK} stroke-width="0.9" />
 
@@ -115,7 +168,7 @@
 					<circle cx={magX + 2.2} cy="17.6" r="4" fill={DARK} />
 					<circle cx={magX + 2.2} cy="17.6" r="1.4" fill={STEEL} />
 				{:else if r.mag === 'box'}
-					<rect x={magX - 1.5} y="14" width="7.5" height="5.6" rx="0.8" fill={r.furniture} />
+					<rect x={magX - 1.5} y="14" width="7.5" height="5.6" rx="0.8" fill={paint(r.furniture)} />
 				{/if}
 
 				<!-- bolt handle -->
@@ -158,22 +211,22 @@
 				/>
 			{:else if look.kind === 'pistol'}
 				{#if look.style === 'revolver'}
-					<rect x="30" y="7.4" width="17" height="3" rx="0.6" fill={look.body} />
-					<rect x="30" y="10.4" width="13" height="2" rx="0.6" fill={look.body} />
-					<rect x="20" y="6.5" width="11" height="8.5" rx="1.5" fill={look.body} />
+					<rect x="30" y="7.4" width="17" height="3" rx="0.6" fill={paint(look.body)} />
+					<rect x="30" y="10.4" width="13" height="2" rx="0.6" fill={paint(look.body)} />
+					<rect x="20" y="6.5" width="11" height="8.5" rx="1.5" fill={paint(look.body)} />
 					<rect x="22.5" y="7.2" width="7.5" height="6.8" rx="2" fill={STEEL} />
 					<path d="M24.5 7.6 V13.6 M27.5 7.6 V13.6" stroke={INK} stroke-width="0.5" />
 					<path d="M20 7 L18 4.6 L20.6 5" fill={DARK} />
-					<path d="M21.5 14 C19.5 17 18.5 20 19.2 22.6 L24.8 22.6 C24.6 19.4 25.2 16.6 27 14.6 Z" fill={look.grip} />
+					<path d="M21.5 14 C19.5 17 18.5 20 19.2 22.6 L24.8 22.6 C24.6 19.4 25.2 16.6 27 14.6 Z" fill={paint(look.grip)} />
 					<path d="M27 15 Q27.5 18 30.5 17.6 L31 15" fill="none" stroke={INK} stroke-width="0.9" />
 				{:else}
 					{@const big = look.style === 'deagle'}
-					<rect x="17" y={big ? 5.2 : 6} width={big ? 29 : 26} height={big ? 6.8 : 5.6} rx="1.2" fill={look.body} />
+					<rect x="17" y={big ? 5.2 : 6} width={big ? 29 : 26} height={big ? 6.8 : 5.6} rx="1.2" fill={paint(look.body)} />
 					{#if big}
-						<rect x="36" y="4.4" width="9" height="1.2" fill={look.body} />
+						<rect x="36" y="4.4" width="9" height="1.2" fill={paint(look.body)} />
 					{/if}
 					<rect x="20.5" y="11.6" width={big ? 21 : 19} height="2.4" fill={DARK} />
-					<path d="M22.5 13.8 L19.5 22.4 L26 22.4 L28.4 13.8 Z" fill={look.grip} />
+					<path d="M22.5 13.8 L19.5 22.4 L26 22.4 L28.4 13.8 Z" fill={paint(look.grip)} />
 					<path d="M28.4 14 Q28.9 17.6 32.6 17.2 L33.4 14" fill="none" stroke={INK} stroke-width="0.9" />
 					<path d="M19 7.4 V10.8 M20.4 7.4 V10.8 M21.8 7.4 V10.8" stroke={INK} stroke-width="0.5" />
 					<rect x={big ? 43.5 : 40.5} y={big ? 4.4 : 5.2} width="1.2" height="1" fill={DARK} />
@@ -181,27 +234,27 @@
 				<line x1="18.5" y1="6.9" x2="40" y2="6.9" stroke="#fff" stroke-opacity="0.4" stroke-width="0.8" />
 			{:else if look.kind === 'launcher'}
 				{#if look.style === 'rpg'}
-					<rect x="6" y="9.6" width="40" height="4" rx="1" fill={look.body} />
+					<rect x="6" y="9.6" width="40" height="4" rx="1" fill={paint(look.body)} />
 					<rect x="16" y="9.1" width="10" height="5" rx="1.2" fill="#9a5f2e" />
 					<path d="M46 8.6 L52 6.6 L60.5 11.6 L52 16.6 L46 14.6 Z" fill="#5d6a3e" />
 					<path d="M24 13.6 L22.5 19.5 L25.5 19.5 L27 13.6 Z M31 13.6 L29.5 18.5 L32.5 18.5 L34 13.6 Z" fill={DARK} />
 					<rect x="21" y="6" width="4" height="3.6" rx="0.6" fill={DARK} />
 				{:else if look.style === 'javelin'}
-					<rect x="4" y="8" width="54" height="7" rx="3.5" fill={look.body} />
+					<rect x="4" y="8" width="54" height="7" rx="3.5" fill={paint(look.body)} />
 					<rect x="14" y="2.6" width="13" height="6" rx="1" fill={DARK} />
 					<circle cx="25" cy="5.6" r="1.3" fill="#7fc4ff" stroke="none" />
 					<path d="M19 15 L18 19.5 L21 19.5 L22 15 Z" fill={DARK} />
 					<path d="M8 8 V15 M54 8 V15" stroke={INK} stroke-width="0.6" />
 				{:else if look.style === 'manpads'}
-					<rect x="4" y="9" width="52" height="5" rx="2.5" fill={look.body} />
+					<rect x="4" y="9" width="52" height="5" rx="2.5" fill={paint(look.body)} />
 					<rect x="26" y="3.4" width="9" height="5.6" rx="1" fill={DARK} />
 					<circle cx="34" cy="6.2" r="1.1" fill="#ff4a4a" stroke="none" />
 					<path d="M21 14 L19.6 20 L22.6 20 L24 14 Z" fill={DARK} />
 					<rect x="13" y="14" width="5" height="4.4" rx="1" fill={STEEL} />
 				{:else}
 					<path d="M18 10 L6 10.4 L5.5 15.6 L9 15.6 L18 13.4 Z M15 11.4 L8 11.6 L7.9 14.2 L9.3 14.2 L15 12.8 Z" fill={DARK} fill-rule="evenodd" />
-					<rect x="17" y="8.4" width="14" height="6" rx="1.4" fill={look.body} />
-					<rect x="30" y="7" width="26" height="6" rx="2.6" fill={look.body} />
+					<rect x="17" y="8.4" width="14" height="6" rx="1.4" fill={paint(look.body)} />
+					<rect x="30" y="7" width="26" height="6" rx="2.6" fill={paint(look.body)} />
 					<circle cx="56" cy="10" r="2.2" fill={INK} />
 					<rect x="34" y="12.6" width="11" height="3.2" rx="1.2" fill={STEEL} />
 					<path d="M24 14.4 L22.4 20.5 L25.6 20.5 L27.2 14.4 Z" fill={DARK} />
@@ -209,18 +262,34 @@
 				<line x1="8" y1="10.4" x2="44" y2="10.4" stroke="#fff" stroke-opacity="0.3" stroke-width="0.8" />
 			{:else if look.kind === 'melee'}
 				{#if look.style === 'knife'}
-					<rect x="6" y="10.4" width="16" height="4.2" rx="1.8" fill={look.handle} />
+					<rect x="6" y="10.4" width="16" height="4.2" rx="1.8" fill={paint(look.handle)} />
 					<path d="M9 10.6 V14.4 M12 10.6 V14.4 M15 10.6 V14.4 M18 10.6 V14.4" stroke={INK} stroke-width="0.5" />
 					<rect x="21.5" y="8.4" width="2.2" height="8.2" rx="0.6" fill={DARK} />
-					<path d="M23.7 10 L49 10 Q55 11 59 12.6 Q52 14.9 23.7 14.8 Z" fill={look.body} />
+					<path d="M23.7 10 L49 10 Q55 11 59 12.6 Q52 14.9 23.7 14.8 Z" fill={paint(look.body)} />
 					<path d="M25 13.6 L50 13.6" stroke="#fff" stroke-opacity="0.6" stroke-width="0.6" />
 				{:else}
-					<path d="M10 21.4 L44 6.4 L45.6 9 L11.8 23 Z" fill={look.handle} />
-					<path d="M37.5 4.2 L50 2.4 Q54 7.4 51 12.6 L42 10.4 Z" fill={look.body} />
-					<path d="M37.6 5.4 L31 4 L37 9.4 Z" fill={look.body} />
+					<path d="M10 21.4 L44 6.4 L45.6 9 L11.8 23 Z" fill={paint(look.handle)} />
+					<path d="M37.5 4.2 L50 2.4 Q54 7.4 51 12.6 L42 10.4 Z" fill={paint(look.body)} />
+					<path d="M37.6 5.4 L31 4 L37 9.4 Z" fill={paint(look.body)} />
 					<path d="M49.8 3.4 Q52.6 7.4 50.4 11.4" fill="none" stroke="#fff" stroke-opacity="0.6" stroke-width="0.6" />
 				{/if}
 			{/if}
 		</g>
 	{/if}
 </svg>
+
+<style>
+	/* Abscar: a faint glow in the camo's colour so it reads at a glance on the dark boxes */
+	:global([data-theme='blackout']) .weapon-icon[data-camo='gold'] {
+		filter: drop-shadow(0 0 2.5px rgb(255 196 60 / 0.45));
+	}
+	:global([data-theme='blackout']) .weapon-icon[data-camo='platinum'] {
+		filter: drop-shadow(0 0 2.5px rgb(220 232 242 / 0.4));
+	}
+	:global([data-theme='blackout']) .weapon-icon[data-camo='harmonicBreak'] {
+		filter: drop-shadow(0 0 3px rgb(255 40 70 / 0.5));
+	}
+	:global([data-theme='blackout']) .weapon-icon[data-camo='divergence'] {
+		filter: drop-shadow(0 0 3px rgb(200 170 255 / 0.55));
+	}
+</style>

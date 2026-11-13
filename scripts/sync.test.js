@@ -108,6 +108,29 @@ test('sync: Warzone / DMZ Mastery merge; a device on the old page (no such count
 	assert.ok(!sameDoc(withMastery({ empyros: 1 }), withMastery({ empyros: 2 })));
 });
 
+test('sync: Extra camos "Got it" ticks travel and merge; an older page (none at all) changes nothing', () => {
+	const withExtras = (extraCamos) => {
+		const d = doc();
+		if (extraCamos) d.progress.extraCamos = extraCamos;
+		return d;
+	};
+	const d = withExtras({ 'event-venom-pile': 1 });
+	const back = fromWire(JSON.parse(JSON.stringify(toWire(d))));
+	assert.ok(sameDoc(back, d));
+	assert.deepEqual(back.progress.extraCamos, { 'event-venom-pile': 1 });
+	assert.ok(!sameDoc(d, withExtras({})));
+
+	const base = withExtras({ a: 1, b: 1 });
+	// this device ticked c and unticked a; the other one unticked b
+	const merged = merge3(base, withExtras({ b: 1, c: 1 }), withExtras({ a: 1 }));
+	assert.deepEqual(merged.progress.extraCamos, { c: 1 });
+	// a document from an older page has no ticks at all: it leaves this device's alone
+	const oldPage = fromWire({ app: 'mw4-camo-grind', sync: 1, progress: { weapons: {}, mastery: {} }, notes: {}, focus: [] });
+	assert.equal(oldPage.progress.extraCamos, undefined);
+	assert.deepEqual(merge3(base, withExtras({ a: 1, b: 1, c: 1 }), oldPage).progress.extraCamos, { a: 1, b: 1, c: 1 });
+	assert.deepEqual(combine(withExtras({ a: 1 }), withExtras({ b: 1 })).progress.extraCamos, { a: 1, b: 1 });
+});
+
 test('sync: codes are long and random, links and pasted text are read', () => {
 	const a = makeSyncCode();
 	assert.equal(a.length, 22);

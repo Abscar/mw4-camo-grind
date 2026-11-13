@@ -10,6 +10,7 @@ import {
 	MASTERY_TRACKS,
 	MAX_LEVEL,
 	SEASON_1_COUNTS_TOWARD_DIVERGENCE,
+	type IconCamo,
 	type MasteryMode,
 	type MasteryStatus
 } from './data/camos.ts';
@@ -98,6 +99,8 @@ class Progress {
 	stamps = $state<Stamps>({});
 	/** Counters toward the steps you're on ("<weapon id>:<step>" → count; rules in steps.ts). */
 	counts = $state<Record<string, number>>({});
+	/** The Extra camos tab's "Got it" ticks (extra camo id → 1). Saved, synced, in backups; not in links. */
+	extraCamos = $state<Record<string, number>>({});
 	prefs = $state<Prefs>(defaultPrefs());
 	/** The user's own notes per weapon. Not part of progress links (too long), but in backups. */
 	notes = $state<Notes>({});
@@ -157,6 +160,16 @@ class Progress {
 
 	has(weaponId: string, ladderIndex: number): boolean {
 		return this.level(weaponId) > ladderIndex;
+	}
+
+	/**
+	 * The camo a weapon's mini picture wears (2026-11-13, the user's pick): its best ladder camo, and
+	 * Divergence's chrome on maxed weapons once Divergence is unlocked. null = plain colours.
+	 */
+	wears(weaponId: string): IconCamo | null {
+		const level = this.level(weaponId);
+		if (level >= MAX_LEVEL && this.divergenceUnlocked) return 'divergence';
+		return level > 0 ? LADDER[Math.min(level, MAX_LEVEL) - 1].id : null;
 	}
 
 	/**
@@ -294,6 +307,21 @@ class Progress {
 		return ((mask >> index) & 1) === 1;
 	}
 
+	/** Whether you have ticked "Got it" on an extra camo (the Extra camos tab). */
+	hasExtra(id: string): boolean {
+		return this.extraCamos[id] === 1;
+	}
+
+	/** Tick or untick "Got it" on an extra camo. Returns the new state. */
+	toggleExtra(id: string): boolean {
+		const next = { ...this.extraCamos };
+		if (next[id] === 1) delete next[id];
+		else next[id] = 1;
+		this.extraCamos = next;
+		this.save();
+		return next[id] === 1;
+	}
+
 	/** When you last added a camo, as far as we know (ISO), or null. */
 	lastActiveAt(): string | null {
 		return this.lastTickAt ?? this.#loadedSavedAt;
@@ -356,7 +384,8 @@ class Progress {
 			weapons: { ...this.weapons },
 			mastery: this.#masteryCounts(),
 			specials: { ...this.specials },
-			counts: { ...this.counts }
+			counts: { ...this.counts },
+			extraCamos: { ...this.extraCamos }
 		};
 	}
 
@@ -379,6 +408,7 @@ class Progress {
 		this.weapons = { ...doc.progress.weapons };
 		this.mastery = { ...this.#masteryCounts(), ...doc.progress.mastery };
 		if (doc.progress.specials) this.specials = { ...doc.progress.specials };
+		if (doc.progress.extraCamos) this.extraCamos = { ...doc.progress.extraCamos };
 		this.counts = pruneCounts(doc.progress.counts ?? this.counts, this.weapons, this.specials);
 		this.stamps = mergeStamps(this.weapons, doc.stamps);
 		this.notes = { ...doc.notes };
@@ -397,13 +427,15 @@ class Progress {
 
 	/**
 	 * Replace all progress (import, link, reset, undo). Returns what was there before, for Undo.
-	 * Data without Special camos or Warzone/DMZ counts (older backups and links) leaves those alone.
+	 * Data without Special camos, Extra camos ticks or Warzone/DMZ counts (older backups, every
+	 * progress link) leaves those alone.
 	 */
 	replace(next: ProgressData): ProgressData {
 		const before = this.snapshot();
 		this.weapons = { ...next.weapons };
 		this.mastery = { ...before.mastery, ...next.mastery };
 		if (next.specials) this.specials = { ...next.specials };
+		if (next.extraCamos) this.extraCamos = { ...next.extraCamos };
 		this.counts = pruneCounts(next.counts ?? this.counts, this.weapons, this.specials);
 		this.stamps = mergeStamps(this.weapons, this.stamps);
 		this.save();
@@ -421,7 +453,8 @@ class Progress {
 			WEAPONS.every((w) => this.level(w.id) === d.weapons[w.id]) &&
 			ALL_MASTERY.every((m) => (this.mastery[m.id] ?? 0) === 0) &&
 			Object.keys(this.specials).length === 0 &&
-			Object.keys(this.counts).length === 0
+			Object.keys(this.counts).length === 0 &&
+			Object.keys(this.extraCamos).length === 0
 		);
 	}
 
@@ -483,6 +516,7 @@ class Progress {
 		this.weapons = m.progress.weapons;
 		this.mastery = { ...this.#masteryCounts(), ...m.progress.mastery };
 		if (m.progress.specials) this.specials = m.progress.specials;
+		if (m.progress.extraCamos) this.extraCamos = m.progress.extraCamos;
 		if (m.progress.counts) this.counts = pruneCounts(m.progress.counts, m.progress.weapons, this.specials);
 		if (m.stamps) this.stamps = mergeStamps(m.progress.weapons, m.stamps);
 		if (m.prefs) this.prefs = m.prefs;

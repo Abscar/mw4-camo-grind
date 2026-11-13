@@ -30,6 +30,12 @@ export interface ProgressData {
 	 * from an older page) leaves your counters alone.
 	 */
 	counts?: Record<string, number>;
+	/**
+	 * The Extra camos tab's "Got it" ticks: extra camo id (data/extraCamos.ts) → 1. Added 2026-11-13
+	 * as an optional field like `specials`: data without it (older saves, backups, progress links,
+	 * sync documents from an older page) leaves your ticks alone. Unknown ids are kept.
+	 */
+	extraCamos?: Record<string, number>;
 }
 
 /** All 3 Special camos ticked. */
@@ -124,12 +130,21 @@ export function defaultProgress(): ProgressData {
  * The two kinds of reset (Backup & other devices → Reset…):
  * - 'zero':   nothing ticked at all (how a new tracker starts);
  * - 'preset': Gold ticked on every launch weapon (how the tracker used to start).
- * Both clear before-Gold ticks, counters and every Mastery count.
+ * Both clear before-Gold ticks, counters, every Mastery count and the Extra camos ticks.
  */
 export function resetProgress(kind: 'preset' | 'zero'): ProgressData {
 	const p = defaultProgress();
 	if (kind === 'preset') for (const id of Object.keys(p.weapons)) p.weapons[id] = presetLevel(id);
-	return { ...p, specials: {}, counts: {} };
+	return { ...p, specials: {}, counts: {}, extraCamos: {} };
+}
+
+/** Clean Extra camos ticks: id-shaped keys, kept as 1 (unknown ids too: newer data may have them). */
+export function normaliseExtraCamos(raw: Record<string, unknown>): Record<string, number> {
+	const out: Record<string, number> = {};
+	for (const [id, value] of Object.entries(raw).slice(0, 300)) {
+		if (/^[a-z0-9][a-z0-9-]{0,80}$/.test(id) && (value === 1 || value === true)) out[id] = 1;
+	}
+	return out;
 }
 
 /** Clean counters: known shape of key, whole numbers above 0 (steps.ts prunes them against the ticks). */
@@ -305,6 +320,7 @@ export function migrate(raw: unknown): Migrated | null {
 		);
 		if (isObject(p.specials)) progress.specials = normaliseSpecials(p.specials);
 		if (isObject(p.counts)) progress.counts = normaliseCounts(p.counts);
+		if (isObject(p.extraCamos)) progress.extraCamos = normaliseExtraCamos(p.extraCamos);
 		const migrated: Migrated = { progress, from: typeof raw.v === 'number' ? raw.v : CURRENT_VERSION };
 		if (isObject(raw.prefs)) migrated.prefs = normalisePrefs(raw.prefs);
 		return addExtras(migrated, raw);
@@ -373,14 +389,20 @@ export function toExport(progress: ProgressData, notes: Notes = {}): ExportV2 {
 	return file;
 }
 
-/** Same ticks and Mastery counts (Special camos and Warzone/DMZ counts too, when both sides have them). */
+/**
+ * Same ticks and Mastery counts (Special camos, counters, Extra camos ticks and Warzone/DMZ counts
+ * too, when both sides have them).
+ */
 export function sameProgress(a: ProgressData, b: ProgressData): boolean {
 	const sa = a.specials;
 	const sb = b.specials;
 	const ca = a.counts;
 	const cb = b.counts;
+	const xa = a.extraCamos;
+	const xb = b.extraCamos;
 	const known = (p: ProgressData, id: string) => MASTERY.some((m) => m.id === id) || id in p.mastery;
 	return (
+		(!xa || !xb || [...new Set([...Object.keys(xa), ...Object.keys(xb)])].every((k) => (xa[k] ?? 0) === (xb[k] ?? 0))) &&
 		(!ca || !cb || [...new Set([...Object.keys(ca), ...Object.keys(cb)])].every((k) => (ca[k] ?? 0) === (cb[k] ?? 0))) &&
 		WEAPONS.every((w) => (a.weapons[w.id] ?? 0) === (b.weapons[w.id] ?? 0)) &&
 		ALL_MASTERY.every(

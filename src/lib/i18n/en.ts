@@ -298,7 +298,16 @@ export const en = {
 		prev: 'Previous channel',
 		next: 'Next channel',
 		sound: 'TV sound',
-		power: 'TV on / off'
+		power: 'TV on / off',
+		/** The breaking-news channel (2026-11-13): a fresh nerf/buff headline interrupts the montage once. */
+		breaking: 'Breaking news',
+		live: 'Live',
+		newsChannel: 'CH 00',
+		newsDesk: 'Patch desk',
+		newsOpen: (title: string) => `Breaking news: ${title}. Read the article`,
+		newsBack: 'Back to the montage',
+		/** the ticker under the headline */
+		tickerMore: 'More patch news'
 	},
 	/** The one-line news banner (green radar box) above the KPI tiles. */
 	banner: {
@@ -673,6 +682,14 @@ export const en = {
 		search: 'Search extra camos',
 		searchPlaceholder: 'Search camo, event, weapon…',
 		results: (shown: number, total: number) => (shown === total ? `${total} camos` : `${shown} of ${total} camos`),
+		/** The "Got it" ticks (2026-11-13): saved and synced like the other ticks. */
+		gotCount: (got: number, total: number) => `${got} of ${total} got`,
+		got: 'Got it',
+		gotTick: (name: string) => `Got ${name}`,
+		gotTickPerWeapon: (name: string) => `Got ${name} (on at least one weapon)`,
+		gotOn: '✔ Got it',
+		hideGot: 'Hide the ones I’ve got',
+		allGot: 'You’ve got every camo in this list.',
 		kindGroup: 'Where it comes from',
 		allKinds: 'All',
 		kinds: {
@@ -721,7 +738,7 @@ export const en = {
 		none: 'Nothing matches.',
 		clear: 'Clear search',
 		honest:
-			'The weapon grind (Military, Special, Gold, Platinum, Harmonic Break, Divergence, Mastery) is on the Camo grind tab; this is every other camo we found a source for. Paid store bundles are left out; the Season 1 Battle Pass, the campaign, DMZ secrets, Twitch drops and the partner promotions were checked and give no camos. Lists move along by themselves as dates pass; ≈ marks an estimated date. Tap a camo for the details.',
+			'The weapon grind (Military, Special, Gold, Platinum, Harmonic Break, Divergence, Mastery) is on the Camo grind tab; this is every other camo we found a source for. Paid store bundles are left out; the Season 1 Battle Pass, the campaign, DMZ secrets, Twitch drops and the partner promotions were checked and give no camos. Lists move along by themselves as dates pass; ≈ marks an estimated date. Tap a camo for the details, tap the box to mark it as got (saved and synced like your other ticks).',
 		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
 	/** The Cosmetics tab (CosmeticsSection; data/cosmetics.ts). */

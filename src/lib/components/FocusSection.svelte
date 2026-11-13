@@ -80,7 +80,7 @@
 							aria-haspopup="dialog"
 							onclick={() => weaponSheet.show(weapon.id)}
 						>
-							{#if look}<span class="compact-hide flex-none"><WeaponIcon {look} /></span>{/if}
+							{#if look}<span class="compact-hide flex-none"><WeaponIcon {look} camo={progress.wears(weapon.id)} /></span>{/if}
 							<span class="min-w-0">
 								<span class="weapon-name block truncate font-semibold">{weapon.name}</span>
 								<span class="block text-[12px] text-muted">{className(weapon.classId)}</span>

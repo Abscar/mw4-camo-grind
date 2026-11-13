@@ -17,6 +17,13 @@
 	- Nothing is drawn over the playing video (YouTube's embed rules): static, the channel OSD and the
 	  warm-up flash only show while the video is hidden.
 	Channel changes make a new <iframe> (changing `src` would add browser history entries).
+	- Breaking news (2026-11-13, the user's pick): when there's a fresh nerf / buff headline
+	  (news-codec.ts `breakingNews`: the newest, at most 14 days old, not shown on this device yet),
+	  the TV drops the montage for "CH 00": our own news-studio screen with a red BREAKING NEWS bar,
+	  the headline, source + time and a ticker. The screen links to the article; after 15 s (or ×,
+	  or a channel knob) the montage comes back. Once per headline per device (`mw4-camo-grind:tv-news`);
+	  only while the TV is on and on screen, so nobody misses it below the fold. The player is
+	  removed meanwhile, so nothing is drawn over a playing video.
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
@@ -24,6 +31,8 @@
 	import { FAVOURITE, MONTAGES } from '#lib/data/montages.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { motion } from '#lib/motion.svelte.ts';
+	import { breakingNews, type Headline } from '#lib/news-codec.ts';
+	import { news, timeAgo } from '#lib/news.svelte.ts';
 	import TvGames from '#lib/components/TvGames.svelte';
 	import {
 		CAPTIONS_OFF,
@@ -44,6 +53,13 @@
 	const TUNE_MS = 350;
 	/** If the player never says "playing" (autoplay blocked, messages lost), show it anyway. */
 	const REVEAL_MS = 2600;
+	/** Which breaking-news headline this device has shown (its link), and for how long it stays on. */
+	const NEWS_KEY = 'mw4-camo-grind:tv-news';
+	const NEWS_MS = 15_000;
+
+	/** The breaking-news headline on screen now, or null (the montage). */
+	let newsItem = $state<Headline | null>(null);
+	let newsTimer: ReturnType<typeof setTimeout> | undefined;
 
 	let mounted = $state(false);
 	let power = $state(false);
@@ -151,6 +167,9 @@
 
 	/** Show static, then load the player for `ch` (after `delay`, so fast flipping loads only the last). */
 	function tuneTo(ch: number, delay = TUNE_MS) {
+		// a channel knob during the news goes back to the montages
+		clearTimeout(newsTimer);
+		newsItem = null;
 		channel = ((ch % N) + N) % N;
 		tuning = true;
 		pending = true;
@@ -184,8 +203,10 @@
 		}
 		clearTimeout(tuneTimer);
 		clearTimeout(revealTimer);
+		clearTimeout(newsTimer);
 		clearInterval(handshake);
 		src = null;
+		newsItem = null;
 		soundOn = false;
 		tuning = true;
 		flash('cool');
@@ -268,6 +289,49 @@
 		}
 	}
 
+	/** Drop the montage for the news screen (the player goes, so nothing is drawn over a playing video). */
+	function showNews(h: Headline) {
+		try {
+			localStorage.setItem(NEWS_KEY, h.url);
+		} catch {
+			// not remembered: it may show once more on the next visit
+		}
+		clearTimeout(tuneTimer);
+		clearTimeout(revealTimer);
+		clearInterval(handshake);
+		src = null;
+		pending = false;
+		tuning = false;
+		newsItem = h;
+		flash('warm');
+		clearTimeout(newsTimer);
+		newsTimer = setTimeout(endNews, NEWS_MS);
+	}
+
+	/** Back to the montage it was on. */
+	function endNews() {
+		clearTimeout(newsTimer);
+		if (!newsItem) return;
+		newsItem = null;
+		if (power) tuneTo(channel, 0);
+	}
+
+	// breaking news: a fresh nerf / buff headline interrupts once, while the TV is on and on screen
+	$effect(() => {
+		const patches = news.patches;
+		if (!mounted || !power || !inView || newsItem) return;
+		untrack(() => {
+			let shownUrl: string | null = null;
+			try {
+				shownUrl = localStorage.getItem(NEWS_KEY);
+			} catch {
+				// no storage: treat as not shown
+			}
+			const h = breakingNews(patches, Date.now(), shownUrl);
+			if (h) showNews(h);
+		});
+	});
+
 	// muted and out of sight (scrolled away, other tab): pause; back in sight: carry on
 	$effect(() => {
 		const away = !inView || !pageVisible;
@@ -336,7 +400,7 @@
 			window.removeEventListener('message', onMessage);
 			window.removeEventListener('online', onOnline);
 			document.removeEventListener('visibilitychange', onVisibility);
-			for (const timer of [tuneTimer, revealTimer, phaseTimer, offTimer]) clearTimeout(timer);
+			for (const timer of [tuneTimer, revealTimer, phaseTimer, offTimer, newsTimer]) clearTimeout(timer);
 			clearInterval(handshake);
 		};
 	});
@@ -359,7 +423,7 @@
 	<div class="tv-cabinet">
 		<div class="tv-front">
 			<div class="tv-glass">
-				{#if power && (tuning || !signal || !src)}
+				{#if power && !newsItem && (tuning || !signal || !src)}
 					<div class="tv-static" aria-hidden="true"></div>
 				{/if}
 				{#if power && signal && src && shown && seen}
@@ -376,13 +440,47 @@
 						></iframe>
 					{/key}
 				{/if}
-				{#if power && (tuning || !signal)}
+				{#if power && !newsItem && (tuning || !signal)}
 					<div class="tv-osd" aria-hidden="true">
 						<span class="tv-osd-ch">{t.tv.channel(channel + 1)}</span>
 						{#if !signal}<span class="tv-osd-msg">{t.tv.noSignal}</span>{/if}
 					</div>
 				{/if}
-				{#if power && !signal && OFFLINE_FILE}
+				{#if power && newsItem}
+					{@const more = news.patches.filter((p) => p.url !== newsItem?.url).slice(0, 3)}
+					<!-- CH 00: the breaking-news screen (our own studio look); tap = the article -->
+					<a
+						class="tv-news"
+						href={newsItem.url}
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="{t.tv.newsOpen(newsItem.title)} ({t.news.newTab})"
+					>
+						<span class="tvn-top" aria-hidden="true">
+							<span class="tvn-live"><i></i>{t.tv.live}</span>
+							<span class="tvn-ch">{t.tv.newsChannel}</span>
+						</span>
+						<span class="tvn-banner" aria-hidden="true">{t.tv.breaking}</span>
+						<span class="tvn-headline" aria-hidden="true">{newsItem.title}</span>
+						<span class="tvn-meta" aria-hidden="true"
+							>{newsItem.source}{#if news.now}{' · '}{timeAgo(newsItem.date, news.now)}{/if}</span
+						>
+						<span class="tvn-ticker" aria-hidden="true"
+							><span class="tvn-crawl"
+								>{t.tv.newsDesk}{#each more as p (p.url)}{'  ◆  '}{p.title}{:else}{'  ◆  '}{newsItem.title}{/each}</span
+							></span
+						>
+						<span class="tvn-timer" aria-hidden="true"></span>
+					</a>
+					<button type="button" class="tvn-back" aria-label={t.tv.newsBack} title={t.tv.newsBack} onclick={endNews}>
+						<span aria-hidden="true"
+							><svg viewBox="0 0 16 16"
+								><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg
+							></span
+						>
+					</button>
+				{/if}
+				{#if power && !newsItem && !signal && OFFLINE_FILE}
 					<a class="tv-yt" href={watchUrl(current.id)} target="_blank" rel="noopener noreferrer"
 						>{t.tv.watchOnYouTube}<span class="sr-only"> ({t.news.newTab})</span></a
 					>
@@ -395,8 +493,11 @@
 				{/if}
 				<div class="tv-flash" data-phase={phase} aria-hidden="true"></div>
 			</div>
-			<p class="tv-plate" title={power ? `${current.by}: ${current.title}` : undefined}>
-				{#if power}
+			<p class="tv-plate" title={power ? (newsItem ? newsItem.title : `${current.by}: ${current.title}`) : undefined}>
+				{#if power && newsItem}
+					<span class="tv-plate-author tvn-plate">{t.tv.breaking}</span>
+					<span class="tv-plate-title">{newsItem.source}</span>
+				{:else if power}
 					<span class="tv-plate-author">{current.by}</span>
 					<span class="tv-plate-title">{current.name}</span>
 				{:else}
@@ -407,7 +508,7 @@
 
 		<div class="tv-controls">
 			<span class="tv-grille" aria-hidden="true"></span>
-			<span class="tv-led" class:tv-led-on={power} aria-hidden="true">{power ? pad(channel + 1) : '88'}</span>
+			<span class="tv-led" class:tv-led-on={power} aria-hidden="true">{power ? (newsItem ? '00' : pad(channel + 1)) : '88'}</span>
 			<button type="button" class="tv-knob" aria-label={t.tv.prev} title={t.tv.prev} onclick={() => flip(-1)}>
 				<span
 					><svg viewBox="0 0 16 16" aria-hidden="true"
@@ -627,6 +728,189 @@
 		color: #fff;
 		font: 700 12.5px/1 var(--font-head);
 		white-space: nowrap;
+	}
+
+	/* CH 00, breaking news: a navy studio with a faint grid, red BREAKING NEWS bar, white headline box,
+	   source line, yellow ticker and a red bar that runs out while it's on */
+	.tv-news {
+		position: absolute;
+		inset: 4px;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		border-radius: 6px;
+		color: #fff;
+		text-decoration: none;
+		background:
+			repeating-linear-gradient(0deg, rgb(120 170 255 / 0.07) 0 1px, transparent 1px 16px),
+			repeating-linear-gradient(90deg, rgb(120 170 255 / 0.07) 0 1px, transparent 1px 16px),
+			radial-gradient(ellipse 80% 60% at 28% 18%, #2a4f93, #0b1834 62%, #050a18);
+		animation: tvn-in 0.35s ease-out;
+	}
+	/* scanlines + a soft vignette, like the rest of the tube */
+	.tv-news::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background:
+			repeating-linear-gradient(0deg, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px),
+			radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55));
+	}
+	.tv-news:focus-visible {
+		outline: 2px solid #ffe14a;
+		outline-offset: -3px;
+	}
+	.tvn-top {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 46px 0 9px;
+		font: 700 11px/1 var(--font-hud);
+		letter-spacing: 0.08em;
+	}
+	.tvn-live {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 3px 7px 3px 6px;
+		border-radius: 3px;
+		background: #d4111b;
+		text-transform: uppercase;
+		box-shadow: 0 0 8px rgb(255 30 40 / 0.6);
+	}
+	.tvn-live i {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #fff;
+		animation: tvn-blink 1s steps(1) infinite;
+	}
+	.tvn-ch {
+		color: #7dff5a;
+		text-shadow: 0 0 6px rgb(110 255 80 / 0.8);
+	}
+	.tvn-banner {
+		align-self: flex-start;
+		margin-top: auto;
+		padding: 5px 18px 4px 9px;
+		clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+		background: linear-gradient(180deg, #ff2b33, #b20b14);
+		font: 800 15px/1 var(--font-head);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		text-shadow: 0 1px 0 rgb(0 0 0 / 0.45);
+		animation: tvn-slide 0.5s 0.15s ease-out backwards;
+	}
+	.tvn-headline {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		overflow: hidden;
+		padding: 6px 9px 5px;
+		background: linear-gradient(180deg, #ffffff, #dfe6f0);
+		color: #0b1424;
+		font: 700 13px/1.25 var(--font-head);
+		animation: tvn-slide 0.5s 0.3s ease-out backwards;
+	}
+	.tvn-meta {
+		padding: 3px 9px;
+		background: #0b1424;
+		color: #ffcc33;
+		font: 700 10px/1.25 var(--font-head);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tvn-ticker {
+		height: 18px;
+		overflow: hidden;
+		white-space: nowrap;
+		background: #ffcc33;
+		color: #14110d;
+		font: 700 10.5px/18px var(--font-head);
+	}
+	.tvn-crawl {
+		display: inline-block;
+		padding-left: 100%;
+		white-space: pre;
+		animation: tvn-crawl 16s linear infinite;
+	}
+	.tvn-timer {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		z-index: 1;
+		width: 100%;
+		height: 2px;
+		background: #ff2b33;
+		transform-origin: left;
+		animation: tvn-timer 15s linear forwards;
+	}
+	/* "back to the montage": a 44 px target in the screen's top-right corner */
+	.tvn-back {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		z-index: 2;
+		display: grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: #fff;
+		cursor: pointer;
+	}
+	.tvn-back > span {
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: rgb(0 0 0 / 0.55);
+		box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35);
+	}
+	.tvn-back svg {
+		width: 11px;
+		height: 11px;
+	}
+	.tvn-back:focus-visible {
+		outline: 2px solid #ffe14a;
+		outline-offset: -4px;
+		border-radius: 50%;
+	}
+	.tv-plate-author.tvn-plate {
+		color: #ff4a4a;
+	}
+	@keyframes tvn-in {
+		from {
+			filter: brightness(2.2) saturate(0.4);
+		}
+	}
+	@keyframes tvn-slide {
+		from {
+			transform: translateX(-105%);
+		}
+	}
+	@keyframes tvn-blink {
+		50% {
+			opacity: 0;
+		}
+	}
+	@keyframes tvn-crawl {
+		to {
+			transform: translateX(-100%);
+		}
+	}
+	@keyframes tvn-timer {
+		to {
+			transform: scaleX(0);
+		}
 	}
 
 	/* switched off: dark glass with a reflection, the whole screen is an "on" button */
@@ -869,8 +1153,19 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.tv-static,
-		.tv-static::after {
+		.tv-static::after,
+		.tv-news,
+		.tvn-banner,
+		.tvn-headline,
+		.tvn-live i,
+		.tvn-crawl {
 			animation: none;
+		}
+		.tvn-crawl {
+			padding-left: 9px;
+		}
+		.tvn-timer {
+			display: none;
 		}
 		.tv-video,
 		.tv-hint {

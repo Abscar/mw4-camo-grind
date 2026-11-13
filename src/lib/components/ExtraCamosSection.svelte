@@ -6,9 +6,13 @@
 	load (the prerendered page uses the snapshot's day, so the first render matches). A search and
 	"where from" buttons; items grouped by where they come from; tap one for the details. The little
 	tile is our own symbol for where it comes from, not a picture of the camo (no made-up looks).
+	Since 2026-11-13 (the user's pick from a brainstorm) every card has a "Got it" box: saved, synced
+	and in backups like the other ticks (progress.extraCamos), plus "x of y got" and a per-device
+	"Hide the ones I've got" switch.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { progress } from '#lib/progress.svelte.ts';
 	import {
 		EXTRA_CAMOS,
 		EXTRA_CAMOS_CHECKED,
@@ -33,10 +37,31 @@
 	// the snapshot's day until the page has loaded, then the viewer's own day
 	let today = $state(EXTRA_CAMOS_CHECKED);
 
+	// "Hide the ones I've got": per device, a convenience only
+	const HIDE_KEY = 'mw4-camo-grind:xc-hide-got';
+	let hideGot = $state(false);
+
 	onMount(() => {
 		const d = new Date();
 		today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+		try {
+			hideGot = localStorage.getItem(HIDE_KEY) === '1';
+		} catch {
+			// private mode: starts off
+		}
 	});
+
+	function setHideGot(on: boolean) {
+		hideGot = on;
+		try {
+			if (on) localStorage.setItem(HIDE_KEY, '1');
+			else localStorage.removeItem(HIDE_KEY);
+		} catch {
+			// not remembered, still works for now
+		}
+	}
+
+	const got = (c: ExtraCamo) => progress.extraCamos[c.id] === 1;
 
 	const statusOf = $derived(new Map(EXTRA_CAMOS.map((c) => [c.id, extraStatus(c, today)])));
 	const counts = $derived(
@@ -47,11 +72,13 @@
 	);
 	const needle = $derived(query.trim().toLowerCase());
 	const inStatus = $derived(EXTRA_CAMOS.filter((c) => statusOf.get(c.id) === status));
+	const gotHere = $derived(inStatus.filter((c) => got(c)).length);
 	const kindsHere = $derived(EXTRA_KINDS.filter((k) => inStatus.some((c) => c.kind === k)));
 	const shown = $derived(
 		[...inStatus]
 			.filter(
 				(c) =>
+					(!hideGot || !got(c)) &&
 					(kind === null || c.kind === kind) &&
 					(needle === '' ||
 						c.name.toLowerCase().includes(needle) ||
@@ -203,7 +230,17 @@
 					class="h-11 w-full rounded-full border border-line bg-panel pr-4 pl-10 text-fg outline-none placeholder:text-muted focus:border-accent"
 				/>
 			</label>
-			<p class="num text-[13px] font-semibold text-fg" role="status">{s.results(shown.length, inStatus.length)}</p>
+			<p class="num text-[13px] font-semibold text-fg" role="status">
+				{s.results(shown.length, inStatus.length)}<span class="xc-gotcount font-normal">{' · '}{s.gotCount(gotHere, inStatus.length)}</span>
+			</p>
+			<label class="flex min-h-11 items-center gap-2.5 text-sm text-muted select-none">
+				<input type="checkbox" class="peer sr-only" checked={hideGot} onchange={(e) => setHideGot(e.currentTarget.checked)} />
+				<span
+					class="relative h-6 w-10 flex-none rounded-full bg-track transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent after:absolute after:top-1 after:left-1 after:size-4 after:rounded-full after:bg-panel after:shadow after:transition-transform peer-checked:after:translate-x-4"
+					aria-hidden="true"
+				></span>
+				{s.hideGot}
+			</label>
 		</div>
 
 		{#if kindsHere.length > 1}
@@ -225,10 +262,12 @@
 				<ul class="mt-2 grid grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] gap-2">
 					{#each g.items as c (c.id)}
 						{@const label = tag(c)}
-						<li class="min-w-0">
+						{@const have = got(c)}
+						<li class="relative min-w-0">
 							<button
 								type="button"
-								class="xc-item meta-card flex h-full w-full min-w-0 items-start gap-3 rounded-card border border-line bg-panel-2 p-2.5 text-left"
+								class="xc-item meta-card relative flex h-full w-full min-w-0 items-start gap-3 rounded-card border border-line bg-panel-2 p-2.5 pr-14 text-left"
+								class:is-got={have}
 								data-kind={c.kind}
 								data-status={statusOf.get(c.id)}
 								aria-haspopup="dialog"
@@ -238,6 +277,7 @@
 								<span class="min-w-0 flex-1">
 									<span class="flex flex-wrap items-center gap-x-2 gap-y-1">
 										<b class="xc-name font-semibold break-words" class:unverified={c.trust === 'one' || c.trust === 'leak'}>{c.name}</b>
+										{#if have}<span class="xc-tag xc-got">{s.gotOn}</span>{/if}
 										{#if c.animated}<span class="xc-tag xc-anim">{s.animated}</span>{/if}
 										{#if label}<span class="xc-tag" data-status={statusOf.get(c.id)}>{label}</span>{/if}
 									</span>
@@ -251,7 +291,20 @@
 									</span>
 									<span class="sr-only"> – {s.openHint}</span>
 								</span>
-								<span class="xc-more flex-none self-center" aria-hidden="true">›</span>
+								<span class="xc-more" aria-hidden="true">›</span>
+							</button>
+							<!-- a sibling of the card button (buttons can't nest), drawn in its top-right corner -->
+							<button
+								type="button"
+								class="xc-tick"
+								aria-pressed={have}
+								aria-label={c.perWeapon ? s.gotTickPerWeapon(c.name) : s.gotTick(c.name)}
+								title={s.got}
+								onclick={() => progress.toggleExtra(c.id)}
+							>
+								<span class="xc-box" aria-hidden="true">
+									{#if have}<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>{/if}
+								</span>
 							</button>
 						</li>
 					{/each}
@@ -259,7 +312,9 @@
 			</section>
 		{:else}
 			<div class="rounded-card border border-line bg-panel-2 px-4 py-5 text-center">
-				<p class="text-muted">{needle !== '' || kind !== null ? s.none : s.empty[status]}</p>
+				<p class="text-muted">
+					{needle !== '' || kind !== null ? s.none : hideGot && inStatus.length > 0 && gotHere === inStatus.length ? s.allGot : s.empty[status]}
+				</p>
 				{#if needle !== '' || kind !== null}
 					<button
 						type="button"
@@ -312,6 +367,15 @@
 		</div>
 	{/if}
 	{#snippet actions()}
+		{#if picked}
+			{@const have = got(picked)}
+			{@const id = picked.id}
+			<button type="button" class="btn xc-got-btn" class:is-got={have} aria-pressed={have} onclick={() => progress.toggleExtra(id)}
+				><span class="xc-box xc-box-sm" aria-hidden="true"
+					>{#if have}<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>{/if}</span
+				>{s.got}</button
+			>
+		{/if}
 		<button type="button" class="btn btn-primary" onclick={() => (infoOpen = false)}>{s.close}</button>
 	{/snippet}
 </Dialog>
@@ -399,9 +463,93 @@
 		opacity: 0.55;
 	}
 	.xc-more {
+		position: absolute;
+		right: 18px;
+		bottom: 6px;
 		font-size: 20px;
 		line-height: 1;
 		color: var(--t-muted);
+	}
+	/* "Got it": a 44 px tap target in the card's top-right corner, a 26 px box inside */
+	.xc-tick {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		display: grid;
+		place-items: center;
+		width: 46px;
+		height: 46px;
+		border-radius: 10px;
+		cursor: pointer;
+	}
+	.xc-box {
+		display: grid;
+		place-items: center;
+		width: 26px;
+		height: 26px;
+		border: 2px solid color-mix(in srgb, var(--t-fg) 45%, transparent);
+		border-radius: 7px;
+		background: var(--t-panel);
+		transition:
+			background-color 0.12s,
+			border-color 0.12s;
+	}
+	.xc-box svg {
+		width: 18px;
+		height: 18px;
+		fill: none;
+		/* dark tick on the light greens (Abscar, Neon Grid), white on the dark ones */
+		stroke: var(--xc-ink, #0b1606);
+		stroke-width: 3.2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	:global([data-theme='field']) .xc-box,
+	:global([data-theme='command']) .xc-box {
+		--xc-ink: #fff;
+	}
+	.xc-tick:hover .xc-box {
+		border-color: var(--t-ok);
+	}
+	.xc-tick[aria-pressed='true'] .xc-box,
+	.xc-got-btn.is-got .xc-box {
+		border-color: var(--t-ok);
+		background: var(--t-ok);
+		animation: xc-pop 0.22s ease-out;
+	}
+	@keyframes xc-pop {
+		50% {
+			transform: scale(1.18);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.xc-tick[aria-pressed='true'] .xc-box,
+		.xc-got-btn.is-got .xc-box {
+			animation: none;
+		}
+	}
+	.xc-item.is-got {
+		border-color: color-mix(in srgb, var(--t-ok) 55%, var(--t-line));
+	}
+	.xc-got {
+		border-color: color-mix(in srgb, var(--t-ok) 70%, transparent);
+	}
+	.xc-gotcount {
+		color: var(--t-muted);
+	}
+	.xc-got-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.xc-box-sm {
+		width: 22px;
+		height: 22px;
+		border-radius: 6px;
+	}
+	.xc-box-sm svg {
+		width: 15px;
+		height: 15px;
 	}
 	.xc-name {
 		font-size: 14.5px;

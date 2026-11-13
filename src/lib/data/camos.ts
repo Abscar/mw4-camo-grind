@@ -20,6 +20,8 @@ export const LADDER = [
 
 export type LadderCamoId = (typeof LADDER)[number]['id'];
 export type LadderCamo = (typeof LADDER)[number];
+/** What a weapon's mini picture can wear (WeaponIcon): a ladder camo, or Divergence. */
+export type IconCamo = LadderCamoId | 'divergence';
 
 /** Highest per-weapon level (= every ladder camo done). */
 export const MAX_LEVEL = LADDER.length;
