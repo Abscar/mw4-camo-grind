@@ -1,7 +1,8 @@
 <!--
-	Abscar theme: for about two seconds when the page opens, a big red "WELCOME ABSCAR & PHILLESTAR"
-	powers on like an old screen, red terminal text boots up under it ("ABSCAR OS … OK"), then it all
-	fades away. Pure CSS, in the prerendered page, so it starts at once.
+	Abscar theme: for about two seconds when the page opens, a big red "WELCOME GRINDERS" powers on like
+	an old screen, red terminal text boots up under it ("ABSCAR OS … OK"), then it all fades away. Pure
+	CSS, in the prerendered page, so it starts at once. (It said "WELCOME ABSCAR & PHILLESTAR" until
+	2026-11-13, when the user asked for just "Welcome Grinders" as the squad grew.)
 	Every time the page opens (2026-11-11, the user's ask; once a day in between), never in compact mode,
 	and any tap or key skips it (app.html's inline script sets data-boot on <html>).
 	Clicks go straight through it, and with reduced motion it isn't shown at all.

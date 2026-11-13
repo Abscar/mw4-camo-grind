@@ -168,14 +168,13 @@ export const en = {
 	operator: {
 		label: 'Operator',
 		callsign: 'Abscar',
-		/** Abscar's squadmate, shown with his own emblem next to Abscar's */
+		/** Abscar's squadmates, each shown with his own emblem next to Abscar's */
 		mate: 'Phillestar',
+		/** Robin's callsign (2026-11-13). The no-break space keeps "Lars Åke" together: the tag breaks after "Drängen". */
+		lars: 'Drängen Lars Åke',
 		online: 'Online',
-		rank: 'Rank',
-		rankName: 'Iridescent',
-		/** label on the frame round both operator tags + the rank badge (they're both Iridescent) */
-		squad: 'Squad',
-		bothRanked: 'Both ranked'
+		/** label on the frame round the three operator tags */
+		squad: 'Squad'
 	},
 	/** The news buddy's speech bubble: nerfs, buffs, movement and patch changes only. */
 	news: {
@@ -214,9 +213,12 @@ export const en = {
 	},
 	/** Abscar theme: the red terminal text for a moment when the page opens. */
 	boot: {
-		/** big greeting above the terminal text; `crew` is split where it may wrap on phones */
+		/**
+		 * big greeting above the terminal text: "Welcome" small, `crew` big under it (split where it may wrap on
+		 * phones). It named the squad until 2026-11-13; the user then asked for just "Welcome Grinders".
+		 */
 		welcome: 'Welcome',
-		crew: ['Abscar', '& Phillestar'],
+		crew: ['Grinders'],
 		title: 'ABSCAR OS // CAMO GRIND MODULE',
 		hud: 'Booting HUD',
 		camos: 'Loading camo data',
@@ -240,7 +242,7 @@ export const en = {
 		close: 'Close the terminal',
 		input: 'Command',
 		quick: 'Quick commands',
-		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar.', 'Type “help” for commands. “exit” or Esc closes.'],
+		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke.', 'Type “help” for commands. “exit” or Esc closes.'],
 		help: [
 			'help              this list',
 			'status            your camo grind in numbers',
@@ -269,8 +271,12 @@ export const en = {
 		seasonLine: (name: string, day: number, length: number) => `${name}: day ${day} of ≈ ${length}`,
 		seasonEnds: (date: string, days: number) => `Ends ≈ ${date} (${days} days left, estimate)`,
 		buddyLine: (stage: string, n: number, total: number, next: string) => `Weed buddy: ${stage} (${n}/${total}). ${next}.`,
-		whoami: ['abscar', 'Rank: Iridescent. Status: grinding. Holk: lit.'],
-		squad: ['ABSCAR ........ ONLINE', 'PHILLESTAR .... ONLINE (snack: hamburger, favourite reward: the nuke)'],
+		whoami: ['abscar', 'Status: grinding. Holk: lit.'],
+		squad: [
+			'ABSCAR ............ ONLINE',
+			'PHILLESTAR ........ ONLINE (snack: hamburger, favourite reward: the nuke)',
+			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)'
+		],
 		nuke: ['!!! TACTICAL NUKE INBOUND !!!'],
 		nukeCount: (n: number) => `  ${n}...`,
 		nukeAfter: ['...', 'Just kidding. Your camos survived.', 'Phillestar says hi.'],
