@@ -19,8 +19,8 @@
  * codmunity's stat lists also carry other guns' parts (the M4's list has Han 86 barrels), which is why
  * only each gun's own attachment list counts. The MAR-9 page has no attachment list: its stat rows
  * were checked against mw4-kunskap/vapen-och-attachments.md and some unlock levels are unknown.
- * Scripts: .claude/testing/meta-codes/ (cm-fetch → cm-builds → opt → gen-site; paths point at the
- * 2026-11-12 scratchpad, adjust them). Refresh after a patch that touches attachments.
+ * Scripts: .claude/testing/meta-codes/ (refresh.mjs runs cm-fetch → cm-builds → opt → gen-site →
+ * gen-codes). Refresh after a patch that touches attachments.
  */
 import { build, type AttachmentSlot, type Loadout } from './loadouts.ts';
 
@@ -31,7 +31,7 @@ export type ExtraBuild = Loadout;
 
 type Parts = Partial<Record<AttachmentSlot, string>>;
 
-const READ = '2026-11-12';
+const READ = '2026-11-14';
 const COMPUTED = 'Worked out from codmunity.gg’s attachment stats';
 
 function notes(n: number, level: number | null, first: string[], why: string): string {

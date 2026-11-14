@@ -4,7 +4,7 @@
  * a small copy button (2026-11-12, the user's ask: "all the different multiplayer and warzone
  * subclasses, neatly with the other metas on the red gun card").
  *
- * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-12: the build
+ * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-14: the build
  * cards the page shows openly (Versatile, Close range, Long range, Sniper, Sniper support, Apex
  * build), in codmunity's rank order. Its "Additional Loadouts" (Max sprint speed, Min ADS …) are
  * Premium-locked on the website and were NOT taken from the page data: our own worked-out versions
@@ -31,7 +31,7 @@ type Parts = Partial<Record<AttachmentSlot, string>>;
 type Extras = { note?: string; verified?: boolean };
 
 export const SITE_SOURCE = 'codmunity.gg';
-const READ = '2026-11-12';
+const READ = '2026-11-14';
 
 function site(code: string, rank: number, role: string, date: string | null, parts: Parts, pro: boolean, extras: Extras = {}): SiteBuild {
 	return { ...build(role, SITE_SOURCE, date ?? READ, parts, extras), code, rank, pro, dated: date !== null };
@@ -115,7 +115,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'A05-43QCD-D1G9C-A311',
 				1,
 				'Versatile',
-				'2026-11-10',
+				'2026-11-13',
 				{
 					Muzzle: 'FSS IS300',
 					Barrel: 'FT Cannonade 7"',
@@ -143,30 +143,31 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 		],
 		wz: [
 			site(
-				'A05-3KB4J-BPH2Q-EW11',
+				'A05-B1GMX-4IEU1-1',
 				1,
+				'Sniper support',
+				'2026-11-13',
+				{
+					Optic: 'ZLR Type C',
+					Muzzle: 'XRK Mil-Tac Suppressor',
+					Underbarrel: 'Hurricane Grip',
+					Stock: 'Hurricane Stock',
+					Laser: 'SA Laz-500',
+					Apex: 'M4 Hurricane'
+				},
+				false
+			),
+			site(
+				'A05-3KB4J-BPH2Q-EW11',
+				2,
 				'Long range',
-				'2026-11-11',
+				'2026-11-13',
 				{
 					Optic: 'Cronen R808',
 					Muzzle: 'FSS IS300',
 					Barrel: '16 Highmark Barrel',
 					Magazine: '45 Round Mag',
 					Ammunition: '5.56 NATO High Velocity'
-				},
-				false
-			),
-			site(
-				'A05-75QM5-L11',
-				2,
-				'Sniper support',
-				null,
-				{
-					Muzzle: 'XRK Mil-Tac Suppressor',
-					Barrel: 'ZLR Drift 16.5"',
-					Magazine: '45 Round Mag',
-					'Rear Grip': 'Brace DX Grip',
-					Stock: 'ZLR ASP50 Stock'
 				},
 				false
 			)
@@ -261,22 +262,8 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 		],
 		wz: [
 			site(
-				'B04-AUY93-9Q6N1-1',
-				1,
-				'Sniper support',
-				null,
-				{
-					Optic: 'ZLR Type C',
-					Muzzle: 'ZLR Cold Echo',
-					Magazine: '35 Round Mag',
-					'Rear Grip': 'Schlager Attack-7 Grip',
-					Stock: 'XRK Ranger D4'
-				},
-				false
-			),
-			site(
 				'B04-26ERW-3NI1L-11',
-				2,
+				1,
 				'Long range',
 				'2026-11-07',
 				{
@@ -285,6 +272,20 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 					Barrel: 'SO 898F 19',
 					Magazine: '50 Round Drum Mag',
 					Stock: 'Hanbit B56T-L9'
+				},
+				false
+			),
+			site(
+				'B04-AUY93-9Q6N1-1',
+				2,
+				'Sniper support',
+				'2026-11-13',
+				{
+					Optic: 'ZLR Type C',
+					Muzzle: 'ZLR Cold Echo',
+					Magazine: '35 Round Mag',
+					'Rear Grip': 'Schlager Attack-7 Grip',
+					Stock: 'XRK Ranger D4'
 				},
 				false
 			)
@@ -296,7 +297,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'A01-43QCD-CXBJ5-XS11',
 				1,
 				'Versatile',
-				'2026-11-10',
+				'2026-11-13',
 				{
 					Barrel: 'FJX Ghostfire 16.3"',
 					'Rear Grip': 'Hanbit TechGrip',
@@ -342,7 +343,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'A01-T4472-C9931-1',
 				2,
 				'Sniper support',
-				'2026-11-11',
+				'2026-11-13',
 				{
 					Optic: 'SZ Helios Holo',
 					Barrel: 'FJX Ghostfire 16.3"',
@@ -471,7 +472,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'A04-5FNB3-5Q11',
 				2,
 				'Sniper support',
-				'2026-11-08',
+				'2026-11-13',
 				{
 					Barrel: 'Matuzek S5-Brace',
 					Underbarrel: 'Mire-50 Tac Grip',
@@ -599,7 +600,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'A02-A46HI-N11',
 				2,
 				'Sniper support',
-				'2026-11-08',
+				'2026-11-13',
 				{
 					Muzzle: 'XRK Mil-Tac Suppressor',
 					Barrel: 'GKL-700 14"',
@@ -617,7 +618,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'S06-3YNQ7-YB11',
 				1,
 				'Versatile',
-				'2026-11-06',
+				'2026-11-13',
 				{
 					Muzzle: 'XRK Herder 40',
 					Stock: 'Demo Kilo90 Stock',
@@ -662,7 +663,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'S06-3K9Y5-LJH5N-Z711',
 				2,
 				'Sniper support',
-				null,
+				'2026-11-13',
 				{
 					Barrel: 'ZLR Carbon-900',
 					Underbarrel: 'FSS Fireline Grip',
@@ -726,7 +727,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'S03-3K9Y5-K3HJT-KW11',
 				2,
 				'Sniper support',
-				'2026-11-08',
+				'2026-11-13',
 				{
 					Muzzle: 'XRK Herder 40',
 					Barrel: 'VB-46 Series 11',
@@ -744,7 +745,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'S04-3KA8Z-I5DIH-LH11',
 				1,
 				'Versatile',
-				'2026-11-06',
+				'2026-11-13',
 				{
 					Muzzle: 'FTAC Silent Recon',
 					Optic: 'ZLR Type C',
@@ -772,12 +773,26 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 		],
 		wz: [
 			site(
-				'S04-9YGGZ-311',
+				'S04-AUXZ6-DU1Q1-1',
 				1,
 				'Close range',
-				'2026-11-11',
-				{ Optic: 'ZLR Type C', Muzzle: 'Full Port Comp', Barrel: 'GW Sender 500', Magazine: '50 Round Drum Mag', Stock: 'Wire Stock' },
+				'2026-11-12',
+				{ Optic: 'ZLR Type C', Muzzle: 'FTAC Silent Recon', Barrel: 'GW Sender 500', Magazine: '50 Round Drum Mag', Stock: 'Wire Stock' },
 				true
+			),
+			site(
+				'S04-AUXZ6-DTWY1-1',
+				2,
+				'Sniper support',
+				'2026-11-13',
+				{
+					Optic: 'ZLR Type C',
+					Muzzle: 'FTAC Silent Recon',
+					Barrel: 'GW Sender 500',
+					Magazine: '50 Round Drum Mag',
+					Stock: 'EXP Calvary II Stock'
+				},
+				false
 			)
 		]
 	},
@@ -1223,8 +1238,23 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 	'mar-9': {
 		mp: [
 			site(
-				'M02-3M5Z9-XNB11',
+				'M02-3M5Z7-FMQ11',
 				1,
+				'Close range',
+				'2026-11-13',
+				{
+					Muzzle: 'Meiko 30CAL-SP',
+					Barrel: 'Bruen Ironhide 76',
+					Laser: 'SZ Gen.6 PEQ',
+					'Rear Grip': 'Schlager PLM-S9',
+					Magazine: '30 Round Mag',
+					Apex: 'MAR-9 Auto'
+				},
+				false
+			),
+			site(
+				'M02-3M5Z9-XNB11',
+				2,
 				'Versatile',
 				'2026-11-10',
 				{
@@ -1233,21 +1263,6 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 					'Rear Grip': 'Schlager PLM-S9',
 					Magazine: '30 Round Mag',
 					Underbarrel: 'FSS Tac90 Grip',
-					Apex: 'MAR-9 Auto'
-				},
-				false
-			),
-			site(
-				'M02-3M5Z7-FMQ11',
-				2,
-				'Close range',
-				'2026-11-07',
-				{
-					Muzzle: 'Meiko 30CAL-SP',
-					Barrel: 'Bruen Ironhide 76',
-					Laser: 'SZ Gen.6 PEQ',
-					'Rear Grip': 'Schlager PLM-S9',
-					Magazine: '30 Round Mag',
 					Apex: 'MAR-9 Auto'
 				},
 				false
@@ -1333,7 +1348,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'M03-26ES6-3P15Q-11',
 				1,
 				'Versatile',
-				'2026-11-06',
+				'2026-11-13',
 				{
 					Muzzle: '330TC2 Gridlock',
 					Barrel: 'Mosin S762 Barrel',
@@ -1347,7 +1362,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'M03-26HE5-1AH2N-11',
 				2,
 				'Close range',
-				'2026-11-07',
+				'2026-11-13',
 				{ Muzzle: '330TC2 Gridlock', Laser: 'Schlager Visiv-5', Bolt: 'TV-Light 7-Bolt', Optic: 'Cronen R808', Stock: 'No Stock' },
 				false
 			),
@@ -1669,18 +1684,20 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 		],
 		wz: [
 			site(
-				'P02-3K9Y5-JTNTJ-HQ11',
+				'P02-VMGBY-353W1-1',
 				1,
 				'Close range',
-				null,
+				'2026-11-13',
 				{
-					Muzzle: 'FTAC HVY-S50',
-					Barrel: 'Matuzek Monarch',
-					Magazine: '14 Round Mag',
-					Ammunition: '.50 Pistol High Velocity',
-					'Trigger Action': 'Corio Lightning N6'
+					Optic: 'KV Corsac Holo',
+					Muzzle: 'Bruen Retort .50',
+					Magazine: '25 Round Drum Mag',
+					'Rear Grip': 'TT Iron Guard Kit',
+					Laser: 'Corvus Aves-3',
+					Apex: 'GS Magna'
 				},
-				false
+				false,
+				{ note: 'The TT Iron Guard Kit is an event reward, not a level unlock, so you may not have it yet.' }
 			)
 		]
 	},

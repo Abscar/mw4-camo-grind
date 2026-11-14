@@ -3,7 +3,7 @@
  * (WeaponCode.svelte; 2026-11-12, the user's ask: "a little button on the guns where you tick your
  * camos, tap it and the meta code is copied").
  *
- * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-12: for each gun
+ * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-14: for each gun
  * the best-ranked Multiplayer build that has a code and no Apex part (the user asked for "no Apex").
  * Nine guns (Hyeon Burst, Patriot XMR, VEL 46, Rezi 12, Warlord, MAR-9, KG-7 Vulcan, SANG 9mm,
  * Krait P68) have only Apex builds in Multiplayer there: they get the best-ranked one WITH the Apex
@@ -32,7 +32,7 @@ export interface LoadoutCode {
 }
 
 export const CODES_SOURCE = 'codmunity.gg';
-export const CODES_READ = '2026-11-12';
+export const CODES_READ = '2026-11-14';
 
 export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'han-86': {
@@ -50,7 +50,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	m4: {
 		code: 'A05-43QCD-D1G9C-A311',
 		role: 'Versatile',
-		date: '2026-11-10',
+		date: '2026-11-13',
 		attachments: [
 			{ slot: 'Muzzle', name: 'FSS IS300' },
 			{ slot: 'Barrel', name: 'FT Cannonade 7"' },
@@ -90,7 +90,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'kastov-762': {
 		code: 'A01-43QCD-CXBJ5-XS11',
 		role: 'Versatile',
-		date: '2026-11-10',
+		date: '2026-11-13',
 		attachments: [
 			{ slot: 'Barrel', name: 'FJX Ghostfire 16.3"' },
 			{ slot: 'Rear Grip', name: 'Hanbit TechGrip' },
@@ -176,7 +176,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'wz-55-striga': {
 		code: 'S04-3KA8Z-I5DIH-LH11',
 		role: 'Versatile',
-		date: '2026-11-06',
+		date: '2026-11-13',
 		attachments: [
 			{ slot: 'Muzzle', name: 'FTAC Silent Recon' },
 			{ slot: 'Optic', name: 'ZLR Type C' },
@@ -212,7 +212,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'csg-35': {
 		code: 'S01-3K9Y5-NZF8J-NL11',
 		role: 'Versatile',
-		date: '2026-11-12',
+		date: '2026-11-14',
 		dated: false,
 		attachments: [
 			{ slot: 'Muzzle', name: 'EXP Forage-Tac' },
@@ -287,15 +287,15 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 		]
 	},
 	'mar-9': {
-		code: 'M02-3M5Z9-XNB11',
-		role: 'Versatile',
-		date: '2026-11-10',
+		code: 'M02-3M5Z7-FMQ11',
+		role: 'Close range',
+		date: '2026-11-13',
 		attachments: [
-			{ slot: 'Barrel', name: 'Bruen Reaper-X' },
+			{ slot: 'Muzzle', name: 'Meiko 30CAL-SP' },
+			{ slot: 'Barrel', name: 'Bruen Ironhide 76' },
 			{ slot: 'Laser', name: 'SZ Gen.6 PEQ' },
 			{ slot: 'Rear Grip', name: 'Schlager PLM-S9' },
 			{ slot: 'Magazine', name: '30 Round Mag' },
-			{ slot: 'Underbarrel', name: 'FSS Tac90 Grip' },
 			{ slot: 'Apex', name: 'MAR-9 Auto' }
 		],
 		note: 'All its Multiplayer builds use the Apex, so this one has the MAR-9 Auto (it unlocks at the gun’s max level; swap it out in the gunsmith if you don’t have it yet).'
@@ -315,7 +315,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'mosin-nagant': {
 		code: 'M03-26ES6-3P15Q-11',
 		role: 'Versatile',
-		date: '2026-11-06',
+		date: '2026-11-13',
 		attachments: [
 			{ slot: 'Muzzle', name: '330TC2 Gridlock' },
 			{ slot: 'Barrel', name: 'Mosin S762 Barrel' },
@@ -372,9 +372,9 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 			{ slot: 'Rear Grip', name: 'SANG Wood Grip' },
 			{ slot: 'Magazine', name: '17 Round Mag' },
 			{ slot: 'Trigger Action', name: 'SANG Insta-F Trigger' },
-			{ slot: 'Apex', name: 'SANG Breach' }
+			{ slot: 'Apex', name: 'Sang Breach' }
 		],
-		note: 'All its Multiplayer builds use the Apex, so this one has the SANG Breach (it unlocks at the gun’s max level; swap it out in the gunsmith if you don’t have it yet).'
+		note: 'All its Multiplayer builds use the Apex, so this one has the Sang Breach (it unlocks at the gun’s max level; swap it out in the gunsmith if you don’t have it yet).'
 	},
 	'krait-p68': {
 		code: 'P03-2JD6P-8IXA9-F711',
