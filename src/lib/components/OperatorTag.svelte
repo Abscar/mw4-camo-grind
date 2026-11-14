@@ -26,38 +26,55 @@
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
 	import { MASTERY } from '#lib/data/camos.ts';
+	import { squad } from '#lib/squad.svelte.ts';
+	import { agoParts, headerStatuses, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
 
 	/**
 	 * How far each squad member is on the Multiplayer Mastery camos, shown as three small boxes under
 	 * their tag (the user's asks, 2026-11-13: first Phillestar's, then "give all of us the same
 	 * checkboxes", "write mine in by hand too", not started = grey). Typed in by hand, in MASTERY
-	 * order: nobody's row follows the tracker's own ticks, since friends open the page too.
-	 * Names come from camos.ts.
+	 * order. Names come from camos.ts.
+	 * Since 2026-11-14 (the Squad tab, squad.svelte.ts): for someone in your squad who picked this
+	 * operator, the boxes show the higher of these and what their own ticks say, so they move by
+	 * themselves and never go back. Visitors who aren't in the squad see these as typed.
 	 */
-	type Status = 'done' | 'active' | 'todo';
+	type Status = HeaderStatus;
 	const SQUAD_MASTERY = {
 		abscar: ['todo', 'todo', 'todo'],
 		phillestar: ['done', 'done', 'active'],
 		lars: ['done', 'active', 'todo'],
 		/** none of the MW4 Mastery camos yet (the user, 2026-11-13) */
 		jeeven: ['todo', 'todo', 'todo']
-	} satisfies Record<string, Status[]>;
+	} satisfies Record<SquadOp, Status[]>;
+
+	/** The squad member who is this operator (only when you're in a squad yourself). */
+	const live = (op: SquadOp) => (squad.on ? squad.forOp(op) : null);
+	const statuses = $derived(
+		Object.fromEntries(
+			(Object.keys(SQUAD_MASTERY) as SquadOp[]).map((op) => [
+				op,
+				headerStatuses(SQUAD_MASTERY[op], live(op)?.stats.mastery.mp ?? null)
+			])
+		) as Record<SquadOp, Status[]>
+	);
+
 	/**
 	 * Whoever is furthest behind gets a red "Slacker" sticker next to their boxes (the user's ask,
-	 * 2026-11-13). Worked out from SQUAD_MASTERY (done = 2, in progress = 1), so it moves by itself
+	 * 2026-11-13). Worked out from the boxes (done = 2, in progress = 1), so it moves by itself
 	 * when the statuses change; nobody gets it while the last place is shared. Da Jeeven is a
 	 * "Certified grinder" and never gets it (the user, 2026-11-13: "don't forget the slacker sticker on
 	 * Abscar", when Da Jeeven joined with no Mastery camos either).
 	 */
-	const SLACKER_EXEMPT = ['jeeven'];
-	const points = (statuses: Status[]) =>
-		statuses.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
-	const scores = Object.entries(SQUAD_MASTERY)
-		.filter(([who]) => !SLACKER_EXEMPT.includes(who))
-		.map(([who, statuses]) => ({ who, n: points(statuses) }));
-	const lowest = Math.min(...scores.map((s) => s.n));
-	const last = scores.filter((s) => s.n === lowest);
-	const slacker = last.length === 1 ? last[0].who : null;
+	const SLACKER_EXEMPT: SquadOp[] = ['jeeven'];
+	const points = (list: Status[]) => list.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
+	const slacker = $derived.by(() => {
+		const scores = (Object.keys(statuses) as SquadOp[])
+			.filter((who) => !SLACKER_EXEMPT.includes(who))
+			.map((who) => ({ who, n: points(statuses[who]) }));
+		const lowest = Math.min(...scores.map((s) => s.n));
+		const last = scores.filter((s) => s.n === lowest);
+		return last.length === 1 ? last[0].who : null;
+	});
 
 	const camos = MASTERY.map((camo) => ({ id: camo.id, name: camo.name.replace(' Reforged', '') }));
 	const STATUS_TEXT: Record<Status, string> = {
@@ -67,16 +84,24 @@
 	};
 </script>
 
-{#snippet callsign(name: string, wrap = false)}
+{#snippet callsign(name: string, op: SquadOp, wrap = false)}
+	<!-- "Online": decoration for visitors; for people in a squad, the real state of whoever picked
+	     this operator (Squad tab): Online (green), Offline (grey, "Seen …" as tooltip), Not in squad -->
+	{@const entry = live(op)}
+	{@const presence = !squad.on ? 'deco' : !entry ? 'none' : entry.online ? 'on' : 'off'}
 	<div class="min-w-0">
 		<p class="font-hud text-[11px] tracking-[0.22em] text-band-muted uppercase">
 			{t.operator.label} <span class="text-accent" aria-hidden="true">//</span>
 		</p>
 		<!-- a long callsign breaks into two lines where its text allows (min-content), never wider -->
 		<p class="op-name font-head text-xl leading-tight font-bold tracking-[0.2em] uppercase" class:op-wrap={wrap}>{name}</p>
-		<p class="font-hud flex items-center gap-1.5 text-[10.5px] tracking-[0.2em] text-accent uppercase">
+		<p
+			class="op-presence font-hud flex items-center gap-1.5 text-[10.5px] tracking-[0.2em] text-accent uppercase"
+			data-presence={presence}
+			title={presence === 'off' && entry ? t.operator.seen(t.squad.ago(agoParts(entry.member.seen, squad.now))) : undefined}
+		>
 			<span class="op-online-dot size-1.5 rounded-full bg-accent" aria-hidden="true"></span>
-			{t.operator.online}
+			{presence === 'off' ? t.operator.offline : presence === 'none' ? t.operator.notJoined : t.operator.online}
 		</p>
 	</div>
 {/snippet}
@@ -116,33 +141,33 @@
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
 				<AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" />
-				{@render callsign(t.operator.callsign)}
+				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
-			{@render mastery(t.operator.callsign, SQUAD_MASTERY.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss')}
+			{@render mastery(t.operator.callsign, statuses.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
 				<PhillestarEmblem />
-				{@render callsign(t.operator.mate)}
+				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
-			{@render mastery(t.operator.mate, SQUAD_MASTERY.phillestar, slacker === 'phillestar', t.operator.mateMotto)}
+			{@render mastery(t.operator.mate, statuses.phillestar, slacker === 'phillestar', t.operator.mateMotto)}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
 				<LarsAkeEmblem />
-				{@render callsign(t.operator.lars, true)}
+				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
-			{@render mastery(t.operator.lars, SQUAD_MASTERY.lars, slacker === 'lars', t.operator.larsMotto, 'lime')}
+			{@render mastery(t.operator.lars, statuses.lars, slacker === 'lars', t.operator.larsMotto, 'lime')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
 				<DaJeevenEmblem />
-				{@render callsign(t.operator.jeeven)}
+				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
-			{@render mastery(t.operator.jeeven, SQUAD_MASTERY.jeeven, slacker === 'jeeven')}
+			{@render mastery(t.operator.jeeven, statuses.jeeven, slacker === 'jeeven')}
 			<!-- his Black Ops 6 + 7 record (the user, 2026-11-13) and the gold "Certified grinder" sticker -->
 			<div class="sq-record-wrap">
 				<p class="sq-record-title font-hud">{t.operator.recordTitle}</p>
@@ -214,6 +239,23 @@
 				0 0,
 				300% 0;
 		}
+	}
+	/* the presence line for people in a squad (2026-11-14): green Online, grey Offline / Not in squad */
+	.op-presence[data-presence='on'] {
+		color: #3ee06a;
+	}
+	.op-presence[data-presence='on'] .op-online-dot {
+		background: #3ee06a;
+		box-shadow: 0 0 6px #3ee06a;
+	}
+	.op-presence[data-presence='off'],
+	.op-presence[data-presence='none'] {
+		color: rgb(200 198 210 / 0.75);
+	}
+	.op-presence[data-presence='off'] .op-online-dot,
+	.op-presence[data-presence='none'] .op-online-dot {
+		background: #7c818a;
+		animation: none;
 	}
 	/* "Drängen / Lars Åke" on two lines (the no-break space keeps "Lars Åke" together) */
 	.op-wrap {

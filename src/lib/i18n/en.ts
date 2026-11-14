@@ -188,6 +188,11 @@ export const en = {
 		abscarStickers: ['Refuses to play campaign mode'],
 		recordOf: (who: string) => `${who}: Black Ops 6 and 7 record`,
 		online: 'Online',
+		/** for a squad member whose page isn't open (only shown to people in the squad; Squad tab) */
+		offline: 'Offline',
+		/** for an operator nobody in your squad has picked yet */
+		notJoined: 'Not in squad',
+		seen: (ago: string) => `Seen ${ago}`,
 		/** the three small Mastery camo boxes under each squad member's tag */
 		masteryOf: (who: string) => `${who}: Mastery camos`,
 		masteryDone: 'done',
@@ -688,7 +693,106 @@ export const en = {
 		label: 'Pages',
 		grind: 'Camo grind',
 		cosmetics: 'Cosmetics',
-		extras: 'Extra camos'
+		extras: 'Extra camos',
+		squad: 'Squad'
+	},
+	/** The Squad tab (SquadSection; squad.svelte.ts): friends' grind side by side, Online / Offline (2026-11-14). */
+	squad: {
+		heading: 'Squad',
+		sub: (n: number) => (n === 1 ? '1 member' : `${n} members`),
+		subOff: 'See each other’s grind',
+		intro:
+			'See your friends’ camo grind next to yours: Gold, Platinum, Harmonic Break, Divergence and Mastery, and who has the page open right now. No accounts or passwords: a private squad link connects you.',
+		steps: [
+			'Create a squad and send the squad link to your friends.',
+			'They open it once and pick their name.',
+			'From then on everyone’s ticks show up here by themselves.'
+		],
+		create: 'Create a squad',
+		haveLink: 'I have a squad link…',
+		invite: 'Squad link',
+		refresh: 'Refresh',
+		edit: 'Change name',
+		leave: 'Leave squad',
+		status: {
+			off: '',
+			loading: 'Loading the squad…',
+			ok: '',
+			offline: 'Offline: the squad updates when you’re back online',
+			error: 'Couldn’t reach the squad, trying again soon',
+			full: 'The squad is full (20 members), so you couldn’t be added'
+		},
+		updatedAt: (time: string) => `Updated ${time}`,
+		you: 'You',
+		asOp: (op: string) => `Operator: ${op}`,
+		online: 'Online',
+		seen: (ago: string) => `Seen ${ago}`,
+		ago: (a: { unit: 'now' } | { unit: 'min' | 'h' | 'd'; n: number }) =>
+			a.unit === 'now' ? 'just now' : a.unit === 'min' ? `${a.n} min ago` : a.unit === 'h' ? `${a.n} h ago` : a.n === 1 ? '1 day ago' : `${a.n} days ago`,
+		lastCamo: (ago: string) => `Last camo ${ago}`,
+		noCamo: 'No camo ticked yet',
+		rank: (n: number) => `#${n}`,
+		ladderOf: (camo: string, n: number, total: number) => `${camo}: ${n} of ${total} weapons`,
+		divergenceLeft: (n: number) => `${n} Harmonic Break${n === 1 ? '' : 's'} to Divergence`,
+		divergenceDone: 'Divergence unlocked',
+		masteryLabel: 'Mastery',
+		modes: { mp: 'MP', wz: 'WZ', dmz: 'DMZ' },
+		modeNames: { mp: 'Multiplayer', wz: 'Warzone', dmz: 'DMZ' },
+		masteryStatus: { locked: 'locked', active: 'in progress', complete: 'done' },
+		masteryOf: (mode: string) => `${mode} Mastery camos`,
+		remove: 'Remove',
+		compareHeading: 'Weapon by weapon',
+		compareHint: 'G = Gold, P = Platinum, HB = Harmonic Break, – = nothing yet',
+		compareWeapon: 'Weapon',
+		levelShort: ['–', 'G', 'P', 'HB'],
+		levelLong: ['Nothing yet', 'Gold', 'Platinum', 'Harmonic Break'],
+		// the name + operator form (create, join, change name)
+		createTitle: 'Create a squad',
+		createGo: 'Create',
+		joinTitle: 'Join the squad',
+		joinWho: (names: string) => `In the squad: ${names}.`,
+		joinEmpty: 'Nobody is in it yet.',
+		joinSwitch: 'You’ll leave the squad you’re in now.',
+		joinGo: 'Join',
+		editTitle: 'Change your name or operator',
+		editGo: 'Save',
+		cancel: 'Cancel',
+		nameLabel: 'Your name',
+		nameHint: 'Shown to the squad. Same person on another device? Type the same name.',
+		nameMissing: 'Type a name, or pick your operator below.',
+		opLegend: 'Which operator in the header are you?',
+		opHint: 'Your Mastery boxes and Online light at the top of the page then follow your ticks.',
+		opNone: 'None of them',
+		opTaken: (name: string) => `${name} has it`,
+		// the squad link
+		linkTitle: 'Your squad link',
+		linkBody:
+			'Send this link to your friends. Opening it once lets them join. Anyone with the link can see the squad and join it, so share it only with them.',
+		pasteTitle: 'Use a squad link',
+		pasteBody: 'Paste the squad link a friend sent you.',
+		pasteLabel: 'Squad link',
+		pasteUse: 'Next',
+		pasteBad: 'That doesn’t look like a squad link.',
+		// leaving and removing
+		leaveTitle: 'Leave the squad?',
+		leaveBody: 'You’re taken out of the squad. Your ticks stay here, and you can join again with the squad link.',
+		leaveGo: 'Leave',
+		removeTitle: (name: string) => `Remove ${name} from the squad?`,
+		removeBody: 'For an old device or a test entry. If their page is still open, they come back by themselves.',
+		removeGo: 'Remove',
+		toast: {
+			created: 'Squad created. Send the squad link to your friends.',
+			joined: 'You’re in the squad.',
+			saved: 'Saved.',
+			left: 'You left the squad. Your ticks stay here.',
+			removed: (name: string) => `${name} was taken out of the squad.`,
+			already: 'You’re already in this squad.',
+			notFound: 'That squad link isn’t active, so nothing changed.',
+			notSquad: 'That isn’t a squad link, so nothing changed.',
+			offline: 'You’re offline. Open the squad link again when you’re online.',
+			error: 'Couldn’t reach the squad just now. Try again in a moment.',
+			full: 'That squad is full (20 members).'
+		}
 	},
 	/** The Extra camos tab (ExtraCamosSection; data/extraCamos.ts). */
 	extraCamos: {

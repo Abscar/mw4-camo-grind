@@ -48,10 +48,17 @@
 	import PageTabs from '#lib/components/PageTabs.svelte';
 	import RankedSection from '#lib/components/RankedSection.svelte';
 	import { pageTab } from '#lib/pageTab.svelte.ts';
+	import SquadSection from '#lib/components/SquadSection.svelte';
+	import { squad } from '#lib/squad.svelte.ts';
 
-	/** The page tabs under the header (2026-11-12). All stay mounted; the others are only hidden. */
-	const PAGE_TABS = ['grind', 'cosmetics', 'extras'] as const;
+	/** The page tabs under the header (2026-11-12; Squad 2026-11-14). All stay mounted; the others are only hidden. */
+	const PAGE_TABS = ['grind', 'cosmetics', 'extras', 'squad'] as const;
 	let view = $state<(typeof PAGE_TABS)[number]>('grind');
+
+	// a squad link was opened: show the Squad tab, where it asks for your name
+	$effect(() => {
+		if (squad.showTab > 0) view = 'squad';
+	});
 
 	function tabKey(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -246,6 +253,10 @@
 			<div class="mt-5"><ExtraCamosSection /></div>
 		</div>
 
+		<div id="panel-squad" role="tabpanel" aria-labelledby="tab-squad" hidden={view !== 'squad'}>
+			<div class="mt-5"><SquadSection /></div>
+		</div>
+
 		<div id="panel-grind" role="tabpanel" aria-labelledby="tab-grind" hidden={view !== 'grind'}>
 		<!-- the green radar with the latest COD news -->
 		<div class="compact-hide mt-5"><NewsBanner /></div>
@@ -370,7 +381,7 @@
 	.page-tab:hover {
 		color: var(--t-fg);
 	}
-	/* phones: three tabs share the row equally */
+	/* phones: the four tabs share the row equally; a long name wraps onto two lines */
 	@media (max-width: 639px) {
 		.page-tabs {
 			gap: 4px;
@@ -378,9 +389,10 @@
 		.page-tab {
 			flex: 1 1 0;
 			min-width: 0;
-			padding: 0 0.35rem;
-			font-size: 12.5px;
-			letter-spacing: 0.04em;
+			padding: 0 0.25rem;
+			font-size: 12px;
+			line-height: 1.1;
+			letter-spacing: 0.03em;
 		}
 	}
 	.page-tab[aria-selected='true'] {
