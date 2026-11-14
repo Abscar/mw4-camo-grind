@@ -179,6 +179,9 @@ export const en = {
 		    "randoms"; 2026-11-14 the user asked for "idiots") */
 		larsMotto: 'Held back by idiots',
 		jeeven: 'Da Jeeven',
+		/** the fifth squad member (2026-11-14, the user's friend), the wizard; his sign in the user's words */
+		ingman: 'Ingman',
+		ingmanMotto: 'Jim and Pro player',
 		certified: 'Certified grinder',
 		recordTitle: 'BO6 + BO7',
 		record: ['Prestige Master', 'Max level', 'All calling cards'],
@@ -200,7 +203,7 @@ export const en = {
 		masteryTodo: 'not started',
 		/** sticker next to the squad member who is furthest behind on the Mastery camos */
 		slacker: 'Slacker',
-		/** label on the frame round the four operator tags */
+		/** label on the frame round the operator tags */
 		squad: 'Squad'
 	},
 	/** The news buddy's speech bubble: nerfs, buffs, movement and patch changes only. */
@@ -269,7 +272,7 @@ export const en = {
 		close: 'Close the terminal',
 		input: 'Command',
 		quick: 'Quick commands',
-		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke, Da Jeeven.', 'Type “help” for commands. “exit” or Esc closes.'],
+		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke, Da Jeeven, Ingman.', 'Type “help” for commands. “exit” or Esc closes.'],
 		help: [
 			'help              this list',
 			'status            your camo grind in numbers',
@@ -304,7 +307,8 @@ export const en = {
 			'ABSCAR ............ ONLINE',
 			'PHILLESTAR ........ ONLINE (snack: hamburger, favourite reward: the nuke)',
 			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)',
-			'DA JEEVEN ......... ONLINE (certified grinder: Prestige Master in BO6 + BO7, holk: lit)'
+			'DA JEEVEN ......... ONLINE (certified grinder: Prestige Master in BO6 + BO7, holk: lit)',
+			'INGMAN ............ ONLINE (class: wizard, pipe: lit, Jim and Pro player)'
 		],
 		/** `squad` while you're in a squad (2026-11-14): the real list, online first */
 		squadLive: (name: string, online: boolean, seen: string, hb: number, total: number) =>

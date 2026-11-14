@@ -34,7 +34,8 @@
 		abscar: t.operator.callsign,
 		phillestar: t.operator.mate,
 		lars: t.operator.lars,
-		jeeven: t.operator.jeeven
+		jeeven: t.operator.jeeven,
+		ingman: t.operator.ingman
 	};
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 

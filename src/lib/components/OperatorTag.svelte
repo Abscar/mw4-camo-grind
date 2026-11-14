@@ -24,6 +24,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
+	import IngmanEmblem from './IngmanEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
 	import { LADDER, MASTERY, MASTERY_TRACKS } from '#lib/data/camos.ts';
@@ -51,7 +52,9 @@
 		phillestar: ['done', 'done', 'active'],
 		lars: ['done', 'active', 'todo'],
 		/** none of the MW4 Mastery camos yet (the user, 2026-11-13) */
-		jeeven: ['todo', 'todo', 'todo']
+		jeeven: ['todo', 'todo', 'todo'],
+		/** not told yet (2026-11-14): not started until the user says otherwise */
+		ingman: ['todo', 'todo', 'todo']
 	} satisfies Record<SquadOp, Status[]>;
 
 	/** The squad member who is this operator (only when you're in a squad yourself). */
@@ -72,7 +75,8 @@
 	 * "Certified grinder" and never gets it (the user, 2026-11-13: "don't forget the slacker sticker on
 	 * Abscar", when Da Jeeven joined with no Mastery camos either).
 	 */
-	const SLACKER_EXEMPT: SquadOp[] = ['jeeven'];
+	// Ingman (2026-11-14) is a "Pro player" by his own sign, so he's left out too: Abscar keeps the sticker.
+	const SLACKER_EXEMPT: SquadOp[] = ['jeeven', 'ingman'];
 	const points = (list: Status[]) => list.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
 	const slacker = $derived.by(() => {
 		const scores = (Object.keys(statuses) as SquadOp[])
@@ -256,6 +260,15 @@
 				<span class="sq-certified font-head">{t.operator.certified}</span>
 			</div>
 		</div>
+
+		<!-- Ingman, the wizard (2026-11-14, the user's friend), with his sign "Jim and Pro player" -->
+		<div class="op-member">
+			<div class="op-tag flex items-center gap-3.5">
+				<IngmanEmblem />
+				{@render callsign(t.operator.ingman, 'ingman')}
+			</div>
+			{@render mastery(t.operator.ingman, statuses.ingman, slacker === 'ingman', t.operator.ingmanMotto, 'wizard', 'ingman')}
+		</div>
 	</div>
 </div>
 
@@ -277,9 +290,10 @@
 			column-gap: 24px;
 		}
 	}
-	@container squad (min-width: 860px) {
+	/* five members (Ingman joined 2026-11-14): three in a row, then two, so the frame still fits beside the TV */
+	@container squad (min-width: 700px) {
 		.squad-frame {
-			grid-template-columns: repeat(4, auto);
+			grid-template-columns: repeat(3, auto);
 			column-gap: 14px;
 		}
 		.op-tag > :global(svg) {
@@ -447,6 +461,19 @@
 			0 2px 5px rgb(0 0 0 / 0.55),
 			0 0 10px rgb(200 90 255 / 0.5);
 		pointer-events: none;
+	}
+	/* Ingman's is wizard purple with his hat's rainbow band along the top */
+	.sq-motto[data-tone='wizard'] {
+		border-top-width: 4px;
+		border-image: linear-gradient(90deg, #e8343a, #f38a1f, #f6d334, #3fb54a, #2f7fe0, #8a3fd0) 4 0 0 0 / 4px 0 0 0;
+		border-left: 2px solid #fff;
+		border-right: 2px solid #fff;
+		border-bottom: 2px solid #fff;
+		background: linear-gradient(135deg, #a86ae0, #6d32ad 55%, #40186e);
+		transform: rotate(6deg);
+		box-shadow:
+			0 2px 5px rgb(0 0 0 / 0.55),
+			0 0 10px rgb(160 90 255 / 0.5);
 	}
 	/* Drängen's is lime like his goggles */
 	.sq-motto[data-tone='lime'] {
