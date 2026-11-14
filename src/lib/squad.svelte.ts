@@ -69,8 +69,11 @@ import {
 } from './squad-radio.ts';
 import { isSyncCode } from './sync-codec.ts';
 import { addPlayed, dayKey, mergePlayed, settleDuel, spin, withBet, withoutBet, withPaid, SPIN_LEAD_MS, SQUAD_UP } from './squad-fun.ts';
+import { cleanCombat, combatView, mergeCombat, withSnap, type CombatLog, type CombatMode, type CombatSnap } from './squad-combat.ts';
 
 const KEY = 'mw4-camo-grind:squad';
+/** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
+const COMBAT_KEY = 'mw4-camo-grind:combat';
 /** What this device last saw of the others (for the kill feed), per squad code. */
 const SEEN_KEY = 'mw4-camo-grind:squad-seen';
 /** When you last looked at the radio (unread count). */
@@ -302,6 +305,8 @@ class Squad {
 	#ping: { to: string; at: number } | null = null;
 	/** Minutes with the tracker open per day (this device; the bigger number of your devices is published). */
 	played = $state<Record<string, number>>({});
+	/** Your K/D, W/L … as you typed them in (merged with your other device's when the squad is read). */
+	combat = $state<CombatLog>({});
 	#playTick = 0;
 	#publishTimer: ReturnType<typeof setTimeout> | undefined;
 	#lookedAt = Date.now();
@@ -344,7 +349,8 @@ class Squad {
 			tickAt: progress.lastTickAt ? Date.parse(progress.lastTickAt) : undefined,
 			recent: memberEntry(me, this.#progressNow(), this.now).recent,
 			readyAt: this.readyAt ?? undefined,
-			played: this.played
+			played: this.played,
+			combat: this.combat
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -382,6 +388,7 @@ class Squad {
 		if (typeof read === 'number') this.readAt = read;
 		const played = readJson(PLAYED_KEY);
 		if (played && typeof played === 'object') this.played = addPlayed(played as Record<string, number>, 0, 0);
+		this.combat = cleanCombat(readJson(COMBAT_KEY)) ?? {};
 		this.#playTick = Date.now();
 		this.#masteryDone = this.#completeMastery();
 		this.#masteryQuarters = this.#quarters();
@@ -566,6 +573,24 @@ class Squad {
 		this.#playTick = now;
 	}
 
+	/**
+	 * Save today's numbers for a mode (a second save the same day replaces the first), publish them
+	 * and say it on the radio. Returns false when the squad couldn't be reached (they're kept here
+	 * and go out with the next hello).
+	 */
+	async saveCombat(mode: CombatMode, values: Omit<CombatSnap, 'at'>): Promise<boolean> {
+		if (!this.me) return false;
+		const now = Math.round(this.serverNow());
+		this.combat = withSnap(this.combat, mode, dayKey(now), { ...values, at: now });
+		writeJson(COMBAT_KEY, this.combat);
+		await this.#publish();
+		const view = combatView(this.combat, mode);
+		if (view?.kd != null || view?.wl != null) {
+			await this.#event(t.squad.combat.event(mode, view.kd, view.wl, view.before?.kdDelta ?? null));
+		}
+		return this.status === 'ok';
+	}
+
 	/** Send a radio message. */
 	async say(text: string): Promise<boolean> {
 		const me = this.me;
@@ -695,7 +720,21 @@ class Squad {
 		// your other device's minutes: the bigger number per day (both pages count the same evening)
 		const theirs = this.#squad.doc?.members[me.id]?.played;
 		if (theirs) this.played = mergePlayed(this.played, theirs);
-		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, { readyAt: this.readyAt, ping: this.#ping, played: this.played });
+		// your K/D updates from your other device: per day, the later one wins
+		const theirCombat = this.#squad.doc?.members[me.id]?.combat;
+		if (theirCombat) {
+			const merged = mergeCombat(this.combat, theirCombat);
+			if (JSON.stringify(merged) !== JSON.stringify(this.combat)) {
+				this.combat = merged;
+				writeJson(COMBAT_KEY, merged);
+			}
+		}
+		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {
+			readyAt: this.readyAt,
+			ping: this.#ping,
+			played: this.played,
+			combat: this.combat
+		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;
 		return more ? { ...entry, more } : entry;

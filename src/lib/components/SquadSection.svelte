@@ -17,6 +17,7 @@
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
+	import SquadCombat from './SquadCombat.svelte';
 	import SquadDuels from './SquadDuels.svelte';
 	import SquadRace from './SquadRace.svelte';
 	import SquadRadio from './SquadRadio.svelte';
@@ -266,7 +267,9 @@
 			</div>
 		</div>
 	{:else}
-		<div class="grid gap-4 border-t border-line px-4 py-4 sm:px-5">
+		<!-- one column that never grows past the box: the weapon table scrolls inside itself instead
+		     (with 5 members it made the whole tab scroll sideways on a 375 px phone) -->
+		<div class="grid grid-cols-[minmax(0,1fr)] gap-4 border-t border-line px-4 py-4 sm:px-5">
 			<div class="flex flex-wrap gap-2">
 				<!-- Ready up: a banner on the others' pages while yours is open -->
 				<button type="button" class="btn sq-ready" aria-pressed={!!squad.readyAt} title={squad.readyAt ? s.ready.onHint : undefined} onclick={() => void squad.toggleReady()}
@@ -284,6 +287,9 @@
 			</p>
 
 			<SquadRace {entries} />
+
+			<!-- K/D, W/L … typed in by each member (2026-11-14) -->
+			<SquadCombat {entries} />
 
 			<!-- one card per member, furthest along first -->
 			<ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-3">
@@ -825,6 +831,9 @@
 	}
 	/* as wide as it needs (not stretched across a wide screen), scrolls inside itself if wider */
 	.sq-table-wrap {
+		/* positioned, so the cells' screen-reader texts (absolutely placed) scroll with the table
+		   instead of stretching the page sideways */
+		position: relative;
 		width: fit-content;
 		max-width: 100%;
 		overflow-x: auto;

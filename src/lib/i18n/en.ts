@@ -879,6 +879,61 @@ export const en = {
 			hint: 'Time with the tracker open (visible, or in the background for up to 30 min), not time in the game',
 			header: (time: string) => `Today ${time}`
 		},
+		/** K/D, W/L … typed in by each member (SquadCombat; squad-combat.ts), 2026-11-14. */
+		combat: {
+			heading: 'Combat record',
+			note: 'Everyone types in their own lifetime numbers from the game’s Combat Record: Activision doesn’t share them with other sites, so nothing can fetch them by itself. The arrow shows the change since the update before.',
+			modes: { mp: 'Multiplayer', wz: 'Warzone' },
+			modeLabel: 'Mode',
+			sortLabel: 'Sort by',
+			sorts: { kd: 'K/D', wl: 'W/L', kills: 'Kills', wins: 'Wins' },
+			winRate: 'Win %',
+			update: 'Update my stats',
+			none: 'No stats yet',
+			noneMine: 'Tap “Update my stats”',
+			empty: 'Nobody has typed in their stats yet. Be the first: tap “Update my stats”.',
+			kills: (n: number) => `${n.toLocaleString('en-US')} kills`,
+			wins: (n: number) => `${n.toLocaleString('en-US')} wins`,
+			spm: (n: number) => `${n.toLocaleString('en-US')} score/min`,
+			updated: (ago: string) => `Updated ${ago}`,
+			delta: (delta: string, date: string) => `K/D ${delta} since ${date}`,
+			form: (kd: string) => `Form ${kd}`,
+			formHint: (date: string) => `K/D over just the games since ${date} (kills gained ÷ deaths gained)`,
+			plusKills: (n: number) => `+${n.toLocaleString('en-US')} kills`,
+			rowLabel: (rank: number, name: string, kd: string, second: string) => `#${rank} ${name}: K/D ${kd}, ${second}`,
+			// the form
+			title: 'Update my stats',
+			where: 'Open your Combat Record in MW4 and copy the lifetime numbers. Fill in what you have and leave the rest empty.',
+			sameDay: 'Saving again today replaces today’s numbers, so a typo is fixed by typing it again.',
+			fields: {
+				kills: 'Kills',
+				deaths: 'Deaths',
+				wins: 'Wins',
+				losses: 'Losses',
+				matches: 'Matches played',
+				spm: 'Score per minute',
+				kd: 'K/D ratio',
+				wl: 'W/L ratio'
+			},
+			ratioAuto: 'Worked out from the numbers above',
+			ratioHint: 'Only see the ratio? Type it here.',
+			bad: 'That isn’t a number',
+			nothing: 'Type in at least one number.',
+			winsOver: 'Wins can’t be more than matches played.',
+			save: 'Save',
+			saved: 'Stats saved. The squad sees them now.',
+			savedOffline: 'Saved here. They go to the squad as soon as it can be reached.',
+			event: (mode: 'mp' | 'wz', kd: number | null, second: number | null, delta: number | null) => {
+				const parts: string[] = [];
+				if (kd !== null) {
+					const r = delta === null ? null : Math.round(delta * 100) / 100;
+					const d = r === null ? '' : ` (${r === 0 ? '±0.00' : `${r > 0 ? '+' : '−'}${Math.abs(r).toFixed(2)}`})`;
+					parts.push(`K/D ${kd.toFixed(2)}${d}`);
+				}
+				if (second !== null) parts.push(mode === 'mp' ? `W/L ${second.toFixed(2)}` : `${second.toFixed(1)}% wins`);
+				return `updated ${mode === 'mp' ? 'MP' : 'WZ'} stats: ${parts.join(' · ')} 📊`;
+			}
+		},
 		squadUp: {
 			banner: (n: number) => `SQUAD UP · ${n} online`,
 			sub: 'Party mode: the header burns, the TV plays a hype montage, the buddy dances.',

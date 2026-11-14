@@ -33,6 +33,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { agoParts, headerStatuses, weeklyMvps, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
 	import { dayKey, playedOn } from '#lib/squad-fun.ts';
+	import { combatView, fmtRatio } from '#lib/squad-combat.ts';
 
 	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
 	const mvps = $derived(squad.on ? weeklyMvps(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])), squad.now) : []);
@@ -171,6 +172,14 @@
 				<span data-camo="mastery">M <b>{mastery}</b>/{MASTERY_TOTAL}</span>
 				{#if played > 0}<span data-camo="played" title={`${t.squad.played.today(t.squad.minutes(played))} (${t.squad.played.hint})`}>⏱ <b>{t.squad.minutesShort(played)}</b></span>{/if}
 			</p>
+			<!-- their Multiplayer K/D + W/L as they typed it in (Squad tab → Combat record, 2026-11-14) -->
+			{@const combat = combatView(entry.member.combat, 'mp')}
+			{#if combat && (combat.kd !== null || combat.wl !== null)}
+				<p class="op-progress font-hud" title="{t.squad.combat.heading} ({t.squad.combat.modes.mp}) · {t.squad.combat.updated(t.squad.ago(agoParts(combat.latest.at, squad.now)))}">
+					{#if combat.kd !== null}<span data-camo="kd">K/D <b>{fmtRatio(combat.kd)}</b></span>{/if}
+					{#if combat.wl !== null}<span data-camo="wl">W/L <b>{fmtRatio(combat.wl)}</b></span>{/if}
+				</p>
+			{/if}
 			{#if mvps.includes(entry.id)}
 				<span class="op-crown" title={t.squad.mvp}><svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 10 2.5 2.5l3.5 4 2-5.5 2 5.5 3.5-4L15 10z" /></svg><span class="sr-only">{t.squad.mvp}</span></span>
 			{/if}
@@ -696,6 +705,12 @@
 	}
 	.op-progress [data-camo='played'] b {
 		color: #9fe8ff;
+	}
+	.op-progress [data-camo='kd'] b {
+		color: #7dffa0;
+	}
+	.op-progress [data-camo='wl'] b {
+		color: #ffb35c;
 	}
 	.sq-wip {
 		padding: 0 5px;
