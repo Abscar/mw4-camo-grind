@@ -20,6 +20,7 @@
 	asked to remove it entirely when Lars Åke joined (2026-11-13). The component is deleted (git history).
 -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/en.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
@@ -30,6 +31,7 @@
 	const MASTERY_TOTAL = MASTERY_TRACKS.reduce((n, tr) => n + tr.camos.length, 0);
 	import { squad } from '#lib/squad.svelte.ts';
 	import { agoParts, headerStatuses, weeklyMvps, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
+	import { dayKey, playedOn } from '#lib/squad-fun.ts';
 
 	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
 	const mvps = $derived(squad.on ? weeklyMvps(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])), squad.now) : []);
@@ -81,7 +83,50 @@
 		return last.length === 1 ? last[0].who : null;
 	});
 
-	const camos = MASTERY.map((camo) => ({ id: camo.id, name: camo.name.replace(' Reforged', '') }));
+	const camos = MASTERY.map((camo) => ({ id: camo.id, name: camo.name.replace(' Reforged', ''), target: camo.target }));
+
+	/**
+	 * Live counters on the boxes (squad step 3, the user's ask 2026-11-14: "a live feed of exactly how
+	 * many of those camos everyone has"): for a squad member who picked this operator, each row shows
+	 * the count from their own tracker ("Orion 214 / 500") and a thin meter. Only where their ticks
+	 * agree with the box: if the hand-typed status says more (done by hand, 0 in their tracker), the
+	 * box keeps its tick and no number shows rather than a wrong one. Targets come from camos.ts.
+	 */
+	const counts = $derived(
+		Object.fromEntries(
+			(Object.keys(SQUAD_MASTERY) as SquadOp[]).map((op) => {
+				const e = live(op);
+				if (!e) return [op, null];
+				const liveStatus = headerStatuses(['todo', 'todo', 'todo'], e.stats.mastery.mp);
+				return [op, MASTERY.map((c, i) => (liveStatus[i] === statuses[op][i] ? Math.min(e.member.mastery[c.id] ?? 0, c.target) : null))];
+			})
+		) as Record<SquadOp, (number | null)[] | null>
+	);
+
+	/** "+12" beside a row for a few seconds when someone's counter goes up (not on the first read). */
+	let gains = $state<Record<string, number>>({});
+	let before: Record<string, number> | null = null;
+	const gainTimers = new Map<string, ReturnType<typeof setTimeout>>();
+	$effect(() => {
+		const now: Record<string, number> = {};
+		for (const [op, list] of Object.entries(counts)) list?.forEach((n, i) => n !== null && (now[`${op}:${i}`] = n));
+		if (before) {
+			for (const [key, n] of Object.entries(now)) {
+				const diff = n - (before[key] ?? n);
+				if (diff > 0) {
+					gains = { ...untrack(() => gains), [key]: diff };
+					clearTimeout(gainTimers.get(key));
+					gainTimers.set(key, setTimeout(() => {
+						const { [key]: _gone, ...rest } = gains;
+						gains = rest;
+					}, 5000));
+				}
+			}
+		}
+		before = now;
+	});
+	const today = $derived(dayKey(squad.now));
+	const short = (n: number) => (n >= 10_000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n));
 	const STATUS_TEXT: Record<Status, string> = {
 		done: t.operator.masteryDone,
 		active: t.operator.masteryInProgress,
@@ -117,8 +162,10 @@
 			<p class="op-progress font-hud" aria-label={t.summary(entry.stats.ladder[0], entry.stats.ladder[1], entry.stats.ladder[2])}>
 				{#each LADDER as camo, i (camo.id)}<span data-camo={camo.id}>{camo.short} <b>{entry.stats.ladder[i]}</b></span>{/each}
 			</p>
+			{@const played = playedOn(entry.member, today)}
 			<p class="op-progress font-hud" title={t.squad.masteryDone(mastery, MASTERY_TOTAL)}>
 				<span data-camo="mastery">M <b>{mastery}</b>/{MASTERY_TOTAL}</span>
+				{#if played > 0}<span data-camo="played" title={`${t.squad.played.today(t.squad.minutes(played))} (${t.squad.played.hint})`}>⏱ <b>{t.squad.minutesShort(played)}</b></span>{/if}
 			</p>
 			{#if mvps.includes(entry.id)}
 				<span class="op-crown" title={t.squad.mvp}><svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 10 2.5 2.5l3.5 4 2-5.5 2 5.5 3.5-4L15 10z" /></svg><span class="sr-only">{t.squad.mvp}</span></span>
@@ -127,19 +174,25 @@
 	</div>
 {/snippet}
 
-{#snippet mastery(who: string, statuses: Status[], isSlacker = false, motto: string | readonly string[] = '', tone = 'purple')}
+{#snippet mastery(who: string, statuses: Status[], isSlacker = false, motto: string | readonly string[] = '', tone = 'purple', op: SquadOp = 'abscar')}
 	<div class="sq-boxes">
 	<ul class="squad-mastery font-hud" aria-label={t.operator.masteryOf(who)}>
 		{#each camos as camo, i (camo.id)}
 			{@const status = statuses[i] ?? 'todo'}
-			<li class="sq-camo" data-camo={camo.id} data-status={status}>
+			{@const n = counts[op]?.[i] ?? null}
+			{@const gain = gains[`${op}:${i}`]}
+			<li class="sq-camo" data-camo={camo.id} data-status={status} class:sq-counted={n !== null} style:--pct={n !== null ? `${(n / camo.target) * 100}%` : undefined}>
 				<span class="sq-box" aria-hidden="true">
 					{#if status === 'done'}
 						<svg viewBox="0 0 12 12"><path d="M2.6 6.4 5 8.8 9.6 3.6" /></svg>
 					{/if}
 				</span>
 				<span class="sq-name">{camo.name}</span>
-				{#if status === 'active'}
+				{#if n !== null}
+					<span class="sq-count num" title="{n.toLocaleString('en-US')} / {camo.target.toLocaleString('en-US')}">{short(n)}/{short(camo.target)}</span>
+					<span class="sr-only">({STATUS_TEXT[status]}, {n} of {camo.target})</span>
+					{#if gain}<span class="sq-gain" aria-hidden="true">+{gain}</span>{/if}
+				{:else if status === 'active'}
 					<span class="sq-wip">{STATUS_TEXT[status]}</span>
 				{:else}
 					<span class="sr-only">({STATUS_TEXT[status]})</span>
@@ -164,7 +217,7 @@
 				<AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" />
 				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
-			{@render mastery(t.operator.callsign, statuses.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss')}
+			{@render mastery(t.operator.callsign, statuses.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss', 'abscar')}
 		</div>
 
 		<div class="op-member">
@@ -172,7 +225,7 @@
 				<PhillestarEmblem />
 				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
-			{@render mastery(t.operator.mate, statuses.phillestar, slacker === 'phillestar', t.operator.mateMotto)}
+			{@render mastery(t.operator.mate, statuses.phillestar, slacker === 'phillestar', t.operator.mateMotto, 'purple', 'phillestar')}
 		</div>
 
 		<div class="op-member">
@@ -180,7 +233,7 @@
 				<LarsAkeEmblem />
 				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
-			{@render mastery(t.operator.lars, statuses.lars, slacker === 'lars', t.operator.larsMotto, 'lime')}
+			{@render mastery(t.operator.lars, statuses.lars, slacker === 'lars', t.operator.larsMotto, 'lime', 'lars')}
 		</div>
 
 		<div class="op-member">
@@ -188,7 +241,7 @@
 				<DaJeevenEmblem />
 				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
-			{@render mastery(t.operator.jeeven, statuses.jeeven, slacker === 'jeeven')}
+			{@render mastery(t.operator.jeeven, statuses.jeeven, slacker === 'jeeven', '', 'purple', 'jeeven')}
 			<!-- his Black Ops 6 + 7 record (the user, 2026-11-13) and the gold "Certified grinder" sticker -->
 			<div class="sq-record-wrap">
 				<p class="sq-record-title font-hud">{t.operator.recordTitle}</p>
@@ -556,6 +609,66 @@
 	}
 	.sq-camo[data-status='todo'] .sq-name {
 		color: rgb(200 198 210 / 0.7);
+	}
+	/* a live counter (squad step 3): "214/500" after the name + a thin meter under the row */
+	.sq-counted {
+		position: relative;
+		padding-bottom: 3px;
+	}
+	.sq-counted::after {
+		content: '';
+		position: absolute;
+		left: 19px;
+		right: 0;
+		bottom: 0;
+		height: 2px;
+		border-radius: 999px;
+		background: linear-gradient(90deg, #ffd75a var(--pct, 0%), rgb(255 255 255 / 0.16) var(--pct, 0%));
+	}
+	.sq-camo[data-status='done'].sq-counted::after {
+		background: var(--fill);
+	}
+	.sq-camo[data-status='todo'].sq-counted::after {
+		background: rgb(255 255 255 / 0.12);
+	}
+	.sq-count {
+		margin-left: 2px;
+		color: rgb(230 225 240 / 0.85);
+		font-size: 9px;
+		letter-spacing: 0.04em;
+	}
+	.sq-camo[data-status='active'] .sq-count {
+		color: #ffd75a;
+	}
+	.sq-camo[data-status='todo'] .sq-count {
+		color: rgb(200 198 210 / 0.6);
+	}
+	.sq-gain {
+		margin-left: 2px;
+		color: #3ee06a;
+		font-size: 10px;
+		font-weight: 700;
+		text-shadow: 0 0 6px rgb(62 224 106 / 0.8);
+		animation: sq-gain 5s ease-out forwards;
+		pointer-events: none;
+	}
+	@keyframes sq-gain {
+		0% {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+		10%,
+		70% {
+			opacity: 1;
+			transform: none;
+		}
+		100% {
+			opacity: 0;
+			transform: translateY(-4px);
+		}
+	}
+	.op-progress [data-camo='played'] b {
+		color: #9fe8ff;
 	}
 	.sq-wip {
 		padding: 0 5px;

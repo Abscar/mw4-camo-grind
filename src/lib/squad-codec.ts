@@ -22,7 +22,7 @@ import {
 	type MasteryMode,
 	type MasteryStatus
 } from './data/camos.ts';
-import { WEAPONS } from './data/weapons.ts';
+import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
 import { startOfDay, startOfWeek } from './stats.ts';
 import { isSyncCode, makeSyncCode } from './sync-codec.ts';
@@ -61,8 +61,46 @@ export interface SquadMember {
 	readyAt?: number;
 	/** A knock on someone's door (terminal `ping <name>`): who and when. */
 	ping?: { to: string; at: number };
+	/**
+	 * Minutes with the tracker open per day ("YYYY-MM-DD" by their own clock → minutes), the last
+	 * PLAYED_DAYS days (step 3: "hours played today"). Time with the page open, not time in the game.
+	 */
+	played?: Record<string, number>;
 	/** Fields a newer page wrote that this one doesn't know: kept as they are, never dropped. */
 	more?: Record<string, unknown>;
+}
+
+/** Tonight's roulette (step 3): who spun, when the wheel spins, and what everyone got. */
+export interface Roulette {
+	id: string;
+	by: string;
+	/** When the wheel starts spinning (ms, the sync service's clock; a little ahead so every page has it). */
+	at: number;
+	/** 'each' = everyone their own gun; 'class' = one class for everyone, a gun of it each. */
+	mode: 'each' | 'class';
+	cls?: string;
+	/** Member id → weapon id. */
+	picks: Record<string, string>;
+}
+
+/** A burger bet (step 3; pretend burgers, never money): on who wins a duel, or the race to Divergence. */
+export interface Bet {
+	id: string;
+	by: string;
+	kind: 'duel' | 'race';
+	/** The duel's id ('' for the race). */
+	ref: string;
+	/** The member they bet on. */
+	pick: string;
+	amount: number;
+	at: number;
+}
+
+/** A finished duel that was taken off the list: its result stays for bets and the IOU list. */
+export interface Settled {
+	id: string;
+	w: string;
+	l: string;
 }
 
 /** "First to <camo> on <weapon>" between two members; the loser gets the stake as a sticker. */
@@ -81,6 +119,12 @@ export interface Duel {
 export interface SquadDoc {
 	members: Record<string, SquadMember>;
 	duels?: Duel[];
+	roulette?: Roulette;
+	bets?: Bet[];
+	/** Finished duels taken off the list (newest SETTLED_MAX). */
+	settled?: Settled[];
+	/** Duel ids whose real-burger IOU was paid. */
+	paid?: string[];
 	/** Document fields a newer page wrote that this one doesn't know: kept as they are. */
 	more?: Record<string, unknown>;
 }
@@ -102,8 +146,14 @@ export interface SquadWire {
 	[key: string]: unknown;
 }
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'tickAt', 'recent', 'readyAt', 'ping']);
-const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels']);
+export const PLAYED_DAYS = 14;
+export const MAX_BETS = 40;
+export const BET_MAX = 10_000;
+export const SETTLED_MAX = 40;
+
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'tickAt', 'recent', 'readyAt', 'ping', 'played']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid']);
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The keys of `raw` this page doesn't know (so a newer page's additions survive an older page's write). */
 function unknownKeys(raw: Record<string, unknown>, known: Set<string>): Record<string, unknown> | undefined {
@@ -113,6 +163,7 @@ function unknownKeys(raw: Record<string, unknown>, known: Set<string>): Record<s
 
 const MEMBER_ID = /^[A-Za-z0-9_-]{8,32}$/;
 const WEAPON_IDS = new Set(WEAPONS.map((w) => w.id));
+const CLASS_IDS = new Set(CLASSES.map((c) => c.id));
 const MASTERY_IDS = new Map(MASTERY_TRACKS.flatMap((t) => t.camos.map((c) => [c.id, c.target] as const)));
 
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
@@ -163,6 +214,8 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (isObject(raw.ping) && typeof raw.ping.to === 'string' && isMemberId(raw.ping.to) && isTime(raw.ping.at)) {
 		member.ping = { to: raw.ping.to, at: raw.ping.at };
 	}
+	const played = cleanPlayed(raw.played);
+	if (played) member.played = played;
 	const more = unknownKeys(raw, MEMBER_KEYS);
 	if (more) member.more = more;
 	return member;
@@ -182,6 +235,68 @@ function cleanRecent(raw: unknown, weapons: Record<string, number>): Record<stri
 		if (list.some(Boolean)) out[id] = list;
 	}
 	return Object.keys(out).length ? out : undefined;
+}
+
+/** Minutes per day, the newest PLAYED_DAYS days, at most a whole day each. */
+export function cleanPlayed(raw: unknown): Record<string, number> | undefined {
+	if (!isObject(raw)) return undefined;
+	const days = Object.entries(raw)
+		.filter(([k, v]) => DAY_KEY.test(k) && Number.isFinite(v) && (v as number) > 0)
+		.sort(([a], [b]) => (a < b ? 1 : -1))
+		.slice(0, PLAYED_DAYS)
+		.map(([k, v]) => [k, Math.min(1440, Math.round(v as number))] as const);
+	return days.length ? Object.fromEntries(days) : undefined;
+}
+
+function cleanRoulette(raw: unknown): Roulette | undefined {
+	if (!isObject(raw) || typeof raw.id !== 'string' || !isMemberId(raw.id) || typeof raw.by !== 'string' || !isMemberId(raw.by) || !isTime(raw.at)) return undefined;
+	if (raw.mode !== 'each' && raw.mode !== 'class') return undefined;
+	const picks: Record<string, string> = {};
+	if (isObject(raw.picks)) {
+		for (const [id, w] of Object.entries(raw.picks)) if (isMemberId(id) && typeof w === 'string' && WEAPON_IDS.has(w)) picks[id] = w;
+	}
+	if (!Object.keys(picks).length) return undefined;
+	const out: Roulette = { id: raw.id, by: raw.by, at: raw.at, mode: raw.mode, picks };
+	if (raw.mode === 'class' && typeof raw.cls === 'string' && CLASS_IDS.has(raw.cls)) out.cls = raw.cls;
+	return out;
+}
+
+function cleanBets(raw: unknown): Bet[] {
+	if (!Array.isArray(raw)) return [];
+	const out: Bet[] = [];
+	for (const b of raw) {
+		if (!isObject(b)) continue;
+		const amount = count(b.amount, BET_MAX);
+		if (
+			typeof b.id !== 'string' ||
+			!isMemberId(b.id) ||
+			typeof b.by !== 'string' ||
+			!isMemberId(b.by) ||
+			typeof b.pick !== 'string' ||
+			!isMemberId(b.pick) ||
+			(b.kind !== 'duel' && b.kind !== 'race') ||
+			typeof b.ref !== 'string' ||
+			(b.kind === 'duel' && !isMemberId(b.ref)) ||
+			!amount ||
+			!isTime(b.at)
+		)
+			continue;
+		out.push({ id: b.id, by: b.by, kind: b.kind, ref: b.kind === 'race' ? '' : b.ref, pick: b.pick, amount, at: b.at });
+	}
+	return out.slice(-MAX_BETS);
+}
+
+function cleanSettled(raw: unknown): Settled[] {
+	if (!Array.isArray(raw)) return [];
+	return raw
+		.filter((s): s is Settled => isObject(s) && [s.id, s.w, s.l].every((x) => typeof x === 'string' && isMemberId(x as string)) && s.w !== s.l)
+		.map((s) => ({ id: s.id, w: s.w, l: s.l }))
+		.slice(-SETTLED_MAX);
+}
+
+function cleanPaid(raw: unknown): string[] {
+	if (!Array.isArray(raw)) return [];
+	return [...new Set(raw.filter((x): x is string => typeof x === 'string' && isMemberId(x)))].slice(-SETTLED_MAX * 2);
 }
 
 export function cleanStake(raw: unknown): string {
@@ -224,6 +339,14 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 	const doc: SquadDoc = { members };
 	const duels = cleanDuels(raw.duels);
 	if (duels.length) doc.duels = duels;
+	const roulette = cleanRoulette(raw.roulette);
+	if (roulette) doc.roulette = roulette;
+	const bets = cleanBets(raw.bets);
+	if (bets.length) doc.bets = bets;
+	const settled = cleanSettled(raw.settled);
+	if (settled.length) doc.settled = settled;
+	const paid = cleanPaid(raw.paid);
+	if (paid.length) doc.paid = paid;
 	const more = unknownKeys(raw, DOC_KEYS);
 	if (more) doc.more = more;
 	return doc;
@@ -235,6 +358,10 @@ export function toSquadWire(doc: SquadDoc): SquadWire {
 	);
 	const wire: SquadWire = { ...doc.more, app: APP_ID, squad: SQUAD_FORMAT, members };
 	if (doc.duels?.length) wire.duels = doc.duels;
+	if (doc.roulette) wire.roulette = doc.roulette;
+	if (doc.bets?.length) wire.bets = doc.bets;
+	if (doc.settled?.length) wire.settled = doc.settled;
+	if (doc.paid?.length) wire.paid = doc.paid;
 	return wire;
 }
 
@@ -253,7 +380,7 @@ export function memberEntry(
 	},
 	seen: number,
 	away = false,
-	extra: { readyAt?: number | null; ping?: { to: string; at: number } | null } = {}
+	extra: { readyAt?: number | null; ping?: { to: string; at: number } | null; played?: Record<string, number> | null } = {}
 ): SquadMember {
 	const entry = cleanMember({
 		name: me.name,
@@ -265,7 +392,8 @@ export function memberEntry(
 		tickAt: progress.lastTickAt ? Date.parse(progress.lastTickAt) : undefined,
 		recent: progress.stamps ? recentFrom(progress.stamps, Date.now()) : undefined,
 		readyAt: extra.readyAt ?? undefined,
-		ping: extra.ping ?? undefined
+		ping: extra.ping ?? undefined,
+		played: extra.played ?? undefined
 	});
 	if (!entry) throw new Error('bad squad entry');
 	return entry;

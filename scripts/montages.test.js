@@ -96,3 +96,8 @@ test('player commands are what the embed expects', () => {
 	assert.deepEqual(JSON.parse(CAPTIONS_OFF).args, ['captions']);
 	assert.equal(JSON.parse(CAPTIONS_OFF).func, 'unloadModule');
 });
+
+test('the squad-up hype montage is one of the checked montages', async () => {
+	const { HYPE, MONTAGES } = await import('../src/lib/data/montages.ts');
+	assert.ok(MONTAGES.some((m) => m.id === HYPE));
+});

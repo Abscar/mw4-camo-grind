@@ -21,6 +21,12 @@ export type MontageGame = (typeof MONTAGE_GAMES)[number];
 
 /** The user's favourite montage maker: the TV switches on to one of his. */
 export const FAVOURITE = 'ZzirGrizZ';
+/**
+ * The hype montage the TV switches to once during squad up (squad step 3, 2026-11-14: 3+ of the
+ * squad online): FaZe's MW3 teamtage, a squad montage. Must stay in MONTAGES (checked to play in
+ * an embed, montages.test.js).
+ */
+export const HYPE = 'Z-Q2g2Tw-Qk';
 
 export interface Montage {
 	/** YouTube video id */

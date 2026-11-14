@@ -50,6 +50,8 @@
 	import { pageTab } from '#lib/pageTab.svelte.ts';
 	import SquadSection from '#lib/components/SquadSection.svelte';
 	import ReadyBanner from '#lib/components/ReadyBanner.svelte';
+	import SquadUpBanner from '#lib/components/SquadUpBanner.svelte';
+	import SquadUpFire from '#lib/components/SquadUpFire.svelte';
 	import { squad } from '#lib/squad.svelte.ts';
 
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14). All stay mounted; the others are only hidden. */
@@ -194,6 +196,8 @@
 	<div class="relative bg-band text-band-fg">
 		<div class="abscar-only compact-hide"><DamascusSteel /></div>
 		<div class="abscar-only compact-hide" aria-hidden="true"><div class="hud-vision"></div></div>
+		<!-- squad up: the header burns while 3+ of the squad are online -->
+		<div class="abscar-only compact-hide"><SquadUpFire /></div>
 		<!-- the settings row: save status on the left; Compact, theme, sound and pause animations on the right (2026-11-10/11) -->
 		<div class="hdr-bar relative z-[32] mx-auto flex max-w-[1240px] items-center justify-between gap-2 px-4 pt-2 sm:px-5 sm:pt-3">
 			<div class="min-w-0"><SaveStatus /></div>
@@ -231,6 +235,7 @@
 	>
 		<!-- the squad's Ready up / ping banners (every tab; nothing outside a squad) -->
 		<ReadyBanner />
+		<SquadUpBanner />
 
 		<!-- page tabs: the tracker, the Cosmetics list, Extra camos or the Squad -->
 		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label}>

@@ -1059,3 +1059,30 @@
 		display: none !important;
 	}
 }
+
+/* Squad up (squad step 3, 2026-11-14): while 3+ of the squad are online the news buddy dances.
+   SquadUpBanner sets data-squadup on <html>. Reduced motion: no dance. */
+html[data-squadup] .hdr-buddy .buddy {
+	transform-origin: 50% 100%;
+	animation: buddy-dance 0.9s ease-in-out infinite;
+}
+@keyframes buddy-dance {
+	0%,
+	100% {
+		transform: translateY(0) rotate(0deg);
+	}
+	25% {
+		transform: translateY(-7px) rotate(-8deg);
+	}
+	50% {
+		transform: translateY(0) rotate(0deg) scale(1.04, 0.96);
+	}
+	75% {
+		transform: translateY(-7px) rotate(8deg);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	html[data-squadup] .hdr-buddy .buddy {
+		animation: none;
+	}
+}

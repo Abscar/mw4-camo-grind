@@ -48,7 +48,6 @@ import {
 	toSquadWire,
 	withDuel,
 	withMember,
-	withoutDuel,
 	withoutMember,
 	SQUAD_OPS,
 	type MemberStats,
@@ -69,12 +68,17 @@ import {
 	type RadioDoc
 } from './squad-radio.ts';
 import { isSyncCode } from './sync-codec.ts';
+import { addPlayed, dayKey, mergePlayed, settleDuel, spin, withBet, withoutBet, withPaid, SPIN_LEAD_MS, SQUAD_UP } from './squad-fun.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** What this device last saw of the others (for the kill feed), per squad code. */
 const SEEN_KEY = 'mw4-camo-grind:squad-seen';
 /** When you last looked at the radio (unread count). */
 const READ_KEY = 'mw4-camo-grind:squad-read';
+/** Minutes with the tracker open per day on this device (step 3, "Played today"). */
+const PLAYED_KEY = 'mw4-camo-grind:played';
+/** Count the time with the page open this often. */
+const PLAY_TICK = 60_000;
 const ENDPOINT = (((import.meta.env.VITE_SYNC_URL as string | undefined) || SYNC_URL) ?? '').replace(/\/+$/, '');
 /** Wait this long after a tick before sending it (several quick ticks go as one). */
 const PUBLISH_DELAY = 1500;
@@ -296,12 +300,17 @@ class Squad {
 	#squad = new Channel<SquadDoc>(fromSquadWire, toSquadWire, emptySquad, (doc) => this.#onSquad(doc));
 	#radio = new Channel<RadioDoc>(fromRadioWire, toRadioWire, emptyRadio);
 	#ping: { to: string; at: number } | null = null;
+	/** Minutes with the tracker open per day (this device; the bigger number of your devices is published). */
+	played = $state<Record<string, number>>({});
+	#playTick = 0;
 	#publishTimer: ReturnType<typeof setTimeout> | undefined;
 	#lookedAt = Date.now();
 	#saidAway = false;
 	#started = false;
 	/** Mastery camos already complete here (a new one goes on the radio). */
 	#masteryDone = new Set<string>();
+	/** Quarter marks reached per Mastery camo (25 / 50 / 75 %: a radio line, not every small step). */
+	#masteryQuarters = new Map<string, number>();
 
 	get on(): boolean {
 		return this.code !== null && this.me !== null;
@@ -334,7 +343,8 @@ class Squad {
 			mastery: progress.mastery,
 			tickAt: progress.lastTickAt ? Date.parse(progress.lastTickAt) : undefined,
 			recent: memberEntry(me, this.#progressNow(), this.now).recent,
-			readyAt: this.readyAt ?? undefined
+			readyAt: this.readyAt ?? undefined,
+			played: this.played
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -357,6 +367,11 @@ class Squad {
 		return this.entries.find((e) => e.id === id) ?? null;
 	}
 
+	/** How many are online right now (you included). */
+	onlineCount = $derived(this.entries.filter((e) => e.online).length);
+	/** Squad up: party mode while SQUAD_UP or more are online at once. */
+	squadUp = $derived(this.on && this.onlineCount >= SQUAD_UP);
+
 	/** Call once in the browser, after progress.load(). Returns a function that stops it. */
 	start(): () => void {
 		if (!this.available || this.#started) return () => {};
@@ -365,7 +380,11 @@ class Squad {
 		if (saved) this.#use(saved.code, saved.me, 0, null);
 		const read = readJson(READ_KEY);
 		if (typeof read === 'number') this.readAt = read;
+		const played = readJson(PLAYED_KEY);
+		if (played && typeof played === 'object') this.played = addPlayed(played as Record<string, number>, 0, 0);
+		this.#playTick = Date.now();
 		this.#masteryDone = this.#completeMastery();
+		this.#masteryQuarters = this.#quarters();
 		this.#checkAddress();
 
 		const stopSaved = progress.onSaved(() => {
@@ -394,6 +413,7 @@ class Squad {
 		}, RADIO_EVERY);
 		const beat = setInterval(() => this.#heartbeat(), HEARTBEAT);
 		const clock = setInterval(() => (this.now = this.serverNow()), 20_000);
+		const play = setInterval(() => this.#countPlayed(), PLAY_TICK);
 		if (this.on) void this.#refresh();
 
 		return () => {
@@ -407,6 +427,7 @@ class Squad {
 			clearInterval(radio);
 			clearInterval(beat);
 			clearInterval(clock);
+			clearInterval(play);
 		};
 	}
 
@@ -486,8 +507,63 @@ class Squad {
 		return outcome === 'ok';
 	}
 
+	/** Take a duel off the list (a finished one keeps its result for bets and IOUs). */
 	async removeDuel(id: string): Promise<void> {
-		this.#done(await this.#squad.write((doc) => withoutDuel(doc, id)));
+		this.#done(await this.#squad.write((doc) => settleDuel(doc, id, this.#members(doc))));
+	}
+
+	/** Spin tonight's roulette for everyone online (or the whole squad when you're alone). */
+	async spinRoulette(mode: 'each' | 'class'): Promise<boolean> {
+		const me = this.me;
+		if (!me) return false;
+		const online = this.entries.filter((e) => e.online).map((e) => e.id);
+		const ids = online.length >= 2 ? online : this.entries.map((e) => e.id);
+		const members = Object.fromEntries(this.entries.map((e) => [e.id, e.member]));
+		const drawn = spin(members, ids, mode, Math.floor(Math.random() * 2 ** 31));
+		if (!drawn) return false;
+		const roulette = { id: makeMemberId(), by: me.id, at: this.serverNow() + SPIN_LEAD_MS, mode, ...drawn };
+		const outcome = await this.#squad.write((doc) => ({ ...doc, roulette }));
+		this.#done(outcome);
+		if (outcome === 'ok') await this.#event(t.squad.roulette.event);
+		return outcome === 'ok';
+	}
+
+	/** Bet pretend burgers on a duel or the race to Divergence. */
+	async placeBet(kind: 'duel' | 'race', ref: string, pick: string, amount: number): Promise<boolean> {
+		const me = this.me;
+		if (!me) return false;
+		const bet = { id: makeMemberId(), by: me.id, kind, ref: kind === 'race' ? '' : ref, pick, amount: Math.floor(amount), at: this.serverNow() };
+		const outcome = await this.#squad.write((doc) => withBet(doc, bet, this.#members(doc)));
+		this.#done(outcome === 'refused' ? 'ok' : outcome);
+		return outcome === 'ok';
+	}
+
+	async withdrawBet(id: string): Promise<void> {
+		this.#done(await this.#squad.write((doc) => withoutBet(doc, id)));
+	}
+
+	/** A real-burger IOU was paid. */
+	async markPaid(ids: string[]): Promise<void> {
+		this.#done(await this.#squad.write((doc) => withPaid(doc, ids)));
+	}
+
+	/** The squad's members with your own entry following your ticks (for bets and duels). */
+	#members(doc: SquadDoc): Record<string, SquadMember> {
+		const out = { ...doc.members };
+		const mine = this.entries.find((e) => e.mine);
+		if (mine) out[mine.id] = mine.member;
+		return out;
+	}
+
+	/** One more minute with the tracker open (visible, or hidden < 30 min: alt-tabbed into the game). */
+	#countPlayed(): void {
+		const now = Date.now();
+		const looking = document.visibilityState === 'visible' || now - this.#lookedAt < HIDDEN_GRACE;
+		if (looking) {
+			this.played = addPlayed(this.played, this.#playTick, now);
+			writeJson(PLAYED_KEY, this.played);
+		}
+		this.#playTick = now;
 	}
 
 	/** Send a radio message. */
@@ -616,7 +692,10 @@ class Squad {
 	}
 
 	#entry(me: Me, away = false): SquadMember {
-		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, { readyAt: this.readyAt, ping: this.#ping });
+		// your other device's minutes: the bigger number per day (both pages count the same evening)
+		const theirs = this.#squad.doc?.members[me.id]?.played;
+		if (theirs) this.played = mergePlayed(this.played, theirs);
+		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, { readyAt: this.readyAt, ping: this.#ping, played: this.played });
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;
 		return more ? { ...entry, more } : entry;
@@ -674,12 +753,28 @@ class Squad {
 		return done;
 	}
 
-	/** A Mastery camo finished since the last save goes on the radio. */
+	#quarters(): Map<string, number> {
+		const out = new Map<string, number>();
+		for (const c of MASTERY_TRACKS.flatMap((tr) => tr.camos)) out.set(c.id, Math.floor((Math.min(progress.mastery[c.id] ?? 0, c.target) / c.target) * 4));
+		return out;
+	}
+
+	/** A Mastery camo finished since the last save goes on the radio, and so does a new quarter mark. */
 	#masteryNews(): void {
 		const now = this.#completeMastery();
 		const fresh = [...now].filter((id) => !this.#masteryDone.has(id));
 		this.#masteryDone = now;
+		const quarters = this.#quarters();
+		const marks = MASTERY_TRACKS.flatMap((tr) => tr.camos).filter((c) => {
+			const q = quarters.get(c.id) ?? 0;
+			return q > (this.#masteryQuarters.get(c.id) ?? 0) && q > 0 && q < 4;
+		});
+		this.#masteryQuarters = quarters;
 		if (!this.on) return;
+		for (const c of marks) {
+			const n = Math.min(progress.mastery[c.id] ?? 0, c.target);
+			void this.#event(t.squad.radio.masteryMark(c.name, (quarters.get(c.id) ?? 0) * 25, n, c.target));
+		}
 		for (const id of fresh) {
 			const camo = MASTERY_TRACKS.flatMap((tr) => tr.camos).find((c) => c.id === id);
 			if (camo) void this.#event(t.squad.radio.masteryEvent(camo.name));

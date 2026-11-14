@@ -24,11 +24,20 @@
 	  or a channel knob) the montage comes back. Once per headline per device (`mw4-camo-grind:tv-news`);
 	  only while the TV is on and on screen, so nobody misses it below the fold. The player is
 	  removed meanwhile, so nothing is drawn over a playing video.
+- Squad TV, CH 99 (squad step 3, 2026-11-14, the user's pick): for people in a squad, the channel
+  knobs go past the last montage to "CH 99", a squad news desk (red studio) that rolls headlines
+  made from the squad's own data (squad-fun.ts squadEvents: maxed guns, Divergence, duels, the
+  week's MVP, who's asleep / missing / slacking). A fresh real news item (a maxed gun, Divergence, a
+  duel won) switches to it by itself once per item per device (`mw4-camo-grind:tv-squad`), like CH 00.
+- Squad up (3+ online): the TV switches once to the hype montage (HYPE in montages.ts) if it's on.
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { OFFLINE_FILE } from '#lib/browser.ts';
-	import { FAVOURITE, MONTAGES } from '#lib/data/montages.ts';
+	import { FAVOURITE, HYPE, MONTAGES } from '#lib/data/montages.ts';
+	import { WEAPON_BY_ID } from '#lib/data/weapons.ts';
+	import { squad } from '#lib/squad.svelte.ts';
+	import { newsKey, squadEvents, type SquadEvent } from '#lib/squad-fun.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { motion } from '#lib/motion.svelte.ts';
 	import { breakingNews, type Headline } from '#lib/news-codec.ts';
@@ -56,6 +65,50 @@
 	/** Which breaking-news headline this device has shown (its link), and for how long it stays on. */
 	const NEWS_KEY = 'mw4-camo-grind:tv-news';
 	const NEWS_MS = 15_000;
+	/** Which squad news item this device has shown (CH 99), and how long each headline stays up. */
+	const SQUAD_KEY = 'mw4-camo-grind:tv-squad';
+	const LINE_MS = 5_000;
+
+	/** CH 99 on screen: 'auto' (a fresh item, goes back by itself) or 'manual' (tuned in with a knob). */
+	let cast = $state<null | 'auto' | 'manual'>(null);
+	let castIdx = $state(0);
+	let castTimer: ReturnType<typeof setTimeout> | undefined;
+	let castRoll: ReturnType<typeof setInterval> | undefined;
+	const events = $derived(squad.on ? squadEvents(squad.entries, squad.doc, squad.now) : []);
+	const weaponName = (id: string) => WEAPON_BY_ID.get(id)?.name ?? id;
+	function line(e: SquadEvent): string {
+		const v = t.squad.tv;
+		switch (e.kind) {
+			case 'maxed':
+				return v.maxed(e.who, weaponName(e.weapon));
+			case 'nuke':
+				return v.nuke(e.who);
+			case 'duelWon':
+				return v.duelWon(e.who, e.loser, weaponName(e.weapon));
+			case 'mvp':
+				return v.mvp(e.who, e.n);
+			case 'mastery':
+				return v.mastery(e.who, e.n);
+			case 'played':
+				return v.played(e.who, t.squad.minutes(e.min));
+			case 'asleep':
+				return v.asleep(e.who);
+			case 'missing':
+				return v.missing(e.who, e.days);
+			case 'slacker':
+				return v.slacker(e.who);
+		}
+	}
+	/** The headlines: real news first, the first one paired with who's asleep ("A maxes the M4, B still asleep"). */
+	const castLines = $derived.by(() => {
+		const lines = events.map(line);
+		const asleep = events.findIndex((e) => e.kind === 'asleep');
+		if (lines.length > 1 && asleep > 0 && events[0].kind !== 'asleep') {
+			lines[0] = `${lines[0]}, ${lines[asleep]}`;
+			lines.splice(asleep, 1);
+		}
+		return lines.length ? lines : [t.squad.tv.quiet];
+	});
 
 	/** The breaking-news headline on screen now, or null (the montage). */
 	let newsItem = $state<Headline | null>(null);
@@ -170,6 +223,7 @@
 		// a channel knob during the news goes back to the montages
 		clearTimeout(newsTimer);
 		newsItem = null;
+		stopCast();
 		channel = ((ch % N) + N) % N;
 		tuning = true;
 		pending = true;
@@ -207,6 +261,7 @@
 		clearInterval(handshake);
 		src = null;
 		newsItem = null;
+		stopCast();
 		soundOn = false;
 		tuning = true;
 		flash('cool');
@@ -216,8 +271,55 @@
 
 	function flip(step: number) {
 		wiggle();
-		if (!power) turnOn(channel + step);
-		else tuneTo(channel + step);
+		// in a squad the ring has one more stop after the last montage: CH 99
+		const ring = N + (squad.on ? 1 : 0);
+		const at = cast ? N : channel;
+		const next = (((at + step) % ring) + ring) % ring;
+		if (next === N) {
+			if (!power) turnOn();
+			showCast('manual');
+			return;
+		}
+		if (!power) turnOn(next);
+		else tuneTo(next);
+	}
+
+	function stopCast() {
+		clearTimeout(castTimer);
+		clearInterval(castRoll);
+		cast = null;
+	}
+
+	/** CH 99: drop the montage for the squad news desk (the player goes, like CH 00). */
+	function showCast(mode: 'auto' | 'manual') {
+		const key = newsKey(events);
+		if (key) {
+			try {
+				localStorage.setItem(SQUAD_KEY, key);
+			} catch {
+				// not remembered: it may show once more
+			}
+		}
+		clearTimeout(tuneTimer);
+		clearTimeout(revealTimer);
+		clearTimeout(newsTimer);
+		clearInterval(handshake);
+		newsItem = null;
+		src = null;
+		pending = false;
+		tuning = false;
+		stopCast();
+		cast = mode;
+		castIdx = 0;
+		flash('warm');
+		castRoll = setInterval(() => (castIdx = (castIdx + 1) % Math.max(1, castLines.length)), LINE_MS);
+		if (mode === 'auto') castTimer = setTimeout(endCast, Math.min(30_000, Math.max(NEWS_MS, castLines.length * LINE_MS)));
+	}
+
+	function endCast() {
+		if (!cast) return;
+		stopCast();
+		if (power) tuneTo(channel, 0);
 	}
 
 	function toggleSound() {
@@ -302,6 +404,7 @@
 		src = null;
 		pending = false;
 		tuning = false;
+		stopCast();
 		newsItem = h;
 		flash('warm');
 		clearTimeout(newsTimer);
@@ -329,6 +432,35 @@
 			}
 			const h = breakingNews(patches, Date.now(), shownUrl);
 			if (h) showNews(h);
+		});
+	});
+
+	// squad news: a fresh maxed gun / Divergence / duel won switches to CH 99 once (not over CH 00)
+	$effect(() => {
+		const key = newsKey(events);
+		if (!mounted || !power || !inView || newsItem || cast || !key) return;
+		untrack(() => {
+			let shownKey: string | null = null;
+			try {
+				shownKey = localStorage.getItem(SQUAD_KEY);
+			} catch {
+				// no storage: show it
+			}
+			if (shownKey !== key) showCast('auto');
+		});
+	});
+
+	// squad up: once per party, the hype montage (if the TV is on and not showing news)
+	let wasUp = false;
+	$effect(() => {
+		const up = squad.squadUp;
+		if (!mounted) return;
+		untrack(() => {
+			if (up && !wasUp && power && !newsItem) {
+				const i = IDS.indexOf(HYPE);
+				if (i >= 0 && (cast || i !== channel)) tuneTo(i, 0);
+			}
+			wasUp = up;
 		});
 	});
 
@@ -400,7 +532,8 @@
 			window.removeEventListener('message', onMessage);
 			window.removeEventListener('online', onOnline);
 			document.removeEventListener('visibilitychange', onVisibility);
-			for (const timer of [tuneTimer, revealTimer, phaseTimer, offTimer, newsTimer]) clearTimeout(timer);
+			for (const timer of [tuneTimer, revealTimer, phaseTimer, offTimer, newsTimer, castTimer]) clearTimeout(timer);
+			clearInterval(castRoll);
 			clearInterval(handshake);
 		};
 	});
@@ -423,7 +556,7 @@
 	<div class="tv-cabinet">
 		<div class="tv-front">
 			<div class="tv-glass">
-				{#if power && !newsItem && (tuning || !signal || !src)}
+				{#if power && !newsItem && !cast && (tuning || !signal || !src)}
 					<div class="tv-static" aria-hidden="true"></div>
 				{/if}
 				{#if power && signal && src && shown && seen}
@@ -440,7 +573,7 @@
 						></iframe>
 					{/key}
 				{/if}
-				{#if power && !newsItem && (tuning || !signal)}
+				{#if power && !newsItem && !cast && (tuning || !signal)}
 					<div class="tv-osd" aria-hidden="true">
 						<span class="tv-osd-ch">{t.tv.channel(channel + 1)}</span>
 						{#if !signal}<span class="tv-osd-msg">{t.tv.noSignal}</span>{/if}
@@ -480,7 +613,31 @@
 						>
 					</button>
 				{/if}
-				{#if power && !newsItem && !signal && OFFLINE_FILE}
+				{#if power && cast}
+					<!-- CH 99: the squad news desk (our own red studio); headlines roll every 5 s -->
+					<div class="tv-news tv-squad" class:tvs-auto={cast === 'auto'}>
+						<span class="tvn-top" aria-hidden="true">
+							<span class="tvn-live"><i></i>{t.tv.live}</span>
+							<span class="tvn-ch">{t.squad.tv.channel}</span>
+						</span>
+						<span class="tvn-banner" aria-hidden="true">{t.squad.tv.breaking}</span>
+						{#key castIdx}
+							<span class="tvn-headline" aria-hidden="true">{castLines[castIdx % castLines.length]}</span>
+						{/key}
+						<span class="tvn-meta" aria-hidden="true">{t.squad.tv.desk}</span>
+						<span class="tvn-ticker" aria-hidden="true"><span class="tvn-crawl">{castLines.join('  ◆  ')}</span></span>
+						{#if cast === 'auto'}<span class="tvn-timer" aria-hidden="true" style:animation-duration="{Math.min(30, Math.max(15, castLines.length * 5))}s"></span>{/if}
+						<span class="sr-only">{t.squad.tv.label(castLines.join('. '))}</span>
+					</div>
+					<button type="button" class="tvn-back" aria-label={t.squad.tv.back} title={t.squad.tv.back} onclick={endCast}>
+						<span aria-hidden="true"
+							><svg viewBox="0 0 16 16"
+								><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg
+							></span
+						>
+					</button>
+				{/if}
+				{#if power && !newsItem && !cast && !signal && OFFLINE_FILE}
 					<a class="tv-yt" href={watchUrl(current.id)} target="_blank" rel="noopener noreferrer"
 						>{t.tv.watchOnYouTube}<span class="sr-only"> ({t.news.newTab})</span></a
 					>
@@ -493,8 +650,11 @@
 				{/if}
 				<div class="tv-flash" data-phase={phase} aria-hidden="true"></div>
 			</div>
-			<p class="tv-plate" title={power ? (newsItem ? newsItem.title : `${current.by}: ${current.title}`) : undefined}>
-				{#if power && newsItem}
+			<p class="tv-plate" title={power ? (newsItem ? newsItem.title : cast ? t.squad.tv.desk : `${current.by}: ${current.title}`) : undefined}>
+				{#if power && cast}
+					<span class="tv-plate-author tvn-plate">{t.squad.tv.channel}</span>
+					<span class="tv-plate-title">{t.squad.tv.desk}</span>
+				{:else if power && newsItem}
 					<span class="tv-plate-author tvn-plate">{t.tv.breaking}</span>
 					<span class="tv-plate-title">{newsItem.source}</span>
 				{:else if power}
@@ -508,7 +668,7 @@
 
 		<div class="tv-controls">
 			<span class="tv-grille" aria-hidden="true"></span>
-			<span class="tv-led" class:tv-led-on={power} aria-hidden="true">{power ? (newsItem ? '00' : pad(channel + 1)) : '88'}</span>
+			<span class="tv-led" class:tv-led-on={power} aria-hidden="true">{power ? (newsItem ? '00' : cast ? '99' : pad(channel + 1)) : '88'}</span>
 			<button type="button" class="tv-knob" aria-label={t.tv.prev} title={t.tv.prev} onclick={() => flip(-1)}>
 				<span
 					><svg viewBox="0 0 16 16" aria-hidden="true"
@@ -756,6 +916,21 @@
 		background:
 			repeating-linear-gradient(0deg, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px),
 			radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55));
+	}
+	/* CH 99: the squad desk is a dark red studio, so it reads as our own channel next to CH 00 */
+	.tv-squad {
+		background:
+			repeating-linear-gradient(0deg, rgb(255 140 90 / 0.07) 0 1px, transparent 1px 16px),
+			repeating-linear-gradient(90deg, rgb(255 140 90 / 0.07) 0 1px, transparent 1px 16px),
+			radial-gradient(ellipse 80% 60% at 28% 18%, #8a1d12, #2a0806 62%, #120302);
+	}
+	.tv-squad .tvn-banner {
+		background: linear-gradient(180deg, #ffcc33, #e08a00);
+		color: #2a1400;
+		text-shadow: none;
+	}
+	.tv-squad .tvn-headline {
+		animation: tvn-slide 0.45s ease-out backwards;
 	}
 	.tv-news:focus-visible {
 		outline: 2px solid #ffe14a;

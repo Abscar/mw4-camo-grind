@@ -20,6 +20,10 @@
 	import SquadDuels from './SquadDuels.svelte';
 	import SquadRace from './SquadRace.svelte';
 	import SquadRadio from './SquadRadio.svelte';
+	import SquadRoulette from './SquadRoulette.svelte';
+	import SquadBank from './SquadBank.svelte';
+	import SquadWrapped from './SquadWrapped.svelte';
+	import { dayKey, playedOn, usualSlot } from '#lib/squad-fun.ts';
 
 	/** Whether the Squad tab is the one shown (the radio counts as read then). */
 	let { visible = false }: { visible?: boolean } = $props();
@@ -59,6 +63,8 @@
 	const entries = $derived(squad.entries);
 	const members = $derived(Object.fromEntries(entries.map((e) => [e.id, e.member])));
 	const mvps = $derived(weeklyMvps(members, squad.now));
+	const today = $derived(dayKey(squad.now));
+	const slot = $derived(usualSlot(entries.map((e) => e.member)));
 	/** Stickers from lost duels, per member. */
 	const stakes = $derived.by(() => {
 		const out: Record<string, string[]> = {};
@@ -269,7 +275,12 @@
 				<button type="button" class="btn" onclick={() => void squad.refreshNow()}>{s.refresh}</button>
 				<button type="button" class="btn" onclick={() => openForm('edit')}>{s.edit}</button>
 				<button type="button" class="btn" onclick={() => (leaveOpen = true)}>{s.leave}</button>
+				<SquadWrapped />
 			</div>
+			<p class="sq-usual text-[13px] text-muted">
+				<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M8 4.5V8l2.5 1.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+				{slot ? s.usual(s.weekdays[slot.day], slot.from) : s.usualNone}
+			</p>
 
 			<SquadRace {entries} />
 
@@ -318,6 +329,11 @@
 								</div>
 							{/each}
 						</div>
+
+						<p class="sq-played text-[13px]" title={s.played.hint}>
+							<span aria-hidden="true">⏱</span>
+							{s.played.today(s.minutes(playedOn(e.member, today)))}<span class="sr-only"> ({s.played.hint})</span>
+						</p>
 
 						<p class="sq-div text-[13px]" class:done={st.divergenceLeft === 0}>
 							<span aria-hidden="true">{st.divergenceLeft === 0 ? '✔' : '◆'}</span>
@@ -369,6 +385,12 @@
 					</li>
 				{/each}
 			</ul>
+
+			<!-- tonight's roulette and the burger bank -->
+			<div class="grid gap-4 lg:grid-cols-2">
+				<SquadRoulette />
+				<SquadBank />
+			</div>
 
 			<!-- the radio and the duels, side by side on wide screens -->
 			<div class="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -679,6 +701,14 @@
 	}
 	.sq-div {
 		color: var(--t-muted);
+	}
+	.sq-usual {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.sq-played {
+		color: var(--t-fg);
 	}
 	.sq-div.done {
 		color: var(--t-fg);
