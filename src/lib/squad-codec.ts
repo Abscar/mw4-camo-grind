@@ -24,6 +24,7 @@ import {
 } from './data/camos.ts';
 import { WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
+import { startOfDay, startOfWeek } from './stats.ts';
 import { isSyncCode, makeSyncCode } from './sync-codec.ts';
 
 /** Format of the squad document (bump + extend fromSquadWire if it changes). */
@@ -51,15 +52,48 @@ export interface SquadMember {
 	mastery: Record<string, number>;
 	/** When they last ticked a camo (ms), if known. */
 	tickAt?: number;
+	/**
+	 * When each camo was ticked, for the last RECENT_DAYS days only (weapon id → [ms per level],
+	 * 0 = not in the window): weekly MVP, streaks, duels (2026-11-14, step 2).
+	 */
+	recent?: Record<string, number[]>;
+	/** "Ready up": when they pressed it (ms, the sync service's clock). */
+	readyAt?: number;
+	/** A knock on someone's door (terminal `ping <name>`): who and when. */
+	ping?: { to: string; at: number };
 	/** Fields a newer page wrote that this one doesn't know: kept as they are, never dropped. */
 	more?: Record<string, unknown>;
 }
 
+/** "First to <camo> on <weapon>" between two members; the loser gets the stake as a sticker. */
+export interface Duel {
+	id: string;
+	a: string;
+	b: string;
+	weapon: string;
+	/** Ladder level to reach: 1 Gold, 2 Platinum, 3 Harmonic Break. */
+	goal: number;
+	stake: string;
+	/** When it started (ms, the sync service's clock). */
+	at: number;
+}
+
 export interface SquadDoc {
 	members: Record<string, SquadMember>;
+	duels?: Duel[];
 	/** Document fields a newer page wrote that this one doesn't know: kept as they are. */
 	more?: Record<string, unknown>;
 }
+
+/** Tick times older than this aren't published. */
+export const RECENT_DAYS = 35;
+const RECENT_MAX = 150;
+export const MAX_DUELS = 8;
+export const STAKE_MAX = 40;
+/** "Ready up" shows on the others' pages this long (while you're online). */
+export const READY_MS = 45 * 60_000;
+/** A ping shows this long. */
+export const PING_MS = 15 * 60_000;
 
 export interface SquadWire {
 	app: typeof APP_ID;
@@ -68,8 +102,8 @@ export interface SquadWire {
 	[key: string]: unknown;
 }
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'tickAt']);
-const DOC_KEYS = new Set(['app', 'squad', 'members']);
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'tickAt', 'recent', 'readyAt', 'ping']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels']);
 
 /** The keys of `raw` this page doesn't know (so a newer page's additions survive an older page's write). */
 function unknownKeys(raw: Record<string, unknown>, known: Set<string>): Record<string, unknown> | undefined {
@@ -123,9 +157,60 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (typeof raw.op === 'string' && (SQUAD_OPS as readonly string[]).includes(raw.op)) member.op = raw.op as SquadOp;
 	if (raw.away === true) member.away = true;
 	if (typeof raw.tickAt === 'number' && Number.isFinite(raw.tickAt) && raw.tickAt > 0) member.tickAt = raw.tickAt;
+	const recent = cleanRecent(raw.recent, weapons);
+	if (recent) member.recent = recent;
+	if (isTime(raw.readyAt)) member.readyAt = raw.readyAt;
+	if (isObject(raw.ping) && typeof raw.ping.to === 'string' && isMemberId(raw.ping.to) && isTime(raw.ping.at)) {
+		member.ping = { to: raw.ping.to, at: raw.ping.at };
+	}
 	const more = unknownKeys(raw, MEMBER_KEYS);
 	if (more) member.more = more;
 	return member;
+}
+
+const isTime = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x) && x > 0;
+
+/** Tick times for weapons the member has, at most 3 per weapon, newest RECENT_MAX kept. */
+function cleanRecent(raw: unknown, weapons: Record<string, number>): Record<string, number[]> | undefined {
+	if (!isObject(raw)) return undefined;
+	const out: Record<string, number[]> = {};
+	for (const [id, times] of Object.entries(raw)) {
+		if (!WEAPON_IDS.has(id) || !Array.isArray(times)) continue;
+		const level = weapons[id] ?? 0;
+		const list = times.slice(0, MAX_LEVEL).map((x, i) => (i < level && isTime(x) ? Math.round(x) : 0));
+		while (list.length && !list[list.length - 1]) list.pop();
+		if (list.some(Boolean)) out[id] = list;
+	}
+	return Object.keys(out).length ? out : undefined;
+}
+
+export function cleanStake(raw: unknown): string {
+	return cleanName(raw).slice(0, STAKE_MAX) || '';
+}
+
+function cleanDuels(raw: unknown): Duel[] {
+	if (!Array.isArray(raw)) return [];
+	const out: Duel[] = [];
+	for (const d of raw) {
+		if (!isObject(d)) continue;
+		const goal = count(d.goal, MAX_LEVEL);
+		if (
+			typeof d.id !== 'string' ||
+			!isMemberId(d.id) ||
+			typeof d.a !== 'string' ||
+			typeof d.b !== 'string' ||
+			!isMemberId(d.a) ||
+			!isMemberId(d.b) ||
+			d.a === d.b ||
+			typeof d.weapon !== 'string' ||
+			!WEAPON_IDS.has(d.weapon) ||
+			!goal ||
+			!isTime(d.at)
+		)
+			continue;
+		out.push({ id: d.id, a: d.a, b: d.b, weapon: d.weapon, goal, stake: cleanStake(d.stake), at: d.at });
+	}
+	return out.slice(-MAX_DUELS);
 }
 
 /** Read a stored squad document (cleaned up), or null if it isn't one. */
@@ -136,15 +221,21 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 		const member = isMemberId(id) ? cleanMember(m) : null;
 		if (member) members[id] = member;
 	}
+	const doc: SquadDoc = { members };
+	const duels = cleanDuels(raw.duels);
+	if (duels.length) doc.duels = duels;
 	const more = unknownKeys(raw, DOC_KEYS);
-	return more ? { members, more } : { members };
+	if (more) doc.more = more;
+	return doc;
 }
 
 export function toSquadWire(doc: SquadDoc): SquadWire {
 	const members = Object.fromEntries(
 		Object.entries(doc.members).map(([id, { more, ...known }]) => [id, { ...more, ...known }])
 	);
-	return { ...doc.more, app: APP_ID, squad: SQUAD_FORMAT, members };
+	const wire: SquadWire = { ...doc.more, app: APP_ID, squad: SQUAD_FORMAT, members };
+	if (doc.duels?.length) wire.duels = doc.duels;
+	return wire;
 }
 
 export function emptySquad(): SquadDoc {
@@ -154,9 +245,15 @@ export function emptySquad(): SquadDoc {
 /** What one member's page publishes about itself. */
 export function memberEntry(
 	me: { name: string; op: SquadOp | null },
-	progress: { weapons: Record<string, number>; mastery: Record<string, number>; lastTickAt: string | null },
+	progress: {
+		weapons: Record<string, number>;
+		mastery: Record<string, number>;
+		lastTickAt: string | null;
+		stamps?: Record<string, number[]>;
+	},
 	seen: number,
-	away = false
+	away = false,
+	extra: { readyAt?: number | null; ping?: { to: string; at: number } | null } = {}
 ): SquadMember {
 	const entry = cleanMember({
 		name: me.name,
@@ -165,10 +262,136 @@ export function memberEntry(
 		away,
 		weapons: progress.weapons,
 		mastery: progress.mastery,
-		tickAt: progress.lastTickAt ? Date.parse(progress.lastTickAt) : undefined
+		tickAt: progress.lastTickAt ? Date.parse(progress.lastTickAt) : undefined,
+		recent: progress.stamps ? recentFrom(progress.stamps, Date.now()) : undefined,
+		readyAt: extra.readyAt ?? undefined,
+		ping: extra.ping ?? undefined
 	});
 	if (!entry) throw new Error('bad squad entry');
 	return entry;
+}
+
+/** Your tick times from the last RECENT_DAYS days (newest RECENT_MAX), for the squad. */
+export function recentFrom(stamps: Record<string, number[]>, now: number): Record<string, number[]> {
+	const from = now - RECENT_DAYS * 86_400_000;
+	const all = Object.entries(stamps)
+		.flatMap(([id, times]) => (Array.isArray(times) ? times.map((ms, i) => ({ id, i, ms })) : []))
+		.filter((x) => isTime(x.ms) && x.ms >= from && x.i < MAX_LEVEL)
+		.sort((a, b) => b.ms - a.ms)
+		.slice(0, RECENT_MAX);
+	const out: Record<string, number[]> = {};
+	for (const { id, i, ms } of all) {
+		const list = (out[id] ??= []);
+		while (list.length <= i) list.push(0);
+		list[i] = ms;
+	}
+	return out;
+}
+
+/** All of a member's known tick times (ms). */
+const tickTimes = (m: Pick<SquadMember, 'recent'>) => Object.values(m.recent ?? {}).flat().filter((x) => x > 0);
+
+/** Camos ticked since Monday 00:00 (the viewer's local time, like the grind stats). */
+export function camosThisWeek(m: Pick<SquadMember, 'recent'>, now: number): number {
+	const from = startOfWeek(now);
+	return tickTimes(m).filter((x) => x >= from && x <= now + 60_000).length;
+}
+
+/** Days in a row with at least one camo, ending today (or yesterday, while today has none yet). */
+export function streakDays(m: Pick<SquadMember, 'recent'>, now: number): number {
+	const days = new Set(tickTimes(m).map((x) => startOfDay(x)));
+	let day = startOfDay(now);
+	if (!days.has(day)) day = startOfDay(day - 12 * 3_600_000);
+	let n = 0;
+	while (days.has(day)) {
+		n++;
+		day = startOfDay(day - 12 * 3_600_000);
+	}
+	return n;
+}
+
+/** This week's MVP(s): the most camos since Monday (at least one); a shared top spot shares the crown. */
+export function weeklyMvps(members: Record<string, Pick<SquadMember, 'recent'>>, now: number): string[] {
+	const counts = Object.entries(members).map(([id, m]) => [id, camosThisWeek(m, now)] as const);
+	const best = Math.max(0, ...counts.map(([, n]) => n));
+	return best > 0 ? counts.filter(([, n]) => n === best).map(([id]) => id) : [];
+}
+
+export function isReady(m: SquadMember, now: number): boolean {
+	return !!m.readyAt && now - m.readyAt < READY_MS && m.readyAt - now < READY_MS && isOnline(m, now);
+}
+
+/** Who knocked on `myId`'s door in the last PING_MS, newest first. */
+export function pingsFor(doc: SquadDoc, myId: string, now: number): { from: string; at: number }[] {
+	return Object.entries(doc.members)
+		.filter(([id, m]) => id !== myId && m.ping?.to === myId && now - m.ping.at < PING_MS && m.ping.at - now < PING_MS)
+		.map(([id, m]) => ({ from: id, at: m.ping!.at }))
+		.sort((a, b) => b.at - a.at);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Duels: "first to <camo> on <weapon>".
+
+export function withDuel(doc: SquadDoc, duel: Duel): SquadDoc | null {
+	const duels = doc.duels ?? [];
+	if (duels.length >= MAX_DUELS) return null;
+	return { ...doc, duels: [...duels, duel] };
+}
+
+export function withoutDuel(doc: SquadDoc, id: string): SquadDoc {
+	return { ...doc, duels: (doc.duels ?? []).filter((d) => d.id !== id) };
+}
+
+/**
+ * Who won: the one who has the goal camo (if both do, whoever ticked it first by their tick times;
+ * without times, nobody can tell, so it's a draw). null while it's still on.
+ */
+export function duelResult(duel: Duel, members: Record<string, Pick<SquadMember, 'weapons' | 'recent'>>): { winner: string | null; loser: string | null; draw: boolean } | null {
+	const a = members[duel.a];
+	const b = members[duel.b];
+	const has = (m: typeof a) => !!m && (m.weapons[duel.weapon] ?? 0) >= duel.goal;
+	const when = (m: typeof a) => m?.recent?.[duel.weapon]?.[duel.goal - 1] || 0;
+	if (!has(a) && !has(b)) return null;
+	if (has(a) && !has(b)) return { winner: duel.a, loser: duel.b, draw: false };
+	if (has(b) && !has(a)) return { winner: duel.b, loser: duel.a, draw: false };
+	const ta = when(a);
+	const tb = when(b);
+	if (ta && tb && ta !== tb) return ta < tb ? { winner: duel.a, loser: duel.b, draw: false } : { winner: duel.b, loser: duel.a, draw: false };
+	return { winner: null, loser: null, draw: true };
+}
+
+// ---------------------------------------------------------------------------------------------
+// What changed for the others since this device last looked (the squad kill feed).
+
+/** Per member: ladder level per weapon and whether Divergence was unlocked, as last seen here. */
+export type SeenSnapshot = Record<string, { w: Record<string, number>; div: boolean }>;
+
+export interface SquadGain {
+	member: string;
+	name: string;
+	weaponId: string;
+	level: number;
+}
+
+/**
+ * New camos the other members got since `before` (a member seen for the first time brings none:
+ * their old progress isn't news), and the snapshot to keep.
+ */
+export function squadGains(before: SeenSnapshot | null, doc: SquadDoc, myId: string): { gains: SquadGain[]; nukes: string[]; next: SeenSnapshot } {
+	const next: SeenSnapshot = {};
+	const gains: SquadGain[] = [];
+	const nukes: string[] = [];
+	for (const [id, m] of Object.entries(doc.members)) {
+		const div = divergenceCount(m.weapons) >= DIVERGENCE_REQUIRED;
+		next[id] = { w: { ...m.weapons }, div };
+		const old = before?.[id];
+		if (id === myId || !old) continue;
+		for (const [weaponId, level] of Object.entries(m.weapons)) {
+			if (level > (old.w[weaponId] ?? 0)) gains.push({ member: id, name: m.name, weaponId, level });
+		}
+		if (div && !old.div) nukes.push(m.name);
+	}
+	return { gains, nukes, next };
 }
 
 /** The document with one member's entry set. null when the squad is full and this is a new member. */

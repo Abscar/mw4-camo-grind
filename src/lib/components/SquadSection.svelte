@@ -13,11 +13,19 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { peekSquad, squad } from '#lib/squad.svelte.ts';
-	import { agoParts, cleanName, squadCodeFromText, SQUAD_OPS, type SquadDoc, type SquadOp } from '#lib/squad-codec.ts';
+	import { agoParts, camosThisWeek, cleanName, duelResult, squadCodeFromText, streakDays, weeklyMvps, SQUAD_OPS, type SquadDoc, type SquadOp } from '#lib/squad-codec.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
+	import SquadAvatar from './SquadAvatar.svelte';
+	import SquadDuels from './SquadDuels.svelte';
+	import SquadRace from './SquadRace.svelte';
+	import SquadRadio from './SquadRadio.svelte';
+
+	/** Whether the Squad tab is the one shown (the radio counts as read then). */
+	let { visible = false }: { visible?: boolean } = $props();
 
 	const s = t.squad;
+	const MASTERY_TOTAL = MASTERY_TRACKS.reduce((n, tr) => n + tr.camos.length, 0);
 	const OP_NAMES: Record<SquadOp, string> = {
 		abscar: t.operator.callsign,
 		phillestar: t.operator.mate,
@@ -49,6 +57,17 @@
 			: s.status[squad.status]
 	);
 	const entries = $derived(squad.entries);
+	const members = $derived(Object.fromEntries(entries.map((e) => [e.id, e.member])));
+	const mvps = $derived(weeklyMvps(members, squad.now));
+	/** Stickers from lost duels, per member. */
+	const stakes = $derived.by(() => {
+		const out: Record<string, string[]> = {};
+		for (const duel of squad.doc?.duels ?? []) {
+			const res = duelResult(duel, members);
+			if (res?.loser && duel.stake) (out[res.loser] ??= []).push(duel.stake);
+		}
+		return out;
+	});
 
 	// ----- the name + operator form (create, join, change name) -----
 
@@ -241,18 +260,28 @@
 	{:else}
 		<div class="grid gap-4 border-t border-line px-4 py-4 sm:px-5">
 			<div class="flex flex-wrap gap-2">
+				<!-- Ready up: a banner on the others' pages while yours is open -->
+				<button type="button" class="btn sq-ready" aria-pressed={!!squad.readyAt} title={squad.readyAt ? s.ready.onHint : undefined} onclick={() => void squad.toggleReady()}
+					>{squad.readyAt ? s.ready.on : s.ready.button}</button
+				>
 				<button type="button" class="btn btn-primary" onclick={showLink}>{s.invite}</button>
 				<button type="button" class="btn" onclick={() => void squad.refreshNow()}>{s.refresh}</button>
 				<button type="button" class="btn" onclick={() => openForm('edit')}>{s.edit}</button>
 				<button type="button" class="btn" onclick={() => (leaveOpen = true)}>{s.leave}</button>
 			</div>
 
+			<SquadRace {entries} />
+
 			<!-- one card per member, furthest along first -->
 			<ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-3">
 				{#each entries as e, i (e.id)}
 					{@const st = e.stats}
+					{@const week = camosThisWeek(e.member, squad.now)}
+					{@const streak = streakDays(e.member, squad.now)}
 					<li class="sq-card meta-card relative flex min-w-0 flex-col gap-2.5 rounded-card border border-line bg-panel-2 p-3" class:sq-mine={e.mine}>
 						<div class="flex min-w-0 items-center gap-2">
+							<!-- their operator from the header (or initials), the user's ask 2026-11-14 -->
+							<SquadAvatar name={e.member.name} op={e.member.op} size={44} />
 							<span class="sq-rank num font-head" aria-label={s.rank(i + 1)}>{s.rank(i + 1)}</span>
 							<b class="sq-name min-w-0 truncate font-head text-[17px] font-bold tracking-wide" title={e.member.name}>{e.member.name}</b>
 							{#if e.mine}<span class="sq-you font-head">{s.you}</span>{/if}
@@ -260,6 +289,18 @@
 						</div>
 						{#if e.member.op && OP_NAMES[e.member.op] !== e.member.name}
 							<p class="-mt-1.5 text-xs text-muted">{s.asOp(OP_NAMES[e.member.op])}</p>
+						{/if}
+						<!-- this week's camos, the MVP crown, the streak, stickers from lost duels -->
+						<div class="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
+							{#if mvps.includes(e.id)}<span class="sq-mvp font-head" title={s.mvp}><svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 10 2.5 2.5l3.5 4 2-5.5 2 5.5 3.5-4L15 10z" /></svg>{s.mvp}</span>{/if}
+							<span class="text-muted">{s.week(week)}</span>
+							{#if streak >= 2}<span class="sq-streak font-head" title={s.streak(streak)}>🔥 {s.streak(streak)}</span>{/if}
+							{#if e.member.readyAt && squad.now - e.member.readyAt < 45 * 60_000 && e.online}<span class="sq-ready-tag font-head">{s.ready.on}</span>{/if}
+						</div>
+						{#if stakes[e.id]?.length}
+							<div class="flex flex-wrap gap-1.5">
+								{#each stakes[e.id] as stake, si (si)}<span class="sq-loser font-head">{stake}</span>{/each}
+							</div>
 						{/if}
 
 						<!-- Gold / Platinum / Harmonic Break -->
@@ -282,9 +323,14 @@
 							{st.divergenceLeft === 0 ? s.divergenceDone : s.divergenceLeft(st.divergenceLeft)}
 						</p>
 
-						<!-- Mastery per mode: three small boxes each -->
+						<!-- Mastery camos (the 3 per mode after the camo grind): how many done, then three boxes per mode -->
 						<div class="sq-mastery grid gap-1">
+							<p class="flex items-baseline justify-between text-[11px] text-muted">
+								<span class="font-head font-semibold tracking-wider uppercase">{s.masteryLabel}</span>
+								<span class="num text-fg" aria-label={s.masteryDone(st.masteryDone, MASTERY_TOTAL)}><b class="text-[15px]">{st.masteryDone}</b>/{MASTERY_TOTAL}</span>
+							</p>
 							{#each MASTERY_TRACKS as track (track.mode)}
+								{@const done = st.mastery[track.mode].filter((x) => x === 'complete').length}
 								<div class="flex items-center gap-2" role="group" aria-label={s.masteryOf(s.modeNames[track.mode])}>
 									<span class="sq-mode font-head" data-mode={track.mode} aria-hidden="true">{s.modes[track.mode]}</span>
 									{#each st.mastery[track.mode] as status, mi (mi)}
@@ -292,6 +338,7 @@
 											<span class="sr-only">{masteryName(track.mode, mi)}: {s.masteryStatus[status]}</span>
 										</span>
 									{/each}
+									<span class="sq-mcount num ml-auto text-[12px]" class:done={done > 0}><b>{done}</b>/{track.camos.length}</span>
 								</div>
 							{/each}
 						</div>
@@ -308,6 +355,12 @@
 					</li>
 				{/each}
 			</ul>
+
+			<!-- the radio and the duels, side by side on wide screens -->
+			<div class="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+				<SquadRadio {visible} />
+				<SquadDuels />
+			</div>
 
 			<!-- weapon by weapon -->
 			<details class="sq-compare" open>
@@ -534,6 +587,62 @@
 		}
 	}
 
+	.sq-ready[aria-pressed='true'] {
+		border-color: #3ee06a;
+		background: rgb(62 224 106 / 0.18);
+		color: var(--t-fg);
+		box-shadow: 0 0 10px rgb(62 224 106 / 0.4);
+	}
+	.sq-mvp {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 1px 7px 1px 5px;
+		border-radius: 999px;
+		background: linear-gradient(180deg, #ffe48a, #e0a420 60%, #b57a0c);
+		color: #3a2400;
+		font-size: 10px;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+	.sq-mvp svg {
+		width: 14px;
+		height: 11px;
+		fill: #fff6c8;
+		stroke: #7a4e00;
+		stroke-width: 1;
+	}
+	.sq-streak,
+	.sq-ready-tag {
+		padding: 1px 7px;
+		border-radius: 999px;
+		border: 1px solid currentColor;
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	.sq-streak {
+		color: #ff8a3c;
+	}
+	.sq-ready-tag {
+		color: var(--t-buff, #3ee06a);
+	}
+	/* stickers from lost duels */
+	.sq-loser {
+		padding: 2px 7px 1px;
+		border: 2px solid #fff;
+		border-radius: 5px;
+		background: linear-gradient(180deg, #ff3b30, #c4111a);
+		color: #fff;
+		font-size: 10.5px;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		transform: rotate(-3deg);
+		box-shadow: 0 2px 4px rgb(0 0 0 / 0.5);
+	}
 	.sq-bar {
 		height: 6px;
 		border-radius: 999px;
@@ -563,6 +672,12 @@
 	}
 
 	/* Mastery: a small label per mode + three boxes */
+	.sq-mcount {
+		color: var(--t-muted);
+	}
+	.sq-mcount.done b {
+		color: var(--t-fg);
+	}
 	.sq-mode {
 		width: 2.4rem;
 		color: var(--t-muted);

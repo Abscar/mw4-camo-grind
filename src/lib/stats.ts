@@ -27,14 +27,14 @@ export interface GrindStats {
 		| { kind: 'noPace' };
 }
 
-function startOfDay(ms: number): number {
+export function startOfDay(ms: number): number {
 	const d = new Date(ms);
 	d.setHours(0, 0, 0, 0);
 	return d.getTime();
 }
 
 /** Monday 00:00 of the week `ms` is in (local time). */
-function startOfWeek(ms: number): number {
+export function startOfWeek(ms: number): number {
 	const d = new Date(startOfDay(ms));
 	d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
 	return d.getTime();

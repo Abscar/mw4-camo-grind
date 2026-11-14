@@ -25,9 +25,14 @@
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
-	import { MASTERY } from '#lib/data/camos.ts';
+	import { LADDER, MASTERY, MASTERY_TRACKS } from '#lib/data/camos.ts';
+
+	const MASTERY_TOTAL = MASTERY_TRACKS.reduce((n, tr) => n + tr.camos.length, 0);
 	import { squad } from '#lib/squad.svelte.ts';
-	import { agoParts, headerStatuses, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
+	import { agoParts, headerStatuses, weeklyMvps, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
+
+	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
+	const mvps = $derived(squad.on ? weeklyMvps(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])), squad.now) : []);
 
 	/**
 	 * How far each squad member is on the Multiplayer Mastery camos, shown as three small boxes under
@@ -103,6 +108,22 @@
 			<span class="op-online-dot size-1.5 rounded-full bg-accent" aria-hidden="true"></span>
 			{presence === 'off' ? t.operator.offline : presence === 'none' ? t.operator.notJoined : t.operator.online}
 		</p>
+		<!-- their camos from the squad (2026-11-14, the user: "progress on our 4 operators at the top") -->
+		{#if entry}
+			<!-- Mastery camos done, all three modes (MP as the boxes below show it, WZ + DMZ from their ticks) -->
+			{@const mastery =
+				statuses[op].filter((x) => x === 'done').length +
+				[...entry.stats.mastery.wz, ...entry.stats.mastery.dmz].filter((x) => x === 'complete').length}
+			<p class="op-progress font-hud" aria-label={t.summary(entry.stats.ladder[0], entry.stats.ladder[1], entry.stats.ladder[2])}>
+				{#each LADDER as camo, i (camo.id)}<span data-camo={camo.id}>{camo.short} <b>{entry.stats.ladder[i]}</b></span>{/each}
+			</p>
+			<p class="op-progress font-hud" title={t.squad.masteryDone(mastery, MASTERY_TOTAL)}>
+				<span data-camo="mastery">M <b>{mastery}</b>/{MASTERY_TOTAL}</span>
+			</p>
+			{#if mvps.includes(entry.id)}
+				<span class="op-crown" title={t.squad.mvp}><svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 10 2.5 2.5l3.5 4 2-5.5 2 5.5 3.5-4L15 10z" /></svg><span class="sr-only">{t.squad.mvp}</span></span>
+			{/if}
+		{/if}
 	</div>
 {/snippet}
 
@@ -239,6 +260,50 @@
 				0 0,
 				300% 0;
 		}
+	}
+	/* their camos from the squad: G / P / HB counts in the camo colours */
+	.op-progress {
+		display: flex;
+		gap: 7px;
+		margin-top: 1px;
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		color: rgb(230 225 240 / 0.8);
+		white-space: nowrap;
+	}
+	.op-progress b {
+		font-weight: 700;
+	}
+	.op-progress [data-camo='gold'] b {
+		color: #ffd75a;
+	}
+	.op-progress [data-camo='platinum'] b {
+		color: #e6edf5;
+	}
+	.op-progress [data-camo='harmonicBreak'] b {
+		color: #ff6a7a;
+	}
+	/* the Mastery count is its own line (a second .op-progress), so the column stays as narrow as before */
+	.op-progress [data-camo='mastery'] b {
+		color: #c9a6ff;
+	}
+	/* this week's MVP: a gold crown on top of their emblem */
+	.op-crown {
+		position: absolute;
+		top: -12px;
+		left: 20px;
+		z-index: 2;
+		transform: rotate(-12deg);
+		filter: drop-shadow(0 0 5px rgb(255 200 60 / 0.8));
+		pointer-events: none;
+	}
+	.op-crown svg {
+		display: block;
+		width: 24px;
+		height: 18px;
+		fill: #ffd75a;
+		stroke: #7a4e00;
+		stroke-width: 1;
 	}
 	/* the presence line for people in a squad (2026-11-14): green Online, grey Offline / Not in squad */
 	.op-presence[data-presence='on'] {

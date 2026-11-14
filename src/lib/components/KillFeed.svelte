@@ -19,8 +19,8 @@
 			{@const camo = LADDER[row.level - 1]}
 			{@const look = WEAPON_LOOKS[row.weaponId]}
 			{#if weapon && camo}
-				<div class="kill-row" data-camo={camo.id}>
-					<span class="kill-player">{t.operator.callsign}</span>
+				<div class="kill-row" data-camo={camo.id} data-squad={row.who ? true : undefined}>
+					<span class="kill-player">{row.who ?? t.operator.callsign}</span>
 					{#if look}<span class="kill-gun"><WeaponIcon {look} camo={camo.id} /></span>{/if}
 					<span class="kill-camo">{camo.name}{#if row.level >= MAX_LEVEL}&nbsp;◆{/if}</span>
 					<span class="kill-weapon">{weapon.name}</span>

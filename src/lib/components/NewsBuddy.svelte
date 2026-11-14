@@ -96,7 +96,15 @@
 		if (last && now.getTime() - Date.parse(last) > SULK_MS) return 'sulk';
 		return 'normal';
 	});
-	const greeting = $derived(grew ? t.buddy.grew(t.buddy.stages[grow.name]) : mood === 'normal' ? t.news.hello : t.news.mood[mood]);
+	const greeting = $derived(
+		grew
+			? t.buddy.grew(t.buddy.stages[grow.name])
+			: mood === 'cheer' && feed.cheering && feed.cheerFor
+				? t.squad.cheer(feed.cheerFor) // a squad member maxed a weapon (2026-11-14)
+				: mood === 'normal'
+					? t.news.hello
+					: t.news.mood[mood]
+	);
 
 	/** Just for fun: poke him and he coughs, blows smoke rings or laughs (never the same twice in a row). */
 	const REACT_MS = 2100;

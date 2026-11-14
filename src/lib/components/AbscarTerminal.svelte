@@ -17,6 +17,8 @@
 	import { roadToDivergence } from '#lib/road.ts';
 	import { activeSteps, isReleased, stepStatus, stepsOf } from '#lib/steps.ts';
 	import { shortDate } from '#lib/ui.ts';
+	import { squad } from '#lib/squad.svelte.ts';
+	import { agoParts } from '#lib/squad-codec.ts';
 
 	type Kind = 'in' | 'out' | 'sys' | 'err' | 'big';
 	let open = $state(false);
@@ -33,7 +35,7 @@
 	let historyAt = 0;
 	const timers = new Set<ReturnType<typeof setTimeout>>();
 
-	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'phillestar', 'lars', 'jeeven', 'nuke', 'hack', 'holk', 'clear', 'exit'];
+	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'ping', 'phillestar', 'lars', 'jeeven', 'nuke', 'hack', 'holk', 'clear', 'exit'];
 	const QUICK = ['status', 'next', 'buddy', 'nuke', 'holk', 'help'];
 
 	const abscar = () => document.documentElement.getAttribute('data-theme') === 'blackout';
@@ -198,6 +200,20 @@
 		});
 	}
 
+	/** `ping <name>`: a "get on!" banner on that squad member's page (2026-11-14). */
+	async function ping(name: string) {
+		const wanted = name.trim().toLowerCase().replace(/\s+/g, ' ');
+		if (!wanted || !squad.on) return print('err', t.terminal.pingUsage);
+		const others = squad.entries.filter((e) => !e.mine);
+		const target =
+			others.find((e) => e.member.name.toLowerCase() === wanted) ??
+			others.find((e) => e.member.name.toLowerCase().replace(/ /g, ' ').startsWith(wanted)) ??
+			others.find((e) => e.member.op && e.member.op.startsWith(wanted));
+		if (!target) return print('err', t.terminal.pingNotFound(name.trim()));
+		const ok = await squad.ping(target.id);
+		print(ok ? 'out' : 'err', ok ? t.terminal.pingSent(target.member.name) : t.terminal.pingFailed);
+	}
+
 	function run(raw: string) {
 		const text = raw.trim();
 		print('in', text);
@@ -224,6 +240,18 @@
 			case 'whoami':
 				return print('out', ...t.terminal.whoami);
 			case 'squad':
+				// in a squad (Squad tab): who's really online, with their Harmonic Breaks
+				if (squad.on && squad.entries.length) {
+					return print(
+						'out',
+						...[...squad.entries]
+							.sort((a, b) => Number(b.online) - Number(a.online))
+							.map((e) => t.terminal.squadLive(e.member.name, e.online, t.squad.ago(agoParts(e.member.seen, squad.now)), e.stats.ladder[2], WEAPONS.length))
+					);
+				}
+				return print('out', ...t.terminal.squad);
+			case 'ping':
+				return ping(arg);
 			case 'phillestar':
 			case 'lars':
 			case 'drängen':

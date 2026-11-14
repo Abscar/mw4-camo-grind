@@ -278,6 +278,7 @@ export const en = {
 			'season            how long Season 1 has left',
 			'buddy             how grown the weed buddy is',
 			'whoami · squad    who’s online',
+			'ping <name>       knock on a squad member’s door',
 			'nuke · hack · holk · 420',
 			'clear · exit'
 		],
@@ -305,6 +306,13 @@ export const en = {
 			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)',
 			'DA JEEVEN ......... ONLINE (certified grinder: Prestige Master in BO6 + BO7, holk: lit)'
 		],
+		/** `squad` while you're in a squad (2026-11-14): the real list, online first */
+		squadLive: (name: string, online: boolean, seen: string, hb: number, total: number) =>
+			`${name.toUpperCase().padEnd(18, '.')} ${online ? 'ONLINE ' : 'OFFLINE'}  HB ${hb}/${total}${online ? '' : `  (seen ${seen})`}`,
+		pingUsage: 'Usage: ping <name>, e.g. “ping phillestar”. Needs a squad (Squad tab).',
+		pingSent: (name: string) => `Knock knock: ${name} sees a banner while their page is open.`,
+		pingNotFound: (name: string) => `Nobody called “${name}” in your squad.`,
+		pingFailed: 'Couldn’t reach the squad just now.',
 		nuke: ['!!! TACTICAL NUKE INBOUND !!!'],
 		nukeCount: (n: number) => `  ${n}...`,
 		nukeAfter: ['...', 'Just kidding. Your camos survived.', 'Phillestar says hi.'],
@@ -735,7 +743,8 @@ export const en = {
 		ladderOf: (camo: string, n: number, total: number) => `${camo}: ${n} of ${total} weapons`,
 		divergenceLeft: (n: number) => `${n} Harmonic Break${n === 1 ? '' : 's'} to Divergence`,
 		divergenceDone: 'Divergence unlocked',
-		masteryLabel: 'Mastery',
+		masteryLabel: 'Mastery camos',
+		masteryDone: (n: number, total: number) => `Mastery camos: ${n} of ${total} done`,
 		modes: { mp: 'MP', wz: 'WZ', dmz: 'DMZ' },
 		modeNames: { mp: 'Multiplayer', wz: 'Warzone', dmz: 'DMZ' },
 		masteryStatus: { locked: 'locked', active: 'in progress', complete: 'done' },
@@ -792,6 +801,70 @@ export const en = {
 			offline: 'You’re offline. Open the squad link again when you’re online.',
 			error: 'Couldn’t reach the squad just now. Try again in a moment.',
 			full: 'That squad is full (20 members).'
+		},
+		// step 2 (2026-11-14): kill feed, flash, buddy, radio, ready up, ping, race, MVP, streaks, duels, faces
+		nuke: (name: string) => `${name} dropped a nuke`,
+		cheer: (name: string) => `LET’S GOOO, ${name}! Weapon maxed!`,
+		radio: {
+			heading: 'Squad radio',
+			note: 'Text only, the last 100 messages. Anyone with the squad link can read and write here.',
+			empty: 'Radio silence. Say something.',
+			label: 'Message to the squad',
+			placeholder: 'Say something…',
+			send: 'Send',
+			quick: ['Who’s on tonight?', 'GG', 'Slacker!'],
+			quickLabel: 'Quick messages',
+			fire: 'Give it a 🔥',
+			fireCount: (n: number, names: string) => `${n} 🔥 from ${names}`,
+			unread: (n: number) => `${n} new`,
+			readyEvent: 'is ready to play',
+			maxedEvent: (weapon: string) => `maxed the ${weapon} ◆`,
+			nukeEvent: 'dropped a nuke: Divergence unlocked!',
+			masteryEvent: (camo: string) => `finished ${camo}`,
+			sendFailed: 'Couldn’t send that just now. Try again.'
+		},
+		ready: {
+			button: 'Ready up',
+			on: 'Ready ✔',
+			onHint: 'The squad sees a banner while your page is open. Tap again to stand down.',
+			banner: (names: string) => `${names} want${names.includes(' & ') ? '' : 's'} to play now`,
+			join: 'I’m in',
+			close: 'Close'
+		},
+		ping: {
+			banner: (name: string) => `${name} is knocking: get on!`
+		},
+		race: {
+			heading: 'Race to Divergence',
+			finish: 'Divergence',
+			lane: (name: string, n: number, total: number) => `${name}: ${n} of ${total} Harmonic Breaks`
+		},
+		mvp: 'MVP of the week',
+		week: (n: number) => `${n} camo${n === 1 ? '' : 's'} this week`,
+		streak: (n: number) => `${n} day${n === 1 ? '' : 's'} in a row`,
+		maxedBy: (names: string) => `Maxed by ${names}`,
+		duel: {
+			heading: 'Duels',
+			start: 'New duel',
+			title: 'Start a duel',
+			against: 'Against',
+			weapon: 'Weapon',
+			goal: 'First to',
+			stake: 'Sticker for the loser',
+			stakeDefault: 'Buys the burgers',
+			go: 'Start duel',
+			on: (camo: string, weapon: string) => `First to ${camo} on the ${weapon}`,
+			vs: 'vs',
+			live: 'On',
+			won: (name: string) => `${name} won`,
+			draw: 'Draw: both got it',
+			remove: 'Remove',
+			none: 'No duels yet. Challenge someone: first to a camo on a weapon.',
+			noOther: 'Someone else has to be in the squad first.',
+			full: 'There are 8 duels already. Remove a finished one first.',
+			taken: 'One of you already has it',
+			event: (name: string, camo: string, weapon: string) => `challenged ${name}: first to ${camo} on the ${weapon}`,
+			loserSticker: (stake: string) => stake
 		}
 	},
 	/** The Extra camos tab (ExtraCamosSection; data/extraCamos.ts). */

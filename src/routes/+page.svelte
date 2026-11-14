@@ -49,6 +49,7 @@
 	import RankedSection from '#lib/components/RankedSection.svelte';
 	import { pageTab } from '#lib/pageTab.svelte.ts';
 	import SquadSection from '#lib/components/SquadSection.svelte';
+	import ReadyBanner from '#lib/components/ReadyBanner.svelte';
 	import { squad } from '#lib/squad.svelte.ts';
 
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14). All stay mounted; the others are only hidden. */
@@ -228,7 +229,10 @@
 		style:--hotrod-tile="url({hotrodCamo})"
 		style:--worn-metal={WORN_METAL}
 	>
-		<!-- page tabs: the tracker, the Cosmetics list, or Extra camos -->
+		<!-- the squad's Ready up / ping banners (every tab; nothing outside a squad) -->
+		<ReadyBanner />
+
+		<!-- page tabs: the tracker, the Cosmetics list, Extra camos or the Squad -->
 		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label}>
 			{#each PAGE_TABS as tab (tab)}
 				<button
@@ -240,7 +244,7 @@
 					aria-controls="panel-{tab}"
 					tabindex={view === tab ? 0 : -1}
 					onclick={() => (view = tab)}
-					onkeydown={tabKey}>{t.pageTabs[tab]}</button
+					onkeydown={tabKey}>{t.pageTabs[tab]}{#if tab === 'squad' && squad.unread > 0 && view !== 'squad'}<span class="tab-badge num">{squad.unread}<span class="sr-only"> ({t.squad.radio.unread(squad.unread)})</span></span>{/if}</button
 				>
 			{/each}
 		</div>
@@ -254,7 +258,7 @@
 		</div>
 
 		<div id="panel-squad" role="tabpanel" aria-labelledby="tab-squad" hidden={view !== 'squad'}>
-			<div class="mt-5"><SquadSection /></div>
+			<div class="mt-5"><SquadSection visible={view === 'squad'} /></div>
 		</div>
 
 		<div id="panel-grind" role="tabpanel" aria-labelledby="tab-grind" hidden={view !== 'grind'}>
@@ -377,6 +381,21 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
+	}
+	/* new radio messages on the Squad tab */
+	.tab-badge {
+		display: inline-grid;
+		place-items: center;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		margin-left: 0.35rem;
+		padding: 0 4px;
+		border-radius: 999px;
+		background: #3ee06a;
+		color: #062010;
+		font-size: 11px;
+		letter-spacing: 0;
+		vertical-align: 1px;
 	}
 	.page-tab:hover {
 		color: var(--t-fg);

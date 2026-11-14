@@ -21,7 +21,7 @@
 					<div class="div-unlock-op"><NukeOperator variant="meltdown" /></div>
 					<p class="div-unlock-kicker">▸ {DIVERGENCE.name.toUpperCase()} // {DIVERGENCE_REQUIRED}/{DIVERGENCE_REQUIRED}</p>
 					<p class="div-unlock-title">{t.unlock.title}</p>
-					<p class="div-unlock-sub">{t.unlock.sub(DIVERGENCE_REQUIRED, MASTERY[0].name)}</p>
+					<p class="div-unlock-sub">{feed.nukeBy ? t.squad.nuke(feed.nukeBy) : t.unlock.sub(DIVERGENCE_REQUIRED, MASTERY[0].name)}</p>
 				</div>
 			</div>
 		{/if}

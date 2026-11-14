@@ -26,8 +26,22 @@ import {
 	squadCodeFromText,
 	toSquadWire,
 	withMember,
-	withoutMember
+	withoutMember,
+	recentFrom,
+	camosThisWeek,
+	streakDays,
+	weeklyMvps,
+	isReady,
+	pingsFor,
+	withDuel,
+	withoutDuel,
+	duelResult,
+	squadGains,
+	MAX_DUELS,
+	READY_MS
 } from '../src/lib/squad-codec.ts';
+import { MAX_MSGS, TEXT_MAX, cleanText, emptyRadio, fromRadioWire, newMsg, radioCode, toRadioWire, toggleFire, unreadCount, withMsg } from '../src/lib/squad-radio.ts';
+import { isSyncCode } from '../src/lib/sync-codec.ts';
 import { makeSyncCode, toWire } from '../src/lib/sync-codec.ts';
 import { defaultProgress } from '../src/lib/progress-codec.ts';
 import { memoryEnv } from './sync-dev-server.js';
@@ -228,4 +242,113 @@ test('the sync service keeps several members apart: a refused write is redone on
 	assert.equal(stored.members[a.id].weapons[WEAPONS[0].id], 2);
 	assert.equal(stored.members[b.id].weapons[WEAPONS[1].id], 3);
 	assert.equal(Object.keys(stored.members).length, 2);
+});
+
+// ----- step 2 -----
+
+const DAY = 86_400_000;
+const at = (y, m, d, h = 12) => new Date(y, m - 1, d, h).getTime();
+
+test('recent tick times: only the last weeks, per weapon and level', () => {
+	const now = at(2026, 11, 14);
+	const w = WEAPONS.map((x) => x.id);
+	const r = recentFrom({ [w[0]]: [now - DAY, now - 2 * DAY, 0], [w[1]]: [now - 90 * DAY], bad: 'x' }, now);
+	assert.deepEqual(r, { [w[0]]: [now - DAY, now - 2 * DAY] });
+	// kept through the document for levels the weapon has
+	const e = { ...entry('A', { [w[0]]: 1 }), recent: r };
+	const back = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire(withMember(emptySquad(), makeMemberId(), e)))));
+	assert.deepEqual(Object.values(back.members)[0].recent, { [w[0]]: [now - DAY] });
+});
+
+test('camos this week (from Monday 00:00), streaks and the weekly MVP', () => {
+	const now = at(2026, 11, 14); // a Saturday
+	const w = WEAPONS.map((x) => x.id);
+	const a = { recent: { [w[0]]: [at(2026, 11, 14, 9), at(2026, 11, 13), at(2026, 11, 12)], [w[1]]: [at(2026, 11, 8)] } };
+	const b = { recent: { [w[2]]: [at(2026, 11, 10), at(2026, 11, 11)] } };
+	assert.equal(camosThisWeek(a, now), 3); // Sunday the 8th is last week
+	assert.equal(camosThisWeek(b, now), 2);
+	assert.equal(streakDays(a, now), 3);
+	assert.equal(streakDays(b, now), 0); // last tick on Wednesday
+	assert.equal(streakDays({ recent: { [w[0]]: [at(2026, 11, 13), at(2026, 11, 12)] } }, now), 2); // today not yet
+	assert.deepEqual(weeklyMvps({ a, b }, now), ['a']);
+	assert.deepEqual(weeklyMvps({ a, c: a }, now).sort(), ['a', 'c']);
+	assert.deepEqual(weeklyMvps({ x: {}, y: {} }, now), []);
+});
+
+test('ready up shows while online and fresh; pings reach only their target', () => {
+	const a = entry('A', {}, {}, { readyAt: NOW - 60_000 });
+	assert.ok(isReady(a, NOW));
+	assert.ok(!isReady({ ...a, readyAt: NOW - READY_MS - 1000 }, NOW));
+	assert.ok(!isReady({ ...a, away: true }, NOW));
+	const me = makeMemberId();
+	const other = makeMemberId();
+	const doc = withMember(withMember(emptySquad(), other, entry('B', {}, {}, { ping: { to: me, at: NOW - 1000 } })), me, entry('Me'));
+	assert.deepEqual(pingsFor(doc, me, NOW), [{ from: other, at: NOW - 1000 }]);
+	assert.deepEqual(pingsFor(doc, other, NOW), []);
+	assert.deepEqual(pingsFor(doc, me, NOW + 60 * 60_000), []);
+});
+
+test('duels: added, kept through the document, won by who got the camo (first by tick time)', () => {
+	const a = makeMemberId();
+	const b = makeMemberId();
+	const w = WEAPONS[0].id;
+	const duel = { id: makeMemberId(), a, b, weapon: w, goal: 2, stake: 'Buys the burgers', at: NOW };
+	let doc = withDuel(withMember(withMember(emptySquad(), a, entry('A')), b, entry('B')), duel);
+	doc = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire(doc))));
+	assert.deepEqual(doc.duels, [duel]);
+	const members = (wa, wb, ra, rb) => ({ [a]: { weapons: { [w]: wa }, recent: ra }, [b]: { weapons: { [w]: wb }, recent: rb } });
+	assert.equal(duelResult(duel, members(1, 1)), null);
+	assert.deepEqual(duelResult(duel, members(2, 1)), { winner: a, loser: b, draw: false });
+	assert.deepEqual(duelResult(duel, members(3, 2, { [w]: [1, NOW + 500] }, { [w]: [1, NOW + 100] })), { winner: b, loser: a, draw: false });
+	assert.equal(duelResult(duel, members(2, 2)).draw, true);
+	let full = doc;
+	for (let i = 1; i < MAX_DUELS; i++) full = withDuel(full, { ...duel, id: makeMemberId() });
+	assert.equal(withDuel(full, { ...duel, id: makeMemberId() }), null);
+	assert.equal(withoutDuel(doc, duel.id).duels.length, 0);
+	// a duel against yourself or on a made-up weapon is dropped
+	const wire = toSquadWire(doc);
+	wire.duels.push({ ...duel, id: makeMemberId(), b: a }, { ...duel, id: makeMemberId(), weapon: 'nope' });
+	assert.equal(fromSquadWire(wire).duels.length, 1);
+});
+
+test('squad kill feed: only the others\' new camos, nothing for someone seen the first time', () => {
+	const me = makeMemberId();
+	const p = makeMemberId();
+	const w = WEAPONS.map((x) => x.id);
+	const doc1 = withMember(withMember(emptySquad(), me, entry('Me')), p, entry('Phille', { [w[0]]: 1 }));
+	const first = squadGains(null, doc1, me);
+	assert.deepEqual(first.gains, []);
+	const doc2 = withMember(doc1, p, entry('Phille', { [w[0]]: 3, [w[1]]: 1 }));
+	const second = squadGains(first.next, doc2, me);
+	assert.deepEqual(second.gains.map((g) => [g.weaponId, g.level]), [[w[0], 3], [w[1], 1]]);
+	assert.deepEqual(second.nukes, []);
+	// my own ticks never come back as news
+	const doc3 = withMember(doc2, me, entry('Me', { [w[5]]: 3 }));
+	assert.deepEqual(squadGains(second.next, doc3, me).gains, []);
+	// Divergence = a nuke
+	const doc4 = withMember(doc3, p, entry('Phille', allAt(3)));
+	assert.deepEqual(squadGains(squadGains(second.next, doc3, me).next, doc4, me).nukes, ['Phille']);
+});
+
+test('the radio: its own code, text only, newest 100, 🔥 on and off, unread count', () => {
+	const code = makeSyncCode();
+	assert.ok(isSyncCode(radioCode(code)));
+	assert.equal(cleanText('  hej\n\nhej  '), 'hej hej');
+	assert.equal(cleanText('x'.repeat(500)).length, TEXT_MAX);
+	const me = makeMemberId();
+	const other = makeMemberId();
+	let doc = emptyRadio();
+	for (let i = 0; i < MAX_MSGS + 5; i++) doc = withMsg(doc, newMsg(i % 2 ? me : other, 'N', `m${i}`, NOW + i));
+	assert.equal(doc.msgs.length, MAX_MSGS);
+	assert.equal(doc.msgs[0].text, 'm5');
+	const id = doc.msgs.at(-1).id;
+	doc = toggleFire(doc, id, me);
+	assert.deepEqual(doc.msgs.at(-1).fire, [me]);
+	doc = toggleFire(doc, id, me);
+	assert.equal(doc.msgs.at(-1).fire, undefined);
+	assert.equal(newMsg(me, 'N', '   ', NOW), null);
+	const back = fromRadioWire(JSON.parse(JSON.stringify(toRadioWire(doc))));
+	assert.equal(back.msgs.length, MAX_MSGS);
+	assert.equal(unreadCount(back, me, NOW + MAX_MSGS), 2); // the others' last two (NOW+100, NOW+102 … from other)
+	assert.equal(fromRadioWire(toSquadWire(emptySquad())), null);
 });
