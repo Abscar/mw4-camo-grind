@@ -175,8 +175,9 @@ export const en = {
 		/** Robin's callsign (2026-11-13). The no-break space keeps "Lars Åke" together: the tag breaks after "Drängen". */
 		lars: 'Drängen Lars Åke',
 		/** the fourth squad member (2026-11-13), with his gold sticker and his Black Ops 6 + 7 record */
-		/** sticker by Drängen Lars Åke's boxes (the user, 2026-11-13; their wording used a slur, softened) */
-		larsMotto: 'Held back by randoms',
+		/** sticker by Drängen Lars Åke's boxes (the user, 2026-11-13; their first wording used a slur, softened to
+		    "randoms"; 2026-11-14 the user asked for "idiots") */
+		larsMotto: 'Held back by idiots',
 		jeeven: 'Da Jeeven',
 		certified: 'Certified grinder',
 		recordTitle: 'BO6 + BO7',

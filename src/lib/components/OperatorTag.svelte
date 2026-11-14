@@ -8,7 +8,7 @@
 	Åke (LarsAkeEmblem: helmet, lime goggles and a big cold beer; 2026-11-13, the user's friend Robin) and
 	Da Jeeven (DaJeevenEmblem: the gold Ghost skull with a big holk; 2026-11-13), who also gets a gold
 	"Certified grinder" sticker and his Black Ops 6 + 7 record (Prestige Master, max level, all calling cards).
-	Fun stickers under the boxes: Phillestar "Ranked or nothing", Drängen "Held back by randoms", and Abscar
+	Fun stickers under the boxes: Phillestar "Ranked or nothing", Drängen "Held back by idiots", and Abscar
 	"Refuses to play campaign mode" in moss green (2026-11-13: the user wanted it "under Abscar, not as checkpoints,
 	just at the side a bit for fun"; it first sat as a ticked line in Da Jeeven's record; a second Abscar sticker,
 	"Ranked, MP, WZ grinder", was removed the same day at their ask).
@@ -260,7 +260,7 @@
 		white-space: normal;
 	}
 	/* a member's motto sticker (the user, 2026-11-13, "just for fun": Phillestar "Ranked or nothing", Drängen
-	   Lars Åke "Held back by randoms"): purple-pink, slapped on at the right under their boxes. In the flow
+	   Lars Åke "Held back by idiots"): purple-pink, slapped on at the right under their boxes. In the flow
 	   (not on top of the boxes), so it never covers a line; their columns are shorter than Da Jeeven's, so
 	   the frame doesn't grow in the four-in-a-row and two-by-two layouts. */
 	.sq-motto {
