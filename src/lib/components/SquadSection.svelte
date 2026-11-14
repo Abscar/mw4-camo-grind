@@ -216,8 +216,9 @@
 		toast.show(s.toast.removed(who.name));
 	}
 
-	const masteryName = (mode: (typeof MASTERY_TRACKS)[number]['mode'], i: number) =>
-		MASTERY_TRACKS.find((tr) => tr.mode === mode)?.camos[i]?.name ?? '';
+	/** "120", "2,500", "12.3k", "25k": short enough for three counters side by side on a phone. */
+	const shortCount = (n: number) =>
+		n >= 10_000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : n.toLocaleString('en-US');
 </script>
 
 {#snippet presence(online: boolean, seen: number, mine: boolean)}
@@ -331,14 +332,27 @@
 							</p>
 							{#each MASTERY_TRACKS as track (track.mode)}
 								{@const done = st.mastery[track.mode].filter((x) => x === 'complete').length}
-								<div class="flex items-center gap-2" role="group" aria-label={s.masteryOf(s.modeNames[track.mode])}>
-									<span class="sq-mode font-head" data-mode={track.mode} aria-hidden="true">{s.modes[track.mode]}</span>
-									{#each st.mastery[track.mode] as status, mi (mi)}
-										<span class="sq-mbox" data-status={status} data-mode={track.mode} title="{masteryName(track.mode, mi)}: {s.masteryStatus[status]}">
-											<span class="sr-only">{masteryName(track.mode, mi)}: {s.masteryStatus[status]}</span>
-										</span>
-									{/each}
-									<span class="sq-mcount num ml-auto text-[12px]" class:done={done > 0}><b>{done}</b>/{track.camos.length}</span>
+								<div class="sq-mtrack" role="group" aria-label={s.masteryOf(s.modeNames[track.mode])}>
+									<p class="flex items-baseline justify-between">
+										<span class="sq-mode font-head" data-mode={track.mode} aria-hidden="true">{s.modes[track.mode]}</span>
+										<span class="sq-mcount num text-[12px]" class:done={done > 0}><b>{done}</b>/{track.camos.length}</span>
+									</p>
+									<!-- each camo with its counter (what that member typed in on their own page), 2026-11-14 -->
+									<div class="mt-0.5 grid grid-cols-3 gap-1.5">
+										{#each track.camos as camo, mi (camo.id)}
+											{@const status = st.mastery[track.mode][mi]}
+											{@const n = Math.min(e.member.mastery[camo.id] ?? 0, camo.target)}
+											<div class="sq-mcell min-w-0" data-status={status} title="{camo.name}: {n.toLocaleString('en-US')} / {camo.target.toLocaleString('en-US')} ({s.masteryStatus[status]})">
+												<p class="flex min-w-0 items-center gap-1">
+													<span class="sq-mbox" data-status={status} data-mode={track.mode} aria-hidden="true"></span>
+													<span class="truncate text-[11px]">{camo.name.replace(' Reforged', '')}</span>
+												</p>
+												<p class="sq-mnum num text-[12px]"><b>{shortCount(n)}</b>/{shortCount(camo.target)}</p>
+												<span class="sq-mbar" data-mode={track.mode} aria-hidden="true"><span style:width="{(n / camo.target) * 100}%"></span></span>
+												<span class="sr-only">{camo.name}: {n} of {camo.target}, {s.masteryStatus[status]}</span>
+											</div>
+										{/each}
+									</div>
 								</div>
 							{/each}
 						</div>
@@ -672,6 +686,51 @@
 	}
 
 	/* Mastery: a small label per mode + three boxes */
+	/* a Mastery counter cell: box + short name, "120/250", a thin bar in the mode's colour */
+	.sq-mcell {
+		padding: 4px 5px 5px;
+		border-radius: 6px;
+		background: rgb(127 127 127 / 0.1);
+	}
+	.sq-mcell[data-status='locked'] {
+		opacity: 0.55;
+	}
+	.sq-mnum {
+		color: var(--t-muted);
+		line-height: 1.3;
+	}
+	.sq-mnum b {
+		color: var(--t-fg);
+	}
+	.sq-mcell .sq-mbox {
+		flex: none;
+		width: 12px;
+		height: 12px;
+		border-radius: 3px;
+	}
+	.sq-mcell .sq-mbox[data-status='complete']::after {
+		font-size: 9px;
+	}
+	.sq-mbar {
+		display: block;
+		height: 4px;
+		margin-top: 2px;
+		border-radius: 999px;
+		background: rgb(127 127 127 / 0.25);
+		overflow: hidden;
+	}
+	.sq-mbar > span {
+		display: block;
+		height: 100%;
+		border-radius: inherit;
+		background: #ff4418;
+	}
+	.sq-mbar[data-mode='wz'] > span {
+		background: #ffcc33;
+	}
+	.sq-mbar[data-mode='dmz'] > span {
+		background: #3ee06a;
+	}
 	.sq-mcount {
 		color: var(--t-muted);
 	}
