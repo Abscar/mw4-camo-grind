@@ -842,7 +842,6 @@ export const en = {
 		mvp: 'MVP of the week',
 		week: (n: number) => `${n} camo${n === 1 ? '' : 's'} this week`,
 		streak: (n: number) => `${n} day${n === 1 ? '' : 's'} in a row`,
-		maxedBy: (names: string) => `Maxed by ${names}`,
 		duel: {
 			heading: 'Duels',
 			start: 'New duel',

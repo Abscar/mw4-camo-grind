@@ -13,7 +13,6 @@
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
 	import { shortDate } from '#lib/ui.ts';
 	import CamoToggle from './CamoToggle.svelte';
-	import SquadFaces from './SquadFaces.svelte';
 	import WeaponCode from './WeaponCode.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
@@ -109,8 +108,6 @@
 					>{t.weapon.metaBadge}</span
 				>
 			{/if}
-			<!-- squad mates who maxed this weapon (2026-11-14) -->
-			<SquadFaces weaponId={weapon.id} />
 		</span>
 		{#if pips !== null && pips > 0}
 			<span class="progress-line num block text-[12px] leading-tight">{t.weapon.preGoldLine(pips, specialsTotal)}</span>
