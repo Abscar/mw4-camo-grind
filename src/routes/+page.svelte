@@ -34,6 +34,7 @@
 	import NukeBanner from '#lib/components/NukeBanner.svelte';
 	import LarsAkeBanner from '#lib/components/LarsAkeBanner.svelte';
 	import CrownBanner from '#lib/components/CrownBanner.svelte';
+	import DoomsdayBanner from '#lib/components/DoomsdayBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -304,12 +305,14 @@
 		</div>
 
 		<div class="abscar-only compact-hide mt-7">
-			<!-- the four banners share one height (the user's ask: "same size so they look in proportion");
-			     Drängen Lars Åke's in the middle (2026-11-13), the crowned skull last (2026-11-13) -->
+			<!-- the five banners share one height (the user's ask: "same size so they look in proportion");
+			     Drängen Lars Åke's in the middle (2026-11-13), the crowned skull (2026-11-13), and the squad in
+			     front of the mushroom cloud last (2026-11-14) -->
 			<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><LarsAkeBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CrownBanner /></div>
+			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><DoomsdayBanner /></div>
 		</div>
 
 		<div class="mt-7"><SyncPanel /></div>
