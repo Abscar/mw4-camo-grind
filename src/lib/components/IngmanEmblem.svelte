@@ -5,7 +5,11 @@
 	and moustache, round lavender-tinted glasses, a wooden pipe with smoke, a purple robe with gold stars and
 	leaves, and a black plate carrier with a small green bong, a row of cartridges and a pouch with a purple
 	leaf patch. The pipe's smoke uses Abscar's `smoke` helper (abscarOperator.ts; op-puff / op-wisp in app.css).
-	Same size and style as the other squad emblems: 64×64 head and shoulders, overflow visible.
+	Same day the user added: "his figure holds a fat dumbbell over his head, because Ingman is so strong": both
+	arms up (biceps beside the head, rolled cuffs, forearms past the brim) holding a chrome dumbbell with two
+	iron plates a side, pressing it up a little again and again (held still with reduced motion).
+	Same size and style as the other squad emblems: 64×64 head and shoulders, overflow visible (the dumbbell
+	reaches ~19 units above the top).
 	Our own cartoon, decoration only (aria-hidden; the callsign next to it is the text). No skin names.
 -->
 <script lang="ts">
@@ -68,11 +72,33 @@
 		<linearGradient id={id('lens')} x1="0" y1="0" x2="1" y2="1">
 			<stop offset="0" stop-color="#b48ad8" stop-opacity=".9" /><stop offset="1" stop-color="#3e2257" stop-opacity=".95" />
 		</linearGradient>
+		<linearGradient id={id('chrome')} x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#f4f7fa" /><stop offset=".45" stop-color="#a9b2bc" /><stop offset="1" stop-color="#4c535b" />
+		</linearGradient>
+		<linearGradient id={id('iron')} x1="0" y1="0" x2="1" y2="0">
+			<stop offset="0" stop-color="#5a616a" /><stop offset=".4" stop-color="#2c3036" /><stop offset="1" stop-color="#111316" />
+		</linearGradient>
 		<clipPath id={id('crown-clip')}><path d={CROWN} /></clipPath>
 		<!-- for the pipe's smoke (abscarOperator.ts) -->
 		<filter id={id('puff-blur')} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.4" /></filter>
 		<filter id={id('blur')} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" /></filter>
 	</defs>
+
+	<!-- both arms up (2026-11-14, "Ingman is so strong"): purple sleeves with a bulging biceps beside his head,
+	     rolled-up cuffs, bare forearms rising past the hat's brim to the dumbbell. Drawn first, so the robe,
+	     face and hat brim sit in front of them. -->
+	<g class="ig-lift">
+		{#each ['', 'translate(64 0) scale(-1 1)'] as flip (flip)}
+			<g transform={flip || undefined}>
+				<path d="M6.5 48 C2.6 41 4 31.6 8 22.4 L15.2 22.4 C16 31 16.4 40 15.4 47.5 Z" fill="url(#{id('robe')})" stroke={O} stroke-width=".9" stroke-linejoin="round" />
+				<path d="M6.4 41 C4.6 36.4 5.2 31 7.4 26.6" fill="none" stroke="#b886e8" stroke-width=".6" stroke-linecap="round" opacity=".7" />
+				<polygon points={star(10.6, 36.5, 1.3)} fill="#f2c34a" stroke="#7a5212" stroke-width=".25" />
+				<path d="M9.4 22.6 C8.6 15 10.4 4.8 12.8 -5.6 L19.2 -5.6 C18.2 4.4 17 13.6 15.8 22.6 Z" fill="url(#{id('skin')})" stroke={O} stroke-width=".9" stroke-linejoin="round" />
+				<path d="M11.2 12 C10.8 8 11.6 3.6 12.8 0" fill="none" stroke="#9a6440" stroke-width=".5" stroke-linecap="round" opacity=".7" />
+				<path d="M8.6 17.4 C11 16.2 14.4 16.2 16.6 17.4 L16.2 13.6 C14 12.6 11.2 12.6 9 13.6 Z" fill="url(#{id('robe')})" stroke={O} stroke-width=".6" stroke-linejoin="round" />
+			</g>
+		{/each}
+	</g>
 
 	<!-- purple robe with gold stars and leaves -->
 	<path d="M1.5 64.5 C2 53.5 8.5 47.6 20 46 L44 46 C55.5 47.6 62 53.5 62.5 64.5 Z" fill="url(#{id('robe')})" stroke={O} stroke-width="1.1" stroke-linejoin="round" />
@@ -153,9 +179,37 @@
 	<polygon points={star(13, 18.2, 0.9)} fill="#f2c34a" />
 	<polygon points={star(51.4, 18.6, 0.9)} fill="#f2c34a" />
 
+	<!-- the fat dumbbell over his head: chrome bar, two iron plates a side, fists round the bar -->
+	<g class="ig-lift">
+		<rect x="3" y="-9.8" width="58" height="3.4" rx="1.3" fill="url(#{id('chrome')})" stroke={O} stroke-width=".6" />
+		{#each ['', 'translate(64 0) scale(-1 1)'] as flip (flip)}
+			<g transform={flip || undefined}>
+				<rect x="-1.6" y="-15.2" width="3.8" height="14.4" rx="1.4" fill="url(#{id('iron')})" stroke={O} stroke-width=".7" />
+				<rect x="1.8" y="-19.2" width="6.6" height="22.4" rx="2" fill="url(#{id('iron')})" stroke={O} stroke-width=".8" />
+				<path d="M3.2 -16.6 V0.6" stroke="#8a929c" stroke-width=".6" stroke-linecap="round" opacity=".8" />
+				<rect x="8.2" y="-12" width="2.4" height="7.8" rx=".7" fill="url(#{id('chrome')})" stroke={O} stroke-width=".5" />
+				<rect x="12.4" y="-12" width="7.4" height="7.2" rx="2.6" fill="url(#{id('skin')})" stroke={O} stroke-width=".7" />
+				<path d="M14.2 -11.6 v6.4 M16.1 -11.8 v6.6 M18 -11.6 v6.4" stroke="#9a6440" stroke-width=".45" stroke-linecap="round" />
+			</g>
+		{/each}
+	</g>
+
 </svg>
 
 <style>
+	/* arms and dumbbell press up a little, again and again */
+	.ig-lift {
+		animation: ig-lift 1.8s ease-in-out infinite;
+	}
+	@keyframes ig-lift {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-1.8px);
+		}
+	}
 	.ig-ember {
 		animation: ig-ember 2.6s ease-in-out infinite;
 	}
@@ -165,6 +219,7 @@
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
+		.ig-lift,
 		.ig-ember {
 			animation: none;
 		}
