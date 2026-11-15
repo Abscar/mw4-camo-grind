@@ -8,7 +8,8 @@
 	the meta card gets its code. Then "Stat builds" (data/extraBuilds.ts: Min ADS, Max sprint, Max
 	range, worked out from the attachment stats, both modes, no code), then the gun's Apex attachment
 	(data/apex.ts + data/apexBuilds.ts).
-	Every build with a code has a small copy button; the codes themselves only show with "Show codes"
+	Every build card has a small copy button (BuildCopy): the game code when one is published or a
+	subclass has exactly the same parts (buildCopy.ts), otherwise the parts as text. The codes themselves only show with "Show codes"
 	(codeView, the same switch as above the weapon list). A modal dialog covers the page's toasts, so
 	the button itself says how it went.
 	Every attachment line shows its slot's cartoon (AttachmentIcon, drawn after the user's own icon
@@ -17,13 +18,15 @@
 -->
 <script lang="ts">
 	import AttachmentIcon from './AttachmentIcon.svelte';
-	import { copyCode } from '#lib/browser.ts';
+	import BuildCopy from './BuildCopy.svelte';
+	import { buildText, codeFor, twinOf } from '#lib/buildCopy.ts';
 	import { codeView } from '#lib/codeView.svelte.ts';
 	import { APEX } from '#lib/data/apex.ts';
 	import { APEX_BUILDS } from '#lib/data/apexBuilds.ts';
 	import { EXTRA_BUILDS, EXTRA_KINDS } from '#lib/data/extraBuilds.ts';
 	import { LOADOUTS, type Loadout, type LoadoutMode } from '#lib/data/loadouts.ts';
 	import { SITE_BUILDS, type SiteBuild } from '#lib/data/siteBuilds.ts';
+	import { WEAPON_BY_ID } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { shortDate } from '#lib/ui.ts';
 
@@ -33,17 +36,14 @@
 	const MODES: LoadoutMode[] = ['mp', 'wz'];
 	const grid = $derived(`grid gap-3 ${columns ? 'sm:grid-cols-2' : ''}`);
 
-	const norm = (s: string) => s.toLowerCase().replace(/["”″]/g, '').replace(/\s+/g, ' ').trim();
-	const sameParts = (a: Loadout, b: Loadout) =>
-		a.attachments.length === b.attachments.length &&
-		a.attachments.every((x) => b.attachments.some((y) => y.slot === x.slot && norm(y.name) === norm(x.name)));
+	const weaponName = $derived(WEAPON_BY_ID.get(weaponId)?.name ?? weaponId);
 
 	/** Per mode: the meta class (with a code when a subclass has exactly its parts) and the other subclasses. */
 	const modes = $derived(
 		MODES.map((mode) => {
 			const meta = LOADOUTS[weaponId]?.[mode];
 			const site = SITE_BUILDS[weaponId]?.[mode] ?? [];
-			const twin = meta ? site.find((b) => sameParts(meta, b)) : undefined;
+			const twin = twinOf(weaponId, mode, meta);
 			return { mode, meta, twin, others: site.filter((b) => b !== twin) };
 		})
 	);
@@ -52,16 +52,6 @@
 	const apex = $derived(APEX[weaponId]);
 	const apexBuilds = $derived(APEX_BUILDS[weaponId] ?? {});
 	const apexModes = $derived(MODES.filter((m) => apexBuilds[m]));
-
-	/** The code whose copy button was pressed last, and how it went (shown on that button). */
-	let copied = $state<{ code: string; ok: boolean } | null>(null);
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	async function copy(code: string, el: HTMLElement | null) {
-		const ok = await copyCode(code, el);
-		copied = { code, ok };
-		clearTimeout(timer);
-		timer = setTimeout(() => (copied = null), ok ? 2200 : 6000);
-	}
 </script>
 
 {#snippet roleText(l: Loadout)}
@@ -70,37 +60,6 @@
 	{:else}
 		<span class="unverified text-xs text-muted" title={t.unverifiedHint}>{l.role}<span class="sr-only"> ({t.unverified})</span></span>
 	{/if}
-{/snippet}
-
-{#snippet copyButton(code: string, what: string)}
-	{@const cs = copied?.code === code ? copied : null}
-	<button
-		type="button"
-		class="mb-copy group"
-		class:done={cs?.ok}
-		aria-label={t.codes.copyBuild(what)}
-		title={cs?.ok ? t.codes.copied : t.codes.copyShort}
-		onclick={(e) => copy(code, e.currentTarget.querySelector('.code-src'))}
-	>
-		<span class="mb-copy-ring" aria-hidden="true">
-			{#if cs?.ok}
-				<svg viewBox="0 0 16 16" width="14" height="14"
-					><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg
-				>
-			{:else}
-				<svg viewBox="0 0 24 24" width="14" height="14"
-					><rect x="8" y="8" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2.4" /><path
-						d="M5 15V6a2 2 0 0 1 2-2h8"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.4"
-						stroke-linecap="round"
-					/></svg
-				>
-			{/if}
-		</span>
-		<span class="code-src" aria-hidden="true">{code}</span>
-	</button>
 {/snippet}
 
 <!-- a build's attachments: tile, slot name, part (the tile sits inside the <dt>, so <dt>/<dd> stay plain) -->
@@ -116,7 +75,7 @@
 {/snippet}
 
 <!-- one build card: title (+ small tags) and copy button on top, the parts, a note, the source -->
-{#snippet card(title: string, l: Loadout, opts: { code?: string; tags?: string[]; role?: boolean; apex?: boolean })}
+{#snippet card(title: string, l: Loadout, opts: { code?: string; label: string; tags?: string[]; role?: boolean; apex?: boolean })}
 	<section class="mb-card rounded-card border border-line bg-panel-2 p-3" aria-label={title}>
 		<header class="flex items-start gap-2">
 			<div class="min-w-0 flex-1">
@@ -129,13 +88,10 @@
 					</p>
 				{/if}
 			</div>
-			{#if opts.code}{@render copyButton(opts.code, title)}{/if}
+			<BuildCopy code={opts.code} text={buildText(weaponName, opts.label, l)} what={opts.label} />
 		</header>
 		{#if opts.code && codeView.show}
 			<p class="mb-code-line"><span>{t.loadout.code}</span><code>{opts.code}</code></p>
-		{/if}
-		{#if opts.code && copied?.code === opts.code && !copied.ok}
-			<p class="mt-1 text-xs text-fg" role="status">{t.loadout.copyFailed}</p>
 		{/if}
 		{@render parts(l)}
 		{#if l.note}
@@ -161,6 +117,7 @@
 				{@const twin = m.twin as SiteBuild | undefined}
 				{@render card(t.loadout.metaTitle, m.meta, {
 					code: twin?.code,
+					label: `${t.loadout.metaTitle} (${t.loadout.modes[m.mode]})`,
 					role: true,
 					tags: [t.loadout.ourPick, ...(twin ? [t.loadout.rank(twin.rank)] : [])],
 					apex: m.meta.attachments.some((a) => a.slot === 'Apex')
@@ -173,6 +130,7 @@
 			{#each m.others as b (b.code)}
 				{@render card(b.role, b, {
 					code: b.code,
+					label: `${b.role} (${t.loadout.modes[m.mode]})`,
 					tags: [t.loadout.rank(b.rank), ...(b.pro ? [t.loadout.pro] : [])],
 					apex: b.attachments.some((a) => a.slot === 'Apex')
 				})}
@@ -187,7 +145,7 @@
 		<p class="mb-sub">{t.loadout.extra.sub}</p>
 		<div class={grid}>
 			{#each extraKinds as kind (kind)}
-				{@render card(t.loadout.extra.kinds[kind], extra[kind]!, { role: true })}
+				{@render card(t.loadout.extra.kinds[kind], extra[kind]!, { role: true, label: `${t.loadout.extra.kinds[kind]} (${t.loadout.extra.heading})` })}
 			{/each}
 		</div>
 	</section>
@@ -208,11 +166,19 @@
 			<div class="mt-2.5 grid gap-3 {columns && apexModes.length > 1 ? 'sm:grid-cols-2' : ''}">
 				{#each apexModes as mode (mode)}
 					{@const l = apexBuilds[mode]!}
-					<section class="rounded-card border border-line bg-panel-2 p-3" aria-label={t.loadout.apex.build(t.loadout.modes[mode])}>
-						<h5 class="font-head flex flex-wrap items-baseline justify-between gap-x-2 text-[13px] font-bold">
-							<span class="tracking-[0.12em] text-fg uppercase">{t.loadout.modes[mode]}</span>
-							{@render roleText(l)}
-						</h5>
+					{@const label = t.loadout.apex.build(t.loadout.modes[mode])}
+					{@const code = codeFor(weaponId, mode, l)}
+					<section class="rounded-card border border-line bg-panel-2 p-3" aria-label={label}>
+						<header class="flex items-start gap-2">
+							<h5 class="font-head flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-2 text-[13px] font-bold">
+								<span class="tracking-[0.12em] text-fg uppercase">{t.loadout.modes[mode]}</span>
+								{@render roleText(l)}
+							</h5>
+							<BuildCopy {code} text={buildText(weaponName, label, l)} what={label} />
+						</header>
+						{#if code && codeView.show}
+							<p class="mb-code-line"><span>{t.loadout.code}</span><code>{code}</code></p>
+						{/if}
 						{@render parts(l)}
 						{#if l.note}
 							<p class="mt-2.5 flex gap-1.5 text-xs text-fg">
@@ -289,47 +255,6 @@
 		color: color-mix(in srgb, #b9a3f0 70%, var(--t-fg));
 	}
 
-	/* the small copy button: a 28 px ring inside a 44 px tap target */
-	.mb-copy {
-		position: relative;
-		display: grid;
-		flex: none;
-		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		margin: -8px -8px -8px 0;
-		border-radius: 999px;
-		color: var(--t-accent);
-	}
-	.mb-copy-ring {
-		display: grid;
-		place-items: center;
-		width: 28px;
-		height: 28px;
-		border: 1px solid var(--t-tick-line, var(--t-line));
-		border-radius: 999px;
-		background: var(--t-tick);
-		transition: border-color 0.15s;
-	}
-	.mb-copy:hover .mb-copy-ring {
-		border-color: var(--t-accent);
-	}
-	.mb-copy.done {
-		color: var(--t-ok);
-	}
-	.mb-copy.done .mb-copy-ring {
-		border-color: var(--t-ok);
-	}
-	/* invisible but selectable, for the fallback copy (select + copy command) */
-	.code-src {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-		user-select: text;
-	}
 	.mb-code-line {
 		display: flex;
 		flex-wrap: wrap;

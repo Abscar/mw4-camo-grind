@@ -39,7 +39,9 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { shortDate } from '#lib/ui.ts';
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
+	import { buildText, codeFor } from '#lib/buildCopy.ts';
 	import AttachmentIcon from './AttachmentIcon.svelte';
+	import BuildCopy from './BuildCopy.svelte';
 	import GearIcon from './GearIcon.svelte';
 	import HpMinimap from './HpMinimap.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
@@ -111,6 +113,10 @@
 				</h4>
 				<p class="build-tag font-head">{tag}</p>
 			</div>
+			{#if l}
+				{@const label = `${tag} (${t.loadout.modes.mp})`}
+				<BuildCopy code={codeFor(w.id, 'mp', l)} text={buildText(w.name, label, l)} what={`${w.name} ${label}`} />
+			{/if}
 		</header>
 		{#if l}
 			<ul class="mt-2.5 grid gap-1.5">

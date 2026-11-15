@@ -642,7 +642,7 @@ export const en = {
 		/** Stat builds under the subclasses (data/extraBuilds.ts). */
 		extra: {
 			heading: 'Stat builds',
-			sub: 'Worked out from the attachment stats. Same in Multiplayer and Warzone; no code, build it by hand.',
+			sub: 'Worked out from the attachment stats. Same in Multiplayer and Warzone. No loadout code exists for these: the button copies the attachments as text.',
 			kinds: { ads: 'Min ADS speed', sprint: 'Max sprint speed', range: 'Max range', velocity: 'Max bullet velocity' }
 		},
 		code: 'Build code',
@@ -689,8 +689,14 @@ export const en = {
 		/** The switch above the weapon list and in the weapon card's Meta tab. */
 		show: 'Show codes',
 		/** Copy button on a build in the weapon card. */
-		copyBuild: (build: string) => `Copy the loadout code for the ${build} build`,
-		copyShort: 'Copy code'
+		copyBuild: (build: string) => `Copy the loadout code: ${build}`,
+		copyShort: 'Copy code',
+		/** Builds no site published a code for: the button copies the parts as text (BuildCopy). */
+		copyText: (build: string) => `Copy the attachments as text: ${build} (no loadout code exists for it)`,
+		copyTextShort: 'No loadout code exists for this build: copy its attachments as text',
+		textTag: 'Text',
+		textCopied: 'Attachments copied as text',
+		copyFailedShort: 'Couldn’t copy here.'
 	},
 
 	cls: {

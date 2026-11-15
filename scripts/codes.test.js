@@ -7,6 +7,8 @@ import { LOADOUT_CODES } from '../src/lib/data/loadoutCodes.ts';
 import { LOADOUTS, MAX_ATTACHMENTS, SLOT_ORDER } from '../src/lib/data/loadouts.ts';
 import { SITE_BUILDS } from '../src/lib/data/siteBuilds.ts';
 import { WEAPON_BY_ID } from '../src/lib/data/weapons.ts';
+import { APEX_BUILDS } from '../src/lib/data/apexBuilds.ts';
+import { buildText, codeFor, sameParts } from '../src/lib/buildCopy.ts';
 
 /** The game's build codes: a weapon prefix (A05 = M4) and 2–3 more groups. */
 const CODE = /^[A-Z]\d\d(-[A-Z0-9]{1,6}){2,3}$/;
@@ -96,4 +98,29 @@ test('stat builds: every gun has Min ADS, Max sprint and Max range; worked out, 
 			assert.match(l.note ?? '', /weapon level \d+|partly unknown/, `${where}: says the level it needs`);
 		}
 	}
+});
+
+test('copy buttons (buildCopy.ts): a code only for a build with exactly a published subclass\'s parts, else text', () => {
+	// every published subclass finds its own code
+	for (const [id, modes] of Object.entries(SITE_BUILDS))
+		for (const [mode, list] of Object.entries(modes)) for (const b of list) assert.ok(codeFor(id, mode, b), `${id} ${mode} ${b.role}: no code`);
+	// a code handed to another card always belongs to a subclass with the same parts, in the same mode
+	for (const [id, a] of [...Object.entries(LOADOUTS), ...Object.entries(APEX_BUILDS)])
+		for (const mode of ['mp', 'wz']) {
+			const code = a[mode] && codeFor(id, mode, a[mode]);
+			if (!code) continue;
+			const twin = SITE_BUILDS[id][mode].find((b) => b.code === code);
+			assert.ok(twin && sameParts(twin, a[mode]), `${id} ${mode}: code ${code} doesn't match the parts`);
+		}
+	// one part different = no code
+	const b = SITE_BUILDS.m4.mp[0];
+	const changed = { attachments: b.attachments.map((x, i) => (i === 0 ? { ...x, name: x.name + ' X' } : x)) };
+	assert.equal(codeFor('m4', 'mp', changed), undefined);
+	assert.equal(codeFor('m4', 'mp', undefined), undefined);
+	// the text: a title line, then "Slot: part" per attachment
+	const text = buildText('M4', 'Meta class (Multiplayer)', LOADOUTS.m4.mp);
+	const lines = text.split('\n');
+	assert.equal(lines[0], 'M4 – Meta class (Multiplayer)');
+	assert.equal(lines.length, LOADOUTS.m4.mp.attachments.length + 1);
+	assert.ok(lines.includes('Muzzle: FSS IS300'));
 });
