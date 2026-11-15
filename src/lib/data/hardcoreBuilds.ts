@@ -4,16 +4,16 @@
 	Hardcore builds on the web: codmunity.gg has a "Hardcore · One-Shot Kill / Two-Shot Kill" build per
 	gun, but only in its app (its weapon pages name them, the parts sit behind its /api/, which its
 	robots.txt bars). So these are typed in from the user's own screenshots of codmunity's phone app
-	(15 Nov 2026, 25 guns in two batches), parts, loadout codes and the weapon level needed exactly as the app showed them.
+	(15 Nov 2026, all 27 guns that have one, in three batches), parts, loadout codes and the weapon level needed exactly as the app showed them.
 
 	Which kind each gun has (one per gun) is on codmunity's public weapon pages, and every screenshot
 	matches it. On twelve screenshots (Kastov 762, Cronen Osprey, Han 86, Axion, Type 73, Oden, Mojave .357, Oris 8.6,
 	Mosin-Nagant, SANG 9mm, Apoc-338, FiNN LMG) the selected tab
 	wasn't in view; their codes match none of codmunity's published subclasses and each gun has exactly
-	one Hardcore build there, so they are taken as that one. The Patriot XMR's code was cut off.
+	one Hardcore build there, so they are taken as that one. The Patriot XMR's code came from a later screenshot (the first cut it off), as did the Cronen Squall (tab not in view either) and PPSh-41.
 
 	codmunity's pages say "Not Recommended for Hardcore" for the KG-7 Vulcan, Astaroth .57 and Signal 50
-	(HARDCORE_NO). Not here yet (not sent): Cronen Squall, PPSh-41; add them the same way. Codes are the
+	(HARDCORE_NO). Every other gun with a gunsmith is here; a new gun gets added the same way. Codes are the
 	game's own: copy them exactly, never make one up.
 */
 import { build, type Loadout } from './loadouts.ts';
@@ -53,7 +53,8 @@ export const HARDCORE_BUILDS: Record<string, HardcoreBuild[]> = {
 		hc(
 			'one',
 			{ Muzzle: 'Meiko 30CAL-SP', Laser: 'SA Laz-500', Optic: 'ZLR Type C', Ammunition: '7.62 NATO High Velocity', Underbarrel: 'FSS Tac90 Grip', Apex: 'Patriot XMR Volt' },
-			undefined
+			'B04-3KA95-TI247-BF11',
+			level(62)
 		)
 	],
 	'kastov-762': [
@@ -69,6 +70,9 @@ export const HARDCORE_BUILDS: Record<string, HardcoreBuild[]> = {
 	],
 	axion: [
 		hc('one', { Muzzle: 'FSS IS300', Laser: 'XRK Clutch-LS', Optic: 'ZLR Type C', Stock: 'XRK FTR-30', Underbarrel: 'FSS Tac90 Grip' }, 'A04-B19PJ-K7QY1-1', level(51))
+	],
+	'cronen-squall': [
+		hc('one', { Muzzle: 'ZLR Cold Echo', Laser: 'SA Laz-500', Optic: 'ZLR Type C', Ammunition: '6.8 Wrath High Velocity', Underbarrel: 'FSS Tac90 Grip' }, 'B03-3KA95-THZIU-6F11', level(63))
 	],
 	'cronen-osprey': [
 		hc(
@@ -86,6 +90,9 @@ export const HARDCORE_BUILDS: Record<string, HardcoreBuild[]> = {
 	],
 	'wz-55-striga': [
 		hc('one', { Muzzle: 'FTAC Silent Recon', Barrel: 'GW Sender 500', Laser: 'XRK Clutch-LS', Optic: 'ZLR Type C', Stock: 'EXP Calvary II Stock' }, 'S04-B16X1-KM551-1', level(48))
+	],
+	'ppsh-41': [
+		hc('two', { Barrel: 'Hanbit Chimmuk-INTR', Laser: 'XRK Clutch-LS', Optic: 'ZLR Type C', Ammunition: '7.62 Tokarev High Velocity', Underbarrel: 'FSS Tac90 Grip' }, 'S05-3KA95-THRP2-GW11', level(59))
 	],
 	'x-58-nyx': [
 		hc('one', { Barrel: 'LX3-V 409mm', Laser: 'XRK Clutch-LS', Optic: 'ZLR Type C', Stock: 'No Stock', Underbarrel: 'FSS Tac90 Grip' }, 'S08-B19PD-ASEF1-1', level(44))

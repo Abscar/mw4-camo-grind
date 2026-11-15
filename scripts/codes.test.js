@@ -145,4 +145,7 @@ test('Hardcore builds (codmunity app screenshots, 2026-11-15): real guns, real-l
 		}
 	}
 	for (const id of HARDCORE_NO) assert.ok(WEAPON_BY_ID.get(id), id);
+	// every gun with a gunsmith has one (or codmunity says it isn't for Hardcore), each with its code
+	for (const id of Object.keys(LOADOUTS)) assert.ok(HARDCORE_BUILDS[id] || HARDCORE_NO.includes(id), ` has no Hardcore build`);
+	for (const [id, list] of Object.entries(HARDCORE_BUILDS)) for (const h of list) assert.ok(h.code, `: no code`);
 });
