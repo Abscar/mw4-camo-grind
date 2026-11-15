@@ -24,6 +24,7 @@
 	import { APEX } from '#lib/data/apex.ts';
 	import { APEX_BUILDS } from '#lib/data/apexBuilds.ts';
 	import { EXTRA_BUILDS, EXTRA_KINDS } from '#lib/data/extraBuilds.ts';
+	import { HARDCORE_BUILDS, HARDCORE_NO } from '#lib/data/hardcoreBuilds.ts';
 	import { LOADOUTS, type Loadout, type LoadoutMode } from '#lib/data/loadouts.ts';
 	import { SITE_BUILDS, type SiteBuild } from '#lib/data/siteBuilds.ts';
 	import { WEAPON_BY_ID } from '#lib/data/weapons.ts';
@@ -47,6 +48,9 @@
 			return { mode, meta, twin, others: site.filter((b) => b !== twin) };
 		})
 	);
+	/** Multiplayer Hardcore (codmunity's app, data/hardcoreBuilds.ts): next to the meta class, at the top. */
+	const hardcore = $derived(HARDCORE_BUILDS[weaponId] ?? []);
+	const hardcoreNo = $derived(HARDCORE_NO.includes(weaponId));
 	const extra = $derived(EXTRA_BUILDS[weaponId] ?? {});
 	const extraKinds = $derived(EXTRA_KINDS.filter((k) => extra[k]));
 	const apex = $derived(APEX[weaponId]);
@@ -75,8 +79,8 @@
 {/snippet}
 
 <!-- one build card: title (+ small tags) and copy button on top, the parts, a note, the source -->
-{#snippet card(title: string, l: Loadout, opts: { code?: string; label: string; tags?: string[]; role?: boolean; apex?: boolean })}
-	<section class="mb-card rounded-card border border-line bg-panel-2 p-3" aria-label={title}>
+{#snippet card(title: string, l: Loadout, opts: { code?: string; label: string; tags?: string[]; role?: boolean; apex?: boolean; hc?: boolean })}
+	<section class="mb-card rounded-card border border-line bg-panel-2 p-3" class:mb-card-hc={opts.hc} aria-label={title}>
 		<header class="flex items-start gap-2">
 			<div class="min-w-0 flex-1">
 				<h5 class="font-head text-[13px] font-bold tracking-[0.12em] text-fg uppercase">{title}</h5>
@@ -126,6 +130,25 @@
 				<section class="rounded-card border border-line bg-panel-2 p-3">
 					<p class="text-[13px] text-muted">{t.loadout.none[m.mode]}</p>
 				</section>
+			{/if}
+			{#if m.mode === 'mp'}
+				<!-- Hardcore right beside the meta class (2026-11-15, the user: "the 2 we'll use most") -->
+				{#each hardcore as h (h.build.role)}
+					{@render card(t.loadout.hardcore.title, h.build, {
+						code: h.code,
+						label: `${t.loadout.hardcore.title} ${h.build.role} (${t.loadout.modes.mp})`,
+						role: true,
+						hc: true,
+						apex: h.build.attachments.some((a) => a.slot === 'Apex')
+					})}
+				{/each}
+				{#if hardcoreNo}
+					<section class="mb-card mb-card-hc rounded-card border border-line bg-panel-2 p-3" aria-label={t.loadout.hardcore.title}>
+						<h5 class="font-head text-[13px] font-bold tracking-[0.12em] text-fg uppercase">{t.loadout.hardcore.title}</h5>
+						<p class="mt-1 text-[13px] text-fg">{t.loadout.hardcore.notRecommended}</p>
+						<p class="mt-2.5 text-[11px] text-muted">{t.loadout.hardcore.noSource}</p>
+					</section>
+				{/if}
 			{/if}
 			{#each m.others as b (b.code)}
 				{@render card(b.role, b, {
@@ -249,6 +272,14 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--t-muted);
+	}
+	/* the Hardcore card: a red edge and a red title, so it stands apart next to the meta class */
+	.mb-card-hc {
+		border-color: color-mix(in srgb, #ff3b3b 65%, var(--t-line));
+		box-shadow: inset 3px 0 0 #ff3b3b;
+	}
+	.mb-card-hc h5 {
+		color: color-mix(in srgb, #ff5a4a 75%, var(--t-fg));
 	}
 	.mb-tag-apex {
 		border-color: color-mix(in srgb, #b9a3f0 60%, var(--t-line));

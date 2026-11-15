@@ -642,6 +642,12 @@ export const en = {
 		},
 		/** The meta class card (loadouts.ts) and the published subclasses (siteBuilds.ts) per mode. */
 		metaTitle: 'Meta class',
+		/** Multiplayer Hardcore builds next to the meta class (data/hardcoreBuilds.ts, 2026-11-15). */
+		hardcore: {
+			title: 'Hardcore',
+			notRecommended: 'Not recommended for Hardcore: codmunity has no Hardcore build for this gun.',
+			noSource: 'codmunity.gg weapon page · 14 Nov 2026'
+		},
 		ourPick: 'Our pick',
 		rank: (n: number) => `#${n}`,
 		pro: 'Pro favorite',

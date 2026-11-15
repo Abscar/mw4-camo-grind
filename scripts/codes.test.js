@@ -7,6 +7,7 @@ import { LOADOUT_CODES } from '../src/lib/data/loadoutCodes.ts';
 import { LOADOUTS, MAX_ATTACHMENTS, SLOT_ORDER } from '../src/lib/data/loadouts.ts';
 import { SITE_BUILDS } from '../src/lib/data/siteBuilds.ts';
 import { WEAPON_BY_ID } from '../src/lib/data/weapons.ts';
+import { HARDCORE_BUILDS, HARDCORE_NO } from '../src/lib/data/hardcoreBuilds.ts';
 import { APEX_BUILDS } from '../src/lib/data/apexBuilds.ts';
 import { buildText, codeFor, sameParts } from '../src/lib/buildCopy.ts';
 
@@ -123,4 +124,25 @@ test('copy buttons (buildCopy.ts): a code only for a build with exactly a publis
 	assert.equal(lines[0], 'M4 – Meta class (Multiplayer)');
 	assert.equal(lines.length, LOADOUTS.m4.mp.attachments.length + 1);
 	assert.ok(lines.includes('Muzzle: FSS IS300'));
+});
+test('Hardcore builds (codmunity app screenshots, 2026-11-15): real guns, real-looking codes, legal slots', () => {
+	const codes = new Set();
+	for (const [id, list] of Object.entries(HARDCORE_BUILDS)) {
+		assert.ok(WEAPON_BY_ID.get(id), `${id} is not a weapon`);
+		assert.ok(LOADOUTS[id], `${id} has no gunsmith`);
+		assert.ok(!HARDCORE_NO.includes(id), `${id} is also marked not recommended`);
+		assert.equal(new Set(list.map((h) => h.kind)).size, list.length, `${id}: the same kind twice`);
+		for (const h of list) {
+			slotsOk(`${id} hardcore`, h.build.attachments, { apex: true });
+			assert.ok(['One-Shot Kill', 'Two-Shot Kill'].includes(h.build.role), id);
+			if (h.code) {
+				assert.match(h.code, CODE, `${id}: ${h.code}`);
+				assert.ok(!codes.has(h.code), `${id}: code ${h.code} used twice`);
+				codes.add(h.code);
+				// not one of the published subclasses (those have their own cards)
+				for (const b of Object.values(SITE_BUILDS[id] ?? {}).flat()) assert.notEqual(b.code, h.code, `${id}: ${h.code} is a published subclass`);
+			}
+		}
+	}
+	for (const id of HARDCORE_NO) assert.ok(WEAPON_BY_ID.get(id), id);
 });
