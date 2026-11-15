@@ -35,6 +35,7 @@
 	import LarsAkeBanner from '#lib/components/LarsAkeBanner.svelte';
 	import CrownBanner from '#lib/components/CrownBanner.svelte';
 	import DoomsdayBanner from '#lib/components/DoomsdayBanner.svelte';
+	import WizardBanner from '#lib/components/WizardBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -332,6 +333,7 @@
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><LarsAkeBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CrownBanner /></div>
+			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><WizardBanner /></div>
 			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><DoomsdayBanner /></div>
 		</div>
 
