@@ -15,7 +15,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { BALANCE, BALANCE_PATCH } from '#lib/data/balance.ts';
-	import { LADDER } from '#lib/data/camos.ts';
+	import { LADDER, PRESTIGE, PRESTIGE_SOURCE } from '#lib/data/camos.ts';
 	import { LOADOUTS, LOADOUTS_AS_OF } from '#lib/data/loadouts.ts';
 	import { META_RANKS } from '#lib/data/metaRanks.ts';
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
@@ -66,6 +66,14 @@
 	const doneCount = $derived(track.filter((x) => x.status === 'done').length);
 	const nextStep = $derived(track.find((x) => x.status === 'active')?.s);
 	const LADDER_SHORT = [t.sheet.trackShort.g, t.sheet.trackShort.p, t.sheet.trackShort.hb];
+	/** The Prestige camos (2026-11-15): a section of their own under the camo ladder, not on the track. */
+	const prestigeLevel = $derived(weapon ? progress.prestigeLevel(weapon.id) : 0);
+	const prestigeSteps = $derived(
+		PRESTIGE.map((c, i) => ({
+			s: { key: `pr${i}`, kind: 'prestige' as const, index: i, name: c.name, fact: { text: c.challenge, verified: true, note: PRESTIGE_SOURCE } },
+			status: (prestigeLevel > i ? 'done' : prestigeLevel === i ? 'active' : 'locked') as StepStatus
+		}))
+	);
 
 	/** The text box keeps its own copy while you type; every change is saved straight away. */
 	let draft = $state('');
@@ -172,6 +180,13 @@
 					<h3 id="{id}-camos" class="wc-h"><span>{t.sheet.camos}</span></h3>
 					{@render stepList(track.filter((x) => x.s.kind === 'ladder'))}
 					{#if weapon.season !== 'launch'}<p class="wc-fine">{t.weapon.s1Divergence}.</p>{/if}
+				</section>
+				<section class="mt-5" aria-labelledby="{id}-prestige">
+					<h3 id="{id}-prestige" class="wc-h"><span>{t.sheet.prestige}</span></h3>
+					<ol class="wc-steps">
+						{#each prestigeSteps as x (x.s.key)}<li data-status={x.status}><CamoStep weaponId={weapon.id} step={x.s} status={x.status} /></li>{/each}
+					</ol>
+					<p class="wc-fine">{t.sheet.prestigeHint}</p>
 				</section>
 			{:else if tab === 'meta'}
 				<h3 class="wc-h"><span>{t.sheet.metaHeading}</span></h3>

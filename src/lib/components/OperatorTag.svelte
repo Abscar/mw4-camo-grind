@@ -170,6 +170,8 @@
 			{@const played = playedOn(entry.member, today)}
 			<p class="op-progress font-hud" title={t.squad.masteryDone(mastery, MASTERY_TOTAL)}>
 				<span data-camo="mastery">M <b>{mastery}</b>/{MASTERY_TOTAL}</span>
+				<!-- weapons with Pyroclast Cascade, all three Prestige camos (2026-11-15), once they have one -->
+				{#if entry.stats.prestige[2] > 0}<span data-camo="pyroclast" title={t.squad.prestigeHeader(entry.stats.prestige[2])}>CAS <b>{entry.stats.prestige[2]}</b></span>{/if}
 				{#if played > 0}<span data-camo="played" title={`${t.squad.played.today(t.squad.minutes(played))} (${t.squad.played.hint})`}>⏱ <b>{t.squad.minutesShort(played)}</b></span>{/if}
 			</p>
 			<!-- their Multiplayer K/D + W/L as they typed it in (Squad tab → Combat record, 2026-11-14) -->
@@ -705,6 +707,9 @@
 	}
 	.op-progress [data-camo='played'] b {
 		color: #9fe8ff;
+	}
+	.op-progress [data-camo='pyroclast'] b {
+		color: #c4ff5a;
 	}
 	.op-progress [data-camo='kd'] b {
 		color: #7dffa0;

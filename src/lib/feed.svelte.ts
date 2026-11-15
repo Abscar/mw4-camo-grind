@@ -17,6 +17,11 @@ export interface Gain {
 	weaponId: string;
 	/** The weapon's new ladder level (1 = Gold … 3 = Harmonic Break). */
 	level: number;
+	/**
+	 * A Prestige camo gained (1 = Pyroclast Terminus … 3 = Pyroclast Cascade, data/camos.ts PRESTIGE)
+	 * instead of a ladder camo; `level` is then just the weapon's ladder level (for its picture).
+	 */
+	prestige?: number;
 	/** This tick maxed the weapon. */
 	maxed: boolean;
 	/** This tick unlocked Divergence. */
@@ -63,8 +68,8 @@ class Feed {
 	}
 
 	/** A squad member's new camo (no shine on your own weapon row, no sound for each one). */
-	squadGain(who: string, weaponId: string, level: number, maxed: boolean): void {
-		this.#row({ weaponId, level, maxed, divergence: false, who });
+	squadGain(who: string, weaponId: string, level: number, maxed: boolean, prestige?: number): void {
+		this.#row({ weaponId, level, maxed, divergence: false, who, ...(prestige ? { prestige } : {}) });
 		if (maxed) this.#cheer(who);
 	}
 

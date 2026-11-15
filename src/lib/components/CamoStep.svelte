@@ -8,18 +8,24 @@
 -->
 <script lang="ts">
 	import { swatchSvg } from '#lib/camoSwatch.ts';
-	import { LADDER } from '#lib/data/camos.ts';
-	import { LADDER_LOOKS, SPECIAL_LOOKS } from '#lib/data/specialLooks.ts';
+	import { LADDER, PRESTIGE } from '#lib/data/camos.ts';
+	import { LADDER_LOOKS, PRESTIGE_LOOKS, SPECIAL_LOOKS } from '#lib/data/specialLooks.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import type { StepInfo, StepStatus } from '#lib/steps.ts';
 	import FactText from './FactText.svelte';
 	import StatusIcon from './StatusIcon.svelte';
 
-	let { weaponId, step, status }: { weaponId: string; step: StepInfo; status: StepStatus } = $props();
+	/** A step of the camo grind, or (2026-11-15) one of the Prestige camos: kind 'prestige', index 0–2. */
+	type Shown = Pick<StepInfo, 'name' | 'fact' | 'index'> & ({ key: StepInfo['key']; kind: StepInfo['kind'] } | { key: string; kind: 'prestige' });
+	let { weaponId, step, status }: { weaponId: string; step: Shown; status: StepStatus } = $props();
 
-	const look = $derived(step.kind === 'ladder' ? LADDER_LOOKS[LADDER[step.index].id] : SPECIAL_LOOKS[step.name]);
+	/** The id the picture is drawn from (the ladder's and Prestige's by camo id, the before-Gold ones by name). */
+	const lookId = $derived(step.kind === 'ladder' ? LADDER[step.index].id : step.kind === 'prestige' ? PRESTIGE[step.index].id : step.name);
+	const look = $derived(
+		step.kind === 'ladder' ? LADDER_LOOKS[LADDER[step.index].id] : step.kind === 'prestige' ? PRESTIGE_LOOKS[PRESTIGE[step.index].id] : SPECIAL_LOOKS[step.name]
+	);
 	// our own generated SVG (data from specialLooks.ts, no user text), so {@html} is safe here
-	const svg = $derived(look ? swatchSvg(look, step.kind === 'ladder' ? LADDER[step.index].id : step.name, `${weaponId}-${step.key}`) : '');
+	const svg = $derived(look ? swatchSvg(look, lookId, `${weaponId}-${step.key}`) : '');
 </script>
 
 <div class="camo-step grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3" data-status={status}>

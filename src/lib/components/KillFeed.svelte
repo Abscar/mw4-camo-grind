@@ -4,7 +4,7 @@
 	feed.svelte.ts and leave after a few seconds. Decoration: the box itself says it's ticked.
 -->
 <script lang="ts">
-	import { LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
+	import { LADDER, MAX_LEVEL, PRESTIGE } from '#lib/data/camos.ts';
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
 	import { WEAPON_BY_ID } from '#lib/data/weapons.ts';
 	import { feed } from '#lib/feed.svelte.ts';
@@ -16,13 +16,15 @@
 	<div class="kill-feed">
 		{#each feed.rows as row (row.id)}
 			{@const weapon = WEAPON_BY_ID.get(row.weaponId)}
-			{@const camo = LADDER[row.level - 1]}
+			{@const ladder = LADDER[row.level - 1]}
+			<!-- a Prestige camo (Pyroclast …) instead of a ladder camo; the gun then wears its best ladder camo -->
+			{@const camo = row.prestige ? PRESTIGE[row.prestige - 1] : ladder}
 			{@const look = WEAPON_LOOKS[row.weaponId]}
 			{#if weapon && camo}
 				<div class="kill-row" data-camo={camo.id} data-squad={row.who ? true : undefined}>
 					<span class="kill-player">{row.who ?? t.operator.callsign}</span>
-					{#if look}<span class="kill-gun"><WeaponIcon {look} camo={camo.id} /></span>{/if}
-					<span class="kill-camo">{camo.name}{#if row.level >= MAX_LEVEL}&nbsp;◆{/if}</span>
+					{#if look}<span class="kill-gun"><WeaponIcon {look} camo={ladder?.id ?? null} /></span>{/if}
+					<span class="kill-camo">{camo.name}{#if !row.prestige && row.level >= MAX_LEVEL}&nbsp;◆{/if}</span>
 					<span class="kill-weapon">{weapon.name}</span>
 				</div>
 			{/if}

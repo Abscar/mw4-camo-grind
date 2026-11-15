@@ -28,6 +28,8 @@ export type Look =
 	| { k: 'topo'; bg: string; line: string; width?: number; glow?: boolean; fills?: string[]; dense?: boolean }
 	/** wavy bands across */
 	| { k: 'waves'; bg: string; colors: string[]; n: number; amp: number; angle?: number; specks?: string }
+	/** glowing energy strands: n thin wavy lines woven through a band across the middle (Pyroclast, 2026-11-15) */
+	| { k: 'strands'; bg: string; colors: string[]; n: number; band: number; glow: string; falls?: string }
 	/** paint splats with droplets */
 	| { k: 'splats'; z?: number; bg: string; colors: string[]; n: number; size: number }
 	/** small rounded spots (leopard / bean shapes), optionally with a dark rim */
@@ -300,6 +302,28 @@ function waves(look: Extract<Look, { k: 'waves' }>, r: Rnd): string {
 	s += look.angle ? `<g transform="rotate(${look.angle} 50 50) scale(1.3) translate(-11.5 -11.5)">${g}</g>` : g;
 	if (look.specks) for (let i = 0; i < 40; i++) s += `<circle cx="${f(between(r, 0, 100))}" cy="${f(between(r, 0, 100))}" r="${f(between(r, 0.4, 1))}" fill="${look.specks}" opacity="0.8"/>`;
 	return s;
+}
+
+function strands(look: Extract<Look, { k: 'strands' }>, r: Rnd, id: string): string {
+	let s = rect(look.bg);
+	let lines = '';
+	for (let i = 0; i < look.n; i++) {
+		const amp = (look.band / 2) * between(r, 0.4, 1);
+		const freq = between(r, 9, 16);
+		const ph = r() * 6;
+		const pts: P[] = [];
+		for (let x = -10; x <= 110; x += 4) pts.push([x, 50 + Math.sin(x / freq + ph) * amp + Math.sin(x / 5 + ph * 2) * amp * 0.15]);
+		lines += `<path d="M${pts.map((p) => `${f(p[0])} ${f(p[1])}`).join('L')}" fill="none" stroke="${pick(r, look.colors)}" stroke-width="${f(between(r, 0.5, 1.3))}" opacity="${f(between(r, 0.6, 1))}"/>`;
+	}
+	// a soft glow along the band, and (Cascade) a few falling streaks through it
+	s += `<defs><radialGradient id="${id}b" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${look.glow}" stop-opacity="0.75"/><stop offset="1" stop-color="${look.glow}" stop-opacity="0"/></radialGradient></defs>`;
+	s += `<ellipse cx="50" cy="50" rx="70" ry="${f(look.band * 0.75)}" fill="url(#${id}b)"/>`;
+	if (look.falls) for (let i = 0; i < 9; i++) {
+		const x = between(r, 4, 96);
+		s += `<rect x="${f(x)}" y="0" width="${f(between(r, 0.6, 1.6))}" height="100" fill="${look.falls}" opacity="${f(between(r, 0.15, 0.4))}"/>`;
+	}
+	s += `${blurDef(id + 'g', 1.6)}<g filter="url(#${id}g)" opacity="0.8">${lines}</g>`;
+	return s + lines;
 }
 
 function splats(look: Extract<Look, { k: 'splats' }>, r: Rnd): string {
@@ -683,6 +707,7 @@ export function swatchSvg(look: Look, seedName: string, uid: string): string {
 		case 'trigrid': body = trigrid(look, r); break;
 		case 'topo': body = topo(look, r, id); break;
 		case 'waves': body = waves(look, r); break;
+		case 'strands': body = strands(look, r, id); break;
 		case 'splats': body = splats(look, r); break;
 		case 'spots': body = spots(look, r); break;
 		case 'scales': body = scales(look, r, id); break;

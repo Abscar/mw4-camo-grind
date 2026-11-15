@@ -633,7 +633,7 @@ class Squad {
 	}
 
 	#progressNow() {
-		return { weapons: progress.weapons, mastery: progress.mastery, lastTickAt: progress.lastTickAt, stamps: progress.stamps };
+		return { weapons: progress.weapons, mastery: progress.mastery, prestige: progress.prestige, lastTickAt: progress.lastTickAt, stamps: progress.stamps };
 	}
 
 	#use(code: string, me: Me, rev: number, doc: SquadDoc | null): void {
@@ -684,7 +684,7 @@ class Squad {
 		const before = saved?.code === this.code && saved.seen ? saved.seen : null;
 		const { gains, nukes, next } = squadGains(before, doc, me.id);
 		writeJson(SEEN_KEY, { code: this.code, seen: next });
-		for (const g of gains.slice(-FEED_MAX)) feed.squadGain(g.name, g.weaponId, g.level, g.level >= 3);
+		for (const g of gains.slice(-FEED_MAX)) feed.squadGain(g.name, g.weaponId, g.level, !g.prestige && g.level >= 3, g.prestige);
 		if (nukes.length) feed.squadNuke(nukes[nukes.length - 1]);
 	}
 

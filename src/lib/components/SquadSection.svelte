@@ -8,7 +8,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { copyText } from '#lib/browser.ts';
-	import { LADDER, MASTERY_TRACKS } from '#lib/data/camos.ts';
+	import { LADDER, MASTERY_TRACKS, PRESTIGE } from '#lib/data/camos.ts';
 	import { CLASSES, WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -336,6 +336,20 @@
 								</div>
 							{/each}
 						</div>
+						<!-- the Prestige camos (2026-11-15): Pyroclast Terminus / Scatter / Cascade, same look as above -->
+						<div class="sq-prestige grid grid-cols-3 gap-2" role="group" aria-label={s.prestigeOf}>
+							{#each PRESTIGE as camo, pi (camo.id)}
+								<div class="min-w-0" aria-label={s.ladderOf(camo.name, st.prestige[pi], WEAPONS.length)} role="group">
+									<p class="flex items-baseline justify-between gap-1 text-[11px] text-muted" aria-hidden="true">
+										<span class="font-head font-semibold tracking-wider uppercase" title={camo.name}>{camo.short}</span>
+										<span class="num text-fg"><b class="text-[15px]">{st.prestige[pi]}</b>/{WEAPONS.length}</span>
+									</p>
+									<div class="sq-bar mt-1" aria-hidden="true">
+										<span data-camo="pyroclast" style:width="{(st.prestige[pi] / WEAPONS.length) * 100}%"></span>
+									</div>
+								</div>
+							{/each}
+						</div>
 
 						<p class="sq-played text-[13px]" title={s.played.hint}>
 							<span aria-hidden="true">⏱</span>
@@ -427,7 +441,11 @@
 										<th scope="row" class="sq-wcol">{w.name}</th>
 										{#each entries as e (e.id)}
 											{@const lvl = e.member.weapons[w.id] ?? 0}
-											<td><span class="sq-lvl font-head" data-level={lvl} title={s.levelLong[lvl]}>{s.levelShort[lvl]}<span class="sr-only"> ({s.levelLong[lvl]})</span></span></td>
+											{@const pr = e.member.prestige?.[w.id] ?? 0}
+											<td
+												><span class="sq-lvl font-head" data-level={lvl} title={s.levelLong[lvl]}>{s.levelShort[lvl]}<span class="sr-only"> ({s.levelLong[lvl]})</span></span
+												>{#if pr}<span class="sq-pr font-head" title={PRESTIGE[pr - 1].name}>{PRESTIGE[pr - 1].short}<span class="sr-only"> ({PRESTIGE[pr - 1].name})</span></span>{/if}</td
+											>
 										{/each}
 									</tr>
 								{/each}
@@ -706,6 +724,14 @@
 	.sq-bar > [data-camo='harmonicBreak'] {
 		background: linear-gradient(90deg, #5a0712, #c4132f 60%, #ff5a6e);
 	}
+	.sq-bar > [data-camo='pyroclast'] {
+		background: linear-gradient(90deg, #1c3a08, #7fd41f 60%, #e2ff7a);
+		box-shadow: 0 0 6px rgb(170 255 60 / 0.5);
+	}
+	/* the Prestige row sits right under G / P / HB, a little closer than the other blocks */
+	.sq-prestige {
+		margin-top: -4px;
+	}
 	.sq-div {
 		color: var(--t-muted);
 	}
@@ -927,6 +953,22 @@
 	.sq-lvl[data-level='3'] {
 		background: linear-gradient(135deg, #ff5a6e, #c4132f 50%, #5a0712);
 		color: #fff;
+	}
+	/* their best Prestige camo on that weapon, next to the ladder level (2026-11-15) */
+	.sq-pr {
+		display: inline-grid;
+		place-items: center;
+		height: 1.5rem;
+		margin-left: 3px;
+		padding: 0 4px;
+		border-radius: 6px;
+		background: radial-gradient(ellipse at 50% 50%, #8fdc2a, #1c3a08 85%);
+		color: #f4ffd8;
+		font-size: 10px;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+		vertical-align: middle;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.sq-presence[data-online='true'] .sq-light {

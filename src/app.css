@@ -33,6 +33,9 @@
 	--color-hb-ink: var(--t-hb-ink, var(--t-hb));
 	--color-div-ink: var(--t-div-ink, var(--t-div));
 	--color-new-ink: var(--t-new-ink, var(--t-new));
+	/* the Prestige camos (Pyroclast Terminus / Scatter / Cascade, 2026-11-15): their green-yellow glow */
+	--color-pyro: var(--t-pyro);
+	--color-pyro-ink: var(--t-pyro-ink, var(--t-pyro));
 
 	/* header band (dark bar in Command Center, invisible elsewhere) */
 	--color-band: var(--t-band);
@@ -76,6 +79,7 @@
 	--t-hb: #a970ff;
 	--t-hb-ink: #b98aff;
 	--t-div: #36d6c3;
+	--t-pyro: #a6ef3c;
 	--t-new: #ff6a3d;
 	--t-tick: #2a1b10;
 	--t-tick-line: #5a3d26;
@@ -138,6 +142,8 @@
 	--t-hb: #7b55d8;
 	--t-div: #2c8c83;
 	--t-div-ink: #1f6f68;
+	--t-pyro: #6aa524;
+	--t-pyro-ink: #3f6e10;
 	--t-new: #d9480f;
 	--t-new-ink: #b23a0a;
 	--t-tick: #f3eee4;
@@ -190,6 +196,7 @@
 	--t-plat: #bfd0ff;
 	--t-hb: #c77dff;
 	--t-div: #2de2e6;
+	--t-pyro: #b6f23d;
 	--t-new: #b6f23d;
 	--t-tick: #231d4d;
 	--t-tick-line: #3a3280;
@@ -245,6 +252,8 @@
 	--t-hb-ink: #6d3fe0;
 	--t-div: #14b8a6;
 	--t-div-ink: #0f766e;
+	--t-pyro: #65a30d;
+	--t-pyro-ink: #3f6212;
 	--t-new: #ef4444;
 	--t-new-ink: #c42020;
 	--t-tick: #eef1f5;
@@ -1706,6 +1715,51 @@
 		0 1px 2px rgb(0 0 0 / 0.9),
 		0 0 6px rgb(0 0 0 / 0.6);
 }
+/*
+ * The Prestige camos (2026-11-15), drawn after mw4camos.com's swatches: not lava, despite the name,
+ * but glowing green-yellow energy on black. Terminus = a band of wavy glowing strands, Scatter =
+ * glowing shards scattered over black, Cascade = the strands with a falling glow through them.
+ * They replace the whole background (the brushed-metal lines would grey out the black).
+ */
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo^='pyroclast'] {
+	--metal-edge: #b8ff4a;
+	--metal-glow: rgb(170 255 60 / 0.55);
+	--metal-ink: #fff;
+	background: var(--metal);
+	text-shadow:
+		0 1px 2px rgb(0 0 0 / 0.95),
+		0 0 6px rgb(0 0 0 / 0.8);
+}
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo='pyroclastTerminus'] {
+	--metal:
+		linear-gradient(180deg, #030603 24%, transparent 36% 64%, #030603 76%),
+		repeating-linear-gradient(173deg, transparent 0 3px, rgb(230 255 120 / 0.75) 3px 4px, transparent 4px 6px),
+		repeating-linear-gradient(187deg, transparent 0 4px, rgb(110 255 170 / 0.6) 4px 5px, transparent 5px 8px),
+		radial-gradient(ellipse 95% 32% at 50% 50%, rgb(170 255 70 / 0.85), transparent 75%),
+		#030603;
+}
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo='pyroclastScatter'] {
+	--metal:
+		radial-gradient(ellipse 3px 6px at 22% 26%, #e4ff6a 60%, transparent),
+		radial-gradient(ellipse 5px 3px at 70% 18%, #b8ff4a 60%, transparent),
+		radial-gradient(ellipse 4px 7px at 82% 62%, #d8ff5a 55%, transparent),
+		radial-gradient(ellipse 6px 4px at 34% 74%, #9eea3a 55%, transparent),
+		radial-gradient(ellipse 3px 4px at 55% 45%, #f0ff9a 60%, transparent),
+		radial-gradient(ellipse 2px 3px at 12% 58%, #c8ff60 60%, transparent),
+		radial-gradient(ellipse 2px 2px at 62% 86%, #e4ff6a 60%, transparent),
+		radial-gradient(circle at 50% 50%, rgb(120 220 40 / 0.22), transparent 70%),
+		#020402;
+}
+[data-theme='blackout'] :is(.camo-toggle, .step-tick)[aria-pressed='true'][data-camo='pyroclastCascade'] {
+	--metal:
+		repeating-linear-gradient(94deg, transparent 0 5px, rgb(200 255 120 / 0.35) 5px 6px, transparent 6px 9px),
+		linear-gradient(180deg, #030603 18%, transparent 32% 68%, #030603 82%),
+		repeating-linear-gradient(170deg, transparent 0 2px, rgb(240 255 140 / 0.8) 2px 3px, transparent 3px 5px),
+		repeating-linear-gradient(190deg, transparent 0 3px, rgb(90 255 190 / 0.7) 3px 4px, transparent 4px 6px),
+		radial-gradient(ellipse 100% 40% at 50% 50%, rgb(190 255 90 / 0.95), transparent 78%),
+		#030603;
+}
+
 /* the glint: one sweep when the box is ticked (the main list's boxes pop + glint) */
 [data-theme='blackout'] .camo-toggle[aria-pressed='true'][data-camo]::after {
 	content: '';

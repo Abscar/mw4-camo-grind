@@ -131,6 +131,30 @@ test('sync: Extra camos "Got it" ticks travel and merge; an older page (none at 
 	assert.deepEqual(combine(withExtras({ a: 1 }), withExtras({ b: 1 })).progress.extraCamos, { a: 1, b: 1 });
 });
 
+test('sync: Prestige camos travel and merge like the ladder; an older page (none at all) changes nothing', () => {
+	const withP = (prestige) => {
+		const d = doc();
+		if (prestige) d.progress.prestige = prestige;
+		return d;
+	};
+	const d = withP({ m4: 2 });
+	const back = fromWire(JSON.parse(JSON.stringify(toWire(d))));
+	assert.ok(sameDoc(back, d));
+	assert.deepEqual(back.progress.prestige, { m4: 2 });
+	assert.ok(!sameDoc(d, withP({ m4: 3 })));
+
+	const base = withP({ m4: 1, oden: 2 });
+	// this device ticked Cascade on the M4 and cleared the Oden; the other one ticked Scatter on the Han 86
+	const merged = merge3(base, withP({ m4: 3 }), withP({ m4: 1, oden: 2, 'han-86': 2 }));
+	assert.deepEqual(merged.progress.prestige, { m4: 3, 'han-86': 2 });
+	// both changed the same weapon: the higher level wins
+	assert.deepEqual(merge3(base, withP({ m4: 2, oden: 2 }), withP({ m4: 3, oden: 2 })).progress.prestige, { m4: 3, oden: 2 });
+	const oldPage = fromWire({ app: 'mw4-camo-grind', sync: 1, progress: { weapons: {}, mastery: {} }, notes: {}, focus: [] });
+	assert.equal(oldPage.progress.prestige, undefined);
+	assert.deepEqual(merge3(base, withP({ m4: 3, oden: 2 }), oldPage).progress.prestige, { m4: 3, oden: 2 });
+	assert.deepEqual(combine(withP({ m4: 1, oden: 3 }), withP({ m4: 2 })).progress.prestige, { m4: 2, oden: 3 });
+});
+
 test('sync: codes are long and random, links and pasted text are read', () => {
 	const a = makeSyncCode();
 	assert.equal(a.length, 22);

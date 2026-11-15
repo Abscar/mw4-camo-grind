@@ -481,6 +481,9 @@
 .kill-row[data-camo='harmonicBreak'] .kill-camo {
 	color: #c9a2ff;
 }
+.kill-row[data-camo^='pyroclast'] .kill-camo {
+	color: #c4ff5a;
+}
 .kill-weapon {
 	overflow: hidden;
 	text-overflow: ellipsis;

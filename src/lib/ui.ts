@@ -1,6 +1,6 @@
 /** Small presentation helpers shared by components. */
 
-import { LADDER, type LadderCamo, type LadderCamoId, type MasteryStatus } from './data/camos.ts';
+import { LADDER, type LadderCamo, type LadderCamoId, type MasteryStatus, type PrestigeCamoId } from './data/camos.ts';
 import { CLASSES, UNLOCK_LEVEL_NOTE, type Fact, type Unlock } from './data/weapons.ts';
 import { t } from './i18n/en.ts';
 
@@ -18,17 +18,23 @@ export function ladderChallenges(classId: string): { camo: LadderCamo; fact: Fac
 }
 
 /** Fill colour of each ladder camo (CSS value). */
-export const CAMO_FILL: Record<LadderCamoId, string> = {
+export const CAMO_FILL: Record<LadderCamoId | PrestigeCamoId, string> = {
 	gold: 'var(--t-gold)',
 	platinum: 'var(--t-plat)',
-	harmonicBreak: 'var(--t-hb)'
+	harmonicBreak: 'var(--t-hb)',
+	pyroclastTerminus: 'var(--t-pyro)',
+	pyroclastScatter: 'var(--t-pyro)',
+	pyroclastCascade: 'var(--t-pyro)'
 };
 
 /** Tailwind text class that is readable on panels, per ladder camo. */
-export const CAMO_INK: Record<LadderCamoId, string> = {
+export const CAMO_INK: Record<LadderCamoId | PrestigeCamoId, string> = {
 	gold: 'text-gold-ink',
 	platinum: 'text-plat-ink',
-	harmonicBreak: 'text-hb-ink'
+	harmonicBreak: 'text-hb-ink',
+	pyroclastTerminus: 'text-pyro-ink',
+	pyroclastScatter: 'text-pyro-ink',
+	pyroclastCascade: 'text-pyro-ink'
 };
 
 export function percent(done: number, total: number): number {

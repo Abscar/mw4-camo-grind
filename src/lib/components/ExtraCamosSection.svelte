@@ -26,10 +26,17 @@
 		type ExtraStatus
 	} from '#lib/data/extraCamos.ts';
 	import Dialog from './Dialog.svelte';
+	import { PRESTIGE } from '#lib/data/camos.ts';
+	import { WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { shortDate } from '#lib/ui.ts';
 
 	const s = t.extraCamos;
+	/**
+	 * The three Prestige camos are ticked per weapon in the camo list (2026-11-15): their cards say on
+	 * how many weapons you have them (Pyroclast itself isn't ticked anywhere, so it has no count).
+	 */
+	const prestigeOn = $derived(new Map(PRESTIGE.map((c, i) => [c.extraId as string, progress.prestigeCounts[i]])));
 
 	let status = $state<ExtraStatus>('now');
 	let kind = $state<ExtraKind | null>(null);
@@ -285,6 +292,7 @@
 									<span class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] leading-snug text-muted">
 										{@render modePills(c)}
 										<span>{c.weapon ? s.onlyWeapon(c.weapon) : c.perWeapon ? s.perWeapon : s.everyWeapon}</span>
+										{#if prestigeOn.has(c.id)}<span class="xc-tag xc-got">{s.prestigeOn(prestigeOn.get(c.id) ?? 0, WEAPONS.length)}</span>{/if}
 										{#if c.trust === 'one' || c.trust === 'leak'}
 											<span><span class="text-accent" aria-hidden="true">⚠</span> {s.trustShort[c.trust]}</span>
 										{/if}
@@ -353,6 +361,7 @@
 				<h3 class="font-head text-[12px] font-bold tracking-[0.12em] text-fg uppercase">{s.howHeading}</h3>
 				<p class="mt-1 text-[15px] leading-snug font-semibold text-fg">{picked.how}</p>
 				<p class="mt-1">{picked.weapon ? s.onlyWeaponLong(picked.weapon) : picked.perWeapon ? s.perWeaponLong : s.everyWeaponLong}</p>
+				{#if prestigeOn.has(picked.id)}<p class="mt-1 font-semibold text-fg">{s.prestigeOnLong(prestigeOn.get(picked.id) ?? 0, WEAPONS.length)}</p>{/if}
 			</div>
 			<div>
 				<h3 class="font-head text-[12px] font-bold tracking-[0.12em] text-fg uppercase">{s.whenHeading}</h3>

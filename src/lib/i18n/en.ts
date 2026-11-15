@@ -450,6 +450,8 @@ export const en = {
 
 	weapon: {
 		column: 'Weapon',
+		/** The Prestige camos' row under G / P / HB (and its column heading, 2026-11-15). */
+		prestigeColumn: 'Prestige',
 		level: (n: number) => `Lv ${n}`,
 		battlePass: (tier: number) => `BP tier ${tier}`,
 		event: 'S1 event',
@@ -538,6 +540,10 @@ export const en = {
 		/** All 3 ladder camos with their challenges, always shown. */
 		camos: 'Camo challenges',
 		camoDone: 'Done',
+		/** The 3 Prestige camos under the ladder (2026-11-15). */
+		prestige: 'Prestige camos',
+		prestigeHint:
+			'Weapon Prestige: Terminus at max level in Weapon Prestige 1, then Scatter and Cascade on the way to Weapon Prestige Master. Tick them in the weapon list, in the row under G / P / HB.',
 		balance: (change: 'buff' | 'nerf', patch: string, date: string) =>
 			`${change === 'buff' ? 'Buffed' : 'Nerfed'} in ${patch} (${date})`,
 		balanceSource: (sources: string) => `From the patch notes, via ${sources}.`,
@@ -751,6 +757,9 @@ export const en = {
 		noCamo: 'No camo ticked yet',
 		rank: (n: number) => `#${n}`,
 		ladderOf: (camo: string, n: number, total: number) => `${camo}: ${n} of ${total} weapons`,
+		/** The Prestige camos' row on a member's card (2026-11-15). */
+		prestigeOf: 'Prestige camos',
+		prestigeHeader: (n: number) => `Pyroclast Cascade (all three Prestige camos) on ${n} weapon${n === 1 ? '' : 's'}`,
 		divergenceLeft: (n: number) => `${n} Harmonic Break${n === 1 ? '' : 's'} to Divergence`,
 		divergenceDone: 'Divergence unlocked',
 		masteryLabel: 'Mastery camos',
@@ -1105,6 +1114,10 @@ export const en = {
 		onlyWeapon: (w: string) => `Only ${w}`,
 		everyWeaponLong: 'A universal camo: once earned it goes on every weapon.',
 		perWeaponLong: 'Earned on each weapon separately, and only that weapon gets it.',
+		/** Pyroclast Terminus / Scatter / Cascade: ticked per weapon in the camo list (2026-11-15). */
+		prestigeOn: (n: number, total: number) => `On ${n} of ${total} weapons`,
+		prestigeOnLong: (n: number, total: number) =>
+			`You have it on ${n} of ${total} weapons. Tick it per weapon in the camo list, in the Prestige row under G / P / HB.`,
 		onlyWeaponLong: (w: string) => `Only for the ${w}.`,
 		openHint: 'opens the details',
 		howHeading: 'How to get it',

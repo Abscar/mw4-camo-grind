@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
+	import { LADDER, MAX_LEVEL, PRESTIGE } from '#lib/data/camos.ts';
 	import type { Weapon, WeaponClass } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -26,6 +26,8 @@
 	const columns = `minmax(0, 1fr) repeat(${LADDER.length}, 2.75rem)`;
 	const total = $derived(cls.weapons.length);
 	const counts = $derived(LADDER.map((_, i) => cls.weapons.filter((w) => progress.has(w.id, i)).length));
+	/** Weapons in the class with Pyroclast Cascade (all three Prestige camos). */
+	const prestigeDone = $derived(cls.weapons.filter((w) => progress.hasPrestige(w.id, PRESTIGE.length - 1)).length);
 	const done = $derived(cls.weapons.reduce((sum, w) => sum + progress.level(w.id), 0));
 	const pct = $derived(percent(done, total * MAX_LEVEL));
 	const maxed = $derived(done === total * MAX_LEVEL);
@@ -55,6 +57,11 @@
 					>{camo.short} <b class="font-bold {CAMO_INK[camo.id]}">{counts[i]}/{total}</b></span
 				>
 			{/each}
+			{#if prestigeDone > 0}
+				<span title={PRESTIGE[PRESTIGE.length - 1].name}
+					>{PRESTIGE[PRESTIGE.length - 1].short} <b class="font-bold text-pyro-ink">{prestigeDone}/{total}</b></span
+				>
+			{/if}
 			{#if maxed}
 				<span class="ml-auto text-[11px] font-bold tracking-wider text-div-ink uppercase">{t.cls.maxed}</span>
 			{/if}
@@ -69,6 +76,11 @@
 		<span>{t.weapon.column}</span>
 		{#each LADDER as camo (camo.id)}
 			<span class="text-center {CAMO_INK[camo.id]}" title={camo.name}>{camo.short}</span>
+		{/each}
+		<!-- second line: the Prestige camos' row under G / P / HB -->
+		<span class="text-[9.5px] tracking-[0.1em]">{t.weapon.prestigeColumn}</span>
+		{#each PRESTIGE as camo (camo.id)}
+			<span class="text-center text-[9.5px] {CAMO_INK[camo.id]}" title={camo.name}>{camo.short}</span>
 		{/each}
 		{#if cls.id === PEEK_CLASS}
 			<!-- Abscar easter egg: the friend's operator peeks over this line now and then (absolute, so no grid cell) -->
@@ -96,5 +108,10 @@
 				><FactText fact={cls.challenges[camo.id]} />
 			</div>
 		{/each}
+		<div>
+			<b class="font-head mr-1.5 text-[11px] font-bold tracking-wider text-pyro-ink uppercase">{t.weapon.prestigeColumn}</b>{PRESTIGE.map(
+				(c) => `${c.name.replace('Pyroclast ', '')}: ${c.challenge}`
+			).join(' · ')}
+		</div>
 	</footer>
 </section>

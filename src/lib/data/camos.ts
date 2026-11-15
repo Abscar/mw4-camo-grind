@@ -42,6 +42,47 @@ export const DIVERGENCE = {
 	how: `Awarded automatically after ${DIVERGENCE_REQUIRED} Harmonic Break camos`
 } as const;
 
+/**
+ * Weapon Prestige camos per weapon (2026-11-15, the user's ask: "the prestige camos in the camo grind,
+ * the last 3, the first one is pointless", ticked under the G / P / HB boxes). The four Pyroclast camos
+ * are stages of one evolving camo; the first ("Pyroclast", just for entering Weapon Prestige 1) is left
+ * out. Stored like the ladder, as a level per weapon: 0 = none, 1 = Terminus, 2 = + Scatter, 3 = all
+ * three; ticking a later one fills the earlier ones (each needs more weapon levels than the one before).
+ * Separate from the camo ladder: Gold / Platinum / Harmonic Break and Divergence don't need them, and
+ * they don't need those. Challenges as in data/extraCamos.ts (Activision's Progression and Prestige
+ * blog, 19 Oct; games.gg, timesaver, GameRant). Never reorder: links store the level by position.
+ */
+export const PRESTIGE = [
+	{
+		id: 'pyroclastTerminus',
+		name: 'Pyroclast Terminus',
+		short: 'TER',
+		challenge: 'Reach max level again in Weapon Prestige 1',
+		/** The matching entry in the Extra camos tab (data/extraCamos.ts). */
+		extraId: 'prestige-pyroclast-terminus'
+	},
+	{
+		id: 'pyroclastScatter',
+		name: 'Pyroclast Scatter',
+		short: 'SCA',
+		challenge: 'Reach Weapon Prestige Master level 150',
+		extraId: 'prestige-pyroclast-scatter'
+	},
+	{
+		id: 'pyroclastCascade',
+		name: 'Pyroclast Cascade',
+		short: 'CAS',
+		challenge: 'Reach Weapon Prestige Master level 250',
+		extraId: 'prestige-pyroclast-cascade'
+	}
+] as const;
+
+export type PrestigeCamo = (typeof PRESTIGE)[number];
+export type PrestigeCamoId = PrestigeCamo['id'];
+/** Highest Prestige level per weapon (= all three Prestige camos). */
+export const PRESTIGE_MAX = PRESTIGE.length;
+export const PRESTIGE_SOURCE = 'Activision (Progression and Prestige blog, 19 Oct); games.gg, timesaver, GameRant';
+
 export interface MasteryCamo {
 	/** Stable id used in saved progress. Never change. Add new ones at the end (links use the order). */
 	id: string;

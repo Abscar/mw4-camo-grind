@@ -67,6 +67,7 @@ export function fromWire(raw: unknown): SyncDoc | null {
 const specialsOf = (d: SyncDoc) => d.progress.specials ?? {};
 const countsOf = (d: SyncDoc) => d.progress.counts ?? {};
 const extrasOf = (d: SyncDoc) => d.progress.extraCamos ?? {};
+const prestigeOf = (d: SyncDoc) => d.progress.prestige ?? {};
 
 const keys = (...objects: Record<string, unknown>[]) => [...new Set(objects.flatMap((o) => Object.keys(o)))];
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -84,6 +85,7 @@ export function sameDoc(a: SyncDoc, b: SyncDoc): boolean {
 		keys(specialsOf(a), specialsOf(b)).every((id) => (specialsOf(a)[id] ?? 0) === (specialsOf(b)[id] ?? 0)) &&
 		keys(countsOf(a), countsOf(b)).every((k) => (countsOf(a)[k] ?? 0) === (countsOf(b)[k] ?? 0)) &&
 		keys(extrasOf(a), extrasOf(b)).every((id) => (extrasOf(a)[id] ?? 0) === (extrasOf(b)[id] ?? 0)) &&
+		keys(prestigeOf(a), prestigeOf(b)).every((id) => (prestigeOf(a)[id] ?? 0) === (prestigeOf(b)[id] ?? 0)) &&
 		keys(a.notes, b.notes).every((id) => (a.notes[id] ?? '') === (b.notes[id] ?? '')) &&
 		sameList(a.focus, b.focus) &&
 		(a.lastTickAt ?? '') === (b.lastTickAt ?? '') &&
@@ -139,6 +141,16 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 	for (const id of keys(bx, lx, rx)) {
 		if (pick(bx[id] ?? 0, lx[id] ?? 0, rx[id] ?? 0) === 1) extraCamos[id] = 1;
 	}
+	// Prestige camos: like the ladder (one-sided changes win, both changed → the higher level). A side
+	// without them at all (a device still on a page from before 2026-11-15) changed nothing.
+	const prestige: Record<string, number> = {};
+	const bp = prestigeOf(base);
+	const lp = local.progress.prestige ?? bp;
+	const rp = remote.progress.prestige ?? bp;
+	for (const id of keys(bp, lp, rp)) {
+		const n = pickCount(bp[id] ?? 0, lp[id] ?? 0, rp[id] ?? 0);
+		if (n > 0) prestige[id] = n;
+	}
 	const notes: Notes = {};
 	for (const id of keys(base.notes, local.notes, remote.notes)) {
 		const note = pick(base.notes[id] ?? '', local.notes[id] ?? '', remote.notes[id] ?? '');
@@ -146,7 +158,7 @@ export function merge3(base: SyncDoc, local: SyncDoc, remote: SyncDoc): SyncDoc 
 	}
 	const focus = sameList(local.focus, base.focus) ? [...remote.focus] : [...local.focus];
 	return {
-		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials), extraCamos },
+		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials), extraCamos, prestige },
 		notes,
 		focus,
 		lastTickAt: later(local.lastTickAt, remote.lastTickAt),
@@ -177,8 +189,13 @@ export function combine(local: SyncDoc, remote: SyncDoc): SyncDoc {
 	}
 	const extraCamos: Record<string, number> = {};
 	for (const id of keys(extrasOf(local), extrasOf(remote))) extraCamos[id] = 1;
+	const prestige: Record<string, number> = {};
+	for (const id of keys(prestigeOf(local), prestigeOf(remote))) {
+		const n = Math.max(prestigeOf(local)[id] ?? 0, prestigeOf(remote)[id] ?? 0);
+		if (n > 0) prestige[id] = n;
+	}
 	return {
-		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials), extraCamos },
+		progress: { weapons, mastery, specials, counts: pruneCounts(counts, weapons, specials), extraCamos, prestige },
 		notes: { ...local.notes, ...remote.notes },
 		focus: remote.focus.length > 0 ? [...remote.focus] : [...local.focus],
 		lastTickAt: later(local.lastTickAt, remote.lastTickAt),

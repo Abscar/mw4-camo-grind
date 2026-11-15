@@ -160,3 +160,14 @@ export const LADDER_LOOKS: Record<'gold' | 'platinum' | 'harmonicBreak', Look> =
 	platinum: { k: 'gradient', stops: ['#555c63', '#dfe5ea', '#8e969e', '#f7f9fb', '#646c74'], angle: 40 },
 	harmonicBreak: { k: 'stripes', bg: '#140305', layers: [['#7c0c1d', 8, 14], ['#110204', 6, 10], ['#b2152f', 8, 8], ['#f01e3c', 14, 1.8]], angle: -28, len: 70 }
 };
+
+/**
+ * The Prestige camos (2026-11-15), after mw4camos.com's swatches: glowing green-yellow energy on
+ * black. Terminus = strands woven through a band, Scatter = glowing shards, Cascade = denser
+ * strands with falling streaks.
+ */
+export const PRESTIGE_LOOKS: Record<'pyroclastTerminus' | 'pyroclastScatter' | 'pyroclastCascade', Look> = {
+	pyroclastTerminus: { k: 'strands', bg: '#030603', colors: ['#e6ff7a', '#b8ff4a', '#8cff9a', '#d4ff5a'], n: 16, band: 30, glow: '#9eff3c' },
+	pyroclastScatter: { k: 'shards', bg: '#020402', colors: ['#e4ff6a', '#b8ff4a', '#9eea3a', '#f0ff9a'], n: 16, size: 7, glow: '#a6ff3c' },
+	pyroclastCascade: { k: 'strands', bg: '#030603', colors: ['#f0ff8a', '#c8ff5a', '#7affc0', '#e0ff6a'], n: 24, band: 40, glow: '#b4ff50', falls: '#c8ff7a' }
+};

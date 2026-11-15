@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LadderCamo } from '#lib/data/camos.ts';
+	import type { LadderCamo, PrestigeCamo } from '#lib/data/camos.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { CAMO_FILL } from '#lib/ui.ts';
 
@@ -13,7 +13,8 @@
 		note = '',
 		unsure = false
 	}: {
-		camo: LadderCamo;
+		/** A ladder camo (G / P / HB) or, in the row under them, a Prestige camo (2026-11-15). */
+		camo: LadderCamo | PrestigeCamo;
 		pressed: boolean;
 		weaponName: string;
 		ontoggle: () => void;

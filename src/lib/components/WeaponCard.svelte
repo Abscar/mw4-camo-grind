@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { tickLadder } from '#lib/actions.ts';
-	import { LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
+	import { tickLadder, tickPrestige } from '#lib/actions.ts';
+	import { LADDER, MAX_LEVEL, PRESTIGE } from '#lib/data/camos.ts';
 	import type { Weapon } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -54,6 +54,13 @@
 		if (i === LADDER.length - 1 && weapon.season !== 'launch') parts.push(t.weapon.s1Divergence);
 		return parts.join('; ');
 	}
+
+	/** A ticked Prestige box's label says what unticking it also clears. */
+	const prestigeLevel = $derived(progress.prestigeLevel(weapon.id));
+	function prestigeExtra(i: number): string {
+		if (i >= PRESTIGE.length - 1 || prestigeLevel <= i + 1) return '';
+		return t.weapon.untickClears(PRESTIGE.slice(i + 1, prestigeLevel).map((c) => c.name).join(t.tickToast.and));
+	}
 </script>
 
 <li
@@ -64,7 +71,7 @@
 	     progress. Nothing tappable sits inside anything else. The META button (copies the meta loadout
 	     code) in its own column on the right, level with the name, so all the buttons in a box line up;
 	     with "Show codes" on, the code itself as a small line underneath. -->
-	<div class="weapon-main grid min-w-0 items-start gap-x-1 {hasCode ? 'has-code grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)]'}">
+	<div class="weapon-main row-span-2 grid min-w-0 items-start gap-x-1 {hasCode ? 'has-code grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)]'}">
 	<button
 		type="button"
 		class="weapon-open block min-w-0 text-left"
@@ -133,6 +140,16 @@
 			ready={i === 0 && goldReady}
 			note={extra(i)}
 			unsure={i === LADDER.length - 1 && weapon.season !== 'launch'}
+		/>
+	{/each}
+	<!-- the Prestige camos (2026-11-15), a row under G / P / HB; the name column spans both rows -->
+	{#each PRESTIGE as camo, i (camo.id)}
+		<CamoToggle
+			{camo}
+			pressed={progress.hasPrestige(weapon.id, i)}
+			weaponName={weapon.name}
+			ontoggle={() => tickPrestige(weapon.id, i)}
+			note={prestigeExtra(i)}
 		/>
 	{/each}
 

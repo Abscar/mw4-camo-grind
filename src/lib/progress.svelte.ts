@@ -9,6 +9,8 @@ import {
 	LADDER,
 	MASTERY_TRACKS,
 	MAX_LEVEL,
+	PRESTIGE,
+	PRESTIGE_MAX,
 	SEASON_1_COUNTS_TOWARD_DIVERGENCE,
 	type IconCamo,
 	type MasteryMode,
@@ -72,6 +74,8 @@ export interface WeaponState {
 	weaponId: string;
 	level: number;
 	specials: number;
+	/** The weapon's Prestige level (0 = no Prestige camo). */
+	prestige: number;
 	stamps: number[] | undefined;
 	counts: Record<string, number>;
 }
@@ -101,6 +105,8 @@ class Progress {
 	counts = $state<Record<string, number>>({});
 	/** The Extra camos tab's "Got it" ticks (extra camo id → 1). Saved, synced, in backups; not in links. */
 	extraCamos = $state<Record<string, number>>({});
+	/** Prestige level per weapon (data/camos.ts PRESTIGE; weapons at 0 left out). Saved, synced, in backups and links. */
+	prestige = $state<Record<string, number>>({});
 	prefs = $state<Prefs>(defaultPrefs());
 	/** The user's own notes per weapon. Not part of progress links (too long), but in backups. */
 	notes = $state<Notes>({});
@@ -118,6 +124,9 @@ class Progress {
 	ladderCounts = $derived(
 		LADDER.map((_, i) => WEAPONS.filter((w) => (this.weapons[w.id] ?? 0) > i).length)
 	);
+
+	/** Per Prestige camo: how many weapons have it. */
+	prestigeCounts = $derived(PRESTIGE.map((_, i) => WEAPONS.filter((w) => (this.prestige[w.id] ?? 0) > i).length));
 
 	/** Harmonic Breaks that count toward Divergence. */
 	divergenceCount = $derived(
@@ -202,13 +211,43 @@ class Progress {
 		}
 	}
 
-	/** One weapon's ticks, before-Gold ticks, tick times and counters, for Undo. */
+	/** A weapon's Prestige level (0 … PRESTIGE_MAX). */
+	prestigeLevel(weaponId: string): number {
+		return this.prestige[weaponId] ?? 0;
+	}
+
+	hasPrestige(weaponId: string, index: number): boolean {
+		return this.prestigeLevel(weaponId) > index;
+	}
+
+	/**
+	 * Tick or untick a Prestige camo, with the same rule as the ladder: ticking one also ticks the
+	 * earlier ones, unticking one also clears the later ones. A gain goes to the kill feed.
+	 */
+	togglePrestige(weaponId: string, index: number): ToggleResult {
+		const state = this.capture(weaponId);
+		const from = state.prestige;
+		const to = Math.max(0, Math.min(PRESTIGE_MAX, this.hasPrestige(weaponId, index) ? index : index + 1));
+		const next = { ...this.prestige };
+		if (to) next[weaponId] = to;
+		else delete next[weaponId];
+		this.prestige = next;
+		if (to > from) {
+			this.lastTickAt = new Date().toISOString();
+			feed.gain({ weaponId, level: this.level(weaponId), prestige: to, maxed: false, divergence: false });
+		}
+		this.save();
+		return { before: state, from, to };
+	}
+
+	/** One weapon's ticks, before-Gold ticks, Prestige camos, tick times and counters, for Undo. */
 	capture(weaponId: string): WeaponState {
 		const prefix = `${weaponId}:`;
 		return {
 			weaponId,
 			level: this.level(weaponId),
 			specials: this.specials[weaponId] ?? 0,
+			prestige: this.prestigeLevel(weaponId),
 			stamps: this.stamps[weaponId] ? [...this.stamps[weaponId]] : undefined,
 			counts: Object.fromEntries(Object.entries(this.counts).filter(([k]) => k.startsWith(prefix)))
 		};
@@ -222,6 +261,10 @@ class Progress {
 		if (state.specials) specials[id] = state.specials;
 		else delete specials[id];
 		this.specials = specials;
+		const prestige = { ...this.prestige };
+		if (state.prestige) prestige[id] = state.prestige;
+		else delete prestige[id];
+		this.prestige = prestige;
 		const stamps = { ...this.stamps };
 		if (state.stamps) stamps[id] = [...state.stamps];
 		else delete stamps[id];
@@ -385,7 +428,8 @@ class Progress {
 			mastery: this.#masteryCounts(),
 			specials: { ...this.specials },
 			counts: { ...this.counts },
-			extraCamos: { ...this.extraCamos }
+			extraCamos: { ...this.extraCamos },
+			prestige: { ...this.prestige }
 		};
 	}
 
@@ -409,6 +453,7 @@ class Progress {
 		this.mastery = { ...this.#masteryCounts(), ...doc.progress.mastery };
 		if (doc.progress.specials) this.specials = { ...doc.progress.specials };
 		if (doc.progress.extraCamos) this.extraCamos = { ...doc.progress.extraCamos };
+		if (doc.progress.prestige) this.prestige = { ...doc.progress.prestige };
 		this.counts = pruneCounts(doc.progress.counts ?? this.counts, this.weapons, this.specials);
 		this.stamps = mergeStamps(this.weapons, doc.stamps);
 		this.notes = { ...doc.notes };
@@ -427,8 +472,8 @@ class Progress {
 
 	/**
 	 * Replace all progress (import, link, reset, undo). Returns what was there before, for Undo.
-	 * Data without Special camos, Extra camos ticks or Warzone/DMZ counts (older backups, every
-	 * progress link) leaves those alone.
+	 * Data without Special camos, Extra camos ticks, Prestige camos or Warzone/DMZ counts (older
+	 * backups, older progress links) leaves those alone.
 	 */
 	replace(next: ProgressData): ProgressData {
 		const before = this.snapshot();
@@ -436,6 +481,7 @@ class Progress {
 		this.mastery = { ...before.mastery, ...next.mastery };
 		if (next.specials) this.specials = { ...next.specials };
 		if (next.extraCamos) this.extraCamos = { ...next.extraCamos };
+		if (next.prestige) this.prestige = { ...next.prestige };
 		this.counts = pruneCounts(next.counts ?? this.counts, this.weapons, this.specials);
 		this.stamps = mergeStamps(this.weapons, this.stamps);
 		this.save();
@@ -454,7 +500,8 @@ class Progress {
 			ALL_MASTERY.every((m) => (this.mastery[m.id] ?? 0) === 0) &&
 			Object.keys(this.specials).length === 0 &&
 			Object.keys(this.counts).length === 0 &&
-			Object.keys(this.extraCamos).length === 0
+			Object.keys(this.extraCamos).length === 0 &&
+			Object.keys(this.prestige).length === 0
 		);
 	}
 
@@ -517,6 +564,7 @@ class Progress {
 		this.mastery = { ...this.#masteryCounts(), ...m.progress.mastery };
 		if (m.progress.specials) this.specials = m.progress.specials;
 		if (m.progress.extraCamos) this.extraCamos = m.progress.extraCamos;
+		if (m.progress.prestige) this.prestige = m.progress.prestige;
 		if (m.progress.counts) this.counts = pruneCounts(m.progress.counts, m.progress.weapons, this.specials);
 		if (m.stamps) this.stamps = mergeStamps(m.progress.weapons, m.stamps);
 		if (m.prefs) this.prefs = m.prefs;

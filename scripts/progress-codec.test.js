@@ -1,7 +1,7 @@
 // Quick checks of the pure progress helpers: `npm test` (Node runs the .ts sources directly).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ALL_MASTERY, DIVERGENCE_REQUIRED, MASTERY, MASTERY_DMZ, MASTERY_EXTRA, MASTERY_TRACKS, MASTERY_WZ, MAX_LEVEL } from '../src/lib/data/camos.ts';
+import { ALL_MASTERY, DIVERGENCE_REQUIRED, MASTERY, MASTERY_DMZ, MASTERY_EXTRA, MASTERY_TRACKS, MASTERY_WZ, MAX_LEVEL, PRESTIGE, PRESTIGE_MAX } from '../src/lib/data/camos.ts';
 import { WEAPON_LOOKS } from '../src/lib/data/weaponLooks.ts';
 import { CLASSES, NEXT_FREE_SLOT, WEAPONS } from '../src/lib/data/weapons.ts';
 import { BALANCE, BALANCE_PATCH } from '../src/lib/data/balance.ts';
@@ -15,6 +15,8 @@ import {
 	mergeStamps,
 	migrate,
 	normaliseExtraCamos,
+	normalisePrestige,
+	sameProgress,
 	normalisePrefs,
 	normaliseSpecials,
 	normaliseStamps,
@@ -121,7 +123,7 @@ test('link: round trip, and it stays short', () => {
 	p.mastery.polyatomicReforged = 17;
 	const code = encodeLink(p);
 	assert.ok(code.length < 40, code);
-	assert.deepEqual(decodeLink(code), { ...p, specials: {} });
+	assert.deepEqual(decodeLink(code), { ...p, specials: {}, prestige: {} });
 	assert.equal(linkCodeFromHash(`#p=${code}`), code);
 	assert.equal(linkCodeFromHash('#something-else'), null);
 });
@@ -149,7 +151,7 @@ test('link: Warzone and DMZ Mastery ride along; older links leave them alone; br
 	assert.deepEqual(decodeLink(code)?.mastery, p.mastery);
 	// all zero → just "M", still read as zeros (not "leave alone")
 	const zero = encodeLink(defaultProgress());
-	assert.ok(zero.endsWith('.M'), zero);
+	assert.ok(zero.endsWith('.M.R'), zero);
 	assert.equal(decodeLink(zero)?.mastery.helio, 0);
 	// a link from before 2026-11-10 (no M part) has no Warzone/DMZ counts at all
 	const old = code.split('.').slice(0, 3 + MASTERY.length).join('.');
@@ -267,4 +269,40 @@ test('link: broken codes are rejected', () => {
 	assert.equal(decodeLink('9.AAAA'), null);
 	assert.equal(decodeLink('1.AA!A'), null);
 	assert.equal(decodeLink('1.AAAA.ZZ'), null);
+});
+
+test('Prestige camos (2026-11-15): the last 3 Pyroclast camos, matching the Extra camos tab', () => {
+	assert.deepEqual(PRESTIGE.map((c) => c.name), ['Pyroclast Terminus', 'Pyroclast Scatter', 'Pyroclast Cascade']);
+	assert.equal(PRESTIGE_MAX, 3);
+	const extraIds = new Set(EXTRA_CAMOS.map((c) => c.id));
+	for (const c of PRESTIGE) assert.ok(extraIds.has(c.extraId), c.extraId);
+});
+
+test('Prestige camos: in saves and backups, cleaned up; older data leaves them alone; reset clears them', () => {
+	const p = defaultProgress();
+	p.prestige = { m4: 3, 'han-86': 1 };
+	const saved = migrate(JSON.parse(JSON.stringify(toStored(p, normalisePrefs({})))));
+	assert.deepEqual(saved?.progress.prestige, { m4: 3, 'han-86': 1 });
+	const backup = migrate(JSON.parse(JSON.stringify(toExport(p))));
+	assert.deepEqual(backup?.progress.prestige, { m4: 3, 'han-86': 1 });
+	assert.equal(migrate({ v: 2, progress: { weapons: {}, mastery: {} } })?.progress.prestige, undefined);
+	assert.deepEqual(normalisePrestige({ m4: 9, oden: 0, 'han-86': '2', 'future-gun': 1, 'Bad Id!': 2, axion: 'x' }), { m4: 3, 'han-86': 2, 'future-gun': 1 });
+	assert.deepEqual(resetProgress('zero').prestige, {});
+	assert.ok(!sameProgress({ ...p, prestige: { m4: 2 } }, p));
+	assert.ok(sameProgress({ ...p, prestige: undefined }, p)); // data without them says nothing about them
+});
+
+test('link: Prestige camos ride along; older links leave them alone; broken ones are rejected', () => {
+	const p = defaultProgress();
+	p.prestige = { m4: 3, 'han-86': 1, 'zlr-talonhawk': 2, 'fss-carbon-edge-1095': 3 };
+	const code = encodeLink(p);
+	assert.ok(code.length < 60, code);
+	assert.deepEqual(decodeLink(code)?.prestige, p.prestige);
+	assert.ok(encodeLink(defaultProgress()).endsWith('.R'));
+	assert.deepEqual(decodeLink(encodeLink(defaultProgress()))?.prestige, {});
+	const old = code.split('.').slice(0, 4 + MASTERY.length).join('.'); // a link from before 2026-11-15
+	assert.equal(decodeLink(old)?.prestige, undefined);
+	assert.equal(decodeLink(`${old}.R!`), null);
+	assert.equal(decodeLink(`${old}.Q`), null);
+	assert.deepEqual(decodeLink(`${code}.Zfuture`)?.prestige, p.prestige);
 });

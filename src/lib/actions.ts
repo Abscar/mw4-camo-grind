@@ -4,7 +4,7 @@
  * the step. Plain taps that do just what they show stay quiet.
  */
 
-import { LADDER } from './data/camos.ts';
+import { LADDER, PRESTIGE } from './data/camos.ts';
 import { WEAPON_BY_ID } from './data/weapons.ts';
 import { t } from './i18n/en.ts';
 import { progress } from './progress.svelte.ts';
@@ -19,6 +19,19 @@ export function tickLadder(weaponId: string, index: number): void {
 	const higher = LADDER.slice(index + 1, r.from).map((c) => c.name);
 	const name = WEAPON_BY_ID.get(weaponId)?.name ?? weaponId;
 	toast.show(t.tickToast.cleared(LADDER[index].name, name, higher.join(t.tickToast.and)), {
+		label: t.toast.undo,
+		run: () => progress.restore(r.before)
+	});
+}
+
+/** A tap on a Prestige box (Pyroclast Terminus / Scatter / Cascade): same rule and Undo as the ladder. */
+export function tickPrestige(weaponId: string, index: number): void {
+	const r = progress.togglePrestige(weaponId, index);
+	const cleared = r.from - r.to - 1;
+	if (cleared <= 0) return;
+	const higher = PRESTIGE.slice(index + 1, r.from).map((c) => c.name);
+	const name = WEAPON_BY_ID.get(weaponId)?.name ?? weaponId;
+	toast.show(t.tickToast.cleared(PRESTIGE[index].name, name, higher.join(t.tickToast.and)), {
 		label: t.toast.undo,
 		run: () => progress.restore(r.before)
 	});

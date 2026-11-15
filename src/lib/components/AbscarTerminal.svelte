@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { growth, GROWTH_STAGES } from '#lib/buddyGrowth.ts';
-	import { DIVERGENCE_REQUIRED, LADDER, MASTERY_TRACKS, MAX_LEVEL } from '#lib/data/camos.ts';
+	import { DIVERGENCE_REQUIRED, LADDER, MASTERY_TRACKS, MAX_LEVEL, PRESTIGE } from '#lib/data/camos.ts';
 	import { SEASON, seasonView, today } from '#lib/data/season.ts';
 	import { CLASSES, WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
@@ -130,6 +130,7 @@
 		print(
 			'out',
 			...LADDER.map((camo, i) => row(camo.name.toUpperCase(), `${progress.ladderCounts[i]}/${WEAPONS.length}`)),
+			...PRESTIGE.map((camo, i) => row(camo.name.replace('Pyroclast', 'PYRO').toUpperCase(), `${progress.prestigeCounts[i]}/${WEAPONS.length}`)),
 			row(
 				'DIVERGENCE',
 				`${Math.min(progress.divergenceCount, DIVERGENCE_REQUIRED)}/${DIVERGENCE_REQUIRED} ${t.terminal.divergenceLeft(DIVERGENCE_REQUIRED - progress.divergenceCount)}`

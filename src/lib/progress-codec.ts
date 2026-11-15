@@ -4,7 +4,7 @@
  * file can be tested directly with Node (`npm test`).
  */
 
-import { ALL_MASTERY, MASTERY, MASTERY_EXTRA, MASTERY_TRACKS, MAX_LEVEL } from './data/camos.ts';
+import { ALL_MASTERY, MASTERY, MASTERY_EXTRA, MASTERY_TRACKS, MAX_LEVEL, PRESTIGE_MAX } from './data/camos.ts';
 import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { isStatusFilter, type StatusFilter } from './filters.ts';
 import { DEFAULT_THEME, isThemeId, type ThemeId } from './themes.ts';
@@ -36,6 +36,13 @@ export interface ProgressData {
 	 * sync documents from an older page) leaves your ticks alone. Unknown ids are kept.
 	 */
 	extraCamos?: Record<string, number>;
+	/**
+	 * Weapon id → Prestige level (data/camos.ts PRESTIGE: 1 = Pyroclast Terminus, 2 = + Scatter,
+	 * 3 = + Cascade; weapons at 0 are left out). Added 2026-11-15 as an optional field like `specials`:
+	 * data without it (older saves, backups, progress links, sync documents from an older page) leaves
+	 * your Prestige ticks alone. Unknown weapon ids are kept.
+	 */
+	prestige?: Record<string, number>;
 }
 
 /** All 3 Special camos ticked. */
@@ -130,12 +137,29 @@ export function defaultProgress(): ProgressData {
  * The two kinds of reset (Backup & other devices → Reset…):
  * - 'zero':   nothing ticked at all (how a new tracker starts);
  * - 'preset': Gold ticked on every launch weapon (how the tracker used to start).
- * Both clear before-Gold ticks, counters, every Mastery count and the Extra camos ticks.
+ * Both clear before-Gold ticks, counters, every Mastery count, the Extra camos ticks and the Prestige camos.
  */
 export function resetProgress(kind: 'preset' | 'zero'): ProgressData {
 	const p = defaultProgress();
 	if (kind === 'preset') for (const id of Object.keys(p.weapons)) p.weapons[id] = presetLevel(id);
-	return { ...p, specials: {}, counts: {}, extraCamos: {} };
+	return { ...p, specials: {}, counts: {}, extraCamos: {}, prestige: {} };
+}
+
+/** A Prestige level we can use (0 … PRESTIGE_MAX). */
+export function clampPrestige(x: unknown): number {
+	const n = typeof x === 'number' ? x : Number(x);
+	if (!Number.isFinite(n)) return 0;
+	return Math.max(0, Math.min(PRESTIGE_MAX, Math.trunc(n)));
+}
+
+/** Keep the weapons with a Prestige camo (level above 0). Unknown weapon ids are kept (newer data). */
+export function normalisePrestige(raw: Record<string, unknown>): Record<string, number> {
+	const out: Record<string, number> = {};
+	for (const [id, value] of Object.entries(raw).slice(0, 500)) {
+		const level = clampPrestige(value);
+		if (level && /^[a-z0-9][a-z0-9.-]{0,80}$/.test(id)) out[id] = level;
+	}
+	return out;
 }
 
 /** Clean Extra camos ticks: id-shaped keys, kept as 1 (unknown ids too: newer data may have them). */
@@ -321,6 +345,7 @@ export function migrate(raw: unknown): Migrated | null {
 		if (isObject(p.specials)) progress.specials = normaliseSpecials(p.specials);
 		if (isObject(p.counts)) progress.counts = normaliseCounts(p.counts);
 		if (isObject(p.extraCamos)) progress.extraCamos = normaliseExtraCamos(p.extraCamos);
+		if (isObject(p.prestige)) progress.prestige = normalisePrestige(p.prestige);
 		const migrated: Migrated = { progress, from: typeof raw.v === 'number' ? raw.v : CURRENT_VERSION };
 		if (isObject(raw.prefs)) migrated.prefs = normalisePrefs(raw.prefs);
 		return addExtras(migrated, raw);
@@ -390,10 +415,13 @@ export function toExport(progress: ProgressData, notes: Notes = {}): ExportV2 {
 }
 
 /**
- * Same ticks and Mastery counts (Special camos, counters, Extra camos ticks and Warzone/DMZ counts
- * too, when both sides have them).
+ * Same ticks and Mastery counts (Special camos, counters, Extra camos ticks, Prestige camos and
+ * Warzone/DMZ counts too, when both sides have them).
  */
 export function sameProgress(a: ProgressData, b: ProgressData): boolean {
+	const pa = a.prestige;
+	const pb = b.prestige;
+	if (pa && pb && !WEAPONS.every((w) => (pa[w.id] ?? 0) === (pb[w.id] ?? 0))) return false;
 	const sa = a.specials;
 	const sb = b.specials;
 	const ca = a.counts;
@@ -413,7 +441,7 @@ export function sameProgress(a: ProgressData, b: ProgressData): boolean {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Progress link: "#p=1.<levels>.<mastery counts>.S<specials>.M<warzone + dmz counts>"
+// Progress link: "#p=1.<levels>.<mastery counts>.S<specials>.M<warzone + dmz counts>.R<prestige>"
 //   levels   = base64url, 3 weapons per character (2 bits each), indexed by weapon `slot`
 //   mastery  = one base-36 number per Multiplayer Mastery camo, in MASTERY order
 //   specials = "S" + base64url, 2 weapons per character (3 bits each), trailing zeros ("A") cut;
@@ -421,11 +449,22 @@ export function sameProgress(a: ProgressData, b: ProgressData): boolean {
 //   extra    = "M" + base-36 counts joined by "-", in MASTERY_EXTRA order (Warzone, then DMZ),
 //              trailing zeros cut ("M" alone = all zero); added 2026-11-10, older links don't
 //              have it and then leave those counts alone. Older pages ignore it.
+//   prestige = "R" + base64url Prestige levels, 3 weapons per character like the levels, trailing
+//              zeros ("A") cut; added 2026-11-15, older links don't have it and then leave the
+//              Prestige ticks alone. Older pages ignore it.
 // e.g. 37 weapons + 3 mastery counts ≈ 30 characters.
 
 const LINK_FORMAT = '1';
 const SPECIALS_TAG = 'S';
 const EXTRA_TAG = 'M';
+const PRESTIGE_TAG = 'R';
+
+/** Levels 0–3 by weapon slot, 3 per base64url character (2 bits each). */
+function packLevels(values: number[]): string {
+	let out = '';
+	for (let i = 0; i < values.length; i += 3) out += B64[((values[i] ?? 0) << 4) | ((values[i + 1] ?? 0) << 2) | (values[i + 2] ?? 0)];
+	return out;
+}
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 export function encodeLink(progress: ProgressData): string {
@@ -444,12 +483,15 @@ export function encodeLink(progress: ProgressData): string {
 	for (let i = 0; i < slots; i += 2) specials += B64[(masks[i] << 3) | (masks[i + 1] ?? 0)];
 	const extra = MASTERY_EXTRA.map((m) => clampCount(progress.mastery[m.id], m.target));
 	while (extra.length > 0 && extra[extra.length - 1] === 0) extra.pop();
+	const prestige = new Array<number>(slots).fill(0);
+	for (const w of WEAPONS) prestige[w.slot] = clampPrestige(progress.prestige?.[w.id]);
 	return [
 		LINK_FORMAT,
 		levels,
 		...mastery,
 		SPECIALS_TAG + specials.replace(/A+$/, ''),
-		EXTRA_TAG + extra.map((n) => n.toString(36)).join('-')
+		EXTRA_TAG + extra.map((n) => n.toString(36)).join('-'),
+		PRESTIGE_TAG + packLevels(prestige).replace(/A+$/, '')
 	].join('.');
 }
 
@@ -491,6 +533,16 @@ export function decodeLink(code: string): ProgressData | null {
 		const counts = extra.length > 1 ? extra.slice(1).split('-') : [];
 		for (const [i, m] of MASTERY_EXTRA.entries()) {
 			out.mastery[m.id] = clampCount(Number.parseInt(counts[i] ?? '0', 36), m.target);
+		}
+	}
+	const prestige = parts[4 + MASTERY.length];
+	if (prestige !== undefined) {
+		if (!/^R[A-Za-z0-9_-]*$/.test(prestige)) return null;
+		out.prestige = {};
+		for (const w of WEAPONS) {
+			const n = Math.max(0, B64.indexOf(prestige[1 + Math.floor(w.slot / 3)] ?? 'A'));
+			const level = clampPrestige((n >> (4 - 2 * (w.slot % 3))) & 3);
+			if (level) out.prestige[w.id] = level;
 		}
 	}
 	return out;

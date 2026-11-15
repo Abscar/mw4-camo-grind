@@ -18,6 +18,8 @@ import {
 	MASTERY,
 	MASTERY_TRACKS,
 	MAX_LEVEL,
+	PRESTIGE,
+	PRESTIGE_MAX,
 	SEASON_1_COUNTS_TOWARD_DIVERGENCE,
 	type MasteryMode,
 	type MasteryStatus
@@ -51,6 +53,11 @@ export interface SquadMember {
 	weapons: Record<string, number>;
 	/** Mastery counts per camo id (only counts above 0). */
 	mastery: Record<string, number>;
+	/**
+	 * Prestige level per weapon, 1–3 (data/camos.ts PRESTIGE: Pyroclast Terminus / Scatter / Cascade;
+	 * only weapons above 0). Added 2026-11-15: a page from before then publishes none.
+	 */
+	prestige?: Record<string, number>;
 	/** When they last ticked a camo (ms), if known. */
 	tickAt?: number;
 	/**
@@ -157,7 +164,7 @@ export const MAX_BETS = 40;
 export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat']);
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat']);
 const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid']);
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -211,6 +218,14 @@ function cleanMember(raw: unknown): SquadMember | null {
 		}
 	}
 	const member: SquadMember = { name, seen: raw.seen, weapons, mastery };
+	if (isObject(raw.prestige)) {
+		const prestige: Record<string, number> = {};
+		for (const [id, level] of Object.entries(raw.prestige)) {
+			const n = count(level, PRESTIGE_MAX);
+			if (n > 0 && WEAPON_IDS.has(id)) prestige[id] = n;
+		}
+		if (Object.keys(prestige).length) member.prestige = prestige;
+	}
 	if (typeof raw.op === 'string' && (SQUAD_OPS as readonly string[]).includes(raw.op)) member.op = raw.op as SquadOp;
 	if (raw.away === true) member.away = true;
 	if (typeof raw.tickAt === 'number' && Number.isFinite(raw.tickAt) && raw.tickAt > 0) member.tickAt = raw.tickAt;
@@ -383,6 +398,7 @@ export function memberEntry(
 	progress: {
 		weapons: Record<string, number>;
 		mastery: Record<string, number>;
+		prestige?: Record<string, number>;
 		lastTickAt: string | null;
 		stamps?: Record<string, number[]>;
 	},
@@ -402,6 +418,7 @@ export function memberEntry(
 		away,
 		weapons: progress.weapons,
 		mastery: progress.mastery,
+		prestige: progress.prestige,
 		tickAt: progress.lastTickAt ? Date.parse(progress.lastTickAt) : undefined,
 		recent: progress.stamps ? recentFrom(progress.stamps, Date.now()) : undefined,
 		readyAt: extra.readyAt ?? undefined,
@@ -505,14 +522,21 @@ export function duelResult(duel: Duel, members: Record<string, Pick<SquadMember,
 // ---------------------------------------------------------------------------------------------
 // What changed for the others since this device last looked (the squad kill feed).
 
-/** Per member: ladder level per weapon and whether Divergence was unlocked, as last seen here. */
-export type SeenSnapshot = Record<string, { w: Record<string, number>; div: boolean }>;
+/**
+ * Per member: ladder level per weapon, Prestige level per weapon (`p`, since 2026-11-15; a snapshot
+ * from before has none, and then their Prestige camos aren't news yet) and whether Divergence was
+ * unlocked, as last seen here.
+ */
+export type SeenSnapshot = Record<string, { w: Record<string, number>; p?: Record<string, number>; div: boolean }>;
 
 export interface SquadGain {
 	member: string;
 	name: string;
 	weaponId: string;
+	/** The weapon's ladder level (for a Prestige gain: its ladder level, for the picture). */
 	level: number;
+	/** A Prestige camo gained (1 = Pyroclast Terminus … 3 = Cascade) instead of a ladder camo. */
+	prestige?: number;
 }
 
 /**
@@ -525,11 +549,16 @@ export function squadGains(before: SeenSnapshot | null, doc: SquadDoc, myId: str
 	const nukes: string[] = [];
 	for (const [id, m] of Object.entries(doc.members)) {
 		const div = divergenceCount(m.weapons) >= DIVERGENCE_REQUIRED;
-		next[id] = { w: { ...m.weapons }, div };
+		next[id] = { w: { ...m.weapons }, p: { ...(m.prestige ?? {}) }, div };
 		const old = before?.[id];
 		if (id === myId || !old) continue;
 		for (const [weaponId, level] of Object.entries(m.weapons)) {
 			if (level > (old.w[weaponId] ?? 0)) gains.push({ member: id, name: m.name, weaponId, level });
+		}
+		if (old.p) {
+			for (const [weaponId, p] of Object.entries(m.prestige ?? {})) {
+				if (p > (old.p[weaponId] ?? 0)) gains.push({ member: id, name: m.name, weaponId, level: m.weapons[weaponId] ?? 0, prestige: p });
+			}
 		}
 		if (div && !old.div) nukes.push(m.name);
 	}
@@ -594,10 +623,13 @@ export interface MemberStats {
 	mastery: Record<MasteryMode, MasteryStatus[]>;
 	/** Mastery camos complete, all modes. */
 	masteryDone: number;
+	/** Weapons with Pyroclast Terminus / Scatter / Cascade (2026-11-15). */
+	prestige: number[];
 }
 
-export function memberStats(m: Pick<SquadMember, 'weapons' | 'mastery'>): MemberStats {
+export function memberStats(m: Pick<SquadMember, 'weapons' | 'mastery' | 'prestige'>): MemberStats {
 	const ladder = LADDER.map((_, i) => WEAPONS.filter((w) => (m.weapons[w.id] ?? 0) > i).length);
+	const prestige = PRESTIGE.map((_, i) => WEAPONS.filter((w) => (m.prestige?.[w.id] ?? 0) > i).length);
 	const divergence = divergenceCount(m.weapons);
 	const mastery = masteryStatuses(m.weapons, m.mastery);
 	return {
@@ -605,7 +637,8 @@ export function memberStats(m: Pick<SquadMember, 'weapons' | 'mastery'>): Member
 		divergence,
 		divergenceLeft: Math.max(0, DIVERGENCE_REQUIRED - divergence),
 		mastery,
-		masteryDone: Object.values(mastery).flat().filter((s) => s === 'complete').length
+		masteryDone: Object.values(mastery).flat().filter((s) => s === 'complete').length,
+		prestige
 	};
 }
 

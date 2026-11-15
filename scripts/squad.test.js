@@ -330,6 +330,30 @@ test('squad kill feed: only the others\' new camos, nothing for someone seen the
 	assert.deepEqual(squadGains(squadGains(second.next, doc3, me).next, doc4, me).nukes, ['Phille']);
 });
 
+test('Prestige camos (2026-11-15): in the entry, read back, counted in the stats, news in the kill feed', () => {
+	const w = WEAPONS.map((x) => x.id);
+	const e = memberEntry({ name: 'Ingman', op: 'ingman' }, { ...progressOf({ [w[0]]: 3 }), prestige: { [w[0]]: 3, [w[1]]: 1, nope: 2, [w[2]]: 0 } }, NOW);
+	assert.deepEqual(e.prestige, { [w[0]]: 3, [w[1]]: 1 });
+	assert.equal(memberEntry({ name: 'Old', op: null }, progressOf(), NOW).prestige, undefined);
+	const id = makeMemberId();
+	const doc = withMember(emptySquad(), id, e);
+	assert.deepEqual(fromSquadWire(JSON.parse(JSON.stringify(toSquadWire(doc)))), doc);
+	const wire = toSquadWire(doc);
+	wire.members[id].prestige = { [w[0]]: 9, [w[3]]: 'x' };
+	assert.deepEqual(fromSquadWire(wire).members[id].prestige, { [w[0]]: 3 });
+	assert.deepEqual(memberStats(e).prestige, [2, 1, 1]);
+	assert.deepEqual(memberStats(entry('X')).prestige, [0, 0, 0]);
+	// kill feed: a new Prestige camo is news; a snapshot from before 2026-11-15 (no `p`) brings none
+	const me = makeMemberId();
+	const doc1 = withMember(withMember(emptySquad(), me, entry('Me')), id, e);
+	const first = squadGains(null, doc1, me);
+	const later = { ...e, prestige: { ...e.prestige, [w[1]]: 2 } };
+	const doc2 = withMember(doc1, id, later);
+	assert.deepEqual(squadGains(first.next, doc2, me).gains.map((g) => [g.weaponId, g.prestige]), [[w[1], 2]]);
+	const oldSnapshot = { ...first.next, [id]: { w: first.next[id].w, div: false } };
+	assert.deepEqual(squadGains(oldSnapshot, doc2, me).gains, []);
+});
+
 test('the radio: its own code, text only, newest 100, 🔥 on and off, unread count', () => {
 	const code = makeSyncCode();
 	assert.ok(isSyncCode(radioCode(code)));
