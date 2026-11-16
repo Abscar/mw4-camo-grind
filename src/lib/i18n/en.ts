@@ -203,6 +203,9 @@ export const en = {
 		masteryTodo: 'not started',
 		/** sticker next to the squad member who is furthest behind on the Mastery camos */
 		slacker: 'Slacker',
+		/** The joke stamp over a squad member (squad-bans.ts, 2026-11-16). */
+		banned: 'Banned',
+		bannedLabel: (name: string, reason: string) => `${name} is banned (a joke): ${reason}`,
 		/** label on the frame round the operator tags */
 		squad: 'Squad'
 	},
@@ -954,6 +957,19 @@ export const en = {
 				if (second !== null) parts.push(mode === 'mp' ? `W/L ${second.toFixed(2)}` : `${second.toFixed(1)}% wins`);
 				return `updated ${mode === 'mp' ? 'MP' : 'WZ'} stats: ${parts.join(' · ')} 📊`;
 			}
+		},
+		/** The joke ban (squad-bans.ts, 2026-11-16): only Abscar sees the button. */
+		ban: {
+			lift: (name: string) => `Lift ${name}’s ban`,
+			again: (name: string) => `Ban ${name} again`,
+			hint: (name: string, reason: string) => `Only you see this. ${name} wears a BANNED stamp in the header (${reason}); lifting it takes it off for the whole squad.`,
+			liftedHint: (name: string) => `${name}’s ban is lifted for the whole squad.`,
+			tag: 'Banned',
+			lifted: (name: string) => `${name}’s ban is lifted.`,
+			banned: (name: string) => `${name} is banned again.`,
+			failed: 'Couldn’t reach the squad. Try again in a moment.',
+			liftedEvent: (name: string) => `lifted ${name}’s ban ✅`,
+			bannedEvent: (name: string) => `banned ${name} 🚫`
 		},
 		/** The Ranked board (2026-11-16): everyone types in their SR, see who's climbing. */
 		ranked: {

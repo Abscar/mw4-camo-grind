@@ -26,6 +26,7 @@ import {
 } from './data/camos.ts';
 import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
+import { cleanBans, type Bans } from './squad-bans.ts';
 import { cleanClasses, type ClassList } from './squad-classes.ts';
 import { cleanCombat, type CombatLog } from './squad-combat.ts';
 import { cleanRanked, type RankedLog } from './squad-ranked.ts';
@@ -144,6 +145,8 @@ export interface SquadDoc {
 	settled?: Settled[];
 	/** Duel ids whose real-burger IOU was paid. */
 	paid?: string[];
+	/** Joke bans lifted or put back by the owner (squad-bans.ts; 2026-11-16). */
+	bans?: Bans;
 	/** Document fields a newer page wrote that this one doesn't know: kept as they are. */
 	more?: Record<string, unknown>;
 }
@@ -171,7 +174,7 @@ export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
 const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes']);
-const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans']);
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The keys of `raw` this page doesn't know (so a newer page's additions survive an older page's write). */
@@ -380,6 +383,8 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 	if (settled.length) doc.settled = settled;
 	const paid = cleanPaid(raw.paid);
 	if (paid.length) doc.paid = paid;
+	const bans = cleanBans(raw.bans);
+	if (bans) doc.bans = bans;
 	const more = unknownKeys(raw, DOC_KEYS);
 	if (more) doc.more = more;
 	return doc;
@@ -395,6 +400,7 @@ export function toSquadWire(doc: SquadDoc): SquadWire {
 	if (doc.bets?.length) wire.bets = doc.bets;
 	if (doc.settled?.length) wire.settled = doc.settled;
 	if (doc.paid?.length) wire.paid = doc.paid;
+	if (doc.bans) wire.bans = doc.bans;
 	return wire;
 }
 

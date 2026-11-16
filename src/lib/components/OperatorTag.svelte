@@ -34,6 +34,7 @@
 	import { agoParts, headerStatuses, weeklyMvps, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
 	import { dayKey, playedOn } from '#lib/squad-fun.ts';
 	import { combatView, fmtRatio } from '#lib/squad-combat.ts';
+	import { isBanned, JOKE_BANS } from '#lib/squad-bans.ts';
 
 	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
 	const mvps = $derived(squad.on ? weeklyMvps(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])), squad.now) : []);
@@ -189,6 +190,17 @@
 	</div>
 {/snippet}
 
+<!-- a joke "BANNED" stamp over a member's emblem + name (squad-bans.ts; 2026-11-16, Ingman typed in a wrong
+     K/D). On from the code; Abscar lifts it for the whole squad in the Squad tab's Combat record. -->
+{#snippet stamp(op: SquadOp, name: string)}
+	{#if isBanned(op, squad.doc?.bans ?? undefined)}
+		<span class="op-stamp font-head" role="img" aria-label={t.operator.bannedLabel(name, JOKE_BANS[op]?.reason ?? '')}>
+			<span class="op-stamp-word" aria-hidden="true">{t.operator.banned}</span>
+			{#if JOKE_BANS[op]}<span class="op-stamp-why" aria-hidden="true">{JOKE_BANS[op].reason}</span>{/if}
+		</span>
+	{/if}
+{/snippet}
+
 {#snippet mastery(who: string, statuses: Status[], isSlacker = false, motto: string | readonly string[] = '', tone = 'purple', op: SquadOp = 'abscar')}
 	<div class="sq-boxes">
 	<ul class="squad-mastery font-hud" aria-label={t.operator.masteryOf(who)}>
@@ -232,6 +244,7 @@
 				<AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" />
 				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
+			{@render stamp('abscar', t.operator.callsign)}
 			{@render mastery(t.operator.callsign, statuses.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss', 'abscar')}
 		</div>
 
@@ -240,6 +253,7 @@
 				<PhillestarEmblem />
 				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
+			{@render stamp('phillestar', t.operator.mate)}
 			{@render mastery(t.operator.mate, statuses.phillestar, slacker === 'phillestar', t.operator.mateMotto, 'purple', 'phillestar')}
 		</div>
 
@@ -248,6 +262,7 @@
 				<LarsAkeEmblem />
 				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
+			{@render stamp('lars', t.operator.lars)}
 			{@render mastery(t.operator.lars, statuses.lars, slacker === 'lars', t.operator.larsMotto, 'lime', 'lars')}
 		</div>
 
@@ -256,6 +271,7 @@
 				<DaJeevenEmblem />
 				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
+			{@render stamp('jeeven', t.operator.jeeven)}
 			{@render mastery(t.operator.jeeven, statuses.jeeven, slacker === 'jeeven', '', 'purple', 'jeeven')}
 			<!-- his Black Ops 6 + 7 record (the user, 2026-11-13) and the gold "Certified grinder" sticker -->
 			<div class="sq-record-wrap">
@@ -278,6 +294,7 @@
 				<IngmanEmblem />
 				{@render callsign(t.operator.ingman, 'ingman')}
 			</div>
+			{@render stamp('ingman', t.operator.ingman)}
 			{@render mastery(t.operator.ingman, statuses.ingman, slacker === 'ingman', t.operator.ingmanMotto, 'wizard', 'ingman')}
 		</div>
 	</div>
@@ -563,6 +580,78 @@
 			0 2px 5px rgb(0 0 0 / 0.55),
 			0 0 10px rgb(255 40 40 / 0.45);
 		pointer-events: none;
+	}
+	/* the joke "BANNED" stamp: a red rubber stamp slammed across the emblem and name, worn ink (a noise
+	   mask punches small holes in it), the reason small underneath */
+	.op-stamp {
+		position: absolute;
+		z-index: 3;
+		top: 40px;
+		left: 50%;
+		display: grid;
+		justify-items: center;
+		padding: 3px 14px 5px;
+		border: 5px double #ff2a2a;
+		border-radius: 9px;
+		background: rgb(26 2 4 / 0.82);
+		color: #ff3030;
+		line-height: 1;
+		text-transform: uppercase;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+		box-shadow:
+			0 0 0 2px rgb(255 42 42 / 0.28),
+			0 0 18px rgb(255 30 30 / 0.45),
+			inset 0 0 14px rgb(255 42 42 / 0.3);
+		transform: translate(-50%, -50%) rotate(-13deg);
+		-webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='70'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.5 1.72'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+		mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='70'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.5 1.72'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+		pointer-events: none;
+		animation: op-stamp-in 0.45s cubic-bezier(0.2, 1.5, 0.45, 1) both;
+	}
+	.op-stamp-word {
+		font-size: 36px;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+	}
+	.op-stamp-why {
+		margin-top: 3px;
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.26em;
+	}
+	/* beside other members (two by two / three in a row) the columns are narrower */
+	@container squad (min-width: 470px) {
+		.op-stamp-word {
+			font-size: 30px;
+		}
+	}
+	@container squad (min-width: 700px) {
+		/* the tags are 64 px tall here */
+		.op-stamp {
+			top: 32px;
+			padding-inline: 10px;
+		}
+		.op-stamp-word {
+			font-size: 26px;
+		}
+		.op-stamp-why {
+			font-size: 10px;
+		}
+	}
+	@keyframes op-stamp-in {
+		from {
+			opacity: 0;
+			transform: translate(-50%, -50%) rotate(-4deg) scale(2.3);
+		}
+		to {
+			opacity: 1;
+			transform: translate(-50%, -50%) rotate(-13deg) scale(1);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.op-stamp {
+			animation: none;
+		}
 	}
 	.op-member > .op-tag {
 		min-height: 80px;

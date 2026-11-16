@@ -25,6 +25,7 @@
 		type CombatSort
 	} from '#lib/squad-combat.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { isBanned, BAN_OWNER, JOKE_BANS } from '#lib/squad-bans.ts';
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
@@ -101,6 +102,24 @@
 	const empty = $derived(Object.keys(values).length === 0);
 	const winsOver = $derived(formMode === 'wz' && num('wins') !== undefined && num('matches') !== undefined && num('wins')! > num('matches')!);
 
+	// ----- the joke ban -----
+
+	const b = t.squad.ban;
+	const OP_NAMES: Record<string, string> = {
+		abscar: t.operator.callsign,
+		phillestar: t.operator.mate,
+		lars: t.operator.lars,
+		jeeven: t.operator.jeeven,
+		ingman: t.operator.ingman
+	};
+	let banBusy = $state(false);
+	async function toggleBan(op: string, on: boolean, name: string) {
+		banBusy = true;
+		const ok = await squad.setBan(op, on, name);
+		banBusy = false;
+		toast.show(ok ? (on ? b.banned(name) : b.lifted(name)) : b.failed);
+	}
+
 	async function save() {
 		tried = true;
 		if (anyBad || empty || winsOver) return;
@@ -119,6 +138,20 @@
 		<button type="button" class="btn btn-sm btn-primary" onclick={openForm}>{c.update}</button>
 	</div>
 	<p class="mt-1 max-w-3xl text-xs text-muted">{c.note}</p>
+
+	<!-- the joke ban (squad-bans.ts): only Abscar sees this and can lift or put back the stamp -->
+	{#if squad.me?.op === BAN_OWNER}
+		{#each Object.entries(JOKE_BANS) as [op, joke] (op)}
+			{@const name = OP_NAMES[op] ?? op}
+			{@const on = isBanned(op, squad.doc?.bans)}
+			<div class="sq-banbox mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg px-3 py-2" data-on={on}>
+				<p class="min-w-0 flex-1 text-xs text-fg">{on ? b.hint(name, joke.reason) : b.liftedHint(name)}</p>
+				<button type="button" class="btn btn-sm" class:btn-primary={on} disabled={banBusy} onclick={() => void toggleBan(op, !on, name)}>
+					{on ? b.lift(name) : b.again(name)}
+				</button>
+			</div>
+		{/each}
+	{/if}
 
 	<div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
 		<div class="flex flex-wrap gap-1.5" role="group" aria-label={c.modeLabel}>
@@ -150,6 +183,7 @@
 				<p class="sq-cname flex min-w-0 items-center gap-1.5" aria-hidden="true">
 					<b class="truncate font-head text-[15px] font-bold tracking-wide" title={e.member.name}>{e.member.name}</b>
 					{#if e.mine}<span class="sq-cyou font-head">{t.squad.you}</span>{/if}
+					{#if e.member.op && isBanned(e.member.op, squad.doc?.bans)}<span class="sq-cbanned font-head">{b.tag}</span>{/if}
 				</p>
 				<div class="sq-cinfo min-w-0" aria-hidden="true">
 					{#if view}
@@ -304,6 +338,27 @@
 	}
 	.sq-crow.mine {
 		border-color: var(--t-accent);
+	}
+	/* the joke ban: a red tag on the banned member's row, and Abscar's lift / ban-again box */
+	.sq-cbanned {
+		flex: none;
+		padding: 0 6px;
+		border: 2px double #ff2a2a;
+		border-radius: 4px;
+		color: #ff3030;
+		font-size: 10px;
+		font-weight: 900;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		transform: rotate(-4deg);
+	}
+	.sq-banbox {
+		border: 1px dashed #ff2a2a;
+		background: rgb(255 42 42 / 0.1);
+	}
+	.sq-banbox[data-on='false'] {
+		border-color: var(--t-line);
+		background: transparent;
 	}
 	.sq-crow[data-empty='true'] {
 		opacity: 0.7;

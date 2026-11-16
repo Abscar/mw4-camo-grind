@@ -72,6 +72,7 @@ import { addPlayed, dayKey, mergePlayed, settleDuel, spin, withBet, withoutBet, 
 import { cleanCombat, combatView, mergeCombat, withSnap, type CombatLog, type CombatMode, type CombatSnap } from './squad-combat.ts';
 import { cleanRanked, fmtSrDelta, mergeRanked, rankedView, withRanked, type RankedLog } from './squad-ranked.ts';
 import { cleanClasses, mergeClasses, withClass, withoutClass, type ClassList, type SquadClass } from './squad-classes.ts';
+import { withBan, BAN_OWNER } from './squad-bans.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
@@ -525,6 +526,19 @@ class Squad {
 			const name = this.doc?.members[other]?.name ?? '';
 			await this.#event(t.squad.duel.event(name, t.squad.levelLong[goal], WEAPON_BY_ID.get(weapon)?.name ?? weapon));
 		}
+		return outcome === 'ok';
+	}
+
+	/**
+	 * Lift (on = false) or put back (on = true) a joke ban for the whole squad (squad-bans.ts). Only the
+	 * owner's operator may: the button shows only for them, and this refuses anyone else.
+	 */
+	async setBan(op: string, on: boolean, name: string): Promise<boolean> {
+		if (this.me?.op !== BAN_OWNER) return false;
+		const at = Math.round(this.serverNow());
+		const outcome = await this.#squad.write((doc) => ({ ...doc, bans: withBan(doc.bans, op, on, at) }));
+		this.#done(outcome);
+		if (outcome === 'ok') await this.#event(on ? t.squad.ban.bannedEvent(name) : t.squad.ban.liftedEvent(name));
 		return outcome === 'ok';
 	}
 
