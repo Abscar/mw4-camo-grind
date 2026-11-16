@@ -10,6 +10,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { casinoTotal, daysToNextRate, dailyRate, dailyTotal } from '#lib/squad-casino.ts';
+	import { burgerBank, houseOf } from '#lib/squad-fun.ts';
 	import CasinoBlackjack from './CasinoBlackjack.svelte';
 	import CasinoRoulette from './CasinoRoulette.svelte';
 	import CasinoSlots from './CasinoSlots.svelte';
@@ -49,6 +50,12 @@
 	const shown = $derived(Math.max(0, balance - hidden));
 	const days = $derived(squad.online?.n ?? 0);
 
+	/** The house (Abscar) and what the others have lost to it so far. */
+	const members = $derived(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])));
+	const houseId = $derived(houseOf(members));
+	const houseEntry = $derived(houseId ? (squad.entries.find((e) => e.id === houseId) ?? null) : null);
+	const houseTake = $derived(houseId && squad.doc ? (burgerBank(squad.doc, members)[houseId]?.house ?? 0) : 0);
+
 	const board = $derived(
 		squad.entries
 			.map((e) => {
@@ -86,6 +93,14 @@
 					{days ? c.bonus.line(days, dailyRate(days), daysToNextRate(days), dailyRate(days + daysToNextRate(days))) : c.bonus.none}
 				</p>
 				{#if days}<p class="text-[11px] text-muted">{c.bonus.total(dailyTotal(days))}</p>{/if}
+			</div>
+
+			<!-- the house: everything the others lose goes to Abscar (squad-casino.ts HOUSE_OP) -->
+			<div class="casino-house grid gap-0.5 rounded-lg px-3 py-2">
+				<p class="font-head text-[11px] font-bold tracking-[0.14em] uppercase">🏦 {c.house.heading}</p>
+				<p class="text-[13px] text-fg">
+					{#if !houseEntry}{c.house.none}{:else if houseEntry.mine}{c.house.mine(houseTake)}{:else}{c.house.line(houseEntry.member.name, houseTake)}{/if}
+				</p>
 			</div>
 
 			<!-- which game -->
@@ -160,6 +175,10 @@
 	.casino-bonus {
 		border: 1px dashed #ffc928;
 		background: rgb(255 201 40 / 0.1);
+	}
+	.casino-house {
+		border: 1px solid rgb(255 201 40 / 0.6);
+		background: rgb(255 201 40 / 0.06);
 	}
 	.casino-row.mine {
 		border-color: var(--t-accent);

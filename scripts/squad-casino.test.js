@@ -30,7 +30,7 @@ import {
 	WHEEL
 } from '../src/lib/squad-casino.ts';
 import { fromSquadWire, memberEntry, toSquadWire } from '../src/lib/squad-codec.ts';
-import { burgerBank, BURGERS } from '../src/lib/squad-fun.ts';
+import { burgerBank, houseOf, BURGERS } from '../src/lib/squad-fun.ts';
 
 const T = Date.UTC(2026, 10, 16, 18);
 const seeded = (seed) => () => {
@@ -82,9 +82,9 @@ test('casino tally: per device, merged, capped', () => {
 	let l = withGame(undefined, 'pcdev1', -10, T);
 	l = withGame(l, 'pcdev1', 35, T + 1);
 	l = withGame(l, 'phone22', -5, T + 2);
-	assert.deepEqual(casinoTotal(l), { net: 20, games: 3 });
+	assert.deepEqual(casinoTotal(l), { net: 20, games: 3, lost: 15 });
 	const other = { pcdev1: { net: 100, games: 9, at: T + 50 } };
-	assert.deepEqual(casinoTotal(mergeCasino(l, other)), { net: 95, games: 10 }, 'the later tally of a device wins');
+	assert.deepEqual(casinoTotal(mergeCasino(l, other)), { net: 95, games: 10, lost: 5 }, 'the later tally of a device wins');
 	let many = {};
 	for (let i = 0; i < CASINO_DEVICES + 3; i++) many = withGame(many, `dev${i}xx`, 1, T + i);
 	assert.equal(Object.keys(many).length, CASINO_DEVICES);
@@ -102,6 +102,38 @@ test('the bank counts the daily bonus and the casino', () => {
 	assert.equal(bank.aaaaaaaa1111.daily, 175);
 	assert.equal(bank.aaaaaaaa1111.balance, BURGERS.start + 175 + 40);
 	assert.equal(bank.bbbbbbbb2222.balance, 0, 'never below zero on show');
+});
+
+test('the house: everything the others lose goes to Abscar (but not Abscar’s own losses)', () => {
+	// lost burgers are counted per game, not just what's below zero
+	let l = withGame(undefined, 'pcdev1', -10, T);
+	l = withGame(l, 'pcdev1', 35, T + 1);
+	l = withGame(l, 'pcdev1', -5, T + 2);
+	assert.deepEqual(casinoTotal(l), { net: 20, games: 3, lost: 15 });
+	// a tally from before `lost` existed counts what's below zero of its net
+	assert.equal(casinoTotal({ olddev: { net: -40, games: 3, at: T } }).lost, 40);
+	assert.equal(casinoTotal({ olddev: { net: 25, games: 3, at: T } }).lost, 0);
+	assert.equal(withGame({ olddev: { net: -40, games: 3, at: T } }, 'olddev', -10, T + 1).olddev.lost, 50);
+	assert.deepEqual(cleanCasino({ d1d1: { net: 5, games: 2, at: T, lost: 20 } }), { d1d1: { net: 5, games: 2, at: T, lost: 20 } });
+
+	const members = {
+		aaaaaaaa1111: { name: 'Abscar', op: 'abscar', weapons: {}, mastery: {}, casino: { pc: { net: -30, games: 2, at: T, lost: 30 } } },
+		bbbbbbbb2222: { name: 'Ingman', op: 'ingman', weapons: {}, mastery: {}, casino: { ph: { net: -100, games: 6, at: T, lost: 160 } } },
+		cccccccc3333: { name: 'Lars', op: 'lars', weapons: {}, mastery: {}, casino: { ph: { net: 40, games: 2, at: T, lost: 10 } } }
+	};
+	assert.equal(houseOf(members), 'aaaaaaaa1111');
+	// a lost bet on the race counts too
+	const doc = { members: {}, bets: [{ id: 'bet1', by: 'cccccccc3333', kind: 'duel', ref: 'gone-duel', pick: 'bbbbbbbb2222', amount: 7, at: T }] };
+	const withSettled = { ...doc, settled: [{ id: 'gone-duel', w: 'aaaaaaaa1111', l: 'bbbbbbbb2222' }] };
+	const bank = burgerBank(withSettled, members);
+	assert.equal(bank.cccccccc3333.lost, 7, 'Lars lost his bet');
+	assert.equal(bank.aaaaaaaa1111.house, 160 + 10 + 7, "Ingman's and Lars's casino losses + Lars's lost bet");
+	assert.equal(bank.aaaaaaaa1111.balance, BURGERS.start - 30 + 177);
+	assert.equal(bank.bbbbbbbb2222.house, 0);
+	// nobody is Abscar: lost burgers just go
+	const noHouse = { bbbbbbbb2222: members.bbbbbbbb2222 };
+	assert.equal(houseOf(noHouse), null);
+	assert.equal(burgerBank({ members: {} }, noHouse).bbbbbbbb2222.house, 0);
 });
 
 test('roulette: wheel, colours, payouts', () => {

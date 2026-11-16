@@ -753,6 +753,14 @@ export const en = {
 			seeded: (days: number) => `Welcome bonus: ${days} day${days === 1 ? '' : 's'} online already counted 🍔`,
 			total: (n: number) => `${n.toLocaleString('en-US')} 🍔 from daily bonuses so far`
 		},
+		/** The house (2026-11-16, the user: "make all losses go to Abscar's burger account"). */
+		house: {
+			heading: 'The house',
+			line: (name: string, n: number) =>
+				`${name} is the house: every burger anyone else loses here or on bets goes to ${name}’s account. ${n.toLocaleString('en-US')} 🍔 so far.`,
+			mine: (n: number) => `You’re the house: every burger the others lose here or on bets goes to your account. ${n.toLocaleString('en-US')} 🍔 so far.`,
+			none: 'Abscar is the house: once Abscar is in the squad, every burger the others lose here or on bets goes to Abscar’s account.'
+		},
 		board: {
 			heading: 'Casino leaderboard',
 			none: 'Nobody has played yet.',
@@ -1182,7 +1190,8 @@ export const en = {
 			howLabel: 'How burgers work',
 			betsHeading: 'Bets',
 			how: (s: { start: number; gold: number; platinum: number; harmonicBreak: number; mastery: number; divergence: number }) =>
-				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (25, going up by 25 every 5 days online), and what you win or lose in BurgiCasino counts too.`,
+				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (25, going up by 25 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account.`,
+			houseTag: (n: number) => `house +${n.toLocaleString('en-US')}`,
 			richest: 'Richest',
 			burgers: (n: number) => `${n.toLocaleString('en-US')} burger${n === 1 ? '' : 's'}`,
 			onBets: (n: number) => `${n} on open bets`,

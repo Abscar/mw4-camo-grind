@@ -33,7 +33,7 @@ import {
 } from './squad-codec.ts';
 import { startOfDay, startOfWeek } from './stats.ts';
 import { isReleased } from './steps.ts';
-import { casinoTotal, dailyTotal } from './squad-casino.ts';
+import { casinoTotal, dailyTotal, HOUSE_OP } from './squad-casino.ts';
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -226,8 +226,13 @@ export function burgersEarned(m: Pick<SquadMember, 'weapons' | 'mastery'>): numb
 }
 
 type Members = Record<string, Pick<SquadMember, 'weapons' | 'recent' | 'name'>>;
-/** What the bank needs of a member: the grind, the daily bonus and the casino (2026-11-16). */
-type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'>;
+/** What the bank needs of a member: the grind, the daily bonus, the casino and who's the house (2026-11-16). */
+type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'> & Partial<Pick<SquadMember, 'op'>>;
+
+/** The member who is the house (squad-casino.ts HOUSE_OP), the lowest id if two picked that operator; null without one. */
+export function houseOf(members: Record<string, Partial<Pick<SquadMember, 'op'>>>): string | null {
+	return Object.keys(members).filter((id) => members[id].op === HOUSE_OP).sort()[0] ?? null;
+}
 
 /** A duel's result, still on the list or taken off it: null while on, 'gone' if nobody knows any more. */
 export function duelOutcome(id: string, doc: SquadDoc, members: Members): { winner: string | null; loser: string | null; draw: boolean } | null | 'gone' {
@@ -278,6 +283,8 @@ export interface BankRow {
 	daily: number;
 	/** BurgiCasino: won minus lost (can be below zero). */
 	casino: number;
+	/** The house only: what everyone else lost in BurgiCasino and on bets. */
+	house: number;
 	won: number;
 	lost: number;
 	/** Burgers on open bets. */
@@ -286,13 +293,13 @@ export interface BankRow {
 }
 
 /**
- * Everyone's burgers: earned + daily bonus + casino + bets won − bets lost − burgers on open bets.
- * Never below zero on show.
+ * Everyone's burgers: earned + daily bonus + casino + bets won − bets lost − burgers on open bets, and
+ * for the house (Abscar) everything the others lost in the casino and on bets. Never below zero on show.
  */
 export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>): Record<string, BankRow> {
 	const out: Record<string, BankRow> = {};
 	for (const [id, m] of Object.entries(members)) {
-		out[id] = { earned: burgersEarned(m), daily: dailyTotal(m.online?.n ?? 0), casino: casinoTotal(m.casino).net, won: 0, lost: 0, held: 0, balance: 0 };
+		out[id] = { earned: burgersEarned(m), daily: dailyTotal(m.online?.n ?? 0), casino: casinoTotal(m.casino).net, house: 0, won: 0, lost: 0, held: 0, balance: 0 };
 	}
 	for (const bet of doc.bets ?? []) {
 		const row = out[bet.by];
@@ -302,7 +309,11 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>): 
 		else if (state === 'lost') row.lost += bet.amount;
 		else if (state === 'open') row.held += bet.amount;
 	}
-	for (const row of Object.values(out)) row.balance = Math.max(0, row.earned + row.daily + row.casino + row.won - row.lost - row.held);
+	const house = houseOf(members);
+	if (house && out[house]) {
+		for (const [id, m] of Object.entries(members)) if (id !== house) out[house].house += casinoTotal(m.casino).lost + out[id].lost;
+	}
+	for (const row of Object.values(out)) row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.won - row.lost - row.held);
 	return out;
 }
 

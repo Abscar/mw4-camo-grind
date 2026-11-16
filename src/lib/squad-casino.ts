@@ -82,7 +82,19 @@ export interface CasinoTally {
 	net: number;
 	games: number;
 	at: number;
+	/**
+	 * All the burgers lost in lost games (they go to the house, HOUSE_OP). Missing on tallies from
+	 * before 2026-11-16 evening: then what's below zero of `net` counts.
+	 */
+	lost?: number;
 }
+
+/**
+ * The house: everything other members lose in BurgiCasino or on bets goes to the member who is this
+ * header operator (the user's ask 2026-11-16: "make all losses go to Abscar's burger account").
+ * Their own losses don't come back to them.
+ */
+export const HOUSE_OP = 'abscar';
 /** Device id → that device's tally. */
 export type CasinoLedger = Record<string, CasinoTally>;
 /** Devices kept per member (the newest). */
@@ -106,7 +118,9 @@ export function cleanCasino(raw: unknown): CasinoLedger | undefined {
 	for (const [dev, t] of Object.entries(raw)) {
 		if (!DEVICE_ID.test(dev) || !isObject(t) || !Number.isInteger(t.net) || !Number.isInteger(t.games) || !isTime(t.at)) continue;
 		if ((t.games as number) < 0 || Math.abs(t.net as number) > NET_MAX) continue;
-		out[dev] = { net: t.net as number, games: t.games as number, at: Math.round(t.at) };
+		const tally: CasinoTally = { net: t.net as number, games: t.games as number, at: Math.round(t.at) };
+		if (Number.isInteger(t.lost) && (t.lost as number) >= 0 && (t.lost as number) <= NET_MAX) tally.lost = t.lost as number;
+		out[dev] = tally;
 	}
 	return Object.keys(out).length ? pruneLedger(out) : undefined;
 }
@@ -118,21 +132,25 @@ export function mergeCasino(a: CasinoLedger | undefined, b: CasinoLedger | undef
 	return pruneLedger(out);
 }
 
-/** All your devices together. */
-export function casinoTotal(l: CasinoLedger | undefined): { net: number; games: number } {
+/** All your devices together: net result, games, and the burgers lost in lost games. */
+export function casinoTotal(l: CasinoLedger | undefined): { net: number; games: number; lost: number } {
 	let net = 0;
 	let games = 0;
+	let lost = 0;
 	for (const t of Object.values(l ?? {})) {
 		net += t.net;
 		games += t.games;
+		lost += t.lost ?? Math.max(0, -t.net);
 	}
-	return { net, games };
+	return { net, games, lost };
 }
 
-/** One finished game on this device. */
+/** One finished game on this device (a lost one adds to `lost`). */
 export function withGame(l: CasinoLedger | undefined, device: string, net: number, at: number): CasinoLedger {
 	const t = l?.[device] ?? { net: 0, games: 0, at: 0 };
-	return pruneLedger({ ...l, [device]: { net: t.net + Math.round(net), games: t.games + 1, at: Math.max(at, t.at + 1) } });
+	const n = Math.round(net);
+	const lost = (t.lost ?? Math.max(0, -t.net)) + Math.max(0, -n);
+	return pruneLedger({ ...l, [device]: { net: t.net + n, games: t.games + 1, at: Math.max(at, t.at + 1), lost } });
 }
 
 /** A random whole number 0 … n−1 from a [0, 1) source. */
