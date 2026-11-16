@@ -725,9 +725,13 @@ export const en = {
 	pageTabs: {
 		label: 'Pages',
 		grind: 'Camo grind',
-		cosmetics: 'Cosmetics',
+		/** soft hyphens: with six tabs a phone breaks it as "Cosmet-/ics", not anywhere */
+		cosmetics: 'Cos­met­ics',
 		extras: 'Extra camos',
 		squad: 'Squad',
+		/** BurgiShop's own tab (2026-11-16, the user: "BurgiShop can have a tab of its own instead of being among
+		    the casino games"); a soft hyphen like BurgiCasino's */
+		shop: 'Burgi­Shop',
 		/** a soft hyphen so it can break on a phone ("Burgi-/Casino") */
 		casino: 'Burgi­Casino'
 	},
@@ -740,7 +744,7 @@ export const en = {
 	},
 	/** BurgiBank loans (loans.ts; 2026-11-16). */
 	loans: {
-		heading: 'BurgiBank',
+		heading: 'Loans',
 		intro: (rate: number, days: number) =>
 			`Borrow burgers from the bank (not from Abscar). Pay back within ${days} days with ${rate}% interest; the interest goes to Abscar. If you don’t, the bank takes it back by itself on the due date.`,
 		take: (n: number) => `Borrow ${n.toLocaleString('en-US')}`,
@@ -791,7 +795,10 @@ export const en = {
 	/** BurgiShop (2026-11-16): cosmetics bought with burgers and worn on your header operator (shop.ts). */
 	shop: {
 		heading: 'BurgiShop',
-		intro: 'Buy cosmetics with your burgers and wear them on your operator at the top of the page: the whole squad sees them. What you buy is yours to keep; tap an item you own to wear it or take it off.',
+		/** the shop's own page tab: the line under the heading, and what it says outside a squad */
+		sub: 'Cosmetics and pranks for your operator',
+		notIn: 'BurgiShop sells with the squad’s burger bank. Join or create a squad in the Squad tab first.',
+		intro:'Buy cosmetics with your burgers and wear them on your operator at the top of the page: the whole squad sees them. What you buy is yours to keep; tap an item you own to wear it or take it off.',
 		noOp: 'You haven’t picked an operator from the header (Squad tab → Edit), so your look only shows here and on your squad card.',
 		preview: 'Your operator',
 		tryOn: 'Trying on',
@@ -815,13 +822,18 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune · Roulette · Blackjack',
+		sub: 'Abscar’s Fortune · Roulette · Blackjack · BurgiBank',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', roulette: 'Roulette', blackjack: 'Blackjack', shop: '🛍️ BurgiShop' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank' },
 		gamesLabel: 'Game',
+		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
+		bank: {
+			line: 'Borrow burgers here, see what the house has taken, and (for Abscar) hand out or take back burgers.',
+			balance: (n: number) => `Your burgers: ${n.toLocaleString('en-US')} 🍔`
+		},
 		how: 'How it works',
 		burgers: (n: number) => `${n.toLocaleString('en-US')} 🍔`,
 		broke: 'Not enough burgers for that bet. Come back tomorrow for your daily bonus, or tick some camos.',

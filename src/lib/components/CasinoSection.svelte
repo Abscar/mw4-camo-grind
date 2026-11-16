@@ -5,6 +5,11 @@
 	the daily bonus (squad-casino.ts: 25 a day, +25 every 5 days online), a switch between Abscar's
 	Fortune (CasinoSlots), roulette and blackjack, and a leaderboard of what everyone won or lost.
 	Pretend burgers, never money. Outside a squad it points to the Squad tab.
+	The game tabs are big picture tiles (2026-11-16, the user's ask: "tidy up the tabs, e.g. BurgiBank can
+	have a big bank, so everything shows what it is beyond text"; CasinoTabArt.svelte), and BurgiBank is a
+	tab of its own: loans, the house and (Abscar only) the admin menu, under a big bank. BurgiShop moved
+	out to a page tab of its own the same evening (ShopPage.svelte; the user: "BurgiShop can have a tab of
+	its own instead of being among the casino games"); a saved 'shop' pick opens the slot machine.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -14,15 +19,15 @@
 	import CasinoBlackjack from './CasinoBlackjack.svelte';
 	import CasinoRoulette from './CasinoRoulette.svelte';
 	import CasinoSlots from './CasinoSlots.svelte';
-	import ShopSection from './ShopSection.svelte';
+	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import CasinoAdmin from './CasinoAdmin.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	let { onSquad }: { onSquad?: () => void } = $props();
 	const c = t.casino;
-	type Game = 'slots' | 'roulette' | 'blackjack' | 'shop';
-	const GAMES: Game[] = ['slots', 'roulette', 'blackjack', 'shop'];
+	type Game = Exclude<CasinoTab, 'shop'>;
+	const GAMES: Game[] = ['slots', 'roulette', 'blackjack', 'bank'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let game = $state<Game>('slots');
@@ -73,7 +78,8 @@
 
 <section class="class-card meta-list casino overflow-hidden rounded-card bg-panel shadow-card" style:--c="#ffc928" aria-labelledby="casino-h">
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-4 pb-3 sm:px-5">
-		<div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
+		<!-- at least 13rem, so on a phone the burgers pill goes to its own line instead of squeezing the names -->
+		<div class="flex min-w-[13rem] flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
 			<h2 id="casino-h" class="casino-title font-head text-xl font-black tracking-wide uppercase">{c.heading}</h2>
 			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{c.sub}</span>
 		</div>
@@ -98,22 +104,13 @@
 				{#if days}<p class="text-[11px] text-muted">{c.bonus.total(dailyTotal(days))}</p>{/if}
 			</div>
 
-			<!-- the house: everything the others lose goes to Abscar (squad-casino.ts HOUSE_OP) -->
-			<div class="casino-house grid gap-0.5 rounded-lg px-3 py-2">
-				<p class="font-head text-[11px] font-bold tracking-[0.14em] uppercase">🏦 {c.house.heading}</p>
-				<p class="text-[13px] text-fg">
-					{#if !houseEntry}{c.house.none}{:else if houseEntry.mine}{c.house.mine(houseTake)}{:else}{c.house.line(houseEntry.member.name, houseTake)}{/if}
-				</p>
-			</div>
-
-			<!-- BurgiBank loans, and (Abscar only) the admin menu -->
-			<CasinoLoans />
-			{#if houseEntry?.mine}<CasinoAdmin />{/if}
-
-			<!-- which game -->
-			<div class="flex flex-wrap gap-1.5" role="group" aria-label={c.gamesLabel}>
+			<!-- which game: big picture tiles -->
+			<div class="casino-tabs" role="group" aria-label={c.gamesLabel}>
 				{#each GAMES as g (g)}
-					<button type="button" class="chip casino-game" aria-pressed={game === g} onclick={() => pick(g)}>{c.games[g]}</button>
+					<button type="button" class="casino-game" data-game={g} aria-pressed={game === g} onclick={() => pick(g)}>
+						<CasinoTabArt kind={g} />
+						<span class="casino-game-name font-head">{c.games[g]}</span>
+					</button>
 				{/each}
 			</div>
 
@@ -125,7 +122,26 @@
 				{:else if game === 'blackjack'}
 					<CasinoBlackjack {balance} bind:hidden />
 				{:else}
-					<ShopSection />
+					<!-- BurgiBank: a big bank, your burgers, loans, the house and (Abscar only) the admin menu -->
+					<div class="grid gap-3">
+						<div class="bank-stage flex flex-wrap items-center gap-x-5 gap-y-2 rounded-card px-4 py-3">
+							<CasinoTabArt kind="bank" size={132} />
+							<div class="min-w-0">
+								<p class="bank-title font-head">{c.games.bank}</p>
+								<p class="text-[13px] text-fg">{c.bank.line}</p>
+								<p class="mt-1 font-head text-[15px] font-bold">{c.bank.balance(shown)}</p>
+							</div>
+						</div>
+						<CasinoLoans />
+						<!-- the house: everything the others lose goes to Abscar (squad-casino.ts HOUSE_OP) -->
+						<div class="casino-house grid gap-0.5 rounded-lg px-3 py-2">
+							<p class="font-head text-[11px] font-bold tracking-[0.14em] uppercase">🏦 {c.house.heading}</p>
+							<p class="text-[13px] text-fg">
+								{#if !houseEntry}{c.house.none}{:else if houseEntry.mine}{c.house.mine(houseTake)}{:else}{c.house.line(houseEntry.member.name, houseTake)}{/if}
+							</p>
+						</div>
+						{#if houseEntry?.mine}<CasinoAdmin />{/if}
+					</div>
 				{/if}
 			{/key}
 
@@ -153,7 +169,10 @@
 </section>
 
 <style>
+	/* the gradient paints the letters with their background; the Abscar theme's heading shadow would be drawn
+	   on top of it and turn them dark, so it's switched off here (the drop-shadow filters give the edge) */
 	.casino-title {
+		text-shadow: none !important;
 		background: linear-gradient(180deg, #fffbe0, #ffd23a 55%, #ffae00);
 		-webkit-background-clip: text;
 		background-clip: text;
@@ -188,6 +207,125 @@
 	.casino-house {
 		border: 1px solid rgb(255 201 40 / 0.6);
 		background: rgb(255 201 40 / 0.06);
+	}
+	/* the game tabs: a picture tile each, in its own casino colours (the same in every theme) */
+	/* four tiles: two by two on phones, one row from 560 px */
+	.casino-tabs {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+	}
+	.casino-tabs :global(svg.ta) {
+		width: 64px;
+		height: 56px;
+	}
+	@media (min-width: 560px) {
+		.casino-tabs {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			max-width: 640px;
+		}
+		/* more room per tile here: bigger pictures */
+		.casino-tabs :global(svg.ta) {
+			width: 80px;
+			height: 70px;
+		}
+	}
+	.casino-game {
+		--tile: #5a0a10;
+		--tile-2: #250306;
+		position: relative;
+		display: grid;
+		justify-items: center;
+		align-content: center;
+		gap: 4px;
+		min-height: 104px;
+		padding: 10px 6px 8px;
+		border: 1.5px solid rgb(255 201 40 / 0.35);
+		border-radius: 14px;
+		background:
+			radial-gradient(90% 70% at 50% 30%, rgb(255 255 255 / 0.14), transparent 70%),
+			linear-gradient(180deg, var(--tile), var(--tile-2));
+		color: #fff6e0;
+		box-shadow:
+			inset 0 1px 0 rgb(255 255 255 / 0.18),
+			0 2px 6px rgb(0 0 0 / 0.35);
+		transition:
+			transform 0.15s ease,
+			box-shadow 0.15s ease,
+			border-color 0.15s ease;
+	}
+	.casino-game[data-game='roulette'] {
+		--tile: #11683a;
+		--tile-2: #052a15;
+	}
+	.casino-game[data-game='blackjack'] {
+		--tile: #0f5a52;
+		--tile-2: #04241f;
+	}
+	.casino-game[data-game='shop'] {
+		--tile: #5a2290;
+		--tile-2: #220a3c;
+	}
+	.casino-game[data-game='bank'] {
+		--tile: #1f3a6e;
+		--tile-2: #0a1530;
+	}
+	.casino-game:hover {
+		border-color: rgb(255 201 40 / 0.7);
+		transform: translateY(-1px);
+	}
+	.casino-game[aria-pressed='true'] {
+		border: 2.5px solid #ffc928;
+		transform: translateY(-2px);
+		box-shadow:
+			inset 0 1px 0 rgb(255 255 255 / 0.25),
+			0 0 0 2px rgb(255 201 40 / 0.25),
+			0 0 18px rgb(255 190 40 / 0.55),
+			0 4px 10px rgb(0 0 0 / 0.4);
+	}
+	.casino-game-name {
+		font-size: 13px;
+		font-weight: 800;
+		line-height: 1.15;
+		letter-spacing: 0.02em;
+		text-align: center;
+		text-wrap: balance;
+		text-shadow: 0 1px 1px rgb(0 0 0 / 0.7);
+	}
+	.casino-game[aria-pressed='true'] .casino-game-name {
+		color: #ffd23a;
+	}
+	/* BurgiBank's head: the big bank on night blue, gold edge */
+	.bank-stage {
+		background:
+			radial-gradient(70% 120% at 15% 50%, rgb(255 201 40 / 0.18), transparent 60%),
+			linear-gradient(180deg, rgb(20 40 90 / 0.65), rgb(8 16 40 / 0.55));
+		box-shadow: inset 0 0 0 1.5px rgb(255 201 40 / 0.55);
+		color: #fff6e0;
+	}
+	.bank-stage .text-fg {
+		color: #f1e6cc;
+	}
+	.bank-title {
+		text-shadow: none !important;
+		font-size: 24px;
+		font-weight: 900;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		background: linear-gradient(180deg, #fffbe0, #ffd23a 55%, #ffae00);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.7));
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.casino-game {
+			transition: none;
+		}
+		.casino-game:hover,
+		.casino-game[aria-pressed='true'] {
+			transform: none;
+		}
 	}
 	.casino-row.mine {
 		border-color: var(--t-accent);
