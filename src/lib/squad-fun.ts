@@ -33,6 +33,7 @@ import {
 } from './squad-codec.ts';
 import { startOfDay, startOfWeek } from './stats.ts';
 import { isReleased } from './steps.ts';
+import { casinoTotal, dailyTotal } from './squad-casino.ts';
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -225,6 +226,8 @@ export function burgersEarned(m: Pick<SquadMember, 'weapons' | 'mastery'>): numb
 }
 
 type Members = Record<string, Pick<SquadMember, 'weapons' | 'recent' | 'name'>>;
+/** What the bank needs of a member: the grind, the daily bonus and the casino (2026-11-16). */
+type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'>;
 
 /** A duel's result, still on the list or taken off it: null while on, 'gone' if nobody knows any more. */
 export function duelOutcome(id: string, doc: SquadDoc, members: Members): { winner: string | null; loser: string | null; draw: boolean } | null | 'gone' {
@@ -269,7 +272,12 @@ export function betOutcome(bet: Bet, doc: SquadDoc, members: Members): BetState 
 }
 
 export interface BankRow {
+	/** From the grind (camos, the start gift). */
 	earned: number;
+	/** The daily bonus so far (squad-casino.ts). */
+	daily: number;
+	/** BurgiCasino: won minus lost (can be below zero). */
+	casino: number;
 	won: number;
 	lost: number;
 	/** Burgers on open bets. */
@@ -277,10 +285,15 @@ export interface BankRow {
 	balance: number;
 }
 
-/** Everyone's burgers: earned + bets won − bets lost − burgers on open bets. Never below zero on show. */
-export function burgerBank(doc: SquadDoc, members: Record<string, Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name'>>): Record<string, BankRow> {
+/**
+ * Everyone's burgers: earned + daily bonus + casino + bets won − bets lost − burgers on open bets.
+ * Never below zero on show.
+ */
+export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>): Record<string, BankRow> {
 	const out: Record<string, BankRow> = {};
-	for (const [id, m] of Object.entries(members)) out[id] = { earned: burgersEarned(m), won: 0, lost: 0, held: 0, balance: 0 };
+	for (const [id, m] of Object.entries(members)) {
+		out[id] = { earned: burgersEarned(m), daily: dailyTotal(m.online?.n ?? 0), casino: casinoTotal(m.casino).net, won: 0, lost: 0, held: 0, balance: 0 };
+	}
 	for (const bet of doc.bets ?? []) {
 		const row = out[bet.by];
 		if (!row) continue;
@@ -289,12 +302,12 @@ export function burgerBank(doc: SquadDoc, members: Record<string, Pick<SquadMemb
 		else if (state === 'lost') row.lost += bet.amount;
 		else if (state === 'open') row.held += bet.amount;
 	}
-	for (const row of Object.values(out)) row.balance = Math.max(0, row.earned + row.won - row.lost - row.held);
+	for (const row of Object.values(out)) row.balance = Math.max(0, row.earned + row.daily + row.casino + row.won - row.lost - row.held);
 	return out;
 }
 
 /** A new bet, or null (too many, not enough burgers, already decided, same bet twice). */
-export function withBet(doc: SquadDoc, bet: Bet, members: Record<string, Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name'>>): SquadDoc | null {
+export function withBet(doc: SquadDoc, bet: Bet, members: Record<string, BankMember>): SquadDoc | null {
 	const bets = doc.bets ?? [];
 	if (bets.length >= MAX_BETS || bet.amount < 1 || bet.amount > BET_MAX) return null;
 	if (betOutcome(bet, doc, members) !== 'open') return null;

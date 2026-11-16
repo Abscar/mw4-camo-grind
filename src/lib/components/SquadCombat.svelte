@@ -25,7 +25,7 @@
 		type CombatSort
 	} from '#lib/squad-combat.ts';
 	import { toast } from '#lib/toast.svelte.ts';
-	import { isBanned, BAN_OWNER, JOKE_BANS } from '#lib/squad-bans.ts';
+	import { banKey, banOf, isBanned, BAN_OWNER, JOKE_BANS, KD_LIMIT, type BanView } from '#lib/squad-bans.ts';
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
@@ -102,7 +102,12 @@
 	const empty = $derived(Object.keys(values).length === 0);
 	const winsOver = $derived(formMode === 'wz' && num('wins') !== undefined && num('matches') !== undefined && num('wins')! > num('matches')!);
 
-	// ----- the joke ban -----
+	/** The K/D the form would save: worked out from kills + deaths, else the typed ratio. */
+	const formKd = $derived(autoRatio.kd ?? num('kd') ?? null);
+	/** Over the limit = a lie, and saving it gets you the BANNED stamp (squad-bans.ts). */
+	const lieKd = $derived(formKd !== null && Math.round(formKd * 100) / 100 > KD_LIMIT);
+
+	// ----- the BANNED stamp (squad-bans.ts) -----
 
 	const b = t.squad.ban;
 	const OP_NAMES: Record<string, string> = {
@@ -112,10 +117,28 @@
 		jeeven: t.operator.jeeven,
 		ingman: t.operator.ingman
 	};
+	/**
+	 * For Abscar's box: the code's joke bans, plus everyone whose latest K/D is over the limit or who
+	 * wears the stamp by Abscar's own choice, one row each with Lift / Ban again.
+	 */
+	const banRows = $derived.by(() => {
+		const out = new Map<string, { key: string; name: string; view: BanView }>();
+		for (const key of Object.keys(JOKE_BANS)) {
+			const e = entries.find((x) => x.member.op === key);
+			out.set(key, { key, name: OP_NAMES[key] ?? key, view: banOf(key, squad.doc?.bans, e?.member.combat) });
+		}
+		for (const e of entries) {
+			const key = banKey(e.id, e.member.op);
+			if (out.has(key)) continue;
+			const view = banOf(key, squad.doc?.bans, e.member.combat);
+			if (view.fake || view.on) out.set(key, { key, name: (e.member.op && OP_NAMES[e.member.op]) || e.member.name, view });
+		}
+		return [...out.values()];
+	});
 	let banBusy = $state(false);
-	async function toggleBan(op: string, on: boolean, name: string) {
+	async function toggleBan(key: string, on: boolean, name: string) {
 		banBusy = true;
-		const ok = await squad.setBan(op, on, name);
+		const ok = await squad.setBan(key, on, name);
 		banBusy = false;
 		toast.show(ok ? (on ? b.banned(name) : b.lifted(name)) : b.failed);
 	}
@@ -139,15 +162,15 @@
 	</div>
 	<p class="mt-1 max-w-3xl text-xs text-muted">{c.note}</p>
 
-	<!-- the joke ban (squad-bans.ts): only Abscar sees this and can lift or put back the stamp -->
+	<!-- the BANNED stamp (squad-bans.ts): only Abscar sees this and can lift or put back the stamp -->
 	{#if squad.me?.op === BAN_OWNER}
-		{#each Object.entries(JOKE_BANS) as [op, joke] (op)}
-			{@const name = OP_NAMES[op] ?? op}
-			{@const on = isBanned(op, squad.doc?.bans)}
-			<div class="sq-banbox mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg px-3 py-2" data-on={on}>
-				<p class="min-w-0 flex-1 text-xs text-fg">{on ? b.hint(name, joke.reason) : b.liftedHint(name)}</p>
-				<button type="button" class="btn btn-sm" class:btn-primary={on} disabled={banBusy} onclick={() => void toggleBan(op, !on, name)}>
-					{on ? b.lift(name) : b.again(name)}
+		{#each banRows as { key, name, view } (key)}
+			<div class="sq-banbox mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg px-3 py-2" data-on={view.on}>
+				<p class="min-w-0 flex-1 text-xs text-fg">
+					{#if view.on}{view.fake ? b.fakeHint(name, fmtRatio(view.fake.kd), KD_LIMIT) : b.hint(name, view.reason)}{:else if view.fake}{b.liftedFakeHint(name, KD_LIMIT)}{:else}{b.liftedHint(name)}{/if}
+				</p>
+				<button type="button" class="btn btn-sm" class:btn-primary={view.on} disabled={banBusy} onclick={() => void toggleBan(key, !view.on, name)}>
+					{view.on ? b.lift(name) : b.again(name)}
 				</button>
 			</div>
 		{/each}
@@ -183,7 +206,7 @@
 				<p class="sq-cname flex min-w-0 items-center gap-1.5" aria-hidden="true">
 					<b class="truncate font-head text-[15px] font-bold tracking-wide" title={e.member.name}>{e.member.name}</b>
 					{#if e.mine}<span class="sq-cyou font-head">{t.squad.you}</span>{/if}
-					{#if e.member.op && isBanned(e.member.op, squad.doc?.bans)}<span class="sq-cbanned font-head">{b.tag}</span>{/if}
+					{#if isBanned(banKey(e.id, e.member.op), squad.doc?.bans, e.member.combat)}<span class="sq-cbanned font-head">{b.tag}</span>{/if}
 				</p>
 				<div class="sq-cinfo min-w-0" aria-hidden="true">
 					{#if view}
@@ -292,6 +315,7 @@
 		<p class="text-xs">{c.sameDay}</p>
 		{#if tried && empty && !anyBad}<p class="text-xs font-semibold text-fg" role="alert">{c.nothing}</p>{/if}
 		{#if winsOver}<p class="text-xs font-semibold text-fg" role="alert">{c.winsOver}</p>{/if}
+		{#if lieKd && formKd !== null}<p class="sq-cwarn font-head" role="status">{b.formWarn(fmtRatio(formKd), KD_LIMIT)}</p>{/if}
 	</form>
 	{#snippet actions()}
 		<button type="button" class="btn" onclick={() => (open = false)}>{t.squad.cancel}</button>
@@ -355,6 +379,18 @@
 	.sq-banbox {
 		border: 1px dashed #ff2a2a;
 		background: rgb(255 42 42 / 0.1);
+	}
+	/* the form's warning when the K/D is over the limit */
+	.sq-cwarn {
+		padding: 6px 10px;
+		border: 3px double #ff2a2a;
+		border-radius: 6px;
+		background: rgb(255 42 42 / 0.12);
+		color: var(--t-fg);
+		font-size: 12px;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
 	}
 	.sq-banbox[data-on='false'] {
 		border-color: var(--t-line);

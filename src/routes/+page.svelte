@@ -50,13 +50,14 @@
 	import RankedSection from '#lib/components/RankedSection.svelte';
 	import { pageTab } from '#lib/pageTab.svelte.ts';
 	import SquadSection from '#lib/components/SquadSection.svelte';
+	import CasinoSection from '#lib/components/CasinoSection.svelte';
 	import ReadyBanner from '#lib/components/ReadyBanner.svelte';
 	import SquadUpBanner from '#lib/components/SquadUpBanner.svelte';
 	import SquadUpFire from '#lib/components/SquadUpFire.svelte';
 	import { squad } from '#lib/squad.svelte.ts';
 
-	/** The page tabs under the header (2026-11-12; Squad 2026-11-14). All stay mounted; the others are only hidden. */
-	const PAGE_TABS = ['grind', 'cosmetics', 'extras', 'squad'] as const;
+	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino 2026-11-16). All stay mounted; the others are only hidden. */
+	const PAGE_TABS = ['grind', 'cosmetics', 'extras', 'squad', 'casino'] as const;
 	let view = $state<(typeof PAGE_TABS)[number]>('grind');
 
 	// a squad link was opened: show the Squad tab, where it asks for your name
@@ -267,6 +268,10 @@
 			<div class="mt-5"><SquadSection visible={view === 'squad'} /></div>
 		</div>
 
+		<div id="panel-casino" role="tabpanel" aria-labelledby="tab-casino" hidden={view !== 'casino'}>
+			<div class="mt-5"><CasinoSection onSquad={() => (view = 'squad')} /></div>
+		</div>
+
 		<div id="panel-grind" role="tabpanel" aria-labelledby="tab-grind" hidden={view !== 'grind'}>
 		<!-- the green radar with the latest COD news -->
 		<div class="compact-hide mt-5"><NewsBanner /></div>
@@ -407,7 +412,7 @@
 	.page-tab:hover {
 		color: var(--t-fg);
 	}
-	/* phones: the four tabs share the row equally; a long name wraps onto two lines */
+	/* phones: the five tabs share the row equally; a long name wraps onto two lines (BurgiCasino at its soft hyphen) */
 	@media (max-width: 639px) {
 		.page-tabs {
 			gap: 4px;
@@ -415,10 +420,13 @@
 		.page-tab {
 			flex: 1 1 0;
 			min-width: 0;
-			padding: 0 0.25rem;
-			font-size: 12px;
+			padding: 0 0.2rem;
+			font-size: 11px;
 			line-height: 1.1;
-			letter-spacing: 0.03em;
+			letter-spacing: 0.02em;
+			/* five tabs: a long single word ("Cosmetics") may break with a hyphen rather than stick out */
+			hyphens: auto;
+			overflow-wrap: anywhere;
 		}
 	}
 	.page-tab[aria-selected='true'] {

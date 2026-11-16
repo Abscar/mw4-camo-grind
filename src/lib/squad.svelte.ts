@@ -68,11 +68,13 @@ import {
 	type RadioDoc
 } from './squad-radio.ts';
 import { isSyncCode } from './sync-codec.ts';
-import { addPlayed, dayKey, mergePlayed, settleDuel, spin, withBet, withoutBet, withPaid, SPIN_LEAD_MS, SQUAD_UP } from './squad-fun.ts';
+import { addPlayed, burgerBank, dayKey, mergePlayed, settleDuel, spin, withBet, withoutBet, withPaid, SPIN_LEAD_MS, SQUAD_UP, type BankRow } from './squad-fun.ts';
 import { cleanCombat, combatView, mergeCombat, withSnap, type CombatLog, type CombatMode, type CombatSnap } from './squad-combat.ts';
 import { cleanRanked, fmtSrDelta, mergeRanked, rankedView, withRanked, type RankedLog } from './squad-ranked.ts';
 import { cleanClasses, mergeClasses, withClass, withoutClass, type ClassList, type SquadClass } from './squad-classes.ts';
-import { withBan, BAN_OWNER } from './squad-bans.ts';
+import { withBan, BAN_OWNER, KD_LIMIT } from './squad-bans.ts';
+import { cleanCasino, cleanOnline, countDay, mergeCasino, mergeOnline, seedOnline, withGame, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
+import { toast } from './toast.svelte.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
@@ -81,6 +83,11 @@ const COMBAT_KEY = 'mw4-camo-grind:combat';
 const RANKED_KEY = 'mw4-camo-grind:ranked';
 /** The classes you share with the squad (squad-classes.ts), kept on this device too. */
 const CLASSES_KEY = 'mw4-camo-grind:squad-classes';
+/** Days online with the squad (the daily burger bonus, squad-casino.ts), kept on this device too. */
+const ONLINE_KEY = 'mw4-camo-grind:online-days';
+/** BurgiCasino's tally per device (squad-casino.ts), and this device's id in it. */
+const CASINO_KEY = 'mw4-camo-grind:casino';
+const DEVICE_KEY = 'mw4-camo-grind:device';
 /** What this device last saw of the others (for the kill feed), per squad code. */
 const SEEN_KEY = 'mw4-camo-grind:squad-seen';
 /** When you last looked at the radio (unread count). */
@@ -318,6 +325,13 @@ class Squad {
 	ranked = $state<RankedLog>({});
 	/** The classes you share (merged with your other device's when the squad is read). */
 	classes = $state<ClassList>({});
+	/** Days online with the squad (daily bonus), merged with your other device's. */
+	online = $state<OnlineDays | undefined>(undefined);
+	/** BurgiCasino's tally per device, merged with your other device's. */
+	casino = $state<CasinoLedger>({});
+	/** Today's daily bonus when this page counted it (for the casino tab's welcome line). */
+	bonusToday = $state<{ amount: number; n: number } | null>(null);
+	#device = '';
 	#playTick = 0;
 	#publishTimer: ReturnType<typeof setTimeout> | undefined;
 	#lookedAt = Date.now();
@@ -363,7 +377,9 @@ class Squad {
 			played: this.played,
 			combat: this.combat,
 			ranked: this.ranked,
-			classes: this.classes
+			classes: this.classes,
+			online: this.online,
+			casino: this.casino
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -404,6 +420,11 @@ class Squad {
 		this.combat = cleanCombat(readJson(COMBAT_KEY)) ?? {};
 		this.ranked = cleanRanked(readJson(RANKED_KEY)) ?? {};
 		this.classes = cleanClasses(readJson(CLASSES_KEY)) ?? {};
+		this.online = cleanOnline(readJson(ONLINE_KEY));
+		this.casino = cleanCasino(readJson(CASINO_KEY)) ?? {};
+		const device = readJson(DEVICE_KEY);
+		this.#device = typeof device === 'string' && /^[A-Za-z0-9_-]{4,16}$/.test(device) ? device : makeMemberId().slice(0, 10);
+		writeJson(DEVICE_KEY, this.#device);
 		this.#playTick = Date.now();
 		this.#masteryDone = this.#completeMastery();
 		this.#masteryQuarters = this.#quarters();
@@ -530,13 +551,14 @@ class Squad {
 	}
 
 	/**
-	 * Lift (on = false) or put back (on = true) a joke ban for the whole squad (squad-bans.ts). Only the
-	 * owner's operator may: the button shows only for them, and this refuses anyone else.
+	 * Lift (on = false) or put back (on = true) a member's BANNED stamp for the whole squad
+	 * (squad-bans.ts; `key` = their operator, else their member id). Only the owner's operator may: the
+	 * button shows only for them, and this refuses anyone else.
 	 */
-	async setBan(op: string, on: boolean, name: string): Promise<boolean> {
+	async setBan(key: string, on: boolean, name: string): Promise<boolean> {
 		if (this.me?.op !== BAN_OWNER) return false;
 		const at = Math.round(this.serverNow());
-		const outcome = await this.#squad.write((doc) => ({ ...doc, bans: withBan(doc.bans, op, on, at) }));
+		const outcome = await this.#squad.write((doc) => ({ ...doc, bans: withBan(doc.bans, key, on, at) }));
 		this.#done(outcome);
 		if (outcome === 'ok') await this.#event(on ? t.squad.ban.bannedEvent(name) : t.squad.ban.liftedEvent(name));
 		return outcome === 'ok';
@@ -616,6 +638,9 @@ class Squad {
 		if (view?.kd != null || view?.wl != null) {
 			await this.#event(t.squad.combat.event(mode, view.kd, view.wl, view.before?.kdDelta ?? null));
 		}
+		// a K/D over the limit is a lie: the stamp goes on by itself (squad-bans.ts), the radio says so
+		const kd = view?.kd != null ? Math.round(view.kd * 100) / 100 : null;
+		if (kd !== null && kd > KD_LIMIT) await this.#event(t.squad.ban.fakeEvent(kd.toFixed(2), KD_LIMIT));
 		return this.status === 'ok';
 	}
 
@@ -655,6 +680,52 @@ class Squad {
 		this.classes = withoutClass(this.classes, id, Math.round(this.serverNow()));
 		writeJson(CLASSES_KEY, this.classes);
 		await this.#publish();
+	}
+
+	/**
+	 * Today counts as a day online (once): the daily burger bonus (squad-casino.ts). Members from
+	 * before the bonus start from the days the tracker was open (`played`, last 14 days).
+	 */
+	#countToday(): void {
+		let seeded = false;
+		if (!this.online) {
+			this.online = seedOnline(this.played);
+			seeded = !!this.online;
+		}
+		const { next, added } = countDay(this.online, dayKey(this.serverNow()));
+		if (added > 0 || seeded) {
+			this.online = next;
+			writeJson(ONLINE_KEY, next);
+			this.bonusToday = { amount: added, n: next.n };
+			// a moment later, so "Squad created / joined" doesn't cover it
+			const text = added > 0 ? t.casino.bonus.toast(added, next.n) : t.casino.bonus.seeded(next.n);
+			setTimeout(() => toast.show(text, undefined, 6000), 4000);
+		}
+	}
+
+	/** Your burgers right now (the bank: grind + daily bonus + casino + bets), or null outside a squad. */
+	get myBank(): BankRow | null {
+		const me = this.me;
+		const doc = this.#squad.doc;
+		if (!me || !doc) return null;
+		return burgerBank(doc, this.#members(doc))[me.id] ?? null;
+	}
+
+	/**
+	 * One finished casino game on this device: added to your tally, published, and (for a big one) a
+	 * line on the radio. Pretend burgers, never money.
+	 */
+	recordGame(net: number, event?: string): void {
+		if (!this.me) return;
+		this.casino = withGame(this.casino, this.#device, net, Math.round(this.serverNow()));
+		writeJson(CASINO_KEY, this.casino);
+		this.#schedulePublish();
+		if (event) void this.#event(event);
+	}
+
+	/** A casino moment on the radio (posted after the game showed it, so the radio doesn't spoil it). */
+	casinoNews(text: string): void {
+		if (this.me) void this.#event(text);
 	}
 
 	/** Send a radio message. */
@@ -811,13 +882,31 @@ class Squad {
 				writeJson(CLASSES_KEY, merged);
 			}
 		}
+		// days online and the casino tally from your other device (most days / per device the later tally)
+		if (mine?.online) {
+			const merged = mergeOnline(this.online, mine.online);
+			if (merged !== this.online) {
+				this.online = merged;
+				writeJson(ONLINE_KEY, merged);
+			}
+		}
+		if (mine?.casino) {
+			const merged = mergeCasino(this.casino, mine.casino);
+			if (JSON.stringify(merged) !== JSON.stringify(this.casino)) {
+				this.casino = merged;
+				writeJson(CASINO_KEY, merged);
+			}
+		}
+		if (!away) this.#countToday();
 		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {
 			readyAt: this.readyAt,
 			ping: this.#ping,
 			played: this.played,
 			combat: this.combat,
 			ranked: this.ranked,
-			classes: this.classes
+			classes: this.classes,
+			online: this.online,
+			casino: this.casino
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;

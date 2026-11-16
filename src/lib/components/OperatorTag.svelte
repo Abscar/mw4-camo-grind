@@ -34,7 +34,7 @@
 	import { agoParts, headerStatuses, weeklyMvps, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
 	import { dayKey, playedOn } from '#lib/squad-fun.ts';
 	import { combatView, fmtRatio } from '#lib/squad-combat.ts';
-	import { isBanned, JOKE_BANS } from '#lib/squad-bans.ts';
+	import { banOf } from '#lib/squad-bans.ts';
 
 	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
 	const mvps = $derived(squad.on ? weeklyMvps(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])), squad.now) : []);
@@ -190,13 +190,15 @@
 	</div>
 {/snippet}
 
-<!-- a joke "BANNED" stamp over a member's emblem + name (squad-bans.ts; 2026-11-16, Ingman typed in a wrong
-     K/D). On from the code; Abscar lifts it for the whole squad in the Squad tab's Combat record. -->
+<!-- the "BANNED" stamp over a member's emblem + name (squad-bans.ts; 2026-11-16): a joke ban from the code
+     (Ingman typed in a wrong K/D) or a fake K/D over 2.5 in the Combat record. Abscar lifts it for the
+     whole squad in the Squad tab's Combat record. -->
 {#snippet stamp(op: SquadOp, name: string)}
-	{#if isBanned(op, squad.doc?.bans ?? undefined)}
-		<span class="op-stamp font-head" role="img" aria-label={t.operator.bannedLabel(name, JOKE_BANS[op]?.reason ?? '')}>
+	{@const ban = banOf(op, squad.doc?.bans ?? undefined, live(op)?.member.combat)}
+	{#if ban.on}
+		<span class="op-stamp font-head" role="img" aria-label={t.operator.bannedLabel(name, ban.reason)}>
 			<span class="op-stamp-word" aria-hidden="true">{t.operator.banned}</span>
-			{#if JOKE_BANS[op]}<span class="op-stamp-why" aria-hidden="true">{JOKE_BANS[op].reason}</span>{/if}
+			<span class="op-stamp-why" aria-hidden="true">{ban.reason}</span>
 		</span>
 	{/if}
 {/snippet}

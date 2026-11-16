@@ -727,7 +727,108 @@ export const en = {
 		grind: 'Camo grind',
 		cosmetics: 'Cosmetics',
 		extras: 'Extra camos',
-		squad: 'Squad'
+		squad: 'Squad',
+		/** a soft hyphen so it can break on a phone ("Burgi-/Casino") */
+		casino: 'Burgi­Casino'
+	},
+	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
+	casino: {
+		heading: 'BurgiCasino',
+		sub: 'Abscar’s Fortune · Roulette · Blackjack',
+		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
+		balance: 'Your burgers',
+		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
+		toSquad: 'Go to the Squad tab',
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', roulette: 'Roulette', blackjack: 'Blackjack' },
+		gamesLabel: 'Game',
+		how: 'How it works',
+		burgers: (n: number) => `${n.toLocaleString('en-US')} 🍔`,
+		broke: 'Not enough burgers for that bet. Come back tomorrow for your daily bonus, or tick some camos.',
+		bonus: {
+			heading: 'Daily bonus',
+			line: (n: number, rate: number, toNext: number, nextRate: number) =>
+				`Day ${n} online: ${rate} 🍔 a day. ${toNext === 1 ? 'Tomorrow' : `In ${toNext} days`} it goes up to ${nextRate} 🍔.`,
+			none: 'Open the page on a day with the squad and you get 25 🍔. Every 5 days online it goes up by 25.',
+			toast: (n: number, day: number) => `Daily bonus: +${n} 🍔 (day ${day} online)`,
+			seeded: (days: number) => `Welcome bonus: ${days} day${days === 1 ? '' : 's'} online already counted 🍔`,
+			total: (n: number) => `${n.toLocaleString('en-US')} 🍔 from daily bonuses so far`
+		},
+		board: {
+			heading: 'Casino leaderboard',
+			none: 'Nobody has played yet.',
+			row: (net: string, games: number) => `${net} 🍔 · ${games} game${games === 1 ? '' : 's'}`
+		},
+		event: {
+			slots: (net: number, tier: string) => `${tier === 'jackpot' ? 'hit the BURGER JACKPOT' : tier === 'mega' ? 'hit a MEGA WIN' : tier === 'big' ? 'hit a BIG WIN' : 'won'} on Abscar’s Fortune: +${net.toLocaleString('en-US')} 🍔 🎰`,
+			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
+			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`)
+		},
+		bet: 'Bet',
+		betLabel: (n: number) => `Bet ${n} burgers`,
+		slots: {
+			spin: 'Spin',
+			credits: 'Burgers',
+			pull: 'Pull the lever',
+			spinning: 'Spinning…',
+			lines: '10 lines',
+			free: (left: number, total: number) => `FREE SPIN ${total - left + 1} / ${total} · wins ×2`,
+			freeWon: (n: number) => `${n} FREE SPINS!`,
+			lastWin: 'Win',
+			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', jackpot: 'BURGER JACKPOT' },
+			lineWin: (line: number, count: number, symbol: string, win: number) => `Line ${line}: ${count} × ${symbol} = ${win} 🍔`,
+			scatterWin: (count: number, win: number, spins: number) => `${count} × Ketchup = ${win} 🍔 + ${spins} free spins`,
+			noWin: 'No win this time.',
+			paytable: 'Paytable & how it works',
+			how: 'Like a real video slot: 5 reels, 3 rows and 10 paylines. Each reel is a weighted strip, so pickles are common and burgers rare; every stop is equally likely (no near-miss tricks). Wins pay left to right from the first reel, 3, 4 or 5 in a row, times your bet ÷ 10, the best win per line. WILD stands in for every symbol but Ketchup and pays the most itself. Ketchup pays anywhere on the screen and 3 or more give free spins with every win doubled (they can come again). In the long run the machine gives back about 95% of what goes in, like real ones (they keep the rest), so the house wins in the end.',
+			symbols: {
+				pickle: 'Pickle',
+				onion: 'Onion ring',
+				tomato: 'Tomato',
+				cheese: 'Cheese',
+				fries: 'Fries',
+				shake: 'Shake',
+				hotdog: 'Hot dog',
+				burger: 'Burger',
+				wild: 'WILD',
+				scatter: 'Ketchup'
+			},
+			payRow: (a: number, b: number, c: number) => `3 → ${a} · 4 → ${b} · 5 → ${c}`,
+			scatterRow: (a: number, b: number, c: number, fa: number, fb: number, fc: number) => `3 → ${a}× bet + ${fa} free · 4 → ${b}× + ${fb} · 5 → ${c}× + ${fc}`,
+			payNote: 'Line wins are times the line bet (your bet ÷ 10).',
+			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`
+		},
+		roulette: {
+			spin: 'Spin',
+			clear: 'Clear',
+			chip: 'Chip',
+			onTable: (n: number) => `${n.toLocaleString('en-US')} 🍔 on the table`,
+			result: (n: number, color: string) => `${n} ${color}`,
+			colors: { red: 'red', black: 'black', green: 'green' },
+			won: (n: number) => `You win ${n.toLocaleString('en-US')} 🍔`,
+			lost: (n: number) => `You lose ${n.toLocaleString('en-US')} 🍔`,
+			even: 'Even money: nothing won, nothing lost',
+			history: 'Last numbers',
+			spots: { low: '1–18', high: '19–36', even: 'Even', odd: 'Odd', red: 'Red', black: 'Black', d1: '1st 12', d2: '2nd 12', d3: '3rd 12', c1: '2:1', c2: '2:1', c3: '2:1' },
+			spotLabel: (spot: string, stake: number) => `Bet on ${spot}${stake ? `, ${stake} on it` : ''}`,
+			colLabel: (c: number) => `column ${c}`,
+			how: 'European roulette: one zero, 37 pockets. Tap spots to put your chip on them, as many as you like, then spin. A number pays 35 to 1, a dozen or a column 2 to 1, red/black, odd/even, 1–18/19–36 pay 1 to 1. The zero loses every outside bet.',
+			wheel: 'Roulette wheel'
+		},
+		blackjack: {
+			deal: 'Deal',
+			hit: 'Hit',
+			stand: 'Stand',
+			double: 'Double',
+			dealer: 'Dealer',
+			you: 'You',
+			total: (n: number, soft: boolean) => `${soft ? 'soft ' : ''}${n}`,
+			results: { blackjack: 'BLACKJACK!', win: 'You win', dealerBust: 'Dealer busts, you win', push: 'Push', lose: 'Dealer wins', bust: 'Bust' },
+			net: (n: number) => (n > 0 ? `+${n.toLocaleString('en-US')} 🍔` : n < 0 ? `−${(-n).toLocaleString('en-US')} 🍔` : '±0 🍔'),
+			shuffle: 'New shoe shuffled',
+			handLabel: (who: string, cards: string, total: string) => `${who}: ${cards} (${total})`,
+			hidden: 'face-down card',
+			how: 'Six decks. Get closer to 21 than the dealer without going over. Picture cards count 10, an ace 1 or 11. Blackjack (an ace and a 10 as your first two cards) pays 3 to 2. The dealer draws to 17 and stands on a soft 17. Double: one more card and your bet doubled.'
+		}
 	},
 	/** The Squad tab (SquadSection; squad.svelte.ts): friends' grind side by side, Online / Offline (2026-11-14). */
 	squad: {
@@ -969,7 +1070,13 @@ export const en = {
 			banned: (name: string) => `${name} is banned again.`,
 			failed: 'Couldn’t reach the squad. Try again in a moment.',
 			liftedEvent: (name: string) => `lifted ${name}’s ban ✅`,
-			bannedEvent: (name: string) => `banned ${name} 🚫`
+			bannedEvent: (name: string) => `banned ${name} 🚫`,
+			/** a K/D over the limit (2026-11-16: "anything over 2.5 is a lie") */
+			fakeHint: (name: string, kd: string, limit: number) =>
+				`Only you see this. ${name} typed in a K/D of ${kd} (over ${limit}) and wears the BANNED stamp; lifting it takes it off until they save a K/D over ${limit} again.`,
+			liftedFakeHint: (name: string, limit: number) => `${name}’s ban is lifted. A new K/D over ${limit} puts it back.`,
+			formWarn: (kd: string, limit: number) => `K/D ${kd}? Anything over ${limit} is a lie: saving it gets you the BANNED stamp.`,
+			fakeEvent: (kd: string, limit: number) => `got BANNED: a K/D of ${kd} is a lie (over ${limit}) 🚫`
 		},
 		/** The Ranked board (2026-11-16): everyone types in their SR, see who's climbing. */
 		ranked: {
@@ -1075,7 +1182,7 @@ export const en = {
 			howLabel: 'How burgers work',
 			betsHeading: 'Bets',
 			how: (s: { start: number; gold: number; platinum: number; harmonicBreak: number; mastery: number; divergence: number }) =>
-				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled.`,
+				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (25, going up by 25 every 5 days online), and what you win or lose in BurgiCasino counts too.`,
 			richest: 'Richest',
 			burgers: (n: number) => `${n.toLocaleString('en-US')} burger${n === 1 ? '' : 's'}`,
 			onBets: (n: number) => `${n} on open bets`,
