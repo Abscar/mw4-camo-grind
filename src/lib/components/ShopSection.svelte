@@ -8,14 +8,38 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
-	import { shopSpent, worn, SHOP_ITEMS, SLOTS, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import { shopSpent, worn, PRANKS, SHOP_ITEMS, SLOTS, type ShopItem, type ShopSlot } from '#lib/shop.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import Dialog from './Dialog.svelte';
 	import OpGear from './OpGear.svelte';
 	import ShopPin from './ShopPin.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	const s = t.shop;
-	let slot = $state<ShopSlot>('aura');
+	const pr = t.pranks;
+	let slot = $state<ShopSlot | 'pranks'>('aura');
+	/** The prank waiting for a target (the "who gets it?" dialog). */
+	let aiming = $state<(typeof PRANKS)[number] | null>(null);
+	let pickOpen = $state(false);
+	const others = $derived(squad.entries.filter((e) => !e.mine));
+
+	function aim(p: (typeof PRANKS)[number]) {
+		if (balance < p.price) {
+			toast.show(s.broke(p.price, balance), undefined, 5000);
+			return;
+		}
+		aiming = p;
+		pickOpen = true;
+	}
+
+	function fire(id: string, name: string) {
+		if (!aiming) return;
+		const r = squad.prank(aiming.id, id, name);
+		pickOpen = false;
+		if (r === 'ok') toast.show(pr.thrown(name));
+		else if (r === 'broke') toast.show(s.broke(aiming.price, balance), undefined, 5000);
+		aiming = null;
+	}
 	/** An item being tried on (shown on the preview only). */
 	let trying = $state<ShopItem | null>(null);
 
@@ -79,11 +103,32 @@
 
 	<!-- the kinds -->
 	<div class="mt-3 flex flex-wrap gap-1.5" role="group" aria-label={s.slotsLabel}>
-		{#each SLOTS as sl (sl)}
+		{#each [...SLOTS, 'pranks' as const] as sl (sl)}
 			<button type="button" class="chip" aria-pressed={slot === sl} onclick={() => ((slot = sl), (trying = null))}>{s.slots[sl]}</button>
 		{/each}
 	</div>
 
+	{#if slot === 'pranks'}
+		<!-- pranks: bought per throw, aimed at a friend -->
+		<p class="mt-3 text-[13px] text-muted">{pr.intro}</p>
+		<ul class="mt-2 grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-2">
+			{#each PRANKS as p (p.id)}
+				<li class="shop-item shop-prank rounded-card border border-line bg-panel-2 p-3" data-prank={p.id}>
+					<div class="shop-try" aria-hidden="true">
+						{#if p.id === 'smoke-bomb'}
+							<OpGear smoked><SquadAvatar name="?" op={me?.op ?? undefined} size={46} /></OpGear>
+						{:else}
+							<span class="shop-highdemo font-head">{pr.stamp}</span>
+						{/if}
+					</div>
+					<p class="mt-2 font-head text-[14px] font-bold">{pr.names[p.id]}</p>
+					<p class="mt-1 text-xs text-muted">{pr.what[p.id]}</p>
+					<button type="button" class="btn btn-sm btn-primary mt-2" disabled={!others.length || balance < p.price} onclick={() => aim(p)}>{pr.throw(p.price)}</button>
+				</li>
+			{/each}
+		</ul>
+		{#if !others.length}<p class="mt-2 text-xs text-muted">{pr.nobody}</p>{/if}
+	{:else}
 	<!-- the items -->
 	<ul class="mt-3 grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-2">
 		{#each items as it (it.id)}
@@ -125,7 +170,25 @@
 			</li>
 		{/each}
 	</ul>
+	{/if}
 </div>
+
+<Dialog bind:open={pickOpen} title={aiming ? `${pr.names[aiming.id]} · ${pr.pick}` : pr.pick}>
+	<ul class="grid gap-1.5">
+		{#each others as e (e.id)}
+			<li>
+				<button type="button" class="shop-target flex w-full items-center gap-2.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-left" onclick={() => fire(e.id, e.member.name)}>
+					<SquadAvatar name={e.member.name} op={e.member.op} size={34} />
+					<b class="min-w-0 flex-1 truncate font-head text-[15px]">{e.member.name}</b>
+					<span class="text-xs text-muted">{aiming ? pr.throw(aiming.price) : ''}</span>
+				</button>
+			</li>
+		{/each}
+	</ul>
+	{#snippet actions()}
+		<button type="button" class="btn" onclick={() => ((pickOpen = false), (aiming = null))}>{t.squad.cancel}</button>
+	{/snippet}
+</Dialog>
 
 <style>
 	.shop-stage {
@@ -189,5 +252,27 @@
 	}
 	.shop-owned {
 		align-self: center;
+	}
+	.shop-prank {
+		--r: #4fe05a;
+	}
+	.shop-highdemo {
+		padding: 2px 10px 3px;
+		border: 4px double #4fe05a;
+		border-radius: 8px;
+		background: rgb(4 30 8 / 0.82);
+		color: #7dff6a;
+		font-size: 14px;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		transform: rotate(8deg);
+		white-space: nowrap;
+	}
+	.shop-target {
+		min-height: 48px;
+	}
+	.shop-target:hover {
+		border-color: var(--t-accent);
 	}
 </style>

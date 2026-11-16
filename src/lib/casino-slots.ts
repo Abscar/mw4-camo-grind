@@ -7,7 +7,9 @@
  * symbols have many stops, the jackpot few), a stop picked at random per reel, 10 paylines paying left
  * to right (3, 4 or 5 in a row), a WILD that stands in for any symbol but the scatter and pays the
  * most itself, and a KETCHUP scatter that pays anywhere on the screen and gives free spins (wins ×2,
- * can retrigger). Long-run return to player ≈ 95 % (measured in scripts/casino-slots.test.js).
+ * can retrigger). Long-run return to player ≈ 99 % (measured in scripts/casino-slots.test.js; it was
+ * ≈ 95 % until the user's "raise the odds a bit", 2026-11-16: low symbols pay a little more and WILD /
+ * burger pay already for 2 in a row; hit rate 30 % → 31 %).
  * Pretend burgers, never money. No near-miss tricks: every stop is equally likely.
  *
  * Pure, the randomness passed in, so Node tests it. No browser APIs and no runes.
@@ -60,8 +62,8 @@ function spread(reel: number): SlotSymbol[] {
 
 /** What 3, 4 and 5 in a row pay, times the line bet (= the bet ÷ 10). */
 export const PAYS: Record<Exclude<SlotSymbol, 'scatter'>, [number, number, number]> = {
-	pickle: [7, 20, 70],
-	onion: [7, 20, 70],
+	pickle: [8, 20, 70],
+	onion: [8, 20, 70],
 	tomato: [8, 25, 100],
 	cheese: [15, 40, 150],
 	fries: [20, 60, 200],
@@ -70,6 +72,11 @@ export const PAYS: Record<Exclude<SlotSymbol, 'scatter'>, [number, number, numbe
 	burger: [75, 300, 1500],
 	wild: [150, 750, 5000]
 };
+/**
+ * The top symbols also pay for just 2 in a row from the first reel (times the line bet), like real
+ * slots do for their premium symbols (2026-11-16, the user's ask: "raise the odds a bit").
+ */
+export const PAYS2: Partial<Record<Exclude<SlotSymbol, 'scatter'>, number>> = { wild: 8, burger: 4 };
 /** Ketchup anywhere: what 3, 4, 5 pay times the whole bet, and the free spins they give. */
 export const SCATTER_PAYS: [number, number, number] = [2, 10, 50];
 export const FREE_SPINS: [number, number, number] = [8, 12, 20];
@@ -126,16 +133,17 @@ export function gridAt(stops: number[]): Grid {
 
 /** One payline: the best of its wild run and its symbol run (a wild stands in for any symbol but the scatter). */
 export function lineWin(symbols: SlotSymbol[]): { symbol: Exclude<SlotSymbol, 'scatter'>; count: number; pays: number } | null {
+	const paysFor = (sym: Exclude<SlotSymbol, 'scatter'>, count: number) => (count >= 3 ? PAYS[sym][count - 3] : count === 2 ? (PAYS2[sym] ?? 0) : 0);
 	let wilds = 0;
 	while (wilds < symbols.length && symbols[wilds] === 'wild') wilds++;
-	const wildPays = wilds >= 3 ? PAYS.wild[wilds - 3] : 0;
+	const wildPays = paysFor('wild', wilds);
 	const first = symbols.find((s) => s !== 'wild');
 	let best: { symbol: Exclude<SlotSymbol, 'scatter'>; count: number; pays: number } | null =
 		wildPays > 0 ? { symbol: 'wild', count: wilds, pays: wildPays } : null;
 	if (first && first !== 'scatter') {
 		let count = 0;
 		while (count < symbols.length && (symbols[count] === first || symbols[count] === 'wild')) count++;
-		const pays = count >= 3 ? PAYS[first][count - 3] : 0;
+		const pays = paysFor(first, count);
 		if (pays > (best?.pays ?? 0)) best = { symbol: first, count, pays };
 	}
 	return best;

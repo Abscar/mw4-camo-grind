@@ -54,6 +54,7 @@
 	import CasinoSection from '#lib/components/CasinoSection.svelte';
 	import ReadyBanner from '#lib/components/ReadyBanner.svelte';
 	import SquadUpBanner from '#lib/components/SquadUpBanner.svelte';
+	import Four20Banner from '#lib/components/Four20Banner.svelte';
 	import SquadUpFire from '#lib/components/SquadUpFire.svelte';
 	import { squad } from '#lib/squad.svelte.ts';
 
@@ -239,6 +240,7 @@
 		<!-- the squad's Ready up / ping banners (every tab; nothing outside a squad) -->
 		<ReadyBanner />
 		<SquadUpBanner />
+		<Four20Banner />
 
 		<!-- page tabs: the tracker, the Cosmetics list, Extra camos or the Squad -->
 		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label}>

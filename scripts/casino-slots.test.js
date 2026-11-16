@@ -2,7 +2,7 @@
 // spins, and the long-run return measured over many seeded spins. `npm test`.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { evaluate, lineWin, play, winTier, LINES, PAYS, REELS, ROWS, SLOT_BETS, STRIPS, SYMBOLS, FREE_MULT } from '../src/lib/casino-slots.ts';
+import { evaluate, lineWin, play, winTier, LINES, PAYS, PAYS2, REELS, ROWS, SLOT_BETS, STRIPS, SYMBOLS, FREE_MULT } from '../src/lib/casino-slots.ts';
 
 const seeded = (seed) => () => {
 	seed ^= seed << 13;
@@ -31,6 +31,12 @@ test('a payline: left to right, wilds stand in, the scatter breaks it, the best 
 	// three wilds then pickles: the wild run (150) beats five pickles (70)
 	assert.deepEqual(lineWin(['wild', 'wild', 'wild', 'pickle', 'pickle']), { symbol: 'wild', count: 3, pays: PAYS.wild[0] });
 	assert.deepEqual(lineWin(['wild', 'wild', 'wild', 'wild', 'wild']), { symbol: 'wild', count: 5, pays: PAYS.wild[2] });
+	// the top symbols pay for 2 in a row; the others don't
+	assert.deepEqual(lineWin(['burger', 'burger', 'fries', 'pickle', 'pickle']), { symbol: 'burger', count: 2, pays: PAYS2.burger });
+	assert.deepEqual(lineWin(['wild', 'wild', 'scatter', 'pickle', 'pickle']), { symbol: 'wild', count: 2, pays: PAYS2.wild });
+	// two wilds before fries count as three fries when that pays more
+	assert.deepEqual(lineWin(['wild', 'wild', 'fries', 'pickle', 'pickle']), { symbol: 'fries', count: 3, pays: PAYS.fries[0] });
+	assert.equal(lineWin(['pickle', 'pickle', 'fries', 'onion', 'onion']), null);
 	assert.equal(lineWin(['scatter', 'scatter', 'scatter', 'pickle', 'pickle']), null);
 });
 
@@ -50,7 +56,7 @@ test('evaluate: line bet = bet ÷ 10, ketchup anywhere pays and gives free spins
 	for (const l of found.lines) assert.equal(l.win, Math.round(PAYS[l.symbol][l.count - 3] * 10));
 });
 
-test('long run: ≈ 95 % back, about 3 in 10 spins win, free spins now and then', () => {
+test('long run: ≈ 99 % back (still under 100 %), about 3 in 10 spins win, free spins now and then', () => {
 	const rand = seeded(2026);
 	const N = 300_000;
 	let bet = 0;
@@ -68,7 +74,7 @@ test('long run: ≈ 95 % back, about 3 in 10 spins win, free spins now and then'
 		assert.equal(p.net, p.win - p.bet);
 	}
 	const rtp = won / bet;
-	assert.ok(rtp > 0.9 && rtp < 0.99, `RTP ${rtp}`);
+	assert.ok(rtp > 0.95 && rtp < 1.02, `RTP ${rtp}`);
 	assert.ok(hits / N > 0.25 && hits / N < 0.35, `hit rate ${hits / N}`);
 	assert.ok(N / features > 40 && N / features < 120, `free spins every ${N / features}`);
 	assert.ok(jackpots < 20, 'the jackpot stays rare');

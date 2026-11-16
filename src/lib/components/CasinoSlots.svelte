@@ -18,6 +18,7 @@
 		FREE_SPINS,
 		LINES,
 		PAYS,
+		PAYS2,
 		REELS,
 		ROWS,
 		SCATTER_PAYS,
@@ -333,7 +334,7 @@
 					{#if sym === 'scatter'}
 						{s.scatterRow(...SCATTER_PAYS, ...FREE_SPINS)}
 					{:else}
-						{s.payRow(...PAYS[sym])}
+						{s.payRow(...PAYS[sym], PAYS2[sym])}
 					{/if}
 				</span>
 			</li>

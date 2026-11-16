@@ -66,8 +66,45 @@ export const SHOP_ITEMS: ShopItem[] = [
 	item('title-degen', 'title', 'Certified Degen', 400, 'rare', 'Certified Degen'),
 	item('title-grinder', 'title', 'No-Life Grinder', 500, 'rare', 'No-Life Grinder'),
 	item('title-jackpot', 'title', 'Jackpot Junkie', 600, 'epic', 'Jackpot Junkie'),
-	item('title-whale', 'title', 'Burger Whale', 5000, 'legendary', 'Burger Whale')
+	item('title-whale', 'title', 'Burger Whale', 5000, 'legendary', 'Burger Whale'),
+	// the 420 pack (2026-11-16, the user's pick "build the 420 pack": "lots of 420, we like that")
+	item('aura-kush', 'aura', 'Kush Cloud', 1100, 'epic'),
+	item('fx-leaves', 'effect', 'Leaf Storm', 700, 'rare'),
+	item('fx-munchies', 'effect', 'Munchies', 1400, 'epic'),
+	item('pin-brownie', 'badge', 'Space Brownie', 150, 'common'),
+	item('pin-leaf', 'badge', 'Weed Leaf', 180, 'common'),
+	item('pin-grinder', 'badge', 'Grinder', 420, 'rare'),
+	item('pin-420', 'badge', '420 Badge', 1420, 'epic'),
+	item('name-rasta', 'name', 'Rasta', 1100, 'epic'),
+	item('title-puff', 'title', 'Puff Puff Pass', 160, 'common', 'Puff Puff Pass'),
+	item('title-couch', 'title', 'Couch Commander', 180, 'common', 'Couch Commander'),
+	item('title-snack', 'title', 'Snack Overflow', 220, 'common', 'Snack Overflow'),
+	item('title-stoner', 'title', 'Certified Stoner', 420, 'rare', 'Certified Stoner'),
+	item('title-baked', 'title', 'Ranked While Baked', 420, 'rare', 'Ranked While Baked'),
+	item('title-hotbox', 'title', 'Hotbox Hero', 480, 'rare', 'Hotbox Hero'),
+	item('title-blazed', 'title', 'Blazed & Amazed', 650, 'epic', 'Blazed & Amazed'),
+	item('title-holklord', 'title', 'Holk Lord', 4200, 'legendary', 'Holk Lord')
 ];
+
+/**
+ * Pranks (the 420 pack): bought once per use and thrown at another squad member. A Smoke Bomb covers
+ * their operator in smoke for an hour; TOO HIGH TO PLAY stamps them for a day (like the BANNED stamp).
+ */
+export const PRANKS = [
+	{ id: 'smoke-bomb', name: 'Smoke Bomb', price: 250, hours: 1 },
+	{ id: 'too-high', name: 'TOO HIGH TO PLAY', price: 400, hours: 24 }
+] as const;
+export type PrankKind = (typeof PRANKS)[number]['id'];
+export const PRANK_BY_ID: ReadonlyMap<string, (typeof PRANKS)[number]> = new Map(PRANKS.map((p) => [p.id, p]));
+/** One thrown prank: which, at whom (member id), when, burgers paid. */
+export interface Prank {
+	k: PrankKind;
+	to: string;
+	at: number;
+	p: number;
+}
+/** Pranks kept in the list (the newest); older ones only count as burgers spent (`pOld`). */
+export const PRANK_KEEP = 30;
 export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map(SHOP_ITEMS.map((i) => [i.id, i]));
 
 export interface ShopState {
@@ -77,21 +114,48 @@ export interface ShopState {
 	eq: Partial<Record<ShopSlot, string>>;
 	/** When `eq` last changed (ms). */
 	at: number;
+	/** Pranks thrown (prank id → prank), the newest PRANK_KEEP. */
+	pranks?: Record<string, Prank>;
+	/** Burgers paid for pranks that dropped off the list. */
+	pOld?: number;
 }
 
 const ID = /^[a-z0-9-]{2,24}$/;
 const PRICE_MAX = 1_000_000;
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
-/** A stored or published shop state, cleaned; undefined when nothing is owned. */
+const MEMBER_ID = /^[A-Za-z0-9_-]{8,32}$/;
+const PRANK_ID = /^[A-Za-z0-9_-]{4,16}$/;
+
+/** Newest PRANK_KEEP pranks; the burgers of the dropped ones move to `pOld`. */
+function prunePranks(pranks: Record<string, Prank>, pOld: number): { pranks: Record<string, Prank>; pOld: number } {
+	const list = Object.entries(pranks).sort(([, a], [, b]) => b.at - a.at);
+	const keep = list.slice(0, PRANK_KEEP);
+	const gone = list.slice(PRANK_KEEP).reduce((n, [, p]) => n + p.p, 0);
+	return { pranks: Object.fromEntries(keep), pOld: pOld + gone };
+}
+
+function cleanPranks(raw: unknown): Record<string, Prank> {
+	const out: Record<string, Prank> = {};
+	if (!isObject(raw)) return out;
+	for (const [id, p] of Object.entries(raw)) {
+		if (!PRANK_ID.test(id) || !isObject(p) || !PRANK_BY_ID.has(p.k as string) || typeof p.to !== 'string' || !MEMBER_ID.test(p.to)) continue;
+		if (typeof p.at !== 'number' || !Number.isFinite(p.at) || p.at <= 0 || !Number.isInteger(p.p) || (p.p as number) < 0 || (p.p as number) > PRICE_MAX) continue;
+		out[id] = { k: p.k as PrankKind, to: p.to, at: Math.round(p.at), p: p.p as number };
+	}
+	return out;
+}
+
+/** A stored or published shop state, cleaned; undefined when nothing was ever bought. */
 export function cleanShop(raw: unknown): ShopState | undefined {
-	if (!isObject(raw) || !isObject(raw.own)) return undefined;
+	if (!isObject(raw)) return undefined;
 	const own: Record<string, number> = {};
-	for (const [id, paid] of Object.entries(raw.own)) {
+	for (const [id, paid] of Object.entries(isObject(raw.own) ? raw.own : {})) {
 		// unknown ids are kept (a newer page's items), as long as they look like ids
 		if (ID.test(id) && Number.isInteger(paid) && (paid as number) >= 0 && (paid as number) <= PRICE_MAX) own[id] = paid as number;
 	}
-	if (!Object.keys(own).length) return undefined;
+	const pruned = prunePranks(cleanPranks(raw.pranks), Number.isInteger(raw.pOld) && (raw.pOld as number) > 0 ? Math.min(raw.pOld as number, PRICE_MAX * 100) : 0);
+	if (!Object.keys(own).length && !Object.keys(pruned.pranks).length && !pruned.pOld) return undefined;
 	const eq: Partial<Record<ShopSlot, string>> = {};
 	if (isObject(raw.eq)) {
 		for (const slot of SLOTS) {
@@ -100,11 +164,54 @@ export function cleanShop(raw: unknown): ShopState | undefined {
 		}
 	}
 	const at = typeof raw.at === 'number' && Number.isFinite(raw.at) && raw.at > 0 ? Math.round(raw.at) : 0;
-	return { own, eq, at };
+	const out: ShopState = { own, eq, at };
+	if (Object.keys(pruned.pranks).length) out.pranks = pruned.pranks;
+	if (pruned.pOld) out.pOld = pruned.pOld;
+	return out;
 }
 
-/** Burgers spent in the shop. */
-export const shopSpent = (s: ShopState | undefined) => Object.values(s?.own ?? {}).reduce((n, p) => n + p, 0);
+/** Burgers spent in the shop (items + pranks). */
+export const shopSpent = (s: ShopState | undefined) =>
+	Object.values(s?.own ?? {}).reduce((n, p) => n + p, 0) + Object.values(s?.pranks ?? {}).reduce((n, p) => n + p.p, 0) + (s?.pOld ?? 0);
+
+/** Throw a prank at another member (paid once per throw). */
+export function throwPrank(
+	s: ShopState | undefined,
+	kind: string,
+	to: string,
+	balance: number,
+	at: number,
+	id: string
+): { state: ShopState; result: 'ok' } | { result: 'broke' | 'unknown' } {
+	const def = PRANK_BY_ID.get(kind);
+	if (!def || !MEMBER_ID.test(to) || !PRANK_ID.test(id)) return { result: 'unknown' };
+	if (balance < def.price) return { result: 'broke' };
+	const base: ShopState = s ?? { own: {}, eq: {}, at: 0 };
+	const pruned = prunePranks({ ...base.pranks, [id]: { k: def.id, to, at, p: def.price } }, base.pOld ?? 0);
+	const state: ShopState = { ...base, pranks: pruned.pranks };
+	if (pruned.pOld) state.pOld = pruned.pOld;
+	return { result: 'ok', state };
+}
+
+export interface ActivePrank {
+	by: string;
+	until: number;
+}
+
+/** The pranks on a member right now (the latest of each kind), from everyone's shop lists. */
+export function pranksOn(target: string, members: Record<string, { shop?: ShopState }>, now: number): Partial<Record<PrankKind, ActivePrank>> {
+	const out: Partial<Record<PrankKind, ActivePrank>> = {};
+	for (const [by, m] of Object.entries(members)) {
+		for (const p of Object.values(m.shop?.pranks ?? {})) {
+			if (p.to !== target) continue;
+			const def = PRANK_BY_ID.get(p.k);
+			if (!def) continue;
+			const until = p.at + def.hours * 3_600_000;
+			if (p.at <= now + 60_000 && until > now && (!out[p.k] || until > out[p.k]!.until)) out[p.k] = { by, until };
+		}
+	}
+	return out;
+}
 
 export type BuyResult = 'ok' | 'owned' | 'broke' | 'unknown';
 
@@ -132,7 +239,11 @@ export function mergeShop(a: ShopState | undefined, b: ShopState | undefined): S
 	if (!a || !b) return a ?? b;
 	const own = { ...a.own };
 	for (const [id, p] of Object.entries(b.own)) own[id] = Math.max(own[id] ?? 0, p);
-	return { own, eq: b.at > a.at ? { ...b.eq } : { ...a.eq }, at: Math.max(a.at, b.at) };
+	const out: ShopState = { own, eq: b.at > a.at ? { ...b.eq } : { ...a.eq }, at: Math.max(a.at, b.at) };
+	const pruned = prunePranks({ ...a.pranks, ...b.pranks }, Math.max(a.pOld ?? 0, b.pOld ?? 0));
+	if (Object.keys(pruned.pranks).length) out.pranks = pruned.pranks;
+	if (pruned.pOld) out.pOld = pruned.pOld;
+	return out;
 }
 
 /** What a member wears, as items (only known, owned ones). */

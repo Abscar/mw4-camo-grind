@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { four20 } from '#lib/four20.svelte.ts';
 	import { growth, GROWTH_STAGES, type Growth } from '#lib/buddyGrowth.ts';
 	import { DIVERGENCE_REQUIRED, MASTERY_TRACKS, MAX_LEVEL } from '#lib/data/camos.ts';
 	import { WEAPONS } from '#lib/data/weapons.ts';
@@ -126,7 +127,7 @@
 
 <div class="news-buddy flex items-start gap-1.5">
 	<button type="button" class="buddy-btn flex-none" aria-label={t.buddy.poke} title={t.buddy.poke} onclick={poke}>
-		<WeedCreature class="buddy block size-24 overflow-visible sm:size-28" {mood} {reaction} {run} stage={grow.stage} {grew} />
+		<WeedCreature class="buddy block size-24 overflow-visible sm:size-28" {mood} {reaction} {run} stage={grow.stage} {grew} blazing={four20.active} />
 	</button>
 
 	<div class="news-bubble relative max-w-[400px] min-w-0 rounded-xl px-3.5 pt-2 pb-2">

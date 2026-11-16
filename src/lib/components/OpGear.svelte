@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
 	import ShopPin from './ShopPin.svelte';
 
 	let {
@@ -14,8 +15,17 @@
 		effect = null,
 		badge = null,
 		pin = 24,
+		smoked = false,
 		children
-	}: { aura?: string | null; effect?: string | null; badge?: string | null; pin?: number; children: Snippet } = $props();
+	}: {
+		aura?: string | null;
+		effect?: string | null;
+		badge?: string | null;
+		pin?: number;
+		/** A friend's Smoke Bomb (shop.ts PRANKS): the emblem disappears in a thick cloud for an hour. */
+		smoked?: boolean;
+		children: Snippet;
+	} = $props();
 
 	/** Particle places (% of the box) and delays, the same for every effect so they spread out. */
 	const PARTS = [
@@ -48,12 +58,63 @@
 				>
 			{/each}
 		</span>
+	{:else if effect === 'fx-leaves'}
+		<!-- Leaf Storm: cannabis leaves swirling round the emblem -->
+		<span class="og-fx og-leaves" aria-hidden="true">
+			{#each PARTS as p, i (i)}
+				<i style:left="{p.x}%" style:top="{p.y}%" style:animation-delay="-{p.d * 1.3}s"
+					><svg viewBox="0 0 24 24" width="13" height="13"
+						>{#each LEAF_PATHS as d, j (j)}<path {d} fill={i % 2 ? '#3fb34a' : '#6fd34a'} stroke="#14501a" stroke-width="0.8" />{/each}<path
+							d={LEAF_STEM}
+							stroke="#14501a"
+							stroke-width="1.4"
+						/></svg
+					></i
+				>
+			{/each}
+		</span>
+	{:else if effect === 'fx-munchies'}
+		<!-- Munchies: snacks floating round the emblem -->
+		<span class="og-fx og-munchies" aria-hidden="true">
+			{#each PARTS.slice(0, 6) as p, i (i)}
+				<i style:left="{p.x}%" style:top="{p.y}%" style:animation-delay="-{p.d}s"
+					><svg viewBox="0 0 24 24" width="14" height="14">
+						{#if i % 6 === 0}
+							<!-- pizza slice -->
+							<path d="M4 5 Q12 1 20 5 L12 22 Z" fill="#ffcf4a" stroke="#6a3a0a" stroke-width="1.3" stroke-linejoin="round" /><path d="M4 5 Q12 1 20 5" fill="none" stroke="#c9822a" stroke-width="2.4" /><circle cx="10" cy="9" r="1.6" fill="#d8352a" /><circle cx="14" cy="12" r="1.5" fill="#d8352a" /><circle cx="12" cy="16.5" r="1.2" fill="#d8352a" />
+						{:else if i % 6 === 1}
+							<!-- donut -->
+							<circle cx="12" cy="12" r="9" fill="#e0a050" stroke="#6a3a0a" stroke-width="1.3" /><path d="M5 10 Q6 4 12 3.6 Q18 4 19.4 10 Q17 12 15.2 10.4 Q12 13 9 10.6 Q7 12.4 5 10 Z" fill="#ff7ab8" /><circle cx="12" cy="12" r="3" fill="#1d0e05" /><path d="M8 7 l1 1 M14 6 l-1 1.2 M16.5 8.6 l1.2 .4" stroke="#fff" stroke-width="1.1" stroke-linecap="round" />
+						{:else if i % 6 === 2}
+							<!-- crisps packet -->
+							<path d="M5 3 L19 3 L18 21 L6 21 Z" fill="#e2261f" stroke="#5a0a0a" stroke-width="1.3" stroke-linejoin="round" /><path d="M5 3 l1.4 1.6 l1.4 -1.6 l1.4 1.6 l1.4 -1.6 l1.4 1.6 l1.4 -1.6 l1.4 1.6 l1.4 -1.6 l1.4 1.6 l1.4 -1.6" fill="none" stroke="#5a0a0a" stroke-width="0.9" /><ellipse cx="12" cy="13" rx="4" ry="3" fill="#ffd23a" />
+						{:else if i % 6 === 3}
+							<!-- burger -->
+							<path d="M3 11c0-4.4 4-7 9-7s9 2.6 9 7z" fill="#e0a040" stroke="#5a3200" stroke-width="1.4" /><path d="M2.5 12.5h19l-1.5 2h-16z" fill="#4fb23a" /><rect x="3" y="14.2" width="18" height="2.8" rx="1.2" fill="#6b3a1c" /><path d="M3.5 17.5h17c0 2-1.5 3-3.5 3H7c-2 0-3.5-1-3.5-3z" fill="#e0a040" stroke="#5a3200" stroke-width="1.4" />
+						{:else if i % 6 === 4}
+							<!-- fries -->
+							<path d="M7 9 L8 2 M10 9 L10.5 1.5 M13 9 L13.4 2 M16 9 L16 2.5" stroke="#ffd23a" stroke-width="2.4" stroke-linecap="round" /><path d="M5 8 L19 8 L17 22 L7 22 Z" fill="#e2261f" stroke="#5a0a0a" stroke-width="1.3" stroke-linejoin="round" />
+						{:else}
+							<!-- chocolate bar -->
+							<rect x="5" y="3" width="14" height="18" rx="1.5" fill="#5a2e14" stroke="#2a1006" stroke-width="1.3" /><path d="M5 9 H19 M5 15 H19 M12 3 V21" stroke="#3a1a08" stroke-width="1" /><path d="M5 14 L19 10 L19 21 L5 21 Z" fill="#c9d3dc" stroke="#2a1006" stroke-width="1" />
+						{/if}
+					</svg></i
+				>
+			{/each}
+		</span>
 	{:else if effect}
 		<span class="og-fx" data-effect={effect} aria-hidden="true">
 			{#each PARTS as p, i (i)}<i style:left="{p.x}%" style:top="{p.y}%" style:animation-delay="-{p.d}s"></i>{/each}
 		</span>
 	{/if}
 	{#if badge}<span class="og-pin" aria-hidden="true"><ShopPin id={badge} size={pin} /></span>{/if}
+	{#if smoked}
+		<span class="og-bomb" aria-hidden="true">
+			{#each [[30, 40, 0], [62, 34, -0.8], [46, 62, -1.6], [22, 66, -2.2], [74, 64, -0.4], [50, 22, -1.2], [40, 48, -2.6]] as [x, y, d], i (i)}
+				<i style:left="{x}%" style:top="{y}%" style:animation-delay="{d}s"></i>
+			{/each}
+		</span>
+	{/if}
 </span>
 
 <style>
@@ -115,6 +176,25 @@
 		filter: blur(7px);
 		opacity: 0.85;
 		animation: og-spin 5s linear infinite;
+	}
+	/* Kush Cloud: thick green smoke rolling round the emblem */
+	.og-aura[data-aura='aura-kush'] i {
+		background:
+			radial-gradient(circle at 30% 40%, rgb(140 255 90 / 0.75) 0 18%, transparent 42%),
+			radial-gradient(circle at 70% 35%, rgb(90 220 60 / 0.7) 0 20%, transparent 44%),
+			radial-gradient(circle at 50% 70%, rgb(60 190 40 / 0.65) 0 24%, transparent 50%),
+			radial-gradient(circle, rgb(40 140 30 / 0.45) 0 40%, transparent 70%);
+		filter: blur(3px);
+		animation: og-kush 6s ease-in-out infinite;
+	}
+	@keyframes og-kush {
+		0%,
+		100% {
+			transform: rotate(0deg) scale(1);
+		}
+		50% {
+			transform: rotate(40deg) scale(1.12);
+		}
 	}
 	.og-aura[data-aura='aura-storm'] i {
 		background: radial-gradient(circle, rgb(120 170 255 / 0.75) 0 28%, rgb(40 70 200 / 0.45) 52%, transparent 70%);
@@ -279,6 +359,43 @@
 			opacity: 1;
 		}
 	}
+	/* Leaf Storm: leaves tumbling round and down */
+	.og-leaves i {
+		animation: og-leaf 3.4s ease-in-out infinite;
+	}
+	.og-leaves i :global(svg) {
+		display: block;
+		filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.6));
+	}
+	@keyframes og-leaf {
+		0% {
+			transform: translate(0, -10px) rotate(0deg) scale(0.6);
+			opacity: 0;
+		}
+		20% {
+			opacity: 1;
+		}
+		100% {
+			transform: translate(8px, 16px) rotate(320deg) scale(1);
+			opacity: 0;
+		}
+	}
+	/* Munchies: snacks bobbing round the emblem */
+	.og-munchies i {
+		animation: og-munch 2.6s ease-in-out infinite alternate;
+	}
+	.og-munchies i :global(svg) {
+		display: block;
+		filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.6));
+	}
+	@keyframes og-munch {
+		from {
+			transform: translateY(-4px) rotate(-14deg);
+		}
+		to {
+			transform: translateY(4px) rotate(14deg);
+		}
+	}
 	/* burgers circling the emblem */
 	.og-orbit {
 		position: absolute;
@@ -304,6 +421,31 @@
 		animation: og-spin 6s linear infinite reverse;
 		filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.6));
 	}
+	/* ---------- a Smoke Bomb: thick grey clouds over the whole emblem ---------- */
+	.og-bomb {
+		position: absolute;
+		inset: -16%;
+		z-index: 4;
+		pointer-events: none;
+	}
+	.og-bomb i {
+		position: absolute;
+		width: 62%;
+		height: 62%;
+		margin: -31% 0 0 -31%;
+		border-radius: 999px;
+		background: radial-gradient(circle at 40% 35%, rgb(235 238 235 / 0.97), rgb(170 176 172 / 0.92) 55%, rgb(120 126 122 / 0) 72%);
+		filter: blur(1.5px);
+		animation: og-bomb 3.2s ease-in-out infinite alternate;
+	}
+	@keyframes og-bomb {
+		from {
+			transform: translate(-6%, 4%) scale(0.92);
+		}
+		to {
+			transform: translate(6%, -6%) scale(1.1);
+		}
+	}
 	/* ---------- the pin on the corner ---------- */
 	.og-pin {
 		position: absolute;
@@ -318,7 +460,8 @@
 	:global(.og-name[data-style='name-gold']),
 	:global(.og-name[data-style='name-chrome']),
 	:global(.og-name[data-style='name-fire']),
-	:global(.og-name[data-style='name-rainbow']) {
+	:global(.og-name[data-style='name-rainbow']),
+	:global(.og-name[data-style='name-rasta']) {
 		text-shadow: none !important;
 		-webkit-text-stroke: 0 !important;
 	}
@@ -358,6 +501,14 @@
 		filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.7));
 		animation: og-rainbow 4s linear infinite;
 	}
+	/* Rasta: red, gold and green bands across the letters */
+	:global(.og-name[data-style='name-rasta']) {
+		background: linear-gradient(180deg, #ff3a2a 0 34%, #ffd23a 34% 66%, #2fc85a 66%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.85)) drop-shadow(0 0 4px rgb(60 200 80 / 0.5));
+	}
 	@keyframes og-rainbow {
 		to {
 			background-position: 200% 0;
@@ -396,6 +547,9 @@
 		.og-orbit,
 		.og-orbit i :global(svg),
 		.og-fx i,
+		.og-leaves i,
+		.og-munchies i,
+		.og-bomb i,
 		:global(.og-name[data-style='name-rainbow']) {
 			animation: none !important;
 		}

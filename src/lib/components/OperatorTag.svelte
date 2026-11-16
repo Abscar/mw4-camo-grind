@@ -35,7 +35,7 @@
 	import { dayKey, playedOn } from '#lib/squad-fun.ts';
 	import { combatView, fmtRatio } from '#lib/squad-combat.ts';
 	import { banOf } from '#lib/squad-bans.ts';
-	import { worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import { pranksOn, worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
 	import OpGear from './OpGear.svelte';
 
 	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
@@ -63,6 +63,12 @@
 
 	/** The squad member who is this operator (only when you're in a squad yourself). */
 	const live = (op: SquadOp) => (squad.on ? squad.forOp(op) : null);
+	/** Pranks on each operator's squad member right now (shop.ts PRANKS). */
+	const pr = $derived.by(() => {
+		const members = Object.fromEntries(squad.entries.map((e) => [e.id, e.member]));
+		return Object.fromEntries(SQUAD_OPS.map((op) => { const e = live(op); return [op, e ? pranksOn(e.id, members, squad.now) : {}]; })) as Record<SquadOp, ReturnType<typeof pranksOn>>;
+	});
+	const nameOf = (id: string) => squad.entries.find((e) => e.id === id)?.member.name ?? '?';
 	/** What each operator's squad member wears from BurgiShop (shop.ts, OpGear; visitors see nothing). */
 	const gear = $derived(
 		Object.fromEntries(SQUAD_OPS.map((op) => [op, worn(live(op)?.member.shop)])) as Record<SquadOp, Partial<Record<ShopSlot, ShopItem>>>
@@ -210,6 +216,16 @@
 	{/if}
 {/snippet}
 
+<!-- a friend's prank (shop.ts PRANKS): a green TOO HIGH TO PLAY stamp for a day -->
+{#snippet high(op: SquadOp)}
+	{@const p = pr[op]['too-high']}
+	{#if p}
+		<span class="op-high font-head" role="img" aria-label={t.pranks.highBy(nameOf(p.by))} title={t.pranks.highBy(nameOf(p.by))}>
+			<span class="op-high-word" aria-hidden="true">{t.pranks.stamp}</span>
+		</span>
+	{/if}
+{/snippet}
+
 {#snippet mastery(who: string, statuses: Status[], isSlacker = false, motto: string | readonly string[] = '', tone = 'purple', op: SquadOp = 'abscar')}
 	<div class="sq-boxes">
 	<ul class="squad-mastery font-hud" aria-label={t.operator.masteryOf(who)}>
@@ -250,37 +266,41 @@
 		<span class="squad-legend font-hud">{t.operator.squad}</span>
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" /></OpGear>
+				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id} smoked={!!pr.abscar['smoke-bomb']}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" /></OpGear>
 				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
 			{@render stamp('abscar', t.operator.callsign)}
+			{@render high('abscar')}
 			{@render mastery(t.operator.callsign, statuses.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss', 'abscar')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id}><PhillestarEmblem /></OpGear>
+				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id} smoked={!!pr.phillestar['smoke-bomb']}><PhillestarEmblem /></OpGear>
 				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
 			{@render stamp('phillestar', t.operator.mate)}
+			{@render high('phillestar')}
 			{@render mastery(t.operator.mate, statuses.phillestar, slacker === 'phillestar', t.operator.mateMotto, 'purple', 'phillestar')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id}><LarsAkeEmblem /></OpGear>
+				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id} smoked={!!pr.lars['smoke-bomb']}><LarsAkeEmblem /></OpGear>
 				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
 			{@render stamp('lars', t.operator.lars)}
+			{@render high('lars')}
 			{@render mastery(t.operator.lars, statuses.lars, slacker === 'lars', t.operator.larsMotto, 'lime', 'lars')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id}><DaJeevenEmblem /></OpGear>
+				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id} smoked={!!pr.jeeven['smoke-bomb']}><DaJeevenEmblem /></OpGear>
 				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
 			{@render stamp('jeeven', t.operator.jeeven)}
+			{@render high('jeeven')}
 			{@render mastery(t.operator.jeeven, statuses.jeeven, slacker === 'jeeven', '', 'purple', 'jeeven')}
 			<!-- his Black Ops 6 + 7 record (the user, 2026-11-13) and the gold "Certified grinder" sticker -->
 			<div class="sq-record-wrap">
@@ -300,10 +320,11 @@
 		<!-- Ingman, the wizard (2026-11-14, the user's friend), with his sign "Jim and Pro player" -->
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id}><IngmanEmblem /></OpGear>
+				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id} smoked={!!pr.ingman['smoke-bomb']}><IngmanEmblem /></OpGear>
 				{@render callsign(t.operator.ingman, 'ingman')}
 			</div>
 			{@render stamp('ingman', t.operator.ingman)}
+			{@render high('ingman')}
 			{@render mastery(t.operator.ingman, statuses.ingman, slacker === 'ingman', t.operator.ingmanMotto, 'wizard', 'ingman')}
 		</div>
 	</div>
@@ -645,6 +666,49 @@
 		}
 		.op-stamp-why {
 			font-size: 10px;
+		}
+	}
+	/* a friend's TOO HIGH TO PLAY prank: a green stamp, tilted the other way, a bit lower than BANNED */
+	.op-high {
+		position: absolute;
+		z-index: 3;
+		top: 58px;
+		left: 46%;
+		padding: 2px 10px 3px;
+		border: 4px double #4fe05a;
+		border-radius: 8px;
+		background: rgb(4 30 8 / 0.82);
+		color: #7dff6a;
+		text-transform: uppercase;
+		text-shadow: 0 0 6px rgb(80 255 80 / 0.6);
+		box-shadow: 0 0 14px rgb(60 220 60 / 0.4);
+		transform: translate(-50%, -50%) rotate(9deg);
+		pointer-events: auto;
+		white-space: nowrap;
+		animation: op-high-in 0.45s cubic-bezier(0.2, 1.5, 0.45, 1) both;
+	}
+	.op-high-word {
+		font-size: 15px;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+	}
+	@keyframes op-high-in {
+		from {
+			opacity: 0;
+			transform: translate(-50%, -50%) rotate(20deg) scale(2.2);
+		}
+	}
+	@container squad (min-width: 700px) {
+		.op-high {
+			top: 50px;
+		}
+		.op-high-word {
+			font-size: 12px;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.op-high {
+			animation: none;
 		}
 	}
 	@keyframes op-stamp-in {

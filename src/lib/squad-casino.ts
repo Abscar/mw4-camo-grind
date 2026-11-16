@@ -22,6 +22,10 @@ export const DAILY = { base: 25, step: 25, every: 5 } as const;
 export interface OnlineDays {
 	n: number;
 	last: string;
+	/** Extra burgers from 4:20 hours (the day's bonus once more, four20.ts). */
+	b420?: number;
+	/** The last day that got the 4:20 extra. */
+	d420?: string;
 }
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -31,7 +35,19 @@ const isTime = (x: unknown): x is number => typeof x === 'number' && Number.isFi
 
 export function cleanOnline(raw: unknown): OnlineDays | undefined {
 	if (!isObject(raw) || !Number.isInteger(raw.n) || (raw.n as number) < 1 || typeof raw.last !== 'string' || !DAY_KEY.test(raw.last)) return undefined;
-	return { n: Math.min(raw.n as number, DAYS_MAX), last: raw.last };
+	const o: OnlineDays = { n: Math.min(raw.n as number, DAYS_MAX), last: raw.last };
+	if (Number.isInteger(raw.b420) && (raw.b420 as number) > 0 && typeof raw.d420 === 'string' && DAY_KEY.test(raw.d420)) {
+		o.b420 = Math.min(raw.b420 as number, 100_000_000);
+		o.d420 = raw.d420;
+	}
+	return o;
+}
+
+/** During the 4:20 hour: the day's bonus once more (once a day); `added` 0 when not now or already had. */
+export function count420(o: OnlineDays | undefined, today: string, active: boolean): { next: OnlineDays | undefined; added: number } {
+	if (!active || !o || o.last !== today || (o.d420 ?? '') >= today) return { next: o, added: 0 };
+	const added = dailyRate(o.n);
+	return { next: { ...o, b420: (o.b420 ?? 0) + added, d420: today }, added };
 }
 
 /** Burgers for your n-th day online: 25 for days 1–5, 50 for 6–10, 75 for 11–15 … */
@@ -54,8 +70,13 @@ export const daysToNextRate = (n: number) => DAILY.every - ((Math.max(n, 1) - 1)
 /** Two copies of your days (two devices): the one with more days; the later last day on a tie. */
 export function mergeOnline(a: OnlineDays | undefined, b: OnlineDays | undefined): OnlineDays | undefined {
 	if (!a || !b) return a ?? b;
-	if (a.n !== b.n) return a.n > b.n ? a : b;
-	return a.last >= b.last ? a : b;
+	const base = a.n !== b.n ? (a.n > b.n ? a : b) : a.last >= b.last ? a : b;
+	// the 4:20 extras: the bigger total and the later day (both devices may have counted the same hour)
+	const b420 = Math.max(a.b420 ?? 0, b.b420 ?? 0);
+	const d420 = [a.d420 ?? '', b.d420 ?? ''].sort().pop() ?? '';
+	if (!b420 || !d420) return base;
+	if (base.b420 === b420 && base.d420 === d420) return base;
+	return { ...base, b420, d420 };
 }
 
 /** Today counted (once): the new days and the burgers it gave (0 when today was already counted). */

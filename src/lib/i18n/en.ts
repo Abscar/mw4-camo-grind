@@ -731,6 +731,63 @@ export const en = {
 		/** a soft hyphen so it can break on a phone ("Burgi-/Casino") */
 		casino: 'Burgi­Casino'
 	},
+	/** 4:20 (four20.ts; 2026-11-16, the 420 pack): every day 16:20–17:20, the page goes green. */
+	four20: {
+		banner: 'IT’S 4:20 🍃',
+		sub: (left: number) => `The page is green, the buddy lights up, and everyone online gets today’s daily bonus once more. ${left} min left.`,
+		bonus: (n: number) => `4:20 bonus: +${n.toLocaleString('en-US')} 🍔 🍃`,
+		close: 'Close'
+	},
+	/** BurgiBank loans (loans.ts; 2026-11-16). */
+	loans: {
+		heading: 'BurgiBank',
+		intro: (rate: number, days: number) =>
+			`Borrow burgers from the bank (not from Abscar). Pay back within ${days} days with ${rate}% interest; the interest goes to Abscar. If you don’t, the bank takes it back by itself on the due date.`,
+		take: (n: number) => `Borrow ${n.toLocaleString('en-US')}`,
+		open: (owed: number, due: string, left: string) => `You owe ${owed.toLocaleString('en-US')} 🍔 (loan + interest), due ${due} · ${left}`,
+		left: (days: number, hours: number) => (days >= 1 ? `${days} day${days === 1 ? '' : 's'} left` : `${hours} h left`),
+		repay: (n: number) => `Pay back ${n.toLocaleString('en-US')} 🍔`,
+		repaid: 'Loan paid back. Thanks for banking with BurgiBank 🏦',
+		taken: (n: number, owed: number) => `+${n.toLocaleString('en-US')} 🍔 borrowed. Pay back ${owed.toLocaleString('en-US')} within a week.`,
+		cantRepay: (owed: number) => `You need ${owed.toLocaleString('en-US')} 🍔 to pay back.`,
+		oneAtATime: 'Pay back your loan before you borrow again.',
+		history: (paid: number, collected: number) => `${paid} paid back · ${collected} collected by the bank`,
+		owesTag: (n: number) => `owes ${n.toLocaleString('en-US')} 🍔`,
+		takenEvent: (n: number) => `borrowed ${n.toLocaleString('en-US')} 🍔 from BurgiBank 🏦`,
+		paidEvent: (n: number) => `paid back ${n.toLocaleString('en-US')} 🍔 to BurgiBank 🏦`
+	},
+	/** Abscar's casino admin menu (2026-11-16). */
+	admin: {
+		heading: 'Admin menu',
+		intro: 'Only you see this. Give or take burgers for anyone in the squad; they come from nowhere and go nowhere (not your account). It goes on the radio.',
+		amount: 'Burgers',
+		give: 'Give',
+		take: 'Take',
+		everyone: 'Everyone',
+		given: (name: string, n: number) => `Gave ${name} ${n.toLocaleString('en-US')} 🍔`,
+		taken: (name: string, n: number) => `Took ${n.toLocaleString('en-US')} 🍔 from ${name}`,
+		failed: 'Couldn’t reach the squad. Try again in a moment.',
+		balanceOf: (n: number) => `${n.toLocaleString('en-US')} 🍔`,
+		adjusted: (n: number) => `admin ${n > 0 ? '+' : '−'}${Math.abs(n).toLocaleString('en-US')}`,
+		gaveEvent: (name: string, n: number) => `gave ${name} ${n.toLocaleString('en-US')} 🍔 (admin) 🎁`,
+		tookEvent: (name: string, n: number) => `took ${n.toLocaleString('en-US')} 🍔 from ${name} (admin) 🔨`
+	},
+	/** Pranks (shop.ts PRANKS; the 420 pack). */
+	pranks: {
+		heading: 'Pranks',
+		intro: 'Bought once per throw. Pick who gets it.',
+		names: { 'smoke-bomb': 'Smoke Bomb', 'too-high': 'TOO HIGH TO PLAY' },
+		what: { 'smoke-bomb': 'Their operator disappears in thick smoke for an hour.', 'too-high': 'A big green TOO HIGH TO PLAY stamp on their operator for a day.' },
+		pick: 'Who gets it?',
+		throw: (price: number) => `Throw · ${price.toLocaleString('en-US')} 🍔`,
+		thrown: (name: string) => `Got ${name} 😈`,
+		nobody: 'Nobody else in the squad yet.',
+		stamp: 'Too high to play',
+		smokedBy: (name: string) => `Smoke-bombed by ${name}`,
+		highBy: (name: string) => `Stamped TOO HIGH TO PLAY by ${name}`,
+		smokeEvent: (name: string) => `threw a SMOKE BOMB at ${name} 💨`,
+		highEvent: (name: string) => `stamped ${name} TOO HIGH TO PLAY 🍃`
+	},
 	/** BurgiShop (2026-11-16): cosmetics bought with burgers and worn on your header operator (shop.ts). */
 	shop: {
 		heading: 'BurgiShop',
@@ -738,7 +795,7 @@ export const en = {
 		noOp: 'You haven’t picked an operator from the header (Squad tab → Edit), so your look only shows here and on your squad card.',
 		preview: 'Your operator',
 		tryOn: 'Trying on',
-		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', name: 'Name styles', title: 'Titles' },
+		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', name: 'Name styles', title: 'Titles', pranks: '😈 Pranks' },
 		slotsLabel: 'Kind',
 		rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
 		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} 🍔`,
@@ -781,8 +838,8 @@ export const en = {
 		house: {
 			heading: 'The house',
 			line: (name: string, n: number) =>
-				`${name} is the house: every burger anyone else loses here or on bets, or spends in BurgiShop, goes to ${name}’s account. ${n.toLocaleString('en-US')} 🍔 so far.`,
-			mine: (n: number) => `You’re the house: every burger the others lose here or on bets, or spend in BurgiShop, goes to your account. ${n.toLocaleString('en-US')} 🍔 so far.`,
+				`${name} is the house: every burger anyone else loses here or on bets, spends in BurgiShop or pays as loan interest goes to ${name}’s account. ${n.toLocaleString('en-US')} 🍔 so far.`,
+			mine: (n: number) => `You’re the house: every burger the others lose here or on bets, spend in BurgiShop or pay as loan interest goes to your account. ${n.toLocaleString('en-US')} 🍔 so far.`,
 			none: 'Abscar is the house: once Abscar is in the squad, every burger the others lose here or on bets, or spend in BurgiShop, goes to Abscar’s account.'
 		},
 		board: {
@@ -816,7 +873,7 @@ export const en = {
 			scatterWin: (count: number, win: number, spins: number) => `${count} × Ketchup = ${win} 🍔 + ${spins} free spins`,
 			noWin: 'No win this time.',
 			paytable: 'Paytable & how it works',
-			how: 'Like a real video slot: 5 reels, 3 rows and 10 paylines. Each reel is a weighted strip, so pickles are common and burgers rare; every stop is equally likely (no near-miss tricks). Wins pay left to right from the first reel, 3, 4 or 5 in a row, times your bet ÷ 10, the best win per line. WILD stands in for every symbol but Ketchup and pays the most itself. Ketchup pays anywhere on the screen and 3 or more give free spins with every win doubled (they can come again). In the long run the machine gives back about 95% of what goes in, like real ones (they keep the rest), so the house wins in the end.',
+			how: 'Like a real video slot: 5 reels, 3 rows and 10 paylines. Each reel is a weighted strip, so pickles are common and burgers rare; every stop is equally likely (no near-miss tricks). Wins pay left to right from the first reel, 3, 4 or 5 in a row (burgers and WILD already from 2), times your bet ÷ 10, the best win per line. WILD stands in for every symbol but Ketchup and pays the most itself. Ketchup pays anywhere on the screen and 3 or more give free spins with every win doubled (they can come again). In the long run the machine gives back about 99% of what goes in (real ones keep a bit more), so the house still wins in the end, just slowly.',
 			symbols: {
 				pickle: 'Pickle',
 				onion: 'Onion ring',
@@ -829,7 +886,7 @@ export const en = {
 				wild: 'WILD',
 				scatter: 'Ketchup'
 			},
-			payRow: (a: number, b: number, c: number) => `3 → ${a} · 4 → ${b} · 5 → ${c}`,
+			payRow: (a: number, b: number, c: number, two?: number) => `${two ? `2 → ${two} · ` : ''}3 → ${a} · 4 → ${b} · 5 → ${c}`,
 			scatterRow: (a: number, b: number, c: number, fa: number, fb: number, fc: number) => `3 → ${a}× bet + ${fa} free · 4 → ${b}× + ${fb} · 5 → ${c}× + ${fc}`,
 			payNote: 'Line wins are times the line bet (your bet ÷ 10).',
 			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`

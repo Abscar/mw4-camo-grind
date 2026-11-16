@@ -3,6 +3,8 @@
 	corner of a member's operator emblem (OpGear.svelte) and shown in the shop. Decorative.
 -->
 <script lang="ts">
+	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
+
 	let { id, size = 24 }: { id: string; size?: number } = $props();
 	const uid = $props.id();
 	const O = '#1d0e05';
@@ -14,7 +16,7 @@
 		<linearGradient id="{uid}-gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fdff" /><stop offset="0.45" stop-color="#5ce1ff" /><stop offset="1" stop-color="#1a6ad8" /></linearGradient>
 	</defs>
 	<!-- the pin's rim -->
-	<circle cx="16" cy="16" r="14.5" fill={id === 'pin-holk' || id === 'pin-crown' ? '#2a0a06' : '#12161c'} stroke="url(#{uid}-gold)" stroke-width="2.5" />
+	<circle cx="16" cy="16" r="14.5" fill={id === 'pin-holk' || id === 'pin-crown' ? '#2a0a06' : id === 'pin-leaf' || id === 'pin-420' ? '#0b2a10' : '#12161c'} stroke="url(#{uid}-gold)" stroke-width="2.5" />
 	{#if id === 'pin-burger'}
 		<path d="M7 15c0-4.4 4-7 9-7s9 2.6 9 7z" fill="#e0a040" stroke={O} stroke-width="1.2" />
 		<path d="M6.5 16.5h19l-1.5 2h-16z" fill="#4fb23a" />
@@ -36,6 +38,28 @@
 	{:else if id === 'pin-diamond'}
 		<path d="M9 13 L12.5 8.5 H19.5 L23 13 L16 24 Z" fill="url(#{uid}-gem)" stroke={O} stroke-width="1.2" stroke-linejoin="round" />
 		<path d="M9 13 H23 M12.5 8.5 L14.5 13 L16 24 L17.5 13 L19.5 8.5" fill="none" stroke="#e8fdff" stroke-width="0.8" opacity="0.8" />
+	{:else if id === 'pin-leaf'}
+		<g transform="translate(4 3.5) scale(1)">
+			{#each LEAF_PATHS as d, i (i)}<path {d} fill="#3fb34a" stroke="#14501a" stroke-width="0.7" stroke-linejoin="round" />{/each}
+			<path d={LEAF_STEM} stroke="#14501a" stroke-width="1.4" stroke-linecap="round" />
+		</g>
+	{:else if id === 'pin-brownie'}
+		<!-- a space brownie: a fudgy square, white frosting dripping, a little leaf on top -->
+		<rect x="8" y="11" width="16" height="13" rx="2" fill="#5a2e14" stroke={O} stroke-width="1.2" />
+		<path d="M8 13 Q8 10.5 10.5 10.5 H21.5 Q24 10.5 24 13 V14 Q22.6 16.4 21.4 14.2 Q20 17 18.6 14.4 Q17.2 16.8 15.8 14.3 Q14.2 17.2 12.8 14.4 Q11 16.6 9.6 14.3 Q8.6 15.6 8 14 Z" fill="#fff6f0" stroke={O} stroke-width="1" stroke-linejoin="round" />
+		<g transform="translate(11.4 2.6) scale(0.4)">{#each LEAF_PATHS as d, i (i)}<path {d} fill="#3fb34a" stroke="#14501a" stroke-width="1.2" />{/each}</g>
+		<circle cx="12" cy="19.5" r="0.9" fill="#3a1a08" /><circle cx="19" cy="21" r="0.9" fill="#3a1a08" /><circle cx="16" cy="18" r="0.7" fill="#3a1a08" />
+	{:else if id === 'pin-grinder'}
+		<!-- a grinder seen from above: a metal ring with teeth and a leaf on the lid -->
+		<circle cx="16" cy="16" r="10.5" fill="#9aa6b2" stroke={O} stroke-width="1.2" />
+		{#each Array.from({ length: 16 }) as _, i (i)}
+			<rect x="15.2" y="5.3" width="1.6" height="2.4" fill="#5a6470" transform="rotate({i * 22.5} 16 16)" />
+		{/each}
+		<circle cx="16" cy="16" r="7.4" fill="#2fa84f" stroke={O} stroke-width="1" />
+		<g transform="translate(9.6 8.6) scale(0.55)">{#each LEAF_PATHS as d, i (i)}<path {d} fill="#c8f5a0" />{/each}</g>
+	{:else if id === 'pin-420'}
+		<text x="16" y="20.5" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="12.5" fill="#7dff6a" stroke="#0b3d10" stroke-width="1" paint-order="stroke" letter-spacing="0.3">420</text>
+		<g transform="translate(11.8 1.6) scale(0.36)">{#each LEAF_PATHS as d, i (i)}<path {d} fill="#3fb34a" />{/each}</g>
 	{:else if id === 'pin-holk'}
 		<!-- a golden cone joint with a glowing tip -->
 		<path d="M8 22 L23 10.5 L25.2 13.6 L9.6 23.6 Z" fill="url(#{uid}-gold)" stroke={O} stroke-width="1.1" stroke-linejoin="round" />

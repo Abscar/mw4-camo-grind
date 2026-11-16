@@ -15,6 +15,8 @@
 	import CasinoRoulette from './CasinoRoulette.svelte';
 	import CasinoSlots from './CasinoSlots.svelte';
 	import ShopSection from './ShopSection.svelte';
+	import CasinoAdmin from './CasinoAdmin.svelte';
+	import CasinoLoans from './CasinoLoans.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	let { onSquad }: { onSquad?: () => void } = $props();
@@ -55,7 +57,7 @@
 	const members = $derived(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])));
 	const houseId = $derived(houseOf(members));
 	const houseEntry = $derived(houseId ? (squad.entries.find((e) => e.id === houseId) ?? null) : null);
-	const houseTake = $derived(houseId && squad.doc ? (burgerBank(squad.doc, members)[houseId]?.house ?? 0) : 0);
+	const houseTake = $derived(houseId && squad.doc ? (burgerBank(squad.doc, members, squad.now)[houseId]?.house ?? 0) : 0);
 
 	const board = $derived(
 		squad.entries
@@ -103,6 +105,10 @@
 					{#if !houseEntry}{c.house.none}{:else if houseEntry.mine}{c.house.mine(houseTake)}{:else}{c.house.line(houseEntry.member.name, houseTake)}{/if}
 				</p>
 			</div>
+
+			<!-- BurgiBank loans, and (Abscar only) the admin menu -->
+			<CasinoLoans />
+			{#if houseEntry?.mine}<CasinoAdmin />{/if}
 
 			<!-- which game -->
 			<div class="flex flex-wrap gap-1.5" role="group" aria-label={c.gamesLabel}>

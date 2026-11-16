@@ -29,6 +29,7 @@ import { APP_ID } from './progress-codec.ts';
 import { cleanBans, type Bans } from './squad-bans.ts';
 import { cleanCasino, cleanOnline, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { cleanShop, type ShopState } from './shop.ts';
+import { cleanLoans, type LoanBook } from './loans.ts';
 import { cleanClasses, type ClassList } from './squad-classes.ts';
 import { cleanCombat, type CombatLog } from './squad-combat.ts';
 import { cleanRanked, type RankedLog } from './squad-ranked.ts';
@@ -94,6 +95,8 @@ export interface SquadMember {
 	casino?: CasinoLedger;
 	/** BurgiShop: what they bought and wear on their operator (shop.ts; 2026-11-16). */
 	shop?: ShopState;
+	/** BurgiBank loans (loans.ts; 2026-11-16). */
+	loans?: LoanBook;
 	/** Fields a newer page wrote that this one doesn't know: kept as they are, never dropped. */
 	more?: Record<string, unknown>;
 }
@@ -155,6 +158,11 @@ export interface SquadDoc {
 	paid?: string[];
 	/** Joke bans lifted or put back by the owner (squad-bans.ts; 2026-11-16). */
 	bans?: Bans;
+	/**
+	 * Abscar's casino admin menu (2026-11-16): burgers given (+) or taken (−) per member, as a running
+	 * total (member id → burgers). Made out of nothing / gone into nothing, not from anyone's account.
+	 */
+	grants?: Record<string, number>;
 	/** Document fields a newer page wrote that this one doesn't know: kept as they are. */
 	more?: Record<string, unknown>;
 }
@@ -181,8 +189,18 @@ export const MAX_BETS = 40;
 export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop']);
-const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans']);
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants']);
+
+/** Admin grants: member id → whole burgers (±), within a sane range. */
+export function cleanGrants(raw: unknown): Record<string, number> | undefined {
+	if (!isObject(raw)) return undefined;
+	const out: Record<string, number> = {};
+	for (const [id, n] of Object.entries(raw)) {
+		if (isMemberId(id) && Number.isInteger(n) && n !== 0 && Math.abs(n as number) <= 100_000_000) out[id] = n as number;
+	}
+	return Object.keys(out).length ? out : undefined;
+}
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The keys of `raw` this page doesn't know (so a newer page's additions survive an older page's write). */
@@ -266,6 +284,8 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (casino) member.casino = casino;
 	const shop = cleanShop(raw.shop);
 	if (shop) member.shop = shop;
+	const loans = cleanLoans(raw.loans);
+	if (loans) member.loans = loans;
 	const more = unknownKeys(raw, MEMBER_KEYS);
 	if (more) member.more = more;
 	return member;
@@ -399,6 +419,8 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 	if (paid.length) doc.paid = paid;
 	const bans = cleanBans(raw.bans);
 	if (bans) doc.bans = bans;
+	const grants = cleanGrants(raw.grants);
+	if (grants) doc.grants = grants;
 	const more = unknownKeys(raw, DOC_KEYS);
 	if (more) doc.more = more;
 	return doc;
@@ -415,6 +437,7 @@ export function toSquadWire(doc: SquadDoc): SquadWire {
 	if (doc.settled?.length) wire.settled = doc.settled;
 	if (doc.paid?.length) wire.paid = doc.paid;
 	if (doc.bans) wire.bans = doc.bans;
+	if (doc.grants) wire.grants = doc.grants;
 	return wire;
 }
 
@@ -444,6 +467,7 @@ export function memberEntry(
 		online?: OnlineDays | null;
 		casino?: CasinoLedger | null;
 		shop?: ShopState | null;
+		loans?: LoanBook | null;
 	} = {}
 ): SquadMember {
 	const entry = cleanMember({
@@ -464,7 +488,8 @@ export function memberEntry(
 		classes: extra.classes ?? undefined,
 		online: extra.online ?? undefined,
 		casino: extra.casino ?? undefined,
-		shop: extra.shop ?? undefined
+		shop: extra.shop ?? undefined,
+		loans: extra.loans ?? undefined
 	});
 	if (!entry) throw new Error('bad squad entry');
 	return entry;

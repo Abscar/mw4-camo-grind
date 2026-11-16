@@ -173,7 +173,8 @@
 		reaction = null,
 		run = 0,
 		stage = 2,
-		grew = false
+		grew = false,
+		blazing = false
 	}: {
 		class?: string;
 		mood?: BuddyMood;
@@ -185,6 +186,8 @@
 		stage?: GrowthStage;
 		/** He just grew a stage: a bounce and a burst of sparkles. */
 		grew?: boolean;
+		/** 4:20 (four20.ts): a lit holk in the corner of his grin, smoking. */
+		blazing?: boolean;
 	} = $props();
 	const uid = $props.id();
 	/** A poke wakes him up for the reaction. */
@@ -383,6 +386,20 @@
 		<path d="M37.5 47 Q46 64 54.5 47 Q46 55 37.5 47 Z" fill="#060d04" />
 		{#each UPPER_TEETH as d, i (i)}<path {d} fill="#ebe4b2" stroke="#6b6436" stroke-width="0.2" />{/each}
 		{#each LOWER_TEETH as d, i (i)}<path {d} fill="#ddd59c" stroke="#6b6436" stroke-width="0.2" />{/each}
+	{/if}
+
+	{#if blazing && awake && reaction !== 'laugh'}
+		<!-- 4:20: a lit holk in the corner of his grin, smoke curling up from the ember -->
+		<g class="buddy-holk">
+			<path d="M51 51.4 L66.4 43.6 L67.8 46.4 L52 53.2 Z" fill="#f3efe4" stroke="#b9b09a" stroke-width="0.35" stroke-linejoin="round" />
+			<path d="M51 51.4 L53.8 50 L54.6 51.9 L52 53.2 Z" fill="#cdb98f" />
+			<path d="M56 50.2 L64 46.2" stroke="#d6cfbb" stroke-width="0.4" stroke-linecap="round" />
+			<circle class="buddy-holk-glow" cx="67.4" cy="44.8" r="3.4" fill="#ff8a1a" opacity="0.45" />
+			<ellipse cx="67.1" cy="45" rx="1.1" ry="1.5" transform="rotate(-28 67.1 45)" fill="#ff8a1a" />
+			{#each [0, 0.9, 1.8, 2.7] as d, i (i)}
+				<circle class="buddy-holk-puff" cx="67.5" cy="42.5" r={1.8 + i * 0.3} fill="#e2e7e2" style:animation-delay="-{d}s" />
+			{/each}
+		</g>
 	{/if}
 
 	{#each FRONT as l, i (i)}{@render leaf(l)}{/each}
@@ -895,6 +912,43 @@
 		to {
 			opacity: 0;
 			transform: translateY(9px);
+		}
+	}
+	/* 4:20: the holk's ember glows and smoke curls up and away */
+	.buddy-holk-glow {
+		animation: buddy-holk-glow 1.8s ease-in-out infinite alternate;
+	}
+	@keyframes buddy-holk-glow {
+		to {
+			opacity: 0.85;
+		}
+	}
+	.buddy-holk-puff {
+		transform-box: fill-box;
+		transform-origin: center;
+		opacity: 0;
+		animation: buddy-holk-puff 3.6s ease-out infinite;
+	}
+	@keyframes buddy-holk-puff {
+		0% {
+			opacity: 0;
+			transform: translate(0, 0) scale(0.5);
+		}
+		20% {
+			opacity: 0.8;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(6px, -22px) scale(2.4);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.buddy-holk-glow,
+		.buddy-holk-puff {
+			animation: none;
+		}
+		.buddy-holk-puff {
+			opacity: 0.4;
 		}
 	}
 </style>

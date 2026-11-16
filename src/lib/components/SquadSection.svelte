@@ -18,7 +18,7 @@
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 	import OpGear from './OpGear.svelte';
-	import { worn } from '#lib/shop.ts';
+	import { pranksOn, worn } from '#lib/shop.ts';
 	import SquadClasses from './SquadClasses.svelte';
 	import SquadCombat from './SquadCombat.svelte';
 	import SquadRanked from './SquadRanked.svelte';
@@ -67,6 +67,8 @@
 			: s.status[squad.status]
 	);
 	const entries = $derived(squad.entries);
+	/** Member id → member (for pranks: who threw what at whom). */
+	const memberMap = $derived(Object.fromEntries(entries.map((e) => [e.id, e.member])));
 	const members = $derived(Object.fromEntries(entries.map((e) => [e.id, e.member])));
 	const mvps = $derived(weeklyMvps(members, squad.now));
 	const today = $derived(dayKey(squad.now));
@@ -308,17 +310,23 @@
 					{@const week = camosThisWeek(e.member, squad.now)}
 					{@const streak = streakDays(e.member, squad.now)}
 					{@const look = worn(e.member.shop)}
+					{@const pk = pranksOn(e.id, memberMap, squad.now)}
 					<li class="sq-card meta-card relative flex min-w-0 flex-col gap-2.5 rounded-card border border-line bg-panel-2 p-3" class:sq-mine={e.mine}>
 						<div class="flex min-w-0 items-center gap-2">
 							<!-- their operator from the header (or initials), the user's ask 2026-11-14, wearing their BurgiShop
 							     look (shop.ts): aura, effect, pin on the face, style + title on the name -->
-							<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pin={16}><SquadAvatar name={e.member.name} op={e.member.op} size={44} /></OpGear>
+							<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pin={16} smoked={!!pk['smoke-bomb']}><SquadAvatar name={e.member.name} op={e.member.op} size={44} /></OpGear>
 							<span class="sq-rank num font-head" aria-label={s.rank(i + 1)}>{s.rank(i + 1)}</span>
 							<b class="sq-name og-name min-w-0 truncate font-head text-[17px] font-bold tracking-wide" data-style={look.name?.id} title={e.member.name}>{e.member.name}</b>
 							{#if e.mine}<span class="sq-you font-head">{s.you}</span>{/if}
 							<span class="ml-auto flex-none">{@render presence(e.online, e.member.seen, e.mine)}</span>
 						</div>
-						{#if look.title}<p class="-mt-1"><span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span></p>{/if}
+						{#if look.title || pk['too-high']}
+							<p class="-mt-1 flex flex-wrap items-center gap-1.5">
+								{#if look.title}<span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span>{/if}
+								{#if pk['too-high']}<span class="sq-high font-head" title={t.pranks.highBy(memberMap[pk['too-high'].by]?.name ?? '?')}>🍃 {t.pranks.stamp}</span>{/if}
+							</p>
+						{/if}
 						{#if e.member.op && OP_NAMES[e.member.op] !== e.member.name}
 							<p class="-mt-1.5 text-xs text-muted">{s.asOp(OP_NAMES[e.member.op])}</p>
 						{/if}
@@ -617,6 +625,19 @@
 		color: var(--t-accent);
 		font-size: 14px;
 		font-weight: 800;
+	}
+	/* a friend's TOO HIGH TO PLAY prank on this member */
+	.sq-high {
+		padding: 1px 8px;
+		border: 2px double #4fe05a;
+		border-radius: 5px;
+		background: rgb(4 30 8 / 0.75);
+		color: #7dff6a;
+		font-size: 10px;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		transform: rotate(-3deg);
 	}
 	.sq-you {
 		flex: none;

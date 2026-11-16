@@ -18,7 +18,7 @@
 	const b = t.squad.bank;
 	const doc = $derived(squad.doc ?? { members: {} });
 	const members = $derived(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])));
-	const bank = $derived(burgerBank(doc, members));
+	const bank = $derived(burgerBank(doc, members, squad.now));
 	const ranking = $derived(squad.entries.map((e) => ({ id: e.id, name: e.member.name, row: bank[e.id] })).sort((x, y) => (y.row?.balance ?? 0) - (x.row?.balance ?? 0)));
 	const owed = $derived(debts(doc, members));
 	const bets = $derived([...(doc.bets ?? [])].reverse());

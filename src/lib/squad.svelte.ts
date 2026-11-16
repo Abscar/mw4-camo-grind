@@ -73,9 +73,11 @@ import { cleanCombat, combatView, mergeCombat, withSnap, type CombatLog, type Co
 import { cleanRanked, fmtSrDelta, mergeRanked, rankedView, withRanked, type RankedLog } from './squad-ranked.ts';
 import { cleanClasses, mergeClasses, withClass, withoutClass, type ClassList, type SquadClass } from './squad-classes.ts';
 import { withBan, BAN_OWNER, KD_LIMIT } from './squad-bans.ts';
-import { cleanCasino, cleanOnline, countDay, mergeCasino, mergeOnline, seedOnline, withGame, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
+import { cleanCasino, cleanOnline, count420, countDay, mergeCasino, mergeOnline, seedOnline, withGame, HOUSE_OP, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { toast } from './toast.svelte.ts';
-import { buy as shopBuy, cleanShop, equip as shopEquip, mergeShop, ITEM_BY_ID, type BuyResult, type ShopSlot, type ShopState } from './shop.ts';
+import { buy as shopBuy, cleanShop, equip as shopEquip, mergeShop, throwPrank as shopThrow, ITEM_BY_ID, type BuyResult, type ShopSlot, type ShopState } from './shop.ts';
+import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
+import { is420 } from './four20.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
@@ -91,6 +93,8 @@ const CASINO_KEY = 'mw4-camo-grind:casino';
 const DEVICE_KEY = 'mw4-camo-grind:device';
 /** BurgiShop: what you own and wear (shop.ts), kept on this device too. */
 const SHOP_KEY = 'mw4-camo-grind:shop';
+/** BurgiBank loans (loans.ts), kept on this device too. */
+const LOANS_KEY = 'mw4-camo-grind:loans';
 /** What this device last saw of the others (for the kill feed), per squad code. */
 const SEEN_KEY = 'mw4-camo-grind:squad-seen';
 /** When you last looked at the radio (unread count). */
@@ -334,6 +338,8 @@ class Squad {
 	casino = $state<CasinoLedger>({});
 	/** BurgiShop: what you own and wear, merged with your other device's. */
 	shop = $state<ShopState | undefined>(undefined);
+	/** BurgiBank loans, merged with your other device's. */
+	loans = $state<LoanBook | undefined>(undefined);
 	/** Today's daily bonus when this page counted it (for the casino tab's welcome line). */
 	bonusToday = $state<{ amount: number; n: number } | null>(null);
 	#device = '';
@@ -385,7 +391,8 @@ class Squad {
 			classes: this.classes,
 			online: this.online,
 			casino: this.casino,
-			shop: this.shop
+			shop: this.shop,
+			loans: this.loans
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -429,6 +436,7 @@ class Squad {
 		this.online = cleanOnline(readJson(ONLINE_KEY));
 		this.casino = cleanCasino(readJson(CASINO_KEY)) ?? {};
 		this.shop = cleanShop(readJson(SHOP_KEY));
+		this.loans = cleanLoans(readJson(LOANS_KEY));
 		const device = readJson(DEVICE_KEY);
 		this.#device = typeof device === 'string' && /^[A-Za-z0-9_-]{4,16}$/.test(device) ? device : makeMemberId().slice(0, 10);
 		writeJson(DEVICE_KEY, this.#device);
@@ -708,14 +716,85 @@ class Squad {
 			const text = added > 0 ? t.casino.bonus.toast(added, next.n) : t.casino.bonus.seeded(next.n);
 			setTimeout(() => toast.show(text, undefined, 6000), 4000);
 		}
+		// 4:20 (four20.ts): online during the hour = the day's bonus once more
+		const now = this.serverNow();
+		const f = count420(this.online, dayKey(now), is420(new Date(now)));
+		if (f.added > 0 && f.next) {
+			this.online = f.next;
+			writeJson(ONLINE_KEY, f.next);
+			setTimeout(() => toast.show(t.four20.bonus(f.added), undefined, 6000), 5000);
+		}
 	}
 
-	/** Your burgers right now (the bank: grind + daily bonus + casino + bets), or null outside a squad. */
+	/** Your burgers right now (the bank: grind + daily bonus + casino + bets + loans + admin), or null outside a squad. */
 	get myBank(): BankRow | null {
 		const me = this.me;
 		const doc = this.#squad.doc;
 		if (!me || !doc) return null;
-		return burgerBank(doc, this.#members(doc))[me.id] ?? null;
+		return burgerBank(doc, this.#members(doc), Math.max(this.now, Date.now()))[me.id] ?? null;
+	}
+
+	// ----- BurgiBank loans (loans.ts) -----
+
+	/** Borrow from the bank: the burgers at once, back within a week with interest (that goes to Abscar). */
+	borrow(p: number): boolean {
+		if (!this.me) return false;
+		const now = Math.round(this.serverNow());
+		const next = takeLoan(this.loans, makeMemberId().slice(0, 10), p, now);
+		if (!next) return false;
+		this.loans = next;
+		writeJson(LOANS_KEY, next);
+		this.#schedulePublish();
+		void this.#event(t.loans.takenEvent(p));
+		return true;
+	}
+
+	/** Pay the open loan back (loan + interest). */
+	repay(): boolean {
+		const bank = this.myBank;
+		if (!this.me || !bank) return false;
+		const now = Math.round(this.serverNow());
+		const open = openLoan(this.loans, now);
+		const next = repayLoan(this.loans, bank.balance, now);
+		if (!next || !open) return false;
+		this.loans = next;
+		writeJson(LOANS_KEY, next);
+		this.#schedulePublish();
+		void this.#event(t.loans.paidEvent(owedOn(open)));
+		return true;
+	}
+
+	// ----- Abscar's admin menu -----
+
+	/** Give (+) or take (−) burgers for a member, out of nothing / into nothing. Only Abscar may. */
+	async grant(id: string, delta: number, name: string): Promise<boolean> {
+		if (this.me?.op !== HOUSE_OP || !Number.isInteger(delta) || delta === 0) return false;
+		const outcome = await this.#squad.write((doc) => {
+			const grants = { ...doc.grants };
+			const n = (grants[id] ?? 0) + delta;
+			if (n === 0) delete grants[id];
+			else grants[id] = n;
+			return { ...doc, grants };
+		});
+		this.#done(outcome);
+		if (outcome === 'ok') await this.#event(delta > 0 ? t.admin.gaveEvent(name, delta) : t.admin.tookEvent(name, -delta));
+		return outcome === 'ok';
+	}
+
+	// ----- pranks (shop.ts PRANKS) -----
+
+	/** Throw a prank at another member (paid with burgers, goes on the radio). */
+	prank(kind: string, to: string, name: string): BuyResult | 'off' {
+		const me = this.me;
+		const bank = this.myBank;
+		if (!me || !bank || to === me.id) return 'off';
+		const r = shopThrow(this.shop, kind, to, bank.balance, Math.round(this.serverNow()), makeMemberId().slice(0, 10));
+		if (r.result !== 'ok') return r.result;
+		this.shop = r.state;
+		writeJson(SHOP_KEY, r.state);
+		this.#schedulePublish();
+		void this.#event(kind === 'smoke-bomb' ? t.pranks.smokeEvent(name) : t.pranks.highEvent(name));
+		return 'ok';
 	}
 
 	/**
@@ -936,6 +1015,13 @@ class Squad {
 				writeJson(SHOP_KEY, merged ?? null);
 			}
 		}
+		if (mine?.loans) {
+			const merged = mergeLoans(this.loans, mine.loans, this.serverNow());
+			if (JSON.stringify(merged) !== JSON.stringify(this.loans)) {
+				this.loans = merged;
+				writeJson(LOANS_KEY, merged ?? null);
+			}
+		}
 		if (!away) this.#countToday();
 		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {
 			readyAt: this.readyAt,
@@ -946,7 +1032,8 @@ class Squad {
 			classes: this.classes,
 			online: this.online,
 			casino: this.casino,
-			shop: this.shop
+			shop: this.shop,
+			loans: this.loans
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;
