@@ -10,8 +10,8 @@ const T = Date.UTC(2026, 10, 16, 20);
 
 test('the catalogue: unique ids, every slot stocked, sane prices, titles have words', () => {
 	assert.equal(new Set(SHOP_ITEMS.map((i) => i.id)).size, SHOP_ITEMS.length);
-	// the mouth slot starts with one thing (the Golden Holk); the others are stocked
-	for (const slot of SLOTS) assert.ok(SHOP_ITEMS.filter((i) => i.slot === slot).length >= (slot === 'mouth' ? 1 : 4), slot);
+	// every kind is stocked (the sidekicks with three)
+	for (const slot of SLOTS) assert.ok(SHOP_ITEMS.filter((i) => i.slot === slot).length >= (slot === 'pet' ? 3 : 4), slot);
 	assert.equal(new Set(SHOP_ITEMS.map((i) => i.name)).size, SHOP_ITEMS.length, 'no two items share a name');
 	for (const i of SHOP_ITEMS) {
 		assert.ok(Number.isInteger(i.price) && i.price > 0, i.id);
@@ -53,6 +53,18 @@ test('the Golden Holk: 2,500 burgers, worn in the mouth next to a pin, survives 
 	const entry = memberEntry({ name: 'Abscar', op: 'abscar' }, { weapons: {}, mastery: {}, lastTickAt: null }, T, false, { shop: s });
 	const doc = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire({ members: { aaaaaaaa1111: entry } }))));
 	assert.deepEqual(doc.members.aaaaaaaa1111.shop.eq, { badge: 'pin-holk', mouth: 'mouth-goldholk' });
+});
+
+test('the 420 pack 2: one of each new kind worn together, cleaned and sent through the squad document', () => {
+	let s;
+	for (const id of ['mouth-bong', 'eyes-laser', 'hat-leafcrown', 'smoke-rainbow', 'pet-bud']) s = buy(s, id, 99_999, T).state;
+	assert.deepEqual(s.eq, { mouth: 'mouth-bong', eyes: 'eyes-laser', hat: 'hat-leafcrown', smoke: 'smoke-rainbow', pet: 'pet-bud' });
+	assert.equal(shopSpent(s), 1800 + 3000 + 2420 + 1600 + 4200);
+	assert.deepEqual(cleanShop(JSON.parse(JSON.stringify(s))), s);
+	assert.equal(equip(s, 'hat', 'eyes-laser', T + 1), null, 'eyes are not a hat');
+	const entry = memberEntry({ name: 'Ingman', op: 'ingman' }, { weapons: {}, mastery: {}, lastTickAt: null }, T, false, { shop: s });
+	const doc = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire({ members: { cccccccc3333: entry } }))));
+	assert.deepEqual(doc.members.cccccccc3333.shop.eq, s.eq);
 });
 
 test('wearing: only what you own, in its slot; taking off', () => {

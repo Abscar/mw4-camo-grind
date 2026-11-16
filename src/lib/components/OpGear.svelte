@@ -8,12 +8,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
+	import ShopPet from './ShopPet.svelte';
 	import ShopPin from './ShopPin.svelte';
 
 	let {
 		aura = null,
 		effect = null,
 		badge = null,
+		pet = null,
 		pin = 24,
 		smoked = false,
 		children
@@ -21,6 +23,8 @@
 		aura?: string | null;
 		effect?: string | null;
 		badge?: string | null;
+		/** the 420 pack 2's sidekick (shop.ts slot `pet`): sits on the emblem's left shoulder (ShopPet) */
+		pet?: string | null;
 		pin?: number;
 		/** A friend's Smoke Bomb (shop.ts PRANKS): the emblem disappears in a thick cloud for an hour. */
 		smoked?: boolean;
@@ -108,6 +112,7 @@
 		</span>
 	{/if}
 	{#if badge}<span class="og-pin" aria-hidden="true"><ShopPin id={badge} size={pin} /></span>{/if}
+	{#if pet}<span class="og-pet" aria-hidden="true"><ShopPet id={pet} size={Math.round(pin * 1.6)} /></span>{/if}
 	{#if smoked}
 		<span class="og-bomb" aria-hidden="true">
 			{#each [[30, 40, 0], [62, 34, -0.8], [46, 62, -1.6], [22, 66, -2.2], [74, 64, -0.4], [50, 22, -1.2], [40, 48, -2.6]] as [x, y, d], i (i)}
@@ -451,6 +456,14 @@
 		position: absolute;
 		right: -6%;
 		bottom: -4%;
+		z-index: 3;
+		pointer-events: none;
+	}
+	/* ---------- the sidekick, sitting on the left shoulder ---------- */
+	.og-pet {
+		position: absolute;
+		left: -10%;
+		bottom: 2%;
 		z-index: 3;
 		pointer-events: none;
 	}

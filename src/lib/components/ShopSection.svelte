@@ -9,6 +9,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
+	import { faceOf } from '#lib/faceGear.ts';
 	import { shopSpent, worn, PRANKS, SHOP_ITEMS, SLOTS, type ShopItem, type ShopSlot } from '#lib/shop.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
@@ -18,6 +19,10 @@
 
 	const s = t.shop;
 	const pr = t.pranks;
+	/** kinds drawn on the face (shown on a bigger operator on their item cards) */
+	const FACE_SLOTS: ShopSlot[] = ['mouth', 'eyes', 'hat', 'smoke'];
+	/** the 420 pack 2's new kinds get a small NEW tag on their button */
+	const NEW_SLOTS: string[] = ['eyes', 'hat', 'smoke', 'pet'];
 	let slot = $state<ShopSlot | 'pranks'>('aura');
 	/** The prank waiting for a target (the "who gets it?" dialog). */
 	let aiming = $state<(typeof PRANKS)[number] | null>(null);
@@ -82,8 +87,8 @@
 </script>
 
 {#snippet face(l: Partial<Record<ShopSlot, ShopItem>>, size: number, pin: number)}
-	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} {pin}>
-		<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} mouth={l.mouth?.id} />
+	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} pet={l.pet?.id} {pin}>
+		<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} face={faceOf(l)} />
 	</OpGear>
 {/snippet}
 
@@ -105,7 +110,9 @@
 	<!-- the kinds -->
 	<div class="mt-3 flex flex-wrap gap-1.5" role="group" aria-label={s.slotsLabel}>
 		{#each [...SLOTS, 'pranks' as const] as sl (sl)}
-			<button type="button" class="chip" aria-pressed={slot === sl} onclick={() => ((slot = sl), (trying = null))}>{s.slots[sl]}</button>
+			<button type="button" class="chip" aria-pressed={slot === sl} onclick={() => ((slot = sl), (trying = null))}
+				>{s.slots[sl]}{#if NEW_SLOTS.includes(sl)}<span class="shop-new font-head">{s.newTag}</span>{/if}</button
+			>
 		{/each}
 	</div>
 
@@ -130,6 +137,7 @@
 		</ul>
 		{#if !others.length}<p class="mt-2 text-xs text-muted">{pr.nobody}</p>{/if}
 	{:else}
+	{#if s.slotHint[slot]}<p class="shop-hint mt-3 text-[13px] text-muted">{s.slotHint[slot]}</p>{/if}
 	<!-- the items -->
 	<ul class="mt-3 grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-2">
 		{#each items as it (it.id)}
@@ -149,9 +157,9 @@
 						<span class="og-title" data-rarity={it.rarity}>{it.text}</span>
 					{:else if it.slot === 'badge'}
 						<ShopPin id={it.id} size={40} />
-					{:else if it.slot === 'mouth'}
-						<!-- bigger, so the thing in the mouth reads -->
-						{@render face({ mouth: it }, 64, 18)}
+					{:else if FACE_SLOTS.includes(it.slot)}
+						<!-- bigger, so the thing on the face reads -->
+						{@render face({ [it.slot]: it }, 64, 18)}
 					{:else}
 						{@render face({ [it.slot]: it }, 46, 18)}
 					{/if}
@@ -256,6 +264,19 @@
 	}
 	.shop-owned {
 		align-self: center;
+	}
+	/* NEW on the 420 pack 2's kinds */
+	.shop-new {
+		margin-left: 6px;
+		padding: 0 5px;
+		border-radius: 999px;
+		background: #2fb84a;
+		color: #04140a;
+		font-size: 9px;
+		font-weight: 900;
+		letter-spacing: 0.08em;
+		line-height: 1.6;
+		vertical-align: 1px;
 	}
 	.shop-prank {
 		--r: #4fe05a;

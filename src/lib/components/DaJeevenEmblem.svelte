@@ -14,9 +14,12 @@
 -->
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
+	import { eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
 
-	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' turns his holk gold */
-	let { mouth = null }: { mouth?: string | null } = $props();
+	/** BurgiShop's face slots (faceGear.ts `faceOf`): the Golden Holk turns his holk gold; the 420 pack 2
+	    puts something else in his teeth, glasses / eyes on the mask, a hat on the hood, a smoke colour */
+	let { face = null }: { face?: FaceWear | null } = $props();
+	const mouth = $derived(face?.mouth ?? null);
 
 	const uid = $props.id(); // ids must be unique per drawing
 	const u = `dj-${uid}`;
@@ -36,9 +39,11 @@
 	/** the big holk: filter tip between his teeth, burning end out to the right; smoke from its end */
 	const HOLK = $derived(holk(u, 34, 38.8, 56.5, 45.4, 2.6, 8.4, undefined, mouth === 'mouth-goldholk'));
 	const SMOKE = smoke(u, 57, 43.6, 0.95);
+	const F = FACES.jeeven;
+	const ITEM = $derived(mouthItem(u, mouth, F.mouth));
 </script>
 
-<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" aria-hidden="true" focusable="false">
+<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" data-smoke={face?.smoke || undefined} aria-hidden="true" focusable="false">
 	<defs>
 		<linearGradient id={id('gold')} x1=".15" y1="0" x2=".85" y2="1">
 			<stop offset="0" stop-color="#fff4c2" /><stop offset=".25" stop-color="#f1c64e" /><stop offset=".55" stop-color="#b98318" /><stop offset=".76" stop-color="#f0c75a" /><stop offset="1" stop-color="#6b4708" />
@@ -125,9 +130,19 @@
 		<polygon class="dj-glint" points="10,6 13.6,6 9.6,48 6,48" fill="#fffbe6" opacity=".55" />
 	</g>
 
-	<!-- the big holk in his teeth, smoke rising from its end (like Abscar's) -->
-	{@html HOLK}
-	{@html SMOKE}
+	<!-- BurgiShop's eyes over the mask (the 420 pack 2) -->
+	{@html eyesItem(u, face?.eyes, F.eyes)}
+
+	<!-- the big holk in his teeth, smoke rising from its end (like Abscar's); or the shop's mouth item -->
+	{#if ITEM}
+		{@html ITEM.markup}
+		{@html hatItem(u, face?.hat, F.head)}
+		{@html smoke(u, ITEM.end[0], ITEM.end[1], 0.95 * ITEM.boost)}
+	{:else}
+		{@html HOLK}
+		{@html hatItem(u, face?.hat, F.head)}
+		{@html SMOKE}
+	{/if}
 </svg>
 
 <style>

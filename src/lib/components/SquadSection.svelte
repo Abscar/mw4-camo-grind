@@ -18,6 +18,7 @@
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 	import OpGear from './OpGear.svelte';
+	import { faceOf } from '#lib/faceGear.ts';
 	import { pranksOn, worn } from '#lib/shop.ts';
 	import SquadClasses from './SquadClasses.svelte';
 	import SquadCombat from './SquadCombat.svelte';
@@ -315,7 +316,7 @@
 						<div class="flex min-w-0 items-center gap-2">
 							<!-- their operator from the header (or initials), the user's ask 2026-11-14, wearing their BurgiShop
 							     look (shop.ts): aura, effect, pin on the face, style + title on the name -->
-							<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pin={16} smoked={!!pk['smoke-bomb']}><SquadAvatar name={e.member.name} op={e.member.op} size={44} mouth={look.mouth?.id} /></OpGear>
+							<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pet={look.pet?.id} pin={16} smoked={!!pk['smoke-bomb']}><SquadAvatar name={e.member.name} op={e.member.op} size={44} face={faceOf(look)} /></OpGear>
 							<span class="sq-rank num font-head" aria-label={s.rank(i + 1)}>{s.rank(i + 1)}</span>
 							<b class="sq-name og-name min-w-0 truncate font-head text-[17px] font-bold tracking-wide" data-style={look.name?.id} title={e.member.name}>{e.member.name}</b>
 							{#if e.mine}<span class="sq-you font-head">{s.you}</span>{/if}

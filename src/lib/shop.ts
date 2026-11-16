@@ -2,8 +2,9 @@
  * BurgiShop (2026-11-16, the user's ask: "a shop where you can buy cosmetics with your burgers, that you
  * can then equip on your operator"). Pretend burgers from the squad's burger bank (squad-fun.ts), never
  * money. What you buy is yours to keep; one item per slot is worn on your header operator (OperatorTag,
- * OpGear.svelte): an aura behind the emblem, an effect around it, a pin on it, something in its mouth
- * (drawn by the emblem itself), a style for the callsign and a title under it.
+ * OpGear.svelte): an aura behind the emblem, an effect around it, a pin on it, something in its mouth,
+ * on its eyes and on its head (drawn by the emblem itself, faceGear.ts), a smoke colour, a sidekick on its
+ * shoulder, a style for the callsign and a title under it.
  *
  * Stored as member field `shop` (squad-codec.ts): what you own with the price paid (so a later price
  * change never moves anyone's balance), what's worn, and when that last changed. Spending goes to the
@@ -14,7 +15,9 @@
  * squad-codec.ts (which imports this file).
  */
 
-export const SLOTS = ['aura', 'effect', 'badge', 'mouth', 'name', 'title'] as const;
+// eyes / hat / smoke / pet: the 420 pack 2 (2026-11-16); eyes + hat are drawn by the emblems (faceGear.ts),
+// smoke tints whatever smokes on them, the pet sits on the shoulder (OpGear + ShopPet)
+export const SLOTS = ['aura', 'effect', 'badge', 'mouth', 'eyes', 'hat', 'smoke', 'pet', 'name', 'title'] as const;
 export type ShopSlot = (typeof SLOTS)[number];
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -87,7 +90,30 @@ export const SHOP_ITEMS: ShopItem[] = [
 	item('title-baked', 'title', 'Ranked While Baked', 420, 'rare', 'Ranked While Baked'),
 	item('title-hotbox', 'title', 'Hotbox Hero', 480, 'rare', 'Hotbox Hero'),
 	item('title-blazed', 'title', 'Blazed & Amazed', 650, 'epic', 'Blazed & Amazed'),
-	item('title-holklord', 'title', 'Holk Lord', 4200, 'legendary', 'Holk Lord')
+	item('title-holklord', 'title', 'Holk Lord', 4200, 'legendary', 'Holk Lord'),
+	// the 420 pack 2 (2026-11-16, the user: "kör 420 paketet"): the mouthpieces, eyes, hats, smoke colours
+	// and shoulder sidekicks left over from the first pack. Face items are drawn per emblem (faceGear.ts).
+	// "Cloud Nine" is the pack list's "Snoop mode", named without a real person's name.
+	item('mouth-blunt', 'mouth', 'Blunt', 450, 'rare'),
+	item('mouth-pipe', 'mouth', 'Long Pipe', 600, 'rare'),
+	item('mouth-double', 'mouth', 'Double Holk', 1100, 'epic'),
+	item('mouth-bong', 'mouth', 'Bong', 1800, 'epic'),
+	item('mouth-cloud9', 'mouth', 'Cloud Nine', 4200, 'legendary'),
+	item('eyes-shades', 'eyes', 'Shades', 250, 'common'),
+	item('eyes-rasta', 'eyes', 'Rasta Shades', 500, 'rare'),
+	item('eyes-baked', 'eyes', 'Baked Eyes', 650, 'rare'),
+	item('eyes-laser', 'eyes', 'Laser Eyes', 3000, 'legendary'),
+	item('hat-bucket', 'hat', 'Tie-Dye Bucket', 350, 'common'),
+	item('hat-rasta', 'hat', 'Rasta Beanie', 600, 'rare'),
+	item('hat-propeller', 'hat', 'Propeller Cap', 1200, 'epic'),
+	item('hat-leafcrown', 'hat', 'Leaf Crown', 2420, 'legendary'),
+	item('smoke-green', 'smoke', 'Green Smoke', 300, 'common'),
+	item('smoke-purple', 'smoke', 'Purple Haze', 700, 'rare'),
+	item('smoke-rainbow', 'smoke', 'Rainbow Smoke', 1600, 'epic'),
+	item('smoke-gold', 'smoke', 'Golden Smoke', 2600, 'legendary'),
+	item('pet-burger', 'pet', 'Burger Buddy', 700, 'rare'),
+	item('pet-smokey', 'pet', 'Smokey', 1400, 'epic'),
+	item('pet-bud', 'pet', 'Lil’ Bud', 4200, 'legendary')
 ];
 
 /**

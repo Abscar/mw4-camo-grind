@@ -802,8 +802,18 @@ export const en = {
 		noOp: 'You haven’t picked an operator from the header (Squad tab → Edit), so your look only shows here and on your squad card.',
 		preview: 'Your operator',
 		tryOn: 'Trying on',
-		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', mouth: 'Mouth', name: 'Name styles', title: 'Titles', pranks: '😈 Pranks' },
+		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', mouth: 'Mouth', eyes: 'Eyes', hat: 'Hats', smoke: 'Smoke', pet: 'Sidekicks', name: 'Name styles', title: 'Titles', pranks: '😈 Pranks' },
 		slotsLabel: 'Kind',
+		/** on the 420 pack 2's kinds (eyes, hats, smoke, sidekicks) */
+		newTag: 'NEW',
+		/** a line under the kind buttons, for the kinds that need one */
+		slotHint: {
+			mouth: 'Swaps out whatever your operator has in their mouth.',
+			eyes: 'Sits on your operator’s eyes, over masks, goggles and glasses.',
+			hat: 'Sits on your operator’s head (Ingman takes his wizard hat off for it).',
+			smoke: 'Colours the smoke from whatever’s in your mouth. Nothing in it? You blow a puff out yourself.',
+			pet: 'A little sidekick that sits on your operator’s shoulder.'
+		} as Partial<Record<string, string>>,
 		rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
 		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} 🍔`,
 		wear: 'Wear',

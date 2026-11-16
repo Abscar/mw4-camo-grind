@@ -15,9 +15,13 @@
 -->
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
+	import { EXHALE_K, exhaleAt, eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
 
-	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' = a gold holk through the balaclava's mouth */
-	let { mouth = null }: { mouth?: string | null } = $props();
+	/** BurgiShop's face slots (faceGear.ts `faceOf`): the Golden Holk = a gold holk through the balaclava's
+	    mouth; the 420 pack 2 = another thing there, glasses / eyes over the goggles, a hat on the helmet,
+	    a smoke colour */
+	let { face = null }: { face?: FaceWear | null } = $props();
+	const mouth = $derived(face?.mouth ?? null);
 
 	const uid = $props.id(); // ids must be unique per drawing
 	const u = (name: string) => `${uid}-${name}`;
@@ -26,6 +30,10 @@
 	    right), smoke rising past the ear cup (abscarOperator.ts helpers; ids `${uid}-…`) */
 	const GOLD_HOLK = holk(uid, 29.6, 38.4, 14.6, 47.6, 2.2, 6.8, undefined, true);
 	const HOLK_SMOKE = smoke(uid, 14.2, 45, 0.7);
+	const F = FACES.lars;
+	const ITEM = $derived(mouthItem(uid, mouth, F.mouth));
+	/** a smoke colour with nothing to smoke: he blows it out through the balaclava */
+	const EXHALE = $derived(face?.smoke && !ITEM && mouth !== 'mouth-goldholk' ? smoke(uid, ...exhaleAt(F), EXHALE_K) : '');
 
 	/** the goggles: black frame and the lime lens inside it (also the glow and the glint's clip) */
 	const FRAME =
@@ -59,7 +67,7 @@
 	];
 </script>
 
-<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" aria-hidden="true" focusable="false">
+<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" data-smoke={face?.smoke || undefined} aria-hidden="true" focusable="false">
 	<defs>
 		<linearGradient id={u('shirt')} x1="0" y1="0" x2="0" y2="1">
 			<stop offset="0" stop-color="#2d3035" /><stop offset="1" stop-color="#15171a" />
@@ -183,10 +191,20 @@
 	<ellipse cx="26.4" cy="40.4" rx="1.9" ry="1.3" fill="#26282c" stroke={O} stroke-width=".6" />
 	<circle class="la-led" cx="49" cy="25.6" r=".8" fill="#a6ff52" filter="url(#{u('led')})" />
 
-	{#if mouth === 'mouth-goldholk'}
+	<!-- BurgiShop: eyes over the goggles, a hat on the helmet (the 420 pack 2) -->
+	{@html eyesItem(uid, face?.eyes, F.eyes)}
+	{@html hatItem(uid, face?.hat, F.head)}
+
+	{#if ITEM}
+		<!-- BurgiShop's 420 pack 2: something through the balaclava's mouth -->
+		{@html ITEM.markup}
+		{@html smoke(uid, ITEM.end[0], ITEM.end[1], 0.7 * ITEM.boost)}
+	{:else if mouth === 'mouth-goldholk'}
 		<!-- BurgiShop's Golden Holk -->
 		{@html GOLD_HOLK}
 		{@html HOLK_SMOKE}
+	{:else if EXHALE}
+		{@html EXHALE}
 	{/if}
 
 	<!-- a big cold beer, held up in his grey-gloved fist (lime wristband, tattooed forearm) -->

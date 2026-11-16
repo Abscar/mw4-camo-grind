@@ -14,9 +14,13 @@
 -->
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
+	import { eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
 
-	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' = a gold holk in place of his pipe */
-	let { mouth = null }: { mouth?: string | null } = $props();
+	/** BurgiShop's face slots (faceGear.ts `faceOf`): the Golden Holk = a gold holk in place of his pipe; the
+	    420 pack 2 = another thing in place of it, glasses / eyes over his own glasses, a hat instead of the
+	    wizard hat, a smoke colour */
+	let { face = null }: { face?: FaceWear | null } = $props();
+	const mouth = $derived(face?.mouth ?? null);
 	const gold = $derived(mouth === 'mouth-goldholk');
 
 	const uid = $props.id();
@@ -51,6 +55,9 @@
 	/** the Golden Holk at the right of his mouth, under the moustache; smoke from its burning end */
 	const GOLD_HOLK = holk(u, 35.2, 33.9, 50.4, 38.4, 2.2, 6.6, undefined, true);
 	const HOLK_SMOKE = smoke(u, 50.6, 35.8, 0.6);
+	const F = FACES.ingman;
+	const ITEM = $derived(mouthItem(u, mouth, F.mouth));
+	const HAT = $derived(hatItem(u, face?.hat, F.head));
 </script>
 
 {#snippet leaf(x: number, y: number, s: number, fill: string)}
@@ -62,7 +69,7 @@
 	</g>
 {/snippet}
 
-<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" aria-hidden="true" focusable="false">
+<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" data-smoke={face?.smoke || undefined} aria-hidden="true" focusable="false">
 	<defs>
 		<linearGradient id={id('robe')} x1="0" y1="0" x2=".25" y2="1">
 			<stop offset="0" stop-color="#9a5ad8" /><stop offset=".55" stop-color="#6a2fa8" /><stop offset="1" stop-color="#3e1670" />
@@ -163,7 +170,14 @@
 	{/each}
 	<path d="M30.9 25 Q32 24.2 33.1 25" fill="none" stroke="#d6b34a" stroke-width=".55" />
 
-	{#if gold}
+	<!-- BurgiShop's eyes over his glasses (the 420 pack 2) -->
+	{@html eyesItem(u, face?.eyes, F.eyes)}
+
+	{#if ITEM}
+		<!-- BurgiShop's 420 pack 2 in place of the pipe -->
+		{@html ITEM.markup}
+		{@html smoke(u, ITEM.end[0], ITEM.end[1], 0.6 * ITEM.boost)}
+	{:else if gold}
 		<!-- BurgiShop's Golden Holk in place of the pipe -->
 		{@html GOLD_HOLK}
 		{@html HOLK_SMOKE}
@@ -179,19 +193,25 @@
 		{@html PIPE_SMOKE}
 	{/if}
 
-	<!-- the wizard hat: wide brim, pointed crown, rainbow band with a green leaf, gold stars -->
-	<path d={BRIM} fill="url(#{id('hat')})" stroke={O} stroke-width="1" stroke-linejoin="round" />
-	<path d="M8.5 18.6 C14 16.4 22 15.6 32 15.6 C42 15.6 50 16.4 55.5 18.6" fill="none" stroke="#b886e8" stroke-width=".5" opacity=".6" />
-	<path d={CROWN} fill="url(#{id('hat')})" stroke={O} stroke-width="1" stroke-linejoin="round" />
-	<g clip-path="url(#{id('crown-clip')})">
-		{#each RAINBOW as c, i (c)}
-			<rect x="18" y={11.6 + i * 0.68} width="28" height=".7" fill={c} />
-		{/each}
-	</g>
-	{@render leaf(36.4, 15.2, 0.7, '#4cc24a')}
-	<polygon points={star(27.2, 7.4, 1.1)} fill="#f2c34a" />
-	<polygon points={star(13, 18.2, 0.9)} fill="#f2c34a" />
-	<polygon points={star(51.4, 18.6, 0.9)} fill="#f2c34a" />
+	{#if HAT}
+		<!-- BurgiShop's hat from the 420 pack 2, instead of the wizard hat: white hair on top -->
+		<path d="M22.6 21.4 C22.6 15.2 26.6 13.2 32 13.2 C37.4 13.2 41.4 15.2 41.4 21.4 C38.6 19.4 35.4 18.6 32 18.6 C28.6 18.6 25.4 19.4 22.6 21.4 Z" fill="url(#{id('beard')})" stroke="#a8977a" stroke-width=".45" />
+		{@html HAT}
+	{:else}
+		<!-- the wizard hat: wide brim, pointed crown, rainbow band with a green leaf, gold stars -->
+		<path d={BRIM} fill="url(#{id('hat')})" stroke={O} stroke-width="1" stroke-linejoin="round" />
+		<path d="M8.5 18.6 C14 16.4 22 15.6 32 15.6 C42 15.6 50 16.4 55.5 18.6" fill="none" stroke="#b886e8" stroke-width=".5" opacity=".6" />
+		<path d={CROWN} fill="url(#{id('hat')})" stroke={O} stroke-width="1" stroke-linejoin="round" />
+		<g clip-path="url(#{id('crown-clip')})">
+			{#each RAINBOW as c, i (c)}
+				<rect x="18" y={11.6 + i * 0.68} width="28" height=".7" fill={c} />
+			{/each}
+		</g>
+		{@render leaf(36.4, 15.2, 0.7, '#4cc24a')}
+		<polygon points={star(27.2, 7.4, 1.1)} fill="#f2c34a" />
+		<polygon points={star(13, 18.2, 0.9)} fill="#f2c34a" />
+		<polygon points={star(51.4, 18.6, 0.9)} fill="#f2c34a" />
+	{/if}
 
 	<!-- the fat dumbbell over his head: chrome bar, two iron plates a side, fists round the bar -->
 	<g class="ig-lift">

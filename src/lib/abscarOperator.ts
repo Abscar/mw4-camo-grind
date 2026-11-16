@@ -136,8 +136,9 @@ const PUFFS = [[0, 5.2, 9, -10, 7], [0.4, 4.6, -8, 6, 6.2], [0.8, 5.6, 10, -20, 
 const WISPS = ['M62 41 C58 33 66 27 61 19 C57 12 64 6 60 -2', 'M63 41 C67 33 59 26 64 18 C68 11 61 5 65 -3', 'M62 41 C60 35 65 30 62 24 C59 18 63 13 61 7', 'M63 42 C64 36 60 31 63 25 C66 19 62 14 64 8', 'M62 42 C57 36 61 29 57 22 C54 16 58 10 55 3', 'M63 41 C66 35 62 29 66 22 C69 16 64 10 67 4'];
 export function smoke(u: string, x: number, y: number, k: number): string {
 	if (k <= 0) return '';
-	return `<g transform="translate(${f(x)} ${f(y)}) scale(${f(k)})">
-	<g filter="url(#${u}-puff-blur)" fill="#e2e7e2">${PUFFS.map(([st, dur, sway, dx, r]) => `<circle class="op-puff" cx="0" cy="0" r="${r}" style="animation-delay:-${st}s;animation-duration:${dur}s;--sway:${sway}px;--dx:${dx}px"/>`).join('')}</g>
+	// op-smoke / op-smoke-puffs: BurgiShop's smoke colours tint these (`data-smoke` on the svg, grind.css)
+	return `<g class="op-smoke" transform="translate(${f(x)} ${f(y)}) scale(${f(k)})">
+	<g class="op-smoke-puffs" filter="url(#${u}-puff-blur)" fill="#e2e7e2">${PUFFS.map(([st, dur, sway, dx, r]) => `<circle class="op-puff" cx="0" cy="0" r="${r}" style="animation-delay:-${st}s;animation-duration:${dur}s;--sway:${sway}px;--dx:${dx}px"/>`).join('')}</g>
 	<g filter="url(#${u}-blur)"><g transform="translate(-62.5 -41.5)">${WISPS.map((d) => `<path class="op-wisp" d="${d}"/>`).join('')}</g></g>
 	</g>`;
 }
@@ -418,14 +419,30 @@ const BODIES: Record<OperatorVariant, (u: string, gold?: boolean) => string> = {
 /** Where the smoke leaves the holk's burning end, per figure. */
 const SMOKE_AT: Record<OperatorVariant, [number, number]> = { ghillie: [57.5, 31.2], lighter: [57.8, 31.4], nvg: [57.5, 31.2], sniper: [57.5, 31.2] };
 
+/** BurgiShop on Abscar's figure (the 420 pack 2): another mouth item instead of his holk, plus eyes / hat. */
+export interface OperatorWear {
+	/** his own holk: white (default), gold (the Golden Holk) or none (something else is in his mouth) */
+	holk?: 'white' | 'gold' | 'none';
+	/** markup drawn over the figure, under the smoke (faceGear.ts: the mouth item, eyes, hat) */
+	extra?: string;
+	/** where the smoke rises from instead of the holk's end, and how much bigger it is */
+	smokeAt?: [number, number];
+	smokeBoost?: number;
+}
+
 /**
  * The inner markup of one figure, for an <svg viewBox="0 0 64 64"> with overflow visible.
  * `uid` keeps the gradient / clip ids unique per figure; `smoke` scales the smoke column (0 = none,
- * 0.9 = the header's full column, ~0.45 = a small one that stays round the head). `goldHolk` = BurgiShop's
- * Golden Holk is worn: the same holk, in gold.
+ * 0.9 = the header's full column, ~0.45 = a small one that stays round the head). `wear` = BurgiShop:
+ * `true` = the Golden Holk (the same holk, in gold), or what he wears from the 420 pack 2 (OperatorWear).
  */
-export function operatorMarkup(variant: OperatorVariant, uid: string, smokeScale = 0.9, goldHolk = false): string {
+export function operatorMarkup(variant: OperatorVariant, uid: string, smokeScale = 0.9, wear: boolean | OperatorWear = false): string {
 	const u = `aop-${uid}`;
-	const [sx, sy] = SMOKE_AT[variant];
-	return `${defs(u, variant)}<g clip-path="url(#${u}-box)">${BODIES[variant](u, goldHolk)}</g>${smoke(u, sx, sy, smokeScale)}`;
+	const w: OperatorWear = typeof wear === 'boolean' ? { holk: wear ? 'gold' : 'white' } : wear;
+	let body = BODIES[variant](u, w.holk === 'gold');
+	// no holk: drop the one between his teeth (the last thing every figure draws; the lighter's flame and fist
+	// come after it there, so cut exactly that holk's markup out)
+	if (w.holk === 'none') body = body.replace(holk(u, ...MOUTH, 57.4, 34, 2.2, 7, variant === 'lighter' ? 9 : undefined), '');
+	const [sx, sy] = w.smokeAt ?? SMOKE_AT[variant];
+	return `${defs(u, variant)}<g clip-path="url(#${u}-box)">${body}</g>${w.extra ?? ''}${smoke(u, sx, sy, smokeScale * (w.smokeBoost ?? 1))}`;
 }

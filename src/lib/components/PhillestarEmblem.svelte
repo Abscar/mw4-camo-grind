@@ -8,9 +8,12 @@
 -->
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
+	import { EXHALE_K, exhaleAt, eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
 
-	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' = a gold holk in the left corner of his mouth */
-	let { mouth = null }: { mouth?: string | null } = $props();
+	/** BurgiShop's face slots (faceGear.ts `faceOf`): the Golden Holk = a gold holk in the left corner of his
+	    mouth; the 420 pack 2 = another thing there, glasses / eyes, a hat on the helmet, a smoke colour */
+	let { face = null }: { face?: FaceWear | null } = $props();
+	const mouth = $derived(face?.mouth ?? null);
 
 	const uid = $props.id(); // ids must be unique per drawing
 	const u = (name: string) => `${uid}-${name}`;
@@ -19,6 +22,10 @@
 	    is on the right), smoke rising past the ear cup (abscarOperator.ts helpers; ids `${uid}-…`) */
 	const GOLD_HOLK = holk(uid, 25.6, 43.2, 8.4, 47.6, 2.2, 6.8, undefined, true);
 	const HOLK_SMOKE = smoke(uid, 8, 45, 0.7);
+	const F = FACES.phillestar;
+	const ITEM = $derived(mouthItem(uid, mouth, F.mouth));
+	/** a smoke colour with nothing to smoke: he blows it out of the corner of his mouth */
+	const EXHALE = $derived(face?.smoke && !ITEM && mouth !== 'mouth-goldholk' ? smoke(uid, ...exhaleAt(F), EXHALE_K) : '');
 
 	const TEETH = [87.4, 91.8, 96.2, 100.6, 105, 109.4];
 	/** sesame seeds on the top bun: [x, y, angle] */
@@ -38,7 +45,7 @@
 	];
 </script>
 
-<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" aria-hidden="true" focusable="false">
+<svg viewBox="0 0 64 64" class="size-16 flex-none overflow-visible sm:size-20" data-smoke={face?.smoke || undefined} aria-hidden="true" focusable="false">
 	<defs>
 		<linearGradient id={u('skull')} x1="0" y1="0" x2=".35" y2="1">
 			<stop offset="0" stop-color="#f1f6fb" /><stop offset=".42" stop-color="#a3b6ca" /><stop offset=".78" stop-color="#56677b" /><stop offset="1" stop-color="#2b3543" />
@@ -110,10 +117,20 @@
 		<circle cx="146" cy="26" r="2.6" fill="#39f3e2" filter="url(#{u('glow')})" />
 	</g>
 
-	{#if mouth === 'mouth-goldholk'}
+	<!-- BurgiShop: eyes over the skull face, a hat on the helmet (the 420 pack 2) -->
+	{@html eyesItem(uid, face?.eyes, F.eyes)}
+	{@html hatItem(uid, face?.hat, F.head)}
+
+	{#if ITEM}
+		<!-- BurgiShop's 420 pack 2: something in the left corner of his mouth -->
+		{@html ITEM.markup}
+		{@html smoke(uid, ITEM.end[0], ITEM.end[1], 0.7 * ITEM.boost)}
+	{:else if mouth === 'mouth-goldholk'}
 		<!-- BurgiShop's Golden Holk -->
 		{@html GOLD_HOLK}
 		{@html HOLK_SMOKE}
+	{:else if EXHALE}
+		{@html EXHALE}
 	{/if}
 
 	<!-- the hamburger, held up in the glowing radioactive hand -->

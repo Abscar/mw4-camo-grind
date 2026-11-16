@@ -1119,3 +1119,157 @@ html[data-squadup] .hdr-buddy .buddy {
 		transform: scale(1.15) rotate(45deg);
 	}
 }
+
+/* BurgiShop's 420 pack 2 (2026-11-16, faceGear.ts): the things drawn on the operators' faces. Reduced motion
+   (app.css stops every animation) leaves each at a sensible rest: rings showing, propeller flat, lids open. */
+/* smoke colours: `data-smoke` on an emblem's <svg> tints its smoke (abscarOperator.ts `smoke`) and rings */
+[data-smoke='smoke-green'] .op-smoke-puffs {
+	fill: #74f25a;
+}
+[data-smoke='smoke-green'] .op-wisp,
+[data-smoke='smoke-green'] .fg-ring {
+	stroke: #a8ff8a;
+}
+[data-smoke='smoke-purple'] .op-smoke-puffs {
+	fill: #b77cff;
+}
+[data-smoke='smoke-purple'] .op-wisp,
+[data-smoke='smoke-purple'] .fg-ring {
+	stroke: #d8b8ff;
+}
+[data-smoke='smoke-gold'] .op-smoke-puffs {
+	fill: #ffd23a;
+}
+[data-smoke='smoke-gold'] .op-wisp,
+[data-smoke='smoke-gold'] .fg-ring {
+	stroke: #fff0a0;
+}
+[data-smoke='smoke-gold'] .op-smoke {
+	filter: drop-shadow(0 0 2px rgb(255 200 40 / 0.9));
+}
+/* rainbow: a hot pink that runs round the colour wheel */
+[data-smoke='smoke-rainbow'] .op-smoke-puffs {
+	fill: #ff5aa0;
+}
+[data-smoke='smoke-rainbow'] .op-wisp,
+[data-smoke='smoke-rainbow'] .fg-ring {
+	stroke: #ff9ac8;
+}
+[data-smoke='smoke-rainbow'] .op-smoke,
+[data-smoke='smoke-rainbow'] .fg-ring {
+	animation: fg-hue 3.2s linear infinite;
+}
+@keyframes fg-hue {
+	to {
+		filter: hue-rotate(360deg);
+	}
+}
+/* Cloud Nine: smoke rings rising from the blunt */
+.fg-ring {
+	fill: none;
+	stroke: #eef2ee;
+	stroke-width: 0.9;
+	opacity: 0.7;
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: fg-ring 3.9s ease-out infinite;
+}
+[data-smoke='smoke-rainbow'] .fg-ring {
+	animation:
+		fg-ring 3.9s ease-out infinite,
+		fg-hue 3.2s linear infinite;
+}
+@keyframes fg-ring {
+	0% {
+		transform: translate(0, 0) scale(0.4);
+		opacity: 0;
+	}
+	15% {
+		opacity: 0.95;
+	}
+	100% {
+		transform: translate(4px, -26px) scale(2.3);
+		opacity: 0;
+	}
+}
+/* the bong: bubbles rise in the water, milky smoke breathes in the tube */
+.fg-bubble {
+	animation: fg-bubble 1.6s linear infinite;
+}
+@keyframes fg-bubble {
+	0% {
+		transform: translateY(0);
+		opacity: 0.95;
+	}
+	100% {
+		transform: translateY(-4.6px);
+		opacity: 0.2;
+	}
+}
+.fg-bong-smoke {
+	animation: fg-bong 3s ease-in-out infinite;
+}
+@keyframes fg-bong {
+	50% {
+		opacity: 0.6;
+	}
+}
+/* Baked Eyes: the heavy lids sag a little lower now and then */
+.fg-lid {
+	animation: fg-lid 4.2s ease-in-out infinite;
+}
+@keyframes fg-lid {
+	0%,
+	55%,
+	100% {
+		transform: translateY(0);
+	}
+	70%,
+	85% {
+		transform: translateY(0.9px);
+	}
+}
+/* Laser Eyes: the flares pulse */
+.fg-laser {
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: fg-laser 1.6s ease-in-out infinite;
+}
+@keyframes fg-laser {
+	50% {
+		transform: scale(1.12);
+		opacity: 0.75;
+	}
+}
+/* Propeller Cap: the propeller spins (squashed side to side, like seen from the front) */
+.fg-prop {
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: fg-prop 0.5s linear infinite;
+}
+@keyframes fg-prop {
+	0%,
+	100% {
+		transform: scaleX(1);
+	}
+	25%,
+	75% {
+		transform: scaleX(0.12);
+	}
+	50% {
+		transform: scaleX(-1);
+	}
+}
+/* with reduced motion the rings would all sit still on the blunt's end: leave them out */
+@media (prefers-reduced-motion: reduce) {
+	.fg-ring {
+		display: none;
+	}
+}
+/* Leaf Crown: a twinkle or two */
+.fg-twinkle {
+	opacity: 0.9;
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: holk-spark 2.6s ease-in-out infinite;
+}
