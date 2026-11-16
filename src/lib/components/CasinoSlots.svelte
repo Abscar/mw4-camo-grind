@@ -9,6 +9,10 @@
 	and the bonus wheel open over the whole cabinet; a Buy bonus row starts free spins, the Burger Box or
 	a wheel spin at once (asked first); free spins get an intro, the marquee turns into their counter,
 	"+8 FREE SPINS" when they come again and the total at the end.
+	Weeds + sticky WILDs (2026-11-16, the user's "sticky wilds in the free spins, and special weed symbols
+	that give ×2, ×5, ×10 and so on"): a weed shows its ×value on the reel; on a winning screen they glow
+	and a big "×n" pops up. In free spins every WILD that lands is drawn again on a layer over the reels
+	(.sticky-layer, the same grid as the cells) so it stays put while the reels spin under it.
 	The whole spin with its bonuses and free spins is worked out and booked at once (squad.recordGame),
 	then shown; the boxes you tap only decide the order the worked-out prizes come in. `hidden` = burgers
 	won but not shown yet, so the balance above doesn't give the result away.
@@ -18,10 +22,12 @@
 	import { holk, smoke } from '#lib/abscarOperator.ts';
 	import {
 		buy,
+		cellKey,
 		evaluate,
 		play,
 		spinsFrom,
 		winTier,
+		MAX_WIN,
 		BOX_COUNT,
 		BOX_REELS,
 		BUY_FREE_SPINS,
@@ -100,6 +106,15 @@
 	let wheelGame = $state<{ bonus: WheelBonus; angle: number; turning: boolean; done: boolean } | null>(null);
 	/** Buy bonus: the feature waiting for a yes. */
 	let buyAsk = $state<BuyKind | null>(null);
+	/** Free spins: the sticky WILDs held ("reel-row"), and the ones that just landed (they flash). */
+	let stickyCells = $state<string[]>([]);
+	let stickyNew = $state<string[]>([]);
+	/** The weeds' sum popping up over the reels after a winning spin with weeds. */
+	let weedPop = $state<number | null>(null);
+	/** Which pop is showing (a later one isn't cleared by an earlier one's timer). */
+	let popId = 0;
+	/** A weed's ×value on the screen shown. */
+	const weedAt = (reel: number, row: number) => screen.weeds.find((w) => w.reel === reel && w.row === row)?.x;
 	let spinBtn = $state<HTMLButtonElement>();
 	let bonusEl = $state<HTMLDivElement>();
 
@@ -113,6 +128,8 @@
 		if (scatterHit) screen.grid.forEach((col, r) => col.forEach((sym, row) => sym === 'scatter' && set.add(`${r}-${row}`)));
 		if (boxHit) for (const r of BOX_REELS) screen.grid[r].forEach((sym, row) => sym === 'box' && set.add(`${r}-${row}`));
 		if (wheelHit) for (const r of WHEEL_REELS) screen.grid[r].forEach((sym, row) => sym === 'wheel' && set.add(`${r}-${row}`));
+		// weeds glow when they multiplied a win
+		if (screen.raw > 0 && (wins.length || scatterHit)) for (const w of screen.weeds) set.add(`${w.reel}-${w.row}`);
 		return set;
 	});
 	const LINE_COLORS = ['#ffd23a', '#ff5ca8', '#5ce1ff', '#7dff6a', '#ff8a1a', '#c98bff', '#ff4b4b', '#4bffd1', '#fff6b0', '#9ab8ff'];
@@ -140,15 +157,23 @@
 		wheelHit = result.wheel;
 		hidden = Math.max(0, hidden - result.win);
 		lastWin = result.win;
+		const weedHit = result.weedMult > 0 && result.raw > 0;
 		const parts = [
 			...result.lines.map((l) => s.lineWin(l.line + 1, l.count, s.symbols[l.symbol], l.win)),
 			...(result.scatterWin || result.freeSpins ? [s.scatterWin(result.scatters, result.scatterWin, result.freeSpins)] : []),
+			...(weedHit ? [s.weedWin(result.weedMult, result.raw, result.win)] : []),
+			...(result.newSticky.length ? [s.sticky(result.newSticky.length)] : []),
 			...(result.box ? [s.boxHit] : []),
 			...(result.wheel ? [s.wheelHit] : [])
 		];
 		message = parts.length ? parts.join(' · ') : s.noWin;
-		if (result.box || result.wheel) sound.play('maxed');
-		else if (result.win > 0) sound.play('camo');
+		if (weedHit) {
+			weedPop = result.weedMult;
+			const id = ++popId;
+			setTimeout(() => popId === id && (weedPop = null), reduce() ? 1400 : 1900);
+		}
+		if (result.box || result.wheel || weedHit) sound.play('maxed');
+		else if (result.win > 0 || result.newSticky.length) sound.play('camo');
 	}
 
 	/* ----- waiting: a tap on a screen or a timeout; everything waiting lets go when the machine goes away ----- */
@@ -290,8 +315,16 @@
 			scatterHit = false;
 			boxHit = false;
 			wheelHit = false;
+			weedPop = null;
+			// the WILDs held so far stay on their layer while the reels spin under them
+			stickyNew = [];
+			stickyCells = fs.sticky;
 			await spinReels(fs);
 			show(fs);
+			if (fs.newSticky.length) {
+				stickyNew = fs.newSticky;
+				stickyCells = [...fs.sticky, ...fs.newSticky];
+			}
 			won += fs.win;
 			freeState = { n: i + 1, total, won };
 			won += await bonusesOf(fs);
@@ -306,6 +339,10 @@
 			await sleep(reduce() ? 250 : 800);
 		}
 		freeState = null;
+		stickyCells = [];
+		stickyNew = [];
+		// a capped play (MAX_WIN) pays less than the spins added up
+		won = Math.min(won, p.win);
 		banner = { kind: 'outro', spins: p.free.length, won };
 		lastWin = won;
 		await waitTap(reduce() ? 1500 : 3000);
@@ -325,6 +362,9 @@
 		tier = 'none';
 		celebrate = false;
 		lastWin = 0;
+		weedPop = null;
+		stickyCells = [];
+		stickyNew = [];
 		const bonuses = !!(p.box || p.wheel || p.free.length || p.base?.boxBonus || p.base?.wheelBonus);
 		if (p.base) {
 			pulled = true;
@@ -338,9 +378,9 @@
 		if (p.wheel) await runWheel(p.wheel);
 		if (p.free.length) await runFree(p);
 		if (!alive) return;
-		if (bonuses) {
+		if (bonuses || p.capped) {
 			lastWin = p.win;
-			message = `${s.lastWin}: ${p.win.toLocaleString('en-US')} 🍔`;
+			message = `${s.lastWin}: ${p.win.toLocaleString('en-US')} 🍔${p.capped ? ` · ${s.maxWin(MAX_WIN)}` : ''}`;
 		}
 		hidden = 0;
 		tier = winTier(p);
@@ -432,7 +472,11 @@
 		bet = SLOT_BETS[Math.max(0, Math.min(SLOT_BETS.length - 1, i + dir))];
 	}
 
-	const reelText = (r: number) => s.reelLabel(r + 1, screen.grid[r].map((x) => s.symbols[x]).join(', '));
+	const reelText = (r: number) =>
+		s.reelLabel(
+			r + 1,
+			screen.grid[r].map((x, row) => (x === 'weed' && weedAt(r, row) ? s.weedLabel(weedAt(r, row)!) : stickyCells.includes(cellKey(r, row)) ? `${s.symbols.wild} (${s.stickyTag})` : s.symbols[x])).join(', ')
+		);
 	const RAIN = Array.from({ length: 14 }, (_, i) => ({ x: (i * 37) % 100, d: (i % 5) * 0.18, dur: 1.4 + (i % 4) * 0.25 }));
 </script>
 
@@ -460,14 +504,26 @@
 					<div class="reel" role="img" aria-label={reelText(r)}>
 						<div class="strip" style:transform={`translateY(calc(var(--cell) * ${-col.y}))`} style:transition={col.dur ? `transform ${col.dur}ms cubic-bezier(0.18, 0.7, 0.28, 1.06)` : 'none'}>
 							{#each col.items as sym, i (i)}
-								<div class="cell" class:win={!spinning && col.items.length === ROWS && winCells.has(`${r}-${i}`)}>
-									<SlotSymbolView symbol={sym} size={48} />
+								<div class="cell" class:win={(!spinning || !!freeState) && col.items.length === ROWS && winCells.has(`${r}-${i}`)}>
+									<SlotSymbolView symbol={sym} size={48} value={sym === 'weed' && col.items.length === ROWS ? weedAt(r, i) : undefined} />
 								</div>
 							{/each}
 						</div>
 					</div>
 				{/each}
 			</div>
+			<!-- free spins: the sticky WILDs, on their own layer so they stay put while the reels spin -->
+			{#if stickyCells.length}
+				<div class="sticky-layer" aria-hidden="true">
+					{#each stickyCells as k (k)}
+						{@const [reel, row] = k.split('-').map(Number)}
+						<div class="sticky-cell" data-cell={k} class:fresh={stickyNew.includes(k)} class:win={winCells.has(k)} style:grid-column={reel + 1} style:grid-row={row + 1}>
+							<SlotSymbolView symbol="wild" size={48} />
+							<span class="sticky-tag font-head">{s.stickyTag}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
 			<!-- the winning paylines, drawn over the cells -->
 			{#if !spinning || freeState}
 				<svg class="paylines" viewBox="0 0 500 300" preserveAspectRatio="none" aria-hidden="true">
@@ -484,13 +540,17 @@
 					{/each}
 				</svg>
 			{/if}
+			{#if weedPop && !banner}
+				<!-- the weeds' sum, after a winning spin with weeds -->
+				<p class="weed-pop font-head num" aria-hidden="true">×{weedPop}</p>
+			{/if}
 			{#if banner?.kind === 'more'}
 				<p class="fs-more font-head" role="status">{s.freeMore(banner.spins)}</p>
 			{:else if banner}
 				<!-- the free-spins intro / total: tap anywhere to go on -->
 				<button type="button" class="fs-screen" data-kind={banner.kind} onclick={() => tapGo?.()}>
 					<span class="rain" aria-hidden="true">
-						{#each RAIN as drop, i (i)}<span style:left="{drop.x}%" style:animation-delay="{drop.d}s" style:animation-duration="{drop.dur}s"><SlotSymbolView symbol={banner.kind === 'intro' ? 'scatter' : i % 3 ? 'burger' : 'fries'} size={28} /></span>{/each}
+						{#each RAIN as drop, i (i)}<span style:left="{drop.x}%" style:animation-delay="{drop.d}s" style:animation-duration="{drop.dur}s"><SlotSymbolView symbol={banner.kind === 'intro' ? (i % 3 ? 'scatter' : 'weed') : i % 3 ? 'burger' : 'fries'} size={28} /></span>{/each}
 					</span>
 					{#if banner.kind === 'intro'}
 						<span class="big font-head">{s.freeIntro(banner.spins)}</span>
@@ -689,11 +749,13 @@
 	<ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-1.5 pb-1">
 		{#each SYMBOLS as sym (sym)}
 			<li class="pay-row flex items-center gap-2 rounded-lg px-2 py-1">
-				<SlotSymbolView symbol={sym} size={34} />
+				<SlotSymbolView symbol={sym} size={34} value={sym === 'weed' ? 5 : undefined} />
 				<span class="min-w-0">
 					<b class="block text-fg">{s.symbols[sym]}</b>
 					{#if sym === 'scatter'}
 						{s.scatterRow(...SCATTER_PAYS, ...FREE_SPINS)}
+					{:else if sym === 'weed'}
+						{s.weedRow}
 					{:else if sym === 'box'}
 						{s.boxRow}
 					{:else if sym === 'wheel'}
@@ -707,6 +769,7 @@
 	</ul>
 	<p class="pb-1">{s.payNote}</p>
 	<p class="pb-1">{s.buyNote(BUY_PRICE.free, BUY_PRICE.box, BUY_PRICE.wheel)}</p>
+	<p class="pb-1">{s.maxNote(MAX_WIN)}</p>
 </details>
 
 <style>
@@ -856,6 +919,103 @@
 		margin: 0 auto;
 		pointer-events: none;
 		filter: drop-shadow(0 0 4px rgb(0 0 0 / 0.8));
+	}
+	/* sticky WILDs: the same grid as the cells, over the reels (the reels spin under them) */
+	/* no z-index: it paints over the reels, and under the paylines and screens that come after it */
+	.sticky-layer {
+		position: absolute;
+		inset: 6px;
+		display: grid;
+		grid-template-columns: repeat(5, var(--cell));
+		grid-template-rows: repeat(3, var(--cell));
+		justify-content: center;
+		column-gap: 4px;
+		pointer-events: none;
+	}
+	.sticky-cell {
+		position: relative;
+		display: grid;
+		place-items: center;
+		border-radius: 8px;
+		background: radial-gradient(circle, #fff6d0, #ffe9a8 60%, #e8c76a);
+		box-shadow:
+			inset 0 0 0 3px #b265ff,
+			0 0 10px rgb(178 101 255 / 0.85);
+	}
+	.sticky-cell :global(.slot-sym) {
+		width: calc(var(--cell) * 0.78);
+		height: calc(var(--cell) * 0.78);
+	}
+	.sticky-cell.win {
+		box-shadow:
+			inset 0 0 0 3px #ffd23a,
+			0 0 14px rgb(255 210 58 / 0.95);
+	}
+	.sticky-cell.fresh {
+		animation: stick-in 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+	}
+	@keyframes stick-in {
+		from {
+			transform: scale(1.5);
+			opacity: 0.4;
+		}
+	}
+	.sticky-tag {
+		position: absolute;
+		bottom: 1px;
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 0 4px;
+		border-radius: 4px;
+		background: #7a3fd0;
+		color: #fff6b0;
+		font-size: clamp(7px, calc(var(--cell) * 0.13), 11px);
+		font-weight: 900;
+		letter-spacing: 0.08em;
+		line-height: 1.35;
+	}
+	/* the weeds' sum after a winning spin with weeds */
+	.weed-pop {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		z-index: 3;
+		margin: 0;
+		transform: translate(-50%, -50%);
+		padding: 2px 18px;
+		border: 3px solid #b6ff7a;
+		border-radius: 999px;
+		background: radial-gradient(circle, #2f9e45, #0b4a1c);
+		color: #fff6b0;
+		font-size: clamp(26px, 9cqi, 50px);
+		font-weight: 900;
+		text-shadow: 0 3px 0 #083a17;
+		box-shadow: 0 0 22px rgb(125 255 106 / 0.75);
+		pointer-events: none;
+		animation: weed-pop 1.8s ease-out both;
+	}
+	@keyframes weed-pop {
+		0% {
+			transform: translate(-50%, -50%) scale(2.2);
+			opacity: 0;
+		}
+		18% {
+			transform: translate(-50%, -50%) scale(1);
+			opacity: 1;
+		}
+		80% {
+			opacity: 1;
+		}
+		100% {
+			transform: translate(-50%, -62%) scale(0.92);
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sticky-cell.fresh,
+		.weed-pop {
+			animation: none;
+		}
 	}
 	/* ---------- free spins ---------- */
 	/* the marquee turns purple and counts the free spins */

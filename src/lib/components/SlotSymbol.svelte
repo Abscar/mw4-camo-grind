@@ -1,11 +1,15 @@
 <!--
 	One reel symbol of the Burger Bandit (casino-slots.ts): our own chunky cartoon drawings, thick dark
 	outlines and bright fills so they read at 44 px. Decorative: the reel's label says the symbols.
+	The weed multiplier (2026-11-16): a green coin with a cannabis leaf (leaf.ts) and its ×value on a
+	badge (green ×2–×3, purple ×5–×10, gold from ×25); without a value (spinning past, the paytable) no badge.
 -->
 <script lang="ts">
 	import type { SlotSymbol } from '#lib/casino-slots.ts';
+	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
 
-	let { symbol, size = 56 }: { symbol: SlotSymbol; size?: number } = $props();
+	let { symbol, size = 56, value }: { symbol: SlotSymbol; size?: number; value?: number } = $props();
+	const tierOf = (x: number) => (x >= 25 ? 'gold' : x >= 5 ? 'purple' : 'green');
 	const uid = $props.id();
 	const O = '#2a1408';
 	/** the bonus wheel symbol's 8 slices (radius 21 round 32,33), red / gold / purple / gold … */
@@ -122,6 +126,29 @@
 		<circle cx="32" cy="33" r="6.5" fill="url(#{uid}-gold)" stroke={O} stroke-width="2.2" />
 		<path d="M28.6 31.4 Q32 28 35.4 31.4" fill="none" stroke="#fff6d0" stroke-width="1.4" stroke-linecap="round" />
 		<path d="M26 1.5 L38 1.5 L32 12 Z" fill="#e2261f" stroke={O} stroke-width="2.4" stroke-linejoin="round" />
+	{:else if symbol === 'weed'}
+		<!-- the weed multiplier: a green coin, a big leaf, the ×value on a badge -->
+		{@const tier = value ? tierOf(value) : 'green'}
+		<circle cx="32" cy="31" r="27" fill="url(#{uid}-weedcoin)" stroke={O} stroke-width="3" />
+		<circle cx="32" cy="31" r="22.5" fill="none" stroke={tier === 'gold' ? '#ffd23a' : '#a8f07a'} stroke-width="1.6" stroke-dasharray="2.5 3" opacity="0.85" />
+		<g transform="translate(5.6 {value ? 0.5 : 5.5}) scale(2.2)">
+			<path d={LEAF_STEM} stroke="#0b3d14" stroke-width="1.6" stroke-linecap="round" />
+			{#each LEAF_PATHS as d, i (i)}<path {d} fill="url(#{uid}-leaf)" stroke="#0b3d14" stroke-width="0.85" stroke-linejoin="round" />{/each}
+			<path d="M12 20 L12 8.5 M12 20 L7.4 11.6 M12 20 L16.6 11.6" stroke="#c8ff9a" stroke-width="0.45" stroke-linecap="round" opacity="0.8" />
+		</g>
+		{#if value}
+			<rect x="13" y="45" width="38" height="17" rx="8.5" fill={tier === 'gold' ? `url(#${uid}-gold)` : tier === 'purple' ? '#7a3fd0' : '#1f9a45'} stroke={O} stroke-width="2.4" />
+			<text x="32" y="58.2" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size={value >= 100 ? 11.5 : 13.5} fill={tier === 'gold' ? '#7a1a00' : '#fff6b0'} letter-spacing="0.4">×{value}</text>
+			{#if tier !== 'green'}
+				<path d="M55 6 l1.3 3.3 l3.3 1.3 l-3.3 1.3 l-1.3 3.3 l-1.3 -3.3 l-3.3 -1.3 l3.3 -1.3 Z" fill="#fff6b0" stroke="#b86e00" stroke-width="0.7" />
+			{/if}
+		{/if}
+	{/if}
+	{#if symbol === 'weed'}
+		<defs>
+			<radialGradient id="{uid}-weedcoin" cx="38%" cy="30%" r="78%"><stop offset="0" stop-color="#2f9e45" /><stop offset="0.6" stop-color="#14662a" /><stop offset="1" stop-color="#083a17" /></radialGradient>
+			<linearGradient id="{uid}-leaf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b6ff7a" /><stop offset="0.55" stop-color="#5fe36a" /><stop offset="1" stop-color="#2fae46" /></linearGradient>
+		</defs>
 	{/if}
 </svg>
 
