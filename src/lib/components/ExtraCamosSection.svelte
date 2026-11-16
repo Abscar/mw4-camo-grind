@@ -4,8 +4,12 @@
 	into "Available now", "Upcoming" and "Expired" (can't be earned any more). Data: the dated snapshot
 	in data/extraCamos.ts; which list a camo is in is worked out from its dates against today, after
 	load (the prerendered page uses the snapshot's day, so the first render matches). A search and
-	"where from" buttons; items grouped by where they come from; tap one for the details. The little
-	tile is our own symbol for where it comes from, not a picture of the camo (no made-up looks).
+	"where from" buttons; items grouped by where they come from; tap one for the details.
+	The little tile (since 2026-11-16, the user's ask "pictures for the camos where they're missing")
+	is a picture of the camo: our own drawing in its style (camoSwatch.ts + data/extraLooks.ts), made
+	only for camos we have seen a picture of, with a line in the info box saying what it was drawn
+	after. A camo without one keeps our symbol for where it comes from (no made-up looks). The
+	pictures are drawn after load, not into the prerendered page (they add up to a few hundred KB).
 	Since 2026-11-13 (the user's pick from a brainstorm) every card has a "Got it" box: saved, synced
 	and in backups like the other ticks (progress.extraCamos), plus "x of y got" and a per-device
 	"Hide the ones I've got" switch.
@@ -26,6 +30,8 @@
 		type ExtraStatus
 	} from '#lib/data/extraCamos.ts';
 	import Dialog from './Dialog.svelte';
+	import { swatchSvg } from '#lib/camoSwatch.ts';
+	import { EXTRA_LOOKS } from '#lib/data/extraLooks.ts';
 	import { PRESTIGE } from '#lib/data/camos.ts';
 	import { WEAPONS } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
@@ -48,7 +54,26 @@
 	const HIDE_KEY = 'mw4-camo-grind:xc-hide-got';
 	let hideGot = $state(false);
 
+	/**
+	 * The camo pictures, drawn once each and only after load. The card and the info box get their own
+	 * copy ("c" / "d"), so the gradient / filter ids inside never clash on the page.
+	 */
+	let mounted = $state(false);
+	const pics = new Map<string, string>();
+	function pic(id: string, where: 'c' | 'd'): string {
+		const key = `${where}-${id}`;
+		let svg = pics.get(key);
+		if (svg === undefined) {
+			const art = EXTRA_LOOKS[id];
+			// our own generated SVG (data from extraLooks.ts, no user text), so {@html} is safe
+			svg = art ? swatchSvg(art.look, id, `xc${where}-${id}`) : '';
+			pics.set(key, svg);
+		}
+		return svg;
+	}
+
 	onMount(() => {
+		mounted = true;
 		const d = new Date();
 		today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 		try {
@@ -186,6 +211,18 @@
 	</svg>
 {/snippet}
 
+<!-- the camo's picture when we have one (an empty tile until the page has loaded), otherwise the symbol -->
+{#snippet tile(c: ExtraCamo, big: boolean)}
+	{#if EXTRA_LOOKS[c.id]}
+		<span class="xc-tile xc-pic flex-none" class:xc-tile-big={big} aria-hidden="true">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+			{#if mounted}{@html pic(c.id, big ? 'd' : 'c')}{/if}
+		</span>
+	{:else}
+		<span class="xc-tile flex-none" class:xc-tile-big={big} aria-hidden="true">{@render symbol(c.kind)}</span>
+	{/if}
+{/snippet}
+
 {#snippet modePills(c: ExtraCamo)}
 	<span class="xc-modes" aria-label={s.modesLabel(c.modes.map((m) => s.modes[m]).join(', '))}>
 		{#each c.modes as m (m)}<span class="xc-mode" data-mode={m} aria-hidden="true">{s.modesShort[m]}</span>{/each}
@@ -280,7 +317,7 @@
 								aria-haspopup="dialog"
 								onclick={() => open(c)}
 							>
-								<span class="xc-tile flex-none" aria-hidden="true">{@render symbol(c.kind)}</span>
+								{@render tile(c, false)}
 								<span class="min-w-0 flex-1">
 									<span class="flex flex-wrap items-center gap-x-2 gap-y-1">
 										<b class="xc-name font-semibold break-words" class:unverified={c.trust === 'one' || c.trust === 'leak'}>{c.name}</b>
@@ -348,7 +385,7 @@
 		{@const st = statusOf.get(picked.id) ?? 'now'}
 		<div class="xc-info grid gap-3" data-kind={picked.kind}>
 			<div class="flex items-center gap-3">
-				<span class="xc-tile xc-tile-big flex-none" aria-hidden="true">{@render symbol(picked.kind)}</span>
+				{@render tile(picked, true)}
 				<div class="min-w-0">
 					<p class="eyebrow">{s.kinds[picked.kind]}{picked.animated ? ` · ${s.animated}` : ''}</p>
 					<p class="mt-1 flex flex-wrap items-center gap-2">
@@ -357,6 +394,7 @@
 					</p>
 				</div>
 			</div>
+			{#if EXTRA_LOOKS[picked.id]}<p class="xc-after text-xs">{s.drawnAfter(EXTRA_LOOKS[picked.id].after)}</p>{/if}
 			<div>
 				<h3 class="font-head text-[12px] font-bold tracking-[0.12em] text-fg uppercase">{s.howHeading}</h3>
 				<p class="mt-1 text-[15px] leading-snug font-semibold text-fg">{picked.how}</p>
@@ -460,6 +498,29 @@
 	.xc-tile-big :global(svg) {
 		width: 44px;
 		height: 44px;
+	}
+	/* a camo picture fills its tile; the group colour stays as the edge */
+	.xc-pic {
+		overflow: hidden;
+	}
+	.xc-pic :global(svg) {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+	.xc-pic.xc-tile-big {
+		width: 96px;
+		height: 96px;
+		border-width: 2px;
+		border-radius: 12px;
+	}
+	.xc-pic.xc-tile-big :global(svg) {
+		width: 100%;
+		height: 100%;
+	}
+	.xc-after {
+		margin-top: -4px;
+		color: var(--t-muted);
 	}
 	.xc-item {
 		transition: border-color 0.12s;

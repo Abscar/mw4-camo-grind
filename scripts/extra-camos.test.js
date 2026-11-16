@@ -13,6 +13,8 @@ import {
 } from '../src/lib/data/extraCamos.ts';
 import { WEAPONS } from '../src/lib/data/weapons.ts';
 import { ALL_MASTERY, DIVERGENCE } from '../src/lib/data/camos.ts';
+import { EXTRA_LOOKS } from '../src/lib/data/extraLooks.ts';
+import { swatchSvg } from '../src/lib/camoSwatch.ts';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -80,6 +82,38 @@ test('extraStatus: the last day still counts, the first day counts, later/gone w
 	assert.equal(extraStatus({ ...base, later: 'Season 1 Reloaded', from: '2026-12-04' }, '2026-12-05'), 'now');
 	assert.equal(extraStatus({ ...base, gone: 'Beta only' }, '2026-11-12'), 'expired');
 	assert.equal(extraStatus(base, '2030-01-01'), 'now');
+});
+
+test('extra camo pictures (2026-11-16): only for real entries, each says what it was drawn after', () => {
+	const ids = new Set(EXTRA_CAMOS.map((c) => c.id));
+	for (const [id, art] of Object.entries(EXTRA_LOOKS)) {
+		assert.ok(ids.has(id), `picture for unknown extra camo ${id}`);
+		assert.ok(typeof art.after === 'string' && art.after.trim().length > 15, `${id}: says what it was drawn after`);
+		assert.doesNotMatch(art.after, /\.$/, `${id}: "after" finishes a sentence, so no full stop of its own`);
+	}
+	// no camo name or picture yet: these must keep the symbol (no made-up looks)
+	for (const id of ['event-wager-match-mastery-camo', 'event-camo-challenge-event-camos', 'event-season-1-reloaded-camo-events']) {
+		assert.ok(ids.has(id), `${id} is still an entry`);
+		assert.equal(EXTRA_LOOKS[id], undefined, `${id} has no camo to draw`);
+	}
+});
+
+test('extra camo pictures: valid-looking SVG, the same every time, ids kept apart per tile', () => {
+	for (const [id, { look }] of Object.entries(EXTRA_LOOKS)) {
+		const a = swatchSvg(look, id, `xcc-${id}`);
+		assert.match(a, /^<svg viewBox="0 0 100 100"[^>]*>.*<\/svg>$/s, id);
+		assert.doesNotMatch(a, /NaN|undefined|Infinity/, `${id} has a broken number`);
+		assert.equal(swatchSvg(look, id, `xcc-${id}`), a, `${id} changes between renders`);
+		assert.ok(a.length < 60000, `${id} is ${a.length} chars`);
+		const scope = `cwxcc${id.replace(/[^a-zA-Z0-9]/g, '')}`;
+		const defined = [...a.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
+		for (const d of defined) assert.ok(d.startsWith(scope), `${id}: id ${d} isn't scoped`);
+		for (const m of a.matchAll(/url\(#([^)]+)\)/g)) assert.ok(defined.includes(m[1]), `${id}: url(#${m[1]}) points at nothing`);
+		// the card and the info box draw the same camo side by side: their ids must differ
+		const b = swatchSvg(look, id, `xcd-${id}`);
+		const other = [...b.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
+		for (const d of other) assert.ok(!defined.includes(d), `${id}: id ${d} used by both copies`);
+	}
 });
 
 test('daysBetween: whole days, across a month and a clock change', () => {

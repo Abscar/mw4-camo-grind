@@ -1573,11 +1573,13 @@ export const en = {
 		},
 		trustShort: { official: 'Official', guides: 'Guides agree', one: 'One source', leak: 'Leak' },
 		sourcesLine: (sources: string) => `Sources: ${sources}.`,
+		/** Under the camo's picture in the info box (2026-11-16; data/extraLooks.ts). */
+		drawnAfter: (after: string) => `The picture is our own drawing in the camo’s style, made after ${after}. It’s close, not exact.`,
 		close: 'Close',
 		none: 'Nothing matches.',
 		clear: 'Clear search',
 		honest:
-			'The weapon grind (Military, Special, Gold, Platinum, Harmonic Break, Divergence, Mastery) is on the Camo grind tab; this is every other camo we found a source for. Paid store bundles are left out; the Season 1 Battle Pass, the campaign, DMZ secrets, Twitch drops and the partner promotions were checked and give no camos. Lists move along by themselves as dates pass; ≈ marks an estimated date. Tap a camo for the details, tap the box to mark it as got (saved and synced like your other ticks).',
+			'The weapon grind (Military, Special, Gold, Platinum, Harmonic Break, Divergence, Mastery) is on the Camo grind tab; this is every other camo we found a source for. Paid store bundles are left out; the Season 1 Battle Pass, the campaign, DMZ secrets, Twitch drops and the partner promotions were checked and give no camos. Lists move along by themselves as dates pass; ≈ marks an estimated date. Tap a camo for the details, tap the box to mark it as got (saved and synced like your other ticks). The camo pictures are our own drawings in each camo’s style, made after the real one; a camo nobody has shown yet gets a symbol for where it comes from instead.',
 		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
 	/** The Cosmetics tab (CosmeticsSection; data/cosmetics.ts). */
@@ -1627,12 +1629,15 @@ export const en = {
 		untilLong: (day: string) => `Available until ${day}.`,
 		endedLong: (day: string) => `Ended ${day}: it can\u2019t be earned any more.`,
 		drawnAfter: (after: string) => `The picture is our own drawing, made after ${after}. It\u2019s close, not exact.`,
+		guessArt:
+			'Nobody has published a picture of the real one yet, so this drawing is our guess from the name. The real one will look different.',
+		guessTag: 'Our guess',
 		noArt: 'No picture of this one found yet, so it isn\u2019t drawn: a made-up look would pass for the real thing.',
 		close: 'Close',
 		none: 'Nothing matches.',
 		clear: 'Clear search',
 		honest:
-			'Nobody publishes a complete list, so this is every large sticker, sticker and charm we found a source for. Items we have seen a picture of are drawn (our own drawings); a plain symbol means no picture found yet. Tap an item for where to get it.',
+			'Nobody publishes a complete list, so this is every large sticker, sticker and charm we found a source for. The pictures are our own drawings made after pictures of the real items; the few nobody has shown yet are our guess from the name and are marked “Our guess”. A plain symbol means no picture found yet. Tap an item for where to get it.',
 		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
 

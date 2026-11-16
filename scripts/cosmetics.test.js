@@ -89,3 +89,10 @@ test('cosmetic drawings: only for cosmetics that exist, plain SVG without ids, s
 	}
 	assert.ok(Object.keys(COSMETIC_ART).length >= 29);
 });
+
+test('cosmetic drawings: every sticker and large decal has one (2026-11-16); guesses say so', () => {
+	for (const c of COSMETICS.filter((x) => x.type !== 'charm')) assert.ok(COSMETIC_ART[c.id], `${c.id}: no drawing`);
+	for (const [id, art] of Object.entries(COSMETIC_ART)) {
+		if (art.guess) assert.match(art.after, /name only/, `${id}: a guess must say it was drawn from the name`);
+	}
+});

@@ -7,18 +7,24 @@
  * in-game screenshots of every Prestige reward row and of Prestige Master 1000, and Detonated's
  * picture of the Wager Match reward board (Snake Eyes).
  *
- * Only items we have SEEN a picture of get a drawing. The rest show the plain symbol and say "no
- * picture found yet": a made-up look would pass for the real thing.
+ * Drawings are made after a picture of the real item. Since 2026-11-16 (the user: "draw pictures for
+ * all the stickers and decals") the ones nobody has a picture of get a drawing from the name too,
+ * marked `guess`, and their info box says so plainly; those and the store / beta / promo stickers
+ * drawn that day live in cosmeticArtMore.ts. Charms without a picture still show the plain symbol.
  *
  * Plain SVG markup without ids (no gradients, patterns or filters), so the same drawing can be on
  * screen twice. Large decals: viewBox 0 0 120 80. Stickers and charms: 0 0 80 80.
  */
+
+import { MORE_ART } from './cosmeticArtMore.ts';
 
 export interface CosmeticArt {
 	viewBox: string;
 	svg: string;
 	/** Whose picture it was drawn after (shown in the item's info box). */
 	after: string;
+	/** No picture of the real item exists yet: our idea from the name only (cosmeticArtMore.ts). */
+	guess?: boolean;
 }
 
 const DECAL = '0 0 120 80';
@@ -105,7 +111,7 @@ function goblinMask(face: string, shade: string, horn: string, hair: string, acc
 	);
 }
 
-export const COSMETIC_ART: Record<string, CosmeticArt> = {
+const BASE_ART: Record<string, CosmeticArt> = {
 	// ===== Large decals =====
 
 	// Prestige 1: three WW2 soldiers mid-action in muted olive and khaki, a pale die-cut edge around the
@@ -773,6 +779,8 @@ export const COSMETIC_ART: Record<string, CosmeticArt> = {
 			'<path d="M22 36c3-6 8-10 14-11" stroke="#efe6cc" stroke-width="1.800" fill="none" stroke-linecap="round"/>'
 	}
 };
+
+export const COSMETIC_ART: Record<string, CosmeticArt> = { ...BASE_ART, ...MORE_ART };
 
 export function cosmeticArt(id: string): CosmeticArt | undefined {
 	return COSMETIC_ART[id];

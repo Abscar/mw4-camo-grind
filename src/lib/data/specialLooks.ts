@@ -10,6 +10,7 @@
  * that every Special camo has a look.
  */
 import type { Look } from '#lib/camoSwatch.ts';
+import { EXTRA_LOOKS } from './extraLooks.ts';
 
 export const SPECIAL_LOOKS: Record<string, Look> = {
 	// Han 86
@@ -162,12 +163,14 @@ export const LADDER_LOOKS: Record<'gold' | 'platinum' | 'harmonicBreak', Look> =
 };
 
 /**
- * The Prestige camos (2026-11-15), after mw4camos.com's swatches: glowing green-yellow energy on
- * black. Terminus = strands woven through a band, Scatter = glowing shards, Cascade = denser
- * strands with falling streaks.
+ * The Prestige camos. First drawn 2026-11-15 after mw4camos.com's swatches, but its Terminus and
+ * Cascade pictures turned out to be the same file as its Prestige Master one (a stand-in). Since
+ * 2026-11-16 they're the Extra camos tab's drawings (extraLooks.ts, after codmunity.gg's renders
+ * and bosslobbies' pictures: dark shards → green streaks → bright green-white streaks), so the weapon
+ * card and the tab show the same picture.
  */
 export const PRESTIGE_LOOKS: Record<'pyroclastTerminus' | 'pyroclastScatter' | 'pyroclastCascade', Look> = {
-	pyroclastTerminus: { k: 'strands', bg: '#030603', colors: ['#e6ff7a', '#b8ff4a', '#8cff9a', '#d4ff5a'], n: 16, band: 30, glow: '#9eff3c' },
-	pyroclastScatter: { k: 'shards', bg: '#020402', colors: ['#e4ff6a', '#b8ff4a', '#9eea3a', '#f0ff9a'], n: 16, size: 7, glow: '#a6ff3c' },
-	pyroclastCascade: { k: 'strands', bg: '#030603', colors: ['#f0ff8a', '#c8ff5a', '#7affc0', '#e0ff6a'], n: 24, band: 40, glow: '#b4ff50', falls: '#c8ff7a' }
+	pyroclastTerminus: EXTRA_LOOKS['prestige-pyroclast-terminus'].look,
+	pyroclastScatter: EXTRA_LOOKS['prestige-pyroclast-scatter'].look,
+	pyroclastCascade: EXTRA_LOOKS['prestige-pyroclast-cascade'].look
 };

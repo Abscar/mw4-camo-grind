@@ -187,6 +187,7 @@
 									<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
 										<b class="cos-name font-semibold break-words" class:unverified={!c.verified}>{c.name}</b>
 										{#if cosmeticIsNew(c, todayIso)}<span class="cos-tag cos-tag-new">{t.cosmetics.newTag}</span>{/if}
+										{#if art?.guess}<span class="cos-tag cos-tag-guess">{t.cosmetics.guessTag}</span>{/if}
 										{#if c.gunScreen}<span class="cos-tag">{t.cosmetics.gunScreen}</span>{/if}
 										{#if c.until}
 											<span class="cos-tag" class:cos-tag-ended={ended}
@@ -258,7 +259,7 @@
 				</p>
 			{/if}
 			<p class="text-xs">
-				{#if pickedArt}{t.cosmetics.drawnAfter(pickedArt.after)}{:else}{t.cosmetics.noArt}{/if}
+				{#if pickedArt?.guess}{t.cosmetics.guessArt}{:else if pickedArt}{t.cosmetics.drawnAfter(pickedArt.after)}{:else}{t.cosmetics.noArt}{/if}
 			</p>
 		</div>
 	{/if}
@@ -408,6 +409,10 @@
 		border-color: #f5c518;
 		background: #f5c518;
 		color: #1a1405;
+	}
+	.cos-tag-guess {
+		border-style: dashed;
+		color: var(--t-muted);
 	}
 	.cos-new-count {
 		color: var(--t-accent);
