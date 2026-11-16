@@ -16,6 +16,11 @@
  * our build (WZ M4, Kastov, Striga, Astaroth, Signal 50), the source now names only the sites that
  * still list it. Dates updated where a site re-confirmed a build.
  *
+ * Marksman rifles re-checked 2026-11-16 (the user's ask: "are the sights right?"): every part checked
+ * against each gun's attachment list on codmunity. Dexerto's MAR-9 and Oris 8.6 pages are from the beta
+ * (21 Aug) and were never updated, so their MP builds were swapped for Season 1 ones (MAR-9 wzstats,
+ * Oris codmunity). Mosin-Nagant MP + all three WZ builds are still what wzstats / codmunity list.
+ *
  * `verified: false` = the build is built around something that was nerfed after it was
  * published, or the sites disagree about whether the gun is any good. The `note` says why, and
  * the popup shows it as text. A build from a single site is normal and is not flagged.
@@ -484,12 +489,14 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 
 	// ---------- Marksman Rifles ----------
 	'mar-9': {
-		mp: build('Long range', DEXERTO, DEX_DATE, {
+		// Was Dexerto's build (SZ Lonewolf Holo), but that page dates from the beta (21 Aug) and was never
+		// updated; wzstats' Season 1 build is the newest one without the Apex (codmunity has only Apex builds).
+		mp: build('Versatile', WZSTATS, S1, {
+			Optic: 'FJX 708 PRO',
 			Barrel: 'Bruen Reaper-X',
+			Underbarrel: 'FSS Tac90 Grip',
 			Laser: 'SA Laz-500',
-			Optic: 'SZ Lonewolf Holo',
-			'Rear Grip': 'Schlager PLM-S9',
-			Underbarrel: 'FSS Tac90 Grip'
+			'Rear Grip': 'Hanbit Wrap 76'
 		}),
 		wz: build(
 			'Long range',
@@ -506,12 +513,14 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 		)
 	},
 	'oris-8-6': {
-		mp: build('Long range', DEXERTO, DEX_DATE, {
-			Barrel: 'EXP Crosstac 22"',
-			Laser: 'Schlager Visiv-5',
+		// Was Dexerto's build (same Cronen R808), from its beta-era page (21 Aug, never updated);
+		// codmunity's #1 Season 1 build is the newest dated one without the Apex.
+		mp: build('Versatile', CODMUNITY, S1, {
 			Optic: 'Cronen R808',
-			'Rear Grip': 'OPS-45 XP Grip',
-			Bolt: 'Lightfire-5 Quick Bolt'
+			Muzzle: 'EXP Undertow Gen. 2',
+			Underbarrel: 'FSS Tac90 Grip',
+			'Rear Grip': 'Bruen R7-TC Grip',
+			Stock: 'SA Dynamo-90 Stock'
 		}),
 		wz: build(
 			'Long range',
@@ -519,7 +528,7 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			S1,
 			{
 				Optic: 'SZ Helios Holo',
-				Barrel: 'EXP Shadow-70 14',
+				Barrel: 'EXP Shadow-70 14"',
 				Magazine: '20 Round Mag',
 				'Rear Grip': 'Bruen C-Wrap 60',
 				Bolt: 'Lightfire-5 Quick Bolt'
