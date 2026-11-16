@@ -158,6 +158,24 @@ export function rankedView(log: RankedLog | undefined): RankedView | null {
 }
 
 /**
+ * SR locked from the code, by the member's header operator (squad-codec `SquadOp`; 2026-11-16, the user: "set
+ * Drängen's SR to 1000 under the squad link, lock it there"). Everyone's board shows this SR for that member,
+ * whatever they type in, and their own page can't change it (SquadRanked). Remove the entry to unlock: what they
+ * typed in meanwhile is still in their log and shows again.
+ */
+export const LOCKED_SR: Readonly<Record<string, { sr: number; since: number }>> = {
+	lars: { sr: 1000, since: Date.UTC(2026, 10, 16, 19, 0) }
+};
+export const lockedSr = (op: string | null | undefined) => (op ? LOCKED_SR[op] : undefined);
+
+/** What the board shows for a member: the locked SR when their operator has one, else their own log. */
+export function boardView(op: string | null | undefined, log: RankedLog | undefined): RankedView | null {
+	const lock = lockedSr(op);
+	if (!lock) return rankedView(log);
+	return { day: new Date(lock.since).toISOString().slice(0, 10), latest: { sr: lock.sr, at: lock.since }, rank: rankOf(lock.sr), before: null };
+}
+
+/**
  * Best first: a Top 250 place first (lower place = better), then by SR; members without an update
  * go last, by name.
  */

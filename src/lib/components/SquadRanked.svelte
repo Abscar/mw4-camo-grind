@@ -4,12 +4,14 @@
 	their page publishes it in the squad document (squad-ranked.ts). Best first; the rank is worked
 	out from the SR with last year's (BO7) table until MW4 publishes its own, and a Top 250 place
 	can be typed in. Same row look as the Combat record (SquadCombat.svelte).
+	A member whose operator has a locked SR (squad-ranked.ts LOCKED_SR; Drängen at 1,000 since the user's ask,
+	2026-11-16) shows that SR with a lock on every page, and their own "Update my SR" button is locked.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad, type SquadEntry } from '#lib/squad.svelte.ts';
 	import { agoParts } from '#lib/squad-codec.ts';
-	import { fmtSrDelta, parseWhole, rankedView, rankOf, rankRanked, toNext, SR_MAX, TOP_MAX, type Rank } from '#lib/squad-ranked.ts';
+	import { boardView, fmtSrDelta, lockedSr, parseWhole, rankedView, rankOf, rankRanked, toNext, SR_MAX, TOP_MAX, type Rank } from '#lib/squad-ranked.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
@@ -17,7 +19,9 @@
 	let { entries }: { entries: SquadEntry[] } = $props();
 	const r = t.squad.ranked;
 
-	const rows = $derived(rankRanked(entries.map((e) => ({ e, name: e.member.name, view: rankedView(e.member.ranked) }))));
+	const rows = $derived(rankRanked(entries.map((e) => ({ e, name: e.member.name, view: boardView(e.member.op, e.member.ranked) }))));
+	/** Your own SR is locked (your operator has a LOCKED_SR). */
+	const myLock = $derived(lockedSr(squad.me?.op));
 	const anySr = $derived(rows.some((x) => x.view));
 
 	/** "7 Nov" for a "YYYY-MM-DD" day. */
@@ -34,6 +38,7 @@
 	let busy = $state(false);
 
 	function openForm() {
+		if (myLock) return;
 		const latest = rankedView(squad.ranked)?.latest;
 		srText = latest ? String(latest.sr) : '';
 		topText = latest?.top !== undefined ? String(latest.top) : '';
@@ -70,7 +75,11 @@
 <section class="sq-ranked" aria-labelledby="sq-ranked-h">
 	<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
 		<h3 id="sq-ranked-h" class="font-head text-[13px] font-bold tracking-[0.12em] uppercase">{r.heading}</h3>
-		<button type="button" class="btn btn-sm btn-primary" onclick={openForm}>{r.update}</button>
+		{#if myLock}
+			<button type="button" class="btn btn-sm" disabled title={r.lockedMine(fmt(myLock.sr))}>{r.lockedBtn}</button>
+		{:else}
+			<button type="button" class="btn btn-sm btn-primary" onclick={openForm}>{r.update}</button>
+		{/if}
 	</div>
 	<p class="mt-1 max-w-3xl text-xs text-muted">{r.note}</p>
 
@@ -79,11 +88,12 @@
 	{/if}
 	<ol class="mt-2 grid gap-1.5">
 		{#each rows as { e, view }, i (e.id)}
-			{@const next = view && view.latest.top === undefined ? toNext(view.latest.sr) : null}
-			<li class="sq-rrow rounded-lg border border-line bg-panel-2" class:mine={e.mine} data-empty={!view}>
+			{@const lock = lockedSr(e.member.op)}
+			{@const next = view && !lock && view.latest.top === undefined ? toNext(view.latest.sr) : null}
+			<li class="sq-rrow rounded-lg border border-line bg-panel-2" class:mine={e.mine} class:locked={!!lock} data-empty={!view}>
 				<span class="sr-only"
 					>{view
-						? `${r.rowLabel(i + 1, e.member.name, view.latest.sr, view.rank.label)}${view.before ? `, ${r.delta(fmtSrDelta(view.before.delta), dateOf(view.before.day))}` : ''}. ${r.updated(ago(view.latest.at))}`
+						? `${r.rowLabel(i + 1, e.member.name, view.latest.sr, view.rank.label)}${view.before ? `, ${r.delta(fmtSrDelta(view.before.delta), dateOf(view.before.day))}` : ''}. ${lock ? r.locked(fmt(lock.sr)) : r.updated(ago(view.latest.at))}`
 						: `${e.member.name}: ${r.none}`}</span
 				>
 				<span class="sq-rrank num font-head" aria-hidden="true">{view ? `#${i + 1}` : '–'}</span>
@@ -92,6 +102,7 @@
 					<b class="min-w-0 truncate font-head text-[15px] font-bold tracking-wide" title={e.member.name}>{e.member.name}</b>
 					{#if e.mine}<span class="sq-ryou font-head">{t.squad.you}</span>{/if}
 					{#if view}{@render badge(view.rank)}{/if}
+					{#if lock}<span class="sq-rlock font-head">🔒 {r.lockedTag}</span>{/if}
 				</p>
 				<div class="sq-rinfo min-w-0" aria-hidden="true">
 					{#if view}
@@ -106,9 +117,13 @@
 								{/if}
 							</p>
 						{/if}
-						<p class="text-[11px] text-muted">
-							{#if next}<span class="whitespace-nowrap">{r.toNext(next.sr, next.label)}</span>{' · '}{/if}<span class="whitespace-nowrap">{r.updated(ago(view.latest.at))}</span>
-						</p>
+						{#if lock}
+							<p class="text-[11px] text-muted">{r.locked(fmt(lock.sr))}</p>
+						{:else}
+							<p class="text-[11px] text-muted">
+								{#if next}<span class="whitespace-nowrap">{r.toNext(next.sr, next.label)}</span>{' · '}{/if}<span class="whitespace-nowrap">{r.updated(ago(view.latest.at))}</span>
+							</p>
+						{/if}
 					{:else}
 						<p class="text-[11.5px] text-muted">{e.mine ? r.noneMine : r.none}</p>
 					{/if}
@@ -256,6 +271,23 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		white-space: nowrap;
+	}
+	/* a locked SR (LOCKED_SR): a grey padlock pill, the SR in grey */
+	.sq-rlock {
+		flex: none;
+		padding: 1px 7px;
+		border: 1px solid var(--t-line);
+		border-radius: 999px;
+		background: rgb(127 127 127 / 0.18);
+		color: var(--t-fg);
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+	.sq-rrow.locked .sq-rstat b {
+		color: var(--t-muted);
 	}
 	.sq-rtrend [data-dir='up'] {
 		color: var(--t-buff, #3ee06a);

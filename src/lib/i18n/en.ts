@@ -1305,6 +1305,11 @@ export const en = {
 			rankDown: (from: string) => `down from ${from}`,
 			toNext: (sr: number, label: string) => `${sr.toLocaleString('en-US')} SR to ${label}`,
 			rowLabel: (rank: number, name: string, sr: number, label: string) => `#${rank} ${name}: ${sr.toLocaleString('en-US')} SR, ${label}`,
+			// a locked SR (squad-ranked.ts LOCKED_SR)
+			lockedTag: 'Locked',
+			locked: (sr: string) => `SR locked at ${sr}`,
+			lockedBtn: '🔒 SR locked',
+			lockedMine: (sr: string) => `Your SR is locked at ${sr}: it can’t be changed from here.`,
 			// the form
 			title: 'Update my SR',
 			where: 'Open Ranked Play in MW4 and type in the SR (skill rating) it shows.',

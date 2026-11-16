@@ -3,6 +3,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+	LOCKED_SR,
+	boardView,
+	lockedSr,
 	RANKED_DAYS,
 	cleanRanked,
 	cleanRankedSnap,
@@ -123,4 +126,19 @@ test('SR travels in the squad document and an older entry without it reads fine'
 	assert.equal(doc.members.abcdefgh1234.more, undefined, 'ranked is a known field');
 	const old = memberEntry(me, progress, T);
 	assert.equal(old.ranked, undefined);
+});
+
+test("a locked SR (Drängen at 1,000): the board shows it whatever he typed, others untouched", () => {
+	assert.deepEqual(LOCKED_SR.lars && { sr: LOCKED_SR.lars.sr }, { sr: 1000 });
+	assert.equal(lockedSr('abscar'), undefined);
+	assert.equal(lockedSr(undefined), undefined);
+	const typed = { '2026-11-15': { sr: 4200, at: Date.UTC(2026, 10, 15) }, '2026-11-16': { sr: 9800, top: 12, at: Date.UTC(2026, 10, 16, 20) } };
+	const v = boardView('lars', typed);
+	assert.equal(v.latest.sr, 1000);
+	assert.equal(v.latest.top, undefined, 'a Top 250 place he typed doesn\u2019t count either');
+	assert.equal(v.rank.label, 'Silver I');
+	assert.equal(v.before, null, 'no "since" arrow on a locked SR');
+	assert.equal(boardView('lars', undefined).latest.sr, 1000, 'locked even before he typed anything');
+	assert.deepEqual(boardView('abscar', typed), rankedView(typed), 'others: their own log');
+	assert.equal(boardView(undefined, undefined), null);
 });
