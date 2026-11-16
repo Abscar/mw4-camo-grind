@@ -70,10 +70,16 @@ import {
 import { isSyncCode } from './sync-codec.ts';
 import { addPlayed, dayKey, mergePlayed, settleDuel, spin, withBet, withoutBet, withPaid, SPIN_LEAD_MS, SQUAD_UP } from './squad-fun.ts';
 import { cleanCombat, combatView, mergeCombat, withSnap, type CombatLog, type CombatMode, type CombatSnap } from './squad-combat.ts';
+import { cleanRanked, fmtSrDelta, mergeRanked, rankedView, withRanked, type RankedLog } from './squad-ranked.ts';
+import { cleanClasses, mergeClasses, withClass, withoutClass, type ClassList, type SquadClass } from './squad-classes.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
 const COMBAT_KEY = 'mw4-camo-grind:combat';
+/** Your own Ranked SR updates (squad-ranked.ts), kept on this device too. */
+const RANKED_KEY = 'mw4-camo-grind:ranked';
+/** The classes you share with the squad (squad-classes.ts), kept on this device too. */
+const CLASSES_KEY = 'mw4-camo-grind:squad-classes';
 /** What this device last saw of the others (for the kill feed), per squad code. */
 const SEEN_KEY = 'mw4-camo-grind:squad-seen';
 /** When you last looked at the radio (unread count). */
@@ -307,6 +313,10 @@ class Squad {
 	played = $state<Record<string, number>>({});
 	/** Your K/D, W/L … as you typed them in (merged with your other device's when the squad is read). */
 	combat = $state<CombatLog>({});
+	/** Your Ranked SR updates (merged with your other device's when the squad is read). */
+	ranked = $state<RankedLog>({});
+	/** The classes you share (merged with your other device's when the squad is read). */
+	classes = $state<ClassList>({});
 	#playTick = 0;
 	#publishTimer: ReturnType<typeof setTimeout> | undefined;
 	#lookedAt = Date.now();
@@ -350,7 +360,9 @@ class Squad {
 			recent: memberEntry(me, this.#progressNow(), this.now).recent,
 			readyAt: this.readyAt ?? undefined,
 			played: this.played,
-			combat: this.combat
+			combat: this.combat,
+			ranked: this.ranked,
+			classes: this.classes
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -389,6 +401,8 @@ class Squad {
 		const played = readJson(PLAYED_KEY);
 		if (played && typeof played === 'object') this.played = addPlayed(played as Record<string, number>, 0, 0);
 		this.combat = cleanCombat(readJson(COMBAT_KEY)) ?? {};
+		this.ranked = cleanRanked(readJson(RANKED_KEY)) ?? {};
+		this.classes = cleanClasses(readJson(CLASSES_KEY)) ?? {};
 		this.#playTick = Date.now();
 		this.#masteryDone = this.#completeMastery();
 		this.#masteryQuarters = this.#quarters();
@@ -591,6 +605,44 @@ class Squad {
 		return this.status === 'ok';
 	}
 
+	/**
+	 * Save today's SR (a second save the same day replaces the first), publish it and say it on the
+	 * radio. Returns false when the squad couldn't be reached (kept here, goes out with the next hello).
+	 */
+	async saveRanked(sr: number, top?: number): Promise<boolean> {
+		if (!this.me) return false;
+		const now = Math.round(this.serverNow());
+		this.ranked = withRanked(this.ranked, dayKey(now), { sr, ...(top !== undefined ? { top } : {}), at: now });
+		writeJson(RANKED_KEY, this.ranked);
+		await this.#publish();
+		const view = rankedView(this.ranked);
+		if (view) await this.#event(t.squad.ranked.event(view.latest.sr, view.rank.label, view.before ? fmtSrDelta(view.before.delta) : null));
+		return this.status === 'ok';
+	}
+
+	/** Share a class with the squad. 'full' = you already share the most a member can (remove one first). */
+	async addClass(cls: Omit<SquadClass, 'at'>): Promise<'ok' | 'offline' | 'full'> {
+		if (!this.me) return 'offline';
+		const at = Math.round(this.serverNow());
+		const id = makeMemberId().slice(0, 10);
+		const next = withClass(this.classes, id, { ...cls, at });
+		if (!next) return 'full';
+		this.classes = next;
+		writeJson(CLASSES_KEY, next);
+		await this.#publish();
+		const gun = WEAPON_BY_ID.get(cls.w)?.name ?? cls.w;
+		await this.#event(t.squad.classes.event(gun, t.squad.classes.kinds[cls.kind], cls.name ?? null));
+		return this.status === 'ok' ? 'ok' : 'offline';
+	}
+
+	/** Stop sharing a class (removed on your other device too). */
+	async removeClass(id: string): Promise<void> {
+		if (!this.me) return;
+		this.classes = withoutClass(this.classes, id, Math.round(this.serverNow()));
+		writeJson(CLASSES_KEY, this.classes);
+		await this.#publish();
+	}
+
 	/** Send a radio message. */
 	async say(text: string): Promise<boolean> {
 		const me = this.me;
@@ -729,11 +781,29 @@ class Squad {
 				writeJson(COMBAT_KEY, merged);
 			}
 		}
+		// your SR updates and shared classes from your other device (per day / per class, the later one wins)
+		const mine = this.#squad.doc?.members[me.id];
+		if (mine?.ranked) {
+			const merged = mergeRanked(this.ranked, mine.ranked);
+			if (JSON.stringify(merged) !== JSON.stringify(this.ranked)) {
+				this.ranked = merged;
+				writeJson(RANKED_KEY, merged);
+			}
+		}
+		if (mine?.classes) {
+			const merged = mergeClasses(this.classes, mine.classes);
+			if (JSON.stringify(merged) !== JSON.stringify(this.classes)) {
+				this.classes = merged;
+				writeJson(CLASSES_KEY, merged);
+			}
+		}
 		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {
 			readyAt: this.readyAt,
 			ping: this.#ping,
 			played: this.played,
-			combat: this.combat
+			combat: this.combat,
+			ranked: this.ranked,
+			classes: this.classes
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;

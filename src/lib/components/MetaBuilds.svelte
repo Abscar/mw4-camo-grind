@@ -19,6 +19,10 @@
 <script lang="ts">
 	import AttachmentIcon from './AttachmentIcon.svelte';
 	import BuildCopy from './BuildCopy.svelte';
+	import SquadClassRow from './SquadClassRow.svelte';
+	import { squad } from '#lib/squad.svelte.ts';
+	import { liveClasses } from '#lib/squad-classes.ts';
+	import { agoParts } from '#lib/squad-codec.ts';
 	import { buildText, codeFor, twinOf } from '#lib/buildCopy.ts';
 	import { codeView } from '#lib/codeView.svelte.ts';
 	import { APEX } from '#lib/data/apex.ts';
@@ -53,6 +57,14 @@
 	const hardcoreNo = $derived(HARDCORE_NO.includes(weaponId));
 	const extra = $derived(EXTRA_BUILDS[weaponId] ?? {});
 	const extraKinds = $derived(EXTRA_KINDS.filter((k) => extra[k]));
+	/** "Your squad runs" (2026-11-16): classes squad members shared for this gun, yours first (squad-classes.ts). */
+	const squadClasses = $derived(
+		squad.on
+			? squad.entries
+					.flatMap((e) => liveClasses(e.member.classes).filter((cls) => cls.w === weaponId).map((cls) => ({ cls, e })))
+					.sort((a, b) => Number(b.e.mine) - Number(a.e.mine) || b.cls.at - a.cls.at)
+			: []
+	);
 	const apex = $derived(APEX[weaponId]);
 	const apexBuilds = $derived(APEX_BUILDS[weaponId] ?? {});
 	const apexModes = $derived(MODES.filter((m) => apexBuilds[m]));
@@ -161,6 +173,18 @@
 		</div>
 	</section>
 {/each}
+
+{#if squadClasses.length}
+	<section class="mb-mode" aria-labelledby="{uid}-squad">
+		<h4 id="{uid}-squad" class="mb-h font-head">{t.squad.classes.cardHeading}</h4>
+		<p class="mb-sub">{t.squad.classes.cardSub}</p>
+		<ul class="grid gap-1.5">
+			{#each squadClasses as { cls, e } (e.id + cls.id)}
+				<SquadClassRow {cls} who={e.member.name} op={e.member.op} mine={e.mine} showGun={false} ago={t.squad.classes.saved(t.squad.ago(agoParts(cls.at, squad.now)))} />
+			{/each}
+		</ul>
+	</section>
+{/if}
 
 {#if extraKinds.length}
 	<section class="mb-mode" aria-labelledby="{uid}-stat">

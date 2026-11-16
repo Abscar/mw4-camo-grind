@@ -26,7 +26,9 @@ import {
 } from './data/camos.ts';
 import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
+import { cleanClasses, type ClassList } from './squad-classes.ts';
 import { cleanCombat, type CombatLog } from './squad-combat.ts';
+import { cleanRanked, type RankedLog } from './squad-ranked.ts';
 import { startOfDay, startOfWeek } from './stats.ts';
 import { isSyncCode, makeSyncCode } from './sync-codec.ts';
 
@@ -79,6 +81,10 @@ export interface SquadMember {
 	 * (squad-combat.ts; the user's ask 2026-11-14: "track k/d and w/l for all the guys").
 	 */
 	combat?: CombatLog;
+	/** Their Ranked SR as they typed it in, one update per day (squad-ranked.ts; 2026-11-16). */
+	ranked?: RankedLog;
+	/** The classes they run, with the game's build codes, for the others to copy (squad-classes.ts; 2026-11-16). */
+	classes?: ClassList;
 	/** Fields a newer page wrote that this one doesn't know: kept as they are, never dropped. */
 	more?: Record<string, unknown>;
 }
@@ -164,7 +170,7 @@ export const MAX_BETS = 40;
 export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat']);
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes']);
 const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid']);
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -239,6 +245,10 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (played) member.played = played;
 	const combat = cleanCombat(raw.combat);
 	if (combat) member.combat = combat;
+	const ranked = cleanRanked(raw.ranked);
+	if (ranked) member.ranked = ranked;
+	const classes = cleanClasses(raw.classes);
+	if (classes) member.classes = classes;
 	const more = unknownKeys(raw, MEMBER_KEYS);
 	if (more) member.more = more;
 	return member;
@@ -409,6 +419,8 @@ export function memberEntry(
 		ping?: { to: string; at: number } | null;
 		played?: Record<string, number> | null;
 		combat?: CombatLog | null;
+		ranked?: RankedLog | null;
+		classes?: ClassList | null;
 	} = {}
 ): SquadMember {
 	const entry = cleanMember({
@@ -424,7 +436,9 @@ export function memberEntry(
 		readyAt: extra.readyAt ?? undefined,
 		ping: extra.ping ?? undefined,
 		played: extra.played ?? undefined,
-		combat: extra.combat ?? undefined
+		combat: extra.combat ?? undefined,
+		ranked: extra.ranked ?? undefined,
+		classes: extra.classes ?? undefined
 	});
 	if (!entry) throw new Error('bad squad entry');
 	return entry;

@@ -17,7 +17,9 @@
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
+	import SquadClasses from './SquadClasses.svelte';
 	import SquadCombat from './SquadCombat.svelte';
+	import SquadRanked from './SquadRanked.svelte';
 	import SquadDuels from './SquadDuels.svelte';
 	import SquadRace from './SquadRace.svelte';
 	import SquadRadio from './SquadRadio.svelte';
@@ -290,6 +292,12 @@
 
 			<!-- K/D, W/L … typed in by each member (2026-11-14) -->
 			<SquadCombat {entries} />
+
+			<!-- SR typed in by each member, best first (2026-11-16, idea 5) -->
+			<SquadRanked {entries} />
+
+			<!-- the classes each member runs, copied in one tap (2026-11-16, idea 3) -->
+			<SquadClasses {entries} />
 
 			<!-- one card per member, furthest along first -->
 			<ul class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-3">
