@@ -6,7 +6,9 @@ import {
 	COSMETICS_CHECKED,
 	COSMETIC_SOURCES,
 	COSMETIC_TYPES,
+	NEW_FOR_DAYS,
 	cosmeticEnded,
+	cosmeticIsNew,
 	cosmeticsOf
 } from '../src/lib/data/cosmetics.ts';
 
@@ -23,7 +25,29 @@ test('cosmetics: unique ids, known type and source, a "how" line, dates as whole
 		assert.ok(c.name.trim() === c.name && c.name.length > 0, c.id);
 		assert.ok(c.how.length > 3, c.id);
 		if (c.until) assert.match(c.until, DAY);
+		if (c.added) {
+			assert.match(c.added, DAY);
+			assert.ok(c.added <= COSMETICS_CHECKED, `${c.id}: added after the check date`);
+		}
 	}
+});
+
+test('cosmeticIsNew: tagged for NEW_FOR_DAYS days from `added`, never before load or for old items', () => {
+	const c = COSMETICS.find((x) => x.added);
+	assert.ok(c, 'some item has an added date');
+	const day = (n) => new Date(Date.parse(c.added) + n * 86_400_000).toISOString().slice(0, 10);
+	assert.equal(cosmeticIsNew(c, day(0)), true);
+	assert.equal(cosmeticIsNew(c, day(NEW_FOR_DAYS - 1)), true);
+	assert.equal(cosmeticIsNew(c, day(NEW_FOR_DAYS)), false);
+	assert.equal(cosmeticIsNew(c, day(-1)), false);
+	assert.equal(cosmeticIsNew(c, ''), false);
+	assert.equal(cosmeticIsNew(COSMETICS[0], day(0)), false);
+});
+
+test('cosmetics: beta and Twitch drop items all have an end date', () => {
+	const beta = COSMETICS.filter((c) => c.source === 'beta');
+	assert.ok(beta.length > 0);
+	for (const c of beta) assert.ok(c.until, `${c.id}: needs until`);
 });
 
 test('cosmetics: anything unconfirmed says why, and nothing of unknown origin is shown as fact', () => {

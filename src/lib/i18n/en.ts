@@ -1592,9 +1592,12 @@ export const en = {
 			event: 'Events',
 			store: 'Store bundles',
 			promo: 'Promotions',
+			beta: 'Beta & Twitch drops',
 			unknown: 'Source unknown'
 		},
 		gunScreen: 'Gun Screen',
+		newTag: 'New',
+		newCount: (n: number) => `${n} new`,
 		until: (day: string) => `Until ${day}`,
 		ended: (day: string) => `Ended ${day}`,
 		unconfirmed: 'Unconfirmed.',
@@ -1605,9 +1608,10 @@ export const en = {
 		sourceHelp: {
 			prestige: 'Reach level 55, enter Prestige, then level up again: the reward unlocks at the level shown. Prestige Master starts after Prestige 10.',
 			battlepass: 'Earn Battle Pass tiers by playing during Season 1. Tiers past the free ones need the paid pass.',
-			event: 'Play during the event and spend what you earn on the event\u2019s reward board. Gone when the event ends.',
+			event: 'Play during the event: earn it on the event\u2019s reward board or by finishing the event challenge shown. Gone when the event ends.',
 			store: 'Bought with COD Points in the in-game Store; comes with everything else in the bundle. Bundles rotate, so it may not be listed every day.',
 			promo: 'A code from a real-world promotion, redeemed at callofduty.com/redeem. Most are limited to certain countries or shops.',
+			beta: 'Only while it ran: playing the open beta in August, or watching Call of Duty on Twitch with your Activision account linked during a drop campaign. Unlocked items carried over to the full game.',
 			unknown: 'Its name is known, but no source says how you get it yet.'
 		},
 		untilLong: (day: string) => `Available until ${day}.`,

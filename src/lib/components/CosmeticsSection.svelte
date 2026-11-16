@@ -14,6 +14,7 @@
 		COSMETIC_SOURCES,
 		COSMETIC_TYPES,
 		cosmeticEnded,
+		cosmeticIsNew,
 		type Cosmetic,
 		type CosmeticSource,
 		type CosmeticType
@@ -47,6 +48,7 @@
 	const groups = $derived(
 		COSMETIC_SOURCES.map((s) => ({ source: s, items: shown.filter((c) => c.source === s) })).filter((g) => g.items.length > 0)
 	);
+	const newHere = $derived(ofType.filter((c) => cosmeticIsNew(c, todayIso)).length);
 
 	function chooseType(next: CosmeticType) {
 		type = next;
@@ -140,7 +142,9 @@
 					class="h-11 w-full rounded-full border border-line bg-panel pr-4 pl-10 text-fg outline-none placeholder:text-muted focus:border-accent"
 				/>
 			</label>
-			<p class="num text-[13px] font-semibold text-fg" role="status">{t.cosmetics.results(shown.length, ofType.length)}</p>
+			<p class="num text-[13px] font-semibold text-fg" role="status">
+				{t.cosmetics.results(shown.length, ofType.length)}{#if newHere > 0}<span class="cos-new-count">{` · ${t.cosmetics.newCount(newHere)}`}</span>{/if}
+			</p>
 		</div>
 
 		<div class="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label={t.cosmetics.sourceGroup}>
@@ -182,6 +186,7 @@
 								<span class="min-w-0 flex-1">
 									<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
 										<b class="cos-name font-semibold break-words" class:unverified={!c.verified}>{c.name}</b>
+										{#if cosmeticIsNew(c, todayIso)}<span class="cos-tag cos-tag-new">{t.cosmetics.newTag}</span>{/if}
 										{#if c.gunScreen}<span class="cos-tag">{t.cosmetics.gunScreen}</span>{/if}
 										{#if c.until}
 											<span class="cos-tag" class:cos-tag-ended={ended}
@@ -278,6 +283,9 @@
 	}
 	[data-source='promo'] {
 		--src: #c77dff;
+	}
+	[data-source='beta'] {
+		--src: #2ec4d6;
 	}
 	[data-source='unknown'] {
 		--src: #9aa3ab;
@@ -394,6 +402,15 @@
 	.cos-tag-ended {
 		color: var(--t-muted);
 		text-decoration: line-through;
+	}
+	/* just added to the list: the same yellow in every theme, dark text so it reads on any panel */
+	.cos-tag-new {
+		border-color: #f5c518;
+		background: #f5c518;
+		color: #1a1405;
+	}
+	.cos-new-count {
+		color: var(--t-accent);
 	}
 	.cos-item.ended .cos-tile {
 		opacity: 0.55;
