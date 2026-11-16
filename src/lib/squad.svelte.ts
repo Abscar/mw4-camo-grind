@@ -75,6 +75,7 @@ import { cleanClasses, mergeClasses, withClass, withoutClass, type ClassList, ty
 import { withBan, BAN_OWNER, KD_LIMIT } from './squad-bans.ts';
 import { cleanCasino, cleanOnline, countDay, mergeCasino, mergeOnline, seedOnline, withGame, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { toast } from './toast.svelte.ts';
+import { buy as shopBuy, cleanShop, equip as shopEquip, mergeShop, ITEM_BY_ID, type BuyResult, type ShopSlot, type ShopState } from './shop.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
@@ -88,6 +89,8 @@ const ONLINE_KEY = 'mw4-camo-grind:online-days';
 /** BurgiCasino's tally per device (squad-casino.ts), and this device's id in it. */
 const CASINO_KEY = 'mw4-camo-grind:casino';
 const DEVICE_KEY = 'mw4-camo-grind:device';
+/** BurgiShop: what you own and wear (shop.ts), kept on this device too. */
+const SHOP_KEY = 'mw4-camo-grind:shop';
 /** What this device last saw of the others (for the kill feed), per squad code. */
 const SEEN_KEY = 'mw4-camo-grind:squad-seen';
 /** When you last looked at the radio (unread count). */
@@ -329,6 +332,8 @@ class Squad {
 	online = $state<OnlineDays | undefined>(undefined);
 	/** BurgiCasino's tally per device, merged with your other device's. */
 	casino = $state<CasinoLedger>({});
+	/** BurgiShop: what you own and wear, merged with your other device's. */
+	shop = $state<ShopState | undefined>(undefined);
 	/** Today's daily bonus when this page counted it (for the casino tab's welcome line). */
 	bonusToday = $state<{ amount: number; n: number } | null>(null);
 	#device = '';
@@ -379,7 +384,8 @@ class Squad {
 			ranked: this.ranked,
 			classes: this.classes,
 			online: this.online,
-			casino: this.casino
+			casino: this.casino,
+			shop: this.shop
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -422,6 +428,7 @@ class Squad {
 		this.classes = cleanClasses(readJson(CLASSES_KEY)) ?? {};
 		this.online = cleanOnline(readJson(ONLINE_KEY));
 		this.casino = cleanCasino(readJson(CASINO_KEY)) ?? {};
+		this.shop = cleanShop(readJson(SHOP_KEY));
 		const device = readJson(DEVICE_KEY);
 		this.#device = typeof device === 'string' && /^[A-Za-z0-9_-]{4,16}$/.test(device) ? device : makeMemberId().slice(0, 10);
 		writeJson(DEVICE_KEY, this.#device);
@@ -723,6 +730,31 @@ class Squad {
 		if (event) void this.#event(event);
 	}
 
+	/** Buy a BurgiShop item with your burgers (worn at once); epic and legendary ones go on the radio. */
+	buyItem(id: string): BuyResult | 'off' {
+		const me = this.me;
+		const bank = this.myBank;
+		if (!me || !bank) return 'off';
+		const r = shopBuy(this.shop, id, bank.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.shop = r.state;
+		writeJson(SHOP_KEY, r.state);
+		this.#schedulePublish();
+		const it = ITEM_BY_ID.get(id);
+		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.shop.event(it.name, t.shop.rarity[it.rarity]));
+		return 'ok';
+	}
+
+	/** Wear an item you own in its slot, or take the slot off (null). */
+	equipItem(slot: ShopSlot, id: string | null): boolean {
+		const next = shopEquip(this.shop, slot, id, Math.round(this.serverNow()));
+		if (!next) return false;
+		this.shop = next;
+		writeJson(SHOP_KEY, next);
+		this.#schedulePublish();
+		return true;
+	}
+
 	/** A casino moment on the radio (posted after the game showed it, so the radio doesn't spoil it). */
 	casinoNews(text: string): void {
 		if (this.me) void this.#event(text);
@@ -897,6 +929,13 @@ class Squad {
 				writeJson(CASINO_KEY, merged);
 			}
 		}
+		if (mine?.shop) {
+			const merged = mergeShop(this.shop, mine.shop);
+			if (JSON.stringify(merged) !== JSON.stringify(this.shop)) {
+				this.shop = merged;
+				writeJson(SHOP_KEY, merged ?? null);
+			}
+		}
 		if (!away) this.#countToday();
 		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {
 			readyAt: this.readyAt,
@@ -906,7 +945,8 @@ class Squad {
 			ranked: this.ranked,
 			classes: this.classes,
 			online: this.online,
-			casino: this.casino
+			casino: this.casino,
+			shop: this.shop
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;

@@ -17,6 +17,8 @@
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
+	import OpGear from './OpGear.svelte';
+	import { worn } from '#lib/shop.ts';
 	import SquadClasses from './SquadClasses.svelte';
 	import SquadCombat from './SquadCombat.svelte';
 	import SquadRanked from './SquadRanked.svelte';
@@ -305,15 +307,18 @@
 					{@const st = e.stats}
 					{@const week = camosThisWeek(e.member, squad.now)}
 					{@const streak = streakDays(e.member, squad.now)}
+					{@const look = worn(e.member.shop)}
 					<li class="sq-card meta-card relative flex min-w-0 flex-col gap-2.5 rounded-card border border-line bg-panel-2 p-3" class:sq-mine={e.mine}>
 						<div class="flex min-w-0 items-center gap-2">
-							<!-- their operator from the header (or initials), the user's ask 2026-11-14 -->
-							<SquadAvatar name={e.member.name} op={e.member.op} size={44} />
+							<!-- their operator from the header (or initials), the user's ask 2026-11-14, wearing their BurgiShop
+							     look (shop.ts): aura, effect, pin on the face, style + title on the name -->
+							<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pin={16}><SquadAvatar name={e.member.name} op={e.member.op} size={44} /></OpGear>
 							<span class="sq-rank num font-head" aria-label={s.rank(i + 1)}>{s.rank(i + 1)}</span>
-							<b class="sq-name min-w-0 truncate font-head text-[17px] font-bold tracking-wide" title={e.member.name}>{e.member.name}</b>
+							<b class="sq-name og-name min-w-0 truncate font-head text-[17px] font-bold tracking-wide" data-style={look.name?.id} title={e.member.name}>{e.member.name}</b>
 							{#if e.mine}<span class="sq-you font-head">{s.you}</span>{/if}
 							<span class="ml-auto flex-none">{@render presence(e.online, e.member.seen, e.mine)}</span>
 						</div>
+						{#if look.title}<p class="-mt-1"><span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span></p>{/if}
 						{#if e.member.op && OP_NAMES[e.member.op] !== e.member.name}
 							<p class="-mt-1.5 text-xs text-muted">{s.asOp(OP_NAMES[e.member.op])}</p>
 						{/if}

@@ -34,6 +34,7 @@ import {
 import { startOfDay, startOfWeek } from './stats.ts';
 import { isReleased } from './steps.ts';
 import { casinoTotal, dailyTotal, HOUSE_OP } from './squad-casino.ts';
+import { shopSpent } from './shop.ts';
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -227,7 +228,7 @@ export function burgersEarned(m: Pick<SquadMember, 'weapons' | 'mastery'>): numb
 
 type Members = Record<string, Pick<SquadMember, 'weapons' | 'recent' | 'name'>>;
 /** What the bank needs of a member: the grind, the daily bonus, the casino and who's the house (2026-11-16). */
-type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'> & Partial<Pick<SquadMember, 'op'>>;
+type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'> & Partial<Pick<SquadMember, 'op' | 'shop'>>;
 
 /** The member who is the house (squad-casino.ts HOUSE_OP), the lowest id if two picked that operator; null without one. */
 export function houseOf(members: Record<string, Partial<Pick<SquadMember, 'op'>>>): string | null {
@@ -283,8 +284,10 @@ export interface BankRow {
 	daily: number;
 	/** BurgiCasino: won minus lost (can be below zero). */
 	casino: number;
-	/** The house only: what everyone else lost in BurgiCasino and on bets. */
+	/** The house only: what everyone else lost in BurgiCasino and on bets, and spent in BurgiShop. */
 	house: number;
+	/** Burgers spent in BurgiShop (shop.ts). */
+	spent: number;
 	won: number;
 	lost: number;
 	/** Burgers on open bets. */
@@ -299,7 +302,7 @@ export interface BankRow {
 export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>): Record<string, BankRow> {
 	const out: Record<string, BankRow> = {};
 	for (const [id, m] of Object.entries(members)) {
-		out[id] = { earned: burgersEarned(m), daily: dailyTotal(m.online?.n ?? 0), casino: casinoTotal(m.casino).net, house: 0, won: 0, lost: 0, held: 0, balance: 0 };
+		out[id] = { earned: burgersEarned(m), daily: dailyTotal(m.online?.n ?? 0), casino: casinoTotal(m.casino).net, house: 0, spent: shopSpent(m.shop), won: 0, lost: 0, held: 0, balance: 0 };
 	}
 	for (const bet of doc.bets ?? []) {
 		const row = out[bet.by];
@@ -311,9 +314,9 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>): 
 	}
 	const house = houseOf(members);
 	if (house && out[house]) {
-		for (const [id, m] of Object.entries(members)) if (id !== house) out[house].house += casinoTotal(m.casino).lost + out[id].lost;
+		for (const [id, m] of Object.entries(members)) if (id !== house) out[house].house += casinoTotal(m.casino).lost + out[id].lost + out[id].spent;
 	}
-	for (const row of Object.values(out)) row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.won - row.lost - row.held);
+	for (const row of Object.values(out)) row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.won - row.lost - row.held - row.spent);
 	return out;
 }
 

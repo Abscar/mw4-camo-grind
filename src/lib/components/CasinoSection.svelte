@@ -14,12 +14,13 @@
 	import CasinoBlackjack from './CasinoBlackjack.svelte';
 	import CasinoRoulette from './CasinoRoulette.svelte';
 	import CasinoSlots from './CasinoSlots.svelte';
+	import ShopSection from './ShopSection.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	let { onSquad }: { onSquad?: () => void } = $props();
 	const c = t.casino;
-	type Game = 'slots' | 'roulette' | 'blackjack';
-	const GAMES: Game[] = ['slots', 'roulette', 'blackjack'];
+	type Game = 'slots' | 'roulette' | 'blackjack' | 'shop';
+	const GAMES: Game[] = ['slots', 'roulette', 'blackjack', 'shop'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let game = $state<Game>('slots');
@@ -115,8 +116,10 @@
 					<CasinoSlots {balance} bind:hidden bind:pending />
 				{:else if game === 'roulette'}
 					<CasinoRoulette {balance} bind:hidden bind:pending />
-				{:else}
+				{:else if game === 'blackjack'}
 					<CasinoBlackjack {balance} bind:hidden />
+				{:else}
+					<ShopSection />
 				{/if}
 			{/key}
 

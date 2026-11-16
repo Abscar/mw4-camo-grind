@@ -162,6 +162,49 @@
 		spinning = false;
 	}
 
+	// ----- auto spin (2026-11-16, the user's ask: "an auto spin button for Abscar's Fortune") -----
+	const AUTO_COUNTS = [10, 25, 50, 100];
+	let autoCount = $state(25);
+	/** Spins left in an auto run (0 = off). */
+	let autoLeft = $state(0);
+	let alive = true;
+
+	function stopAuto(text?: string) {
+		if (autoLeft > 0 && text) toast.show(text, undefined, 4000);
+		autoLeft = 0;
+	}
+
+	async function runAuto() {
+		if (autoLeft > 0) {
+			stopAuto();
+			return;
+		}
+		autoLeft = autoCount;
+		while (alive && autoLeft > 0) {
+			if (bet > shown) {
+				stopAuto(t.casino.broke);
+				break;
+			}
+			await spin();
+			if (!alive || autoLeft === 0) break;
+			autoLeft -= 1;
+			// a big win gets its moment before the next spin
+			await sleep(celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 650);
+		}
+		if (alive && autoLeft === 0) message = message || s.autoDone;
+		autoLeft = 0;
+	}
+
+	$effect(() => {
+		const hide = () => document.visibilityState === 'hidden' && stopAuto();
+		document.addEventListener('visibilitychange', hide);
+		return () => {
+			alive = false;
+			autoLeft = 0;
+			document.removeEventListener('visibilitychange', hide);
+		};
+	});
+
 	function stepBet(dir: 1 | -1) {
 		const i = SLOT_BETS.indexOf(bet);
 		bet = SLOT_BETS[Math.max(0, Math.min(SLOT_BETS.length - 1, i + dir))];
@@ -241,7 +284,19 @@
 				</div>
 			</div>
 			<div class="led win"><span>{s.lastWin}</span><b class="num">{lastWin.toLocaleString('en-US')}</b></div>
-			<button type="button" class="spin font-head" disabled={spinning} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
+			<button type="button" class="spin font-head" disabled={spinning || autoLeft > 0} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
+		</div>
+
+		<!-- auto spin: how many, then AUTO (it turns into STOP while running) -->
+		<div class="auto" role="group" aria-label={s.autoLabel}>
+			<button type="button" class="auto-btn font-head" aria-pressed={autoLeft > 0} disabled={autoLeft === 0 && (spinning || bet > shown)} onclick={() => void runAuto()}>
+				{autoLeft > 0 ? s.autoStop(autoLeft) : s.auto(autoCount)}
+			</button>
+			{#if autoLeft === 0}
+				{#each AUTO_COUNTS as n (n)}
+					<button type="button" class="auto-n num font-head" aria-pressed={autoCount === n} aria-label={s.autoCount(n)} onclick={() => (autoCount = n)}>{n}</button>
+				{/each}
+			{/if}
 		</div>
 	</div>
 
@@ -605,6 +660,54 @@
 	.spin:disabled {
 		filter: grayscale(0.5) brightness(0.8);
 	}
+	/* auto spin row */
+	.auto {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		margin-top: 8px;
+	}
+	.auto-btn {
+		min-height: 44px;
+		padding: 0 16px;
+		border: 2px solid #ffc928;
+		border-radius: 999px;
+		background: #3d0508;
+		color: #ffd23a;
+		font-size: 13px;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+	}
+	.auto-btn[aria-pressed='true'] {
+		background: #ffc928;
+		color: #3d0508;
+		box-shadow: 0 0 12px rgb(255 201 40 / 0.7);
+		animation: auto-pulse 1.2s ease-in-out infinite alternate;
+	}
+	.auto-btn:disabled {
+		opacity: 0.45;
+	}
+	@keyframes auto-pulse {
+		to {
+			box-shadow: 0 0 4px rgb(255 201 40 / 0.4);
+		}
+	}
+	.auto-n {
+		width: 44px;
+		height: 44px;
+		border-radius: 999px;
+		background: #0c0201;
+		color: #ffb27a;
+		font-size: 13px;
+		font-weight: 800;
+		box-shadow: inset 0 0 0 2px #5a1a0a;
+	}
+	.auto-n[aria-pressed='true'] {
+		color: #ffd23a;
+		box-shadow: inset 0 0 0 2px #ffc928;
+	}
 	/* the lever: a big holk on a chrome mount */
 	.lever {
 		align-self: stretch;
@@ -648,6 +751,9 @@
 		.lever .arm,
 		.lever:not(.pulled) .arm {
 			transition: none;
+		}
+		.auto-btn[aria-pressed='true'] {
+			animation: none;
 		}
 	}
 </style>

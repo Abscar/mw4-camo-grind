@@ -731,6 +731,30 @@ export const en = {
 		/** a soft hyphen so it can break on a phone ("Burgi-/Casino") */
 		casino: 'Burgi­Casino'
 	},
+	/** BurgiShop (2026-11-16): cosmetics bought with burgers and worn on your header operator (shop.ts). */
+	shop: {
+		heading: 'BurgiShop',
+		intro: 'Buy cosmetics with your burgers and wear them on your operator at the top of the page: the whole squad sees them. What you buy is yours to keep; tap an item you own to wear it or take it off.',
+		noOp: 'You haven’t picked an operator from the header (Squad tab → Edit), so your look only shows here and on your squad card.',
+		preview: 'Your operator',
+		tryOn: 'Trying on',
+		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', name: 'Name styles', title: 'Titles' },
+		slotsLabel: 'Kind',
+		rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
+		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} 🍔`,
+		wear: 'Wear',
+		wearing: 'Wearing',
+		takeOff: 'Take off',
+		owned: 'Owned',
+		bought: (name: string) => `${name} bought and on your operator 🛍️`,
+		broke: (price: number, have: number) => `${price.toLocaleString('en-US')} 🍔 needed, you have ${have.toLocaleString('en-US')}.`,
+		wornNow: (name: string) => `Wearing ${name}`,
+		takenOff: (name: string) => `${name} taken off`,
+		spent: (n: number) => `${n.toLocaleString('en-US')} 🍔 spent in BurgiShop`,
+		toHouse: 'Burgers spent here go to the house (Abscar), like casino losses.',
+		itemLabel: (name: string, kind: string, rarity: string, state: string) => `${name}, ${kind}, ${rarity}: ${state}`,
+		event: (name: string, rarity: string) => `bought ${name} (${rarity}) in BurgiShop 🛍️`
+	},
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
@@ -739,7 +763,7 @@ export const en = {
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', roulette: 'Roulette', blackjack: 'Blackjack' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', roulette: 'Roulette', blackjack: 'Blackjack', shop: '🛍️ BurgiShop' },
 		gamesLabel: 'Game',
 		how: 'How it works',
 		burgers: (n: number) => `${n.toLocaleString('en-US')} 🍔`,
@@ -757,9 +781,9 @@ export const en = {
 		house: {
 			heading: 'The house',
 			line: (name: string, n: number) =>
-				`${name} is the house: every burger anyone else loses here or on bets goes to ${name}’s account. ${n.toLocaleString('en-US')} 🍔 so far.`,
-			mine: (n: number) => `You’re the house: every burger the others lose here or on bets goes to your account. ${n.toLocaleString('en-US')} 🍔 so far.`,
-			none: 'Abscar is the house: once Abscar is in the squad, every burger the others lose here or on bets goes to Abscar’s account.'
+				`${name} is the house: every burger anyone else loses here or on bets, or spends in BurgiShop, goes to ${name}’s account. ${n.toLocaleString('en-US')} 🍔 so far.`,
+			mine: (n: number) => `You’re the house: every burger the others lose here or on bets, or spend in BurgiShop, goes to your account. ${n.toLocaleString('en-US')} 🍔 so far.`,
+			none: 'Abscar is the house: once Abscar is in the squad, every burger the others lose here or on bets, or spend in BurgiShop, goes to Abscar’s account.'
 		},
 		board: {
 			heading: 'Casino leaderboard',
@@ -776,6 +800,11 @@ export const en = {
 		slots: {
 			spin: 'Spin',
 			credits: 'Burgers',
+			auto: (n: number) => `Auto · ${n}`,
+			autoStop: (n: number) => `Stop · ${n} left`,
+			autoCount: (n: number) => `${n} auto spins`,
+			autoLabel: 'Auto spin',
+			autoDone: 'Auto spins done.',
 			pull: 'Pull the lever',
 			spinning: 'Spinning…',
 			lines: '10 lines',

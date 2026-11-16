@@ -28,6 +28,7 @@ import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
 import { cleanBans, type Bans } from './squad-bans.ts';
 import { cleanCasino, cleanOnline, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
+import { cleanShop, type ShopState } from './shop.ts';
 import { cleanClasses, type ClassList } from './squad-classes.ts';
 import { cleanCombat, type CombatLog } from './squad-combat.ts';
 import { cleanRanked, type RankedLog } from './squad-ranked.ts';
@@ -91,6 +92,8 @@ export interface SquadMember {
 	online?: OnlineDays;
 	/** What they won or lost in BurgiCasino, per device (squad-casino.ts; 2026-11-16). */
 	casino?: CasinoLedger;
+	/** BurgiShop: what they bought and wear on their operator (shop.ts; 2026-11-16). */
+	shop?: ShopState;
 	/** Fields a newer page wrote that this one doesn't know: kept as they are, never dropped. */
 	more?: Record<string, unknown>;
 }
@@ -178,7 +181,7 @@ export const MAX_BETS = 40;
 export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino']);
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop']);
 const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans']);
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -261,6 +264,8 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (online) member.online = online;
 	const casino = cleanCasino(raw.casino);
 	if (casino) member.casino = casino;
+	const shop = cleanShop(raw.shop);
+	if (shop) member.shop = shop;
 	const more = unknownKeys(raw, MEMBER_KEYS);
 	if (more) member.more = more;
 	return member;
@@ -438,6 +443,7 @@ export function memberEntry(
 		classes?: ClassList | null;
 		online?: OnlineDays | null;
 		casino?: CasinoLedger | null;
+		shop?: ShopState | null;
 	} = {}
 ): SquadMember {
 	const entry = cleanMember({
@@ -457,7 +463,8 @@ export function memberEntry(
 		ranked: extra.ranked ?? undefined,
 		classes: extra.classes ?? undefined,
 		online: extra.online ?? undefined,
-		casino: extra.casino ?? undefined
+		casino: extra.casino ?? undefined,
+		shop: extra.shop ?? undefined
 	});
 	if (!entry) throw new Error('bad squad entry');
 	return entry;

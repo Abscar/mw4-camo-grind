@@ -31,10 +31,12 @@
 
 	const MASTERY_TOTAL = MASTERY_TRACKS.reduce((n, tr) => n + tr.camos.length, 0);
 	import { squad } from '#lib/squad.svelte.ts';
-	import { agoParts, headerStatuses, weeklyMvps, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
+	import { agoParts, headerStatuses, weeklyMvps, SQUAD_OPS, type HeaderStatus, type SquadOp } from '#lib/squad-codec.ts';
 	import { dayKey, playedOn } from '#lib/squad-fun.ts';
 	import { combatView, fmtRatio } from '#lib/squad-combat.ts';
 	import { banOf } from '#lib/squad-bans.ts';
+	import { worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import OpGear from './OpGear.svelte';
 
 	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
 	const mvps = $derived(squad.on ? weeklyMvps(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])), squad.now) : []);
@@ -61,6 +63,10 @@
 
 	/** The squad member who is this operator (only when you're in a squad yourself). */
 	const live = (op: SquadOp) => (squad.on ? squad.forOp(op) : null);
+	/** What each operator's squad member wears from BurgiShop (shop.ts, OpGear; visitors see nothing). */
+	const gear = $derived(
+		Object.fromEntries(SQUAD_OPS.map((op) => [op, worn(live(op)?.member.shop)])) as Record<SquadOp, Partial<Record<ShopSlot, ShopItem>>>
+	);
 	const statuses = $derived(
 		Object.fromEntries(
 			(Object.keys(SQUAD_MASTERY) as SquadOp[]).map((op) => [
@@ -150,7 +156,8 @@
 			{t.operator.label} <span class="text-accent" aria-hidden="true">//</span>
 		</p>
 		<!-- a long callsign breaks into two lines where its text allows (min-content), never wider -->
-		<p class="op-name font-head text-xl leading-tight font-bold tracking-[0.2em] uppercase" class:op-wrap={wrap}>{name}</p>
+		<p class="op-name og-name font-head text-xl leading-tight font-bold tracking-[0.2em] uppercase" class:op-wrap={wrap} data-style={gear[op].name?.id}>{name}</p>
+		{#if gear[op].title}<p class="op-title"><span class="og-title" data-rarity={gear[op].title.rarity}>{gear[op].title.text}</span></p>{/if}
 		<p
 			class="op-presence font-hud flex items-center gap-1.5 text-[10.5px] tracking-[0.2em] text-accent uppercase"
 			data-presence={presence}
@@ -243,7 +250,7 @@
 		<span class="squad-legend font-hud">{t.operator.squad}</span>
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" />
+				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" /></OpGear>
 				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
 			{@render stamp('abscar', t.operator.callsign)}
@@ -252,7 +259,7 @@
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<PhillestarEmblem />
+				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id}><PhillestarEmblem /></OpGear>
 				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
 			{@render stamp('phillestar', t.operator.mate)}
@@ -261,7 +268,7 @@
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<LarsAkeEmblem />
+				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id}><LarsAkeEmblem /></OpGear>
 				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
 			{@render stamp('lars', t.operator.lars)}
@@ -270,7 +277,7 @@
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<DaJeevenEmblem />
+				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id}><DaJeevenEmblem /></OpGear>
 				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
 			{@render stamp('jeeven', t.operator.jeeven)}
@@ -293,7 +300,7 @@
 		<!-- Ingman, the wizard (2026-11-14, the user's friend), with his sign "Jim and Pro player" -->
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<IngmanEmblem />
+				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id}><IngmanEmblem /></OpGear>
 				{@render callsign(t.operator.ingman, 'ingman')}
 			</div>
 			{@render stamp('ingman', t.operator.ingman)}
@@ -326,7 +333,7 @@
 			grid-template-columns: repeat(3, auto);
 			column-gap: 14px;
 		}
-		.op-tag > :global(svg) {
+		.op-tag :global(.og-body > svg) {
 			width: 64px;
 			height: 64px;
 		}
