@@ -862,7 +862,8 @@ export const en = {
 		event: {
 			slots: (net: number, tier: string) => `${tier === 'jackpot' ? 'hit the BURGER JACKPOT' : tier === 'mega' ? 'hit a MEGA WIN' : tier === 'big' ? 'hit a BIG WIN' : 'won'} on Abscar’s Fortune: +${net.toLocaleString('en-US')} 🍔 🎰`,
 			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
-			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`)
+			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`),
+			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
 		},
 		bet: 'Bet',
 		betLabel: (n: number) => `Bet ${n} burgers`,
@@ -979,7 +980,29 @@ export const en = {
 			shuffle: 'New shoe shuffled',
 			handLabel: (who: string, cards: string, total: string) => `${who}: ${cards} (${total})`,
 			hidden: 'face-down card',
-			how: 'Six decks. Get closer to 21 than the dealer without going over. Picture cards count 10, an ace 1 or 11. Blackjack (an ace and a 10 as your first two cards) pays 3 to 2. The dealer draws to 17 and stands on a soft 17. Double: one more card and your bet doubled.'
+			how: 'Six decks. Get closer to 21 than the dealer without going over. Picture cards count 10, an ace 1 or 11. Blackjack (an ace and a 10 as your first two cards) pays 3 to 2. The dealer draws to 17 and stands on a soft 17. Double: one more card and your bet doubled.',
+			/** boosts + side bets (2026-11-16) */
+			streak: (n: number) => `🔥 ${n} in a row`,
+			streakNone: 'Win 3 in a row for a streak boost',
+			streakNext: (m: string) => `next win ${m}`,
+			boost: (kind: string, m: string) => `${kind}: ${m} if you win`,
+			boostApplied: (m: string, extra: number) => `Boost ${m}: +${extra.toLocaleString('en-US')} 🍔`,
+			kinds: {
+				pair: 'Pair',
+				colourPair: 'Colour pair',
+				perfectPair: 'Perfect pair',
+				flush: 'Flush',
+				straight: 'Straight',
+				trips: 'Three of a kind',
+				straightFlush: 'Straight flush',
+				suitedTrips: 'Suited trips'
+			},
+			sides: { pairs: 'Perfect Pairs', plus3: '21+3' },
+			sidesLabel: 'Side bets',
+			sideWin: (name: string, kind: string, n: number) => `${name}: ${kind}! +${n.toLocaleString('en-US')} 🍔`,
+			sideLose: (name: string, n: number) => `${name}: no luck −${n.toLocaleString('en-US')} 🍔`,
+			boostsHow: 'Free boosts on a won hand (no extra bet): a pair in your first two cards ×1.1, a colour pair ×1.2, a perfect pair (same suit) ×1.5; with the dealer’s up card a straight ×1.2, three of a kind ×1.5, a straight flush ×2, suited trips ×4 (the best one counts). Wins in a row add more: the 3rd ×1.05, the 4th ×1.1, the 5th and on ×1.2. A push keeps the streak, a loss ends it.',
+			sidesHow: 'Side bets, like a real table: each costs a chip the size of your bet and is settled on the deal. Perfect Pairs (your first two cards): pair 6×, colour pair 12×, perfect pair 25×. 21+3 (your two cards and the dealer’s up card): flush 5×, straight 10×, three of a kind 30×, straight flush 40×, suited trips 100×. The house keeps a few percent of side bets in the long run.'
 		}
 	},
 	/** The Squad tab (SquadSection; squad.svelte.ts): friends' grind side by side, Online / Offline (2026-11-14). */

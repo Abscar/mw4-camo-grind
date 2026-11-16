@@ -3,24 +3,39 @@
 	draws to 17 and stands on a soft 17, blackjack pays 3:2, the dealer checks for blackjack at once.
 	Our own drawn cards (rank + suit). The stake is set aside while the hand is played (`hidden`) and
 	the result booked when it ends (squad.recordGame). Pretend burgers.
+	Boosts + side bets (2026-11-16, the user's ask: "boosts when you win several in a row, get a perfect
+	pair or a straight", then "both" to free boosts and real side bets): a won hand is multiplied by its card
+	boost and the win-streak boost (the streak is kept per device), and "Perfect Pairs" / "21+3" side bets
+	(a chip the size of the bet each) are settled on the deal and booked with the hand.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import {
+		boostedNet,
+		cardBoost,
 		dealerPlays,
 		handNet,
 		handResult,
 		handValue,
 		isBlackjack,
 		newShoe,
+		nextStreak,
 		rankLabel,
+		sideResult,
+		streakBoost,
+		BJ_BOOSTS,
 		CASINO_MAX_BET,
 		RESHUFFLE_AT,
+		SIDE_BETS,
 		SUIT_SYMBOL,
+		type BjBoost,
 		type Card,
-		type HandResult
+		type HandResult,
+		type PairKind,
+		type SideBet,
+		type ThreeKind
 	} from '#lib/squad-casino.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 
@@ -43,11 +58,54 @@
 	let net = $state(0);
 	let shuffled = $state(false);
 
+	/* ----- boosts + side bets ----- */
+	const STREAK_KEY = 'mw4-camo-grind:bj-streak';
+	const SIDES_KEY = 'mw4-camo-grind:bj-sides';
+	const readNum = (k: string) => {
+		try {
+			const n = Number(localStorage.getItem(k));
+			return Number.isInteger(n) && n > 0 ? n : 0;
+		} catch {
+			return 0;
+		}
+	};
+	/** Wins in a row (kept per device, so switching games or reloading doesn't end it). */
+	let streak = $state(0);
+	/** Side bets switched on for the next hand (remembered per device). */
+	let sides = $state<Record<SideBet, boolean>>({ pairs: false, plus3: false });
 	$effect(() => {
-		hidden = phase === 'play' ? stake * (doubled ? 2 : 1) : 0;
+		streak = readNum(STREAK_KEY);
+		try {
+			const s = JSON.parse(localStorage.getItem(SIDES_KEY) ?? '{}');
+			sides = { pairs: s?.pairs === true, plus3: s?.plus3 === true };
+		} catch {
+			/* keep the defaults */
+		}
+	});
+	function toggleSide(k: SideBet) {
+		sides = { ...sides, [k]: !sides[k] };
+		try {
+			localStorage.setItem(SIDES_KEY, JSON.stringify(sides));
+		} catch {
+			/* only this visit then */
+		}
+	}
+	/** The side bets on the hand being played: each its own chip the size of the bet. */
+	let onTable = $state<SideBet[]>([]);
+	const sideStake = $derived(onTable.length * stake);
+	const nextSides = $derived(SIDE_BETS.filter((k) => sides[k]).length * stake);
+	/** This hand's card boost (shown once dealt; it counts if the hand is won). */
+	let boost = $state<BjBoost | null>(null);
+	let sideOut = $state<{ bet: SideBet; kind: PairKind | ThreeKind | null; net: number }[]>([]);
+	/** What the boosts added to a won hand. */
+	let boostInfo = $state<{ mult: number; extra: number } | null>(null);
+
+	$effect(() => {
+		hidden = phase === 'play' ? stake * (doubled ? 2 : 1) + sideStake : 0;
 	});
 	$effect(() => () => (hidden = 0));
-	const free = $derived(Math.max(0, balance - (phase === 'play' ? stake * (doubled ? 2 : 1) : 0)));
+	const free = $derived(Math.max(0, balance - (phase === 'play' ? stake * (doubled ? 2 : 1) + sideStake : 0)));
+	const mult = (m: number) => `×${+m.toFixed(2)}`;
 
 	function draw(): Card {
 		if (shoe.length < RESHUFFLE_AT) {
@@ -58,7 +116,7 @@
 	}
 
 	function deal() {
-		if (stake > balance || stake > CASINO_MAX_BET) {
+		if (stake + nextSides > balance || stake > CASINO_MAX_BET) {
 			toast.show(t.casino.broke, undefined, 5000);
 			return;
 		}
@@ -66,8 +124,14 @@
 		doubled = false;
 		result = null;
 		net = 0;
+		boostInfo = null;
+		onTable = SIDE_BETS.filter((k) => sides[k]);
 		player = [draw(), draw()];
 		dealer = [draw(), draw()];
+		boost = cardBoost(player, dealer[0]);
+		// the side bets are settled on the deal (your two cards + the dealer's up card), booked with the hand
+		sideOut = onTable.map((bet) => ({ bet, ...sideResult(bet, player, dealer[0], stake) }));
+		if (sideOut.some((x) => x.net > 0)) sound.play('maxed');
 		phase = 'play';
 		// a blackjack on either side ends the hand at once (the dealer checks the hole card)
 		if (isBlackjack(player) || isBlackjack(dealer)) finish(false);
@@ -84,7 +148,7 @@
 	}
 
 	function double() {
-		if (stake * 2 > balance) {
+		if (stake * 2 + sideStake > balance) {
 			toast.show(t.casino.broke, undefined, 5000);
 			return;
 		}
@@ -96,11 +160,23 @@
 	function finish(dealerDraws: boolean) {
 		if (dealerDraws) dealer = dealerPlays(dealer, draw);
 		result = handResult(player, dealer);
-		net = handNet(result, stake, doubled);
+		const base = handNet(result, stake, doubled);
+		streak = nextStreak(streak, result);
+		try {
+			localStorage.setItem(STREAK_KEY, String(streak));
+		} catch {
+			/* only this visit then */
+		}
+		const boosted = boostedNet(base, boost, streak);
+		boostInfo = boosted.mult > 1 ? { mult: boosted.mult, extra: boosted.net - base } : null;
+		const sideNet = sideOut.reduce((n, x) => n + x.net, 0);
+		net = boosted.net + sideNet;
 		phase = 'done';
 		squad.recordGame(net);
-		if (net > 0) sound.play(result === 'blackjack' || net >= 100 ? 'maxed' : 'camo');
-		if (result === 'blackjack' || Math.abs(net) >= 100) squad.casinoNews(t.casino.event.blackjack(net, result === 'blackjack'));
+		if (net > 0) sound.play(result === 'blackjack' || net >= 100 || boostInfo ? 'maxed' : 'camo');
+		const bigSide = sideOut.find((x) => x.net >= 100);
+		if (bigSide) squad.casinoNews(t.casino.event.bjSide(b.sides[bigSide.bet], b.kinds[bigSide.kind!], bigSide.net));
+		else if (result === 'blackjack' || Math.abs(net) >= 100) squad.casinoNews(t.casino.event.blackjack(net, result === 'blackjack'));
 	}
 
 	const cardText = (c: Card) => `${rankLabel(c.r)}${SUIT_SYMBOL[c.s]}`;
@@ -108,7 +184,9 @@
 	const dealerShown = $derived(hideHole ? dealer.slice(0, 1) : dealer);
 	const pv = $derived(handValue(player));
 	const dv = $derived(handValue(dealerShown));
-	const canDouble = $derived(phase === 'play' && player.length === 2 && stake * 2 <= balance);
+	const canDouble = $derived(phase === 'play' && player.length === 2 && stake * 2 + sideStake <= balance);
+	/** The streak boost the next win would get (the streak it would make). */
+	const nextStreakBoost = $derived(streakBoost(streak + 1));
 </script>
 
 {#snippet card(c: Card | null, i: number)}
@@ -151,6 +229,25 @@
 		</div>
 	</div>
 
+	<!-- boosts: the win streak, this hand's card boost, the side bets' results, what the boosts added -->
+	<div class="bj-boosts mt-2" aria-live="polite">
+		<span class="bj-streak font-head" data-hot={streak >= 2}>
+			{#if streak > 0}{b.streak(streak)}{:else}{b.streakNone}{/if}
+			{#if nextStreakBoost > 1}<b class="num">{b.streakNext(mult(nextStreakBoost))}</b>{/if}
+		</span>
+		{#if boost && phase !== 'bet'}
+			<span class="bj-boost font-head" data-big={BJ_BOOSTS[boost] >= 2}>⚡ {b.boost(b.kinds[boost], mult(BJ_BOOSTS[boost]))}</span>
+		{/if}
+		{#each sideOut as x (x.bet)}
+			<span class="bj-side font-head" data-won={x.net > 0}>
+				{x.kind && x.net > 0 ? b.sideWin(b.sides[x.bet], b.kinds[x.kind], x.net) : b.sideLose(b.sides[x.bet], -x.net)}
+			</span>
+		{/each}
+		{#if boostInfo && phase === 'done'}
+			<span class="bj-boost font-head" data-big="true">{b.boostApplied(mult(boostInfo.mult), boostInfo.extra)}</span>
+		{/if}
+	</div>
+
 	{#if phase === 'play'}
 		<div class="mt-3 flex flex-wrap gap-2">
 			<button type="button" class="btn btn-primary" onclick={hit}>{b.hit}</button>
@@ -163,12 +260,26 @@
 				<button type="button" class="bj-bet num font-head" aria-pressed={stake === v} disabled={v > free} onclick={() => (stake = v)}>{v}</button>
 			{/each}
 		</div>
-		<button type="button" class="btn btn-primary mt-2" disabled={stake > balance} onclick={deal}>{b.deal} · {t.casino.burgers(stake)}</button>
+		<!-- side bets: a chip the size of the bet each, settled on the deal -->
+		<div class="mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label={b.sidesLabel}>
+			<span class="bj-sides-label font-head">{b.sidesLabel}</span>
+			{#each SIDE_BETS as k (k)}
+				<button type="button" class="bj-side-btn font-head" aria-pressed={sides[k]} onclick={() => toggleSide(k)}>
+					<span class="bj-side-tick" aria-hidden="true">{sides[k] ? '✔' : ''}</span>
+					{b.sides[k]} · <span class="num">{t.casino.burgers(stake)}</span>
+				</button>
+			{/each}
+		</div>
+		<button type="button" class="btn btn-primary mt-2" disabled={stake + nextSides > balance} onclick={deal}
+			>{b.deal} · {t.casino.burgers(stake + nextSides)}</button
+		>
 	{/if}
 
 	<details class="mt-3 text-xs text-muted">
 		<summary class="min-h-11 cursor-pointer content-center font-semibold">{t.casino.how}</summary>
 		<p class="pb-1">{b.how}</p>
+		<p class="pb-1">{b.boostsHow}</p>
+		<p class="pb-1">{b.sidesHow}</p>
 	</details>
 </div>
 
@@ -297,8 +408,100 @@
 	.bj-bet:disabled {
 		opacity: 0.4;
 	}
+	/* boosts */
+	.bj-boosts {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		min-height: 30px;
+	}
+	.bj-streak,
+	.bj-boost,
+	.bj-side {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 3px 10px;
+		border-radius: 999px;
+		background: rgb(127 127 127 / 0.15);
+		color: var(--t-fg);
+		font-size: 12px;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+	}
+	.bj-streak b {
+		color: #ffb02a;
+	}
+	.bj-streak[data-hot='true'] {
+		background: linear-gradient(90deg, #ff4418, #ffb02a);
+		color: #fff;
+		box-shadow: 0 0 10px rgb(255 120 30 / 0.6);
+		animation: bj-hot 1.2s ease-in-out infinite alternate;
+	}
+	.bj-streak[data-hot='true'] b {
+		color: #fff6b0;
+	}
+	@keyframes bj-hot {
+		to {
+			box-shadow: 0 0 2px rgb(255 120 30 / 0.4);
+		}
+	}
+	.bj-boost {
+		background: #3a1a6a;
+		color: #fff6b0;
+		box-shadow: 0 0 0 1.5px #b265ff;
+	}
+	.bj-boost[data-big='true'] {
+		background: linear-gradient(90deg, #7a3fd0, #ff5ca8);
+		color: #fff;
+		box-shadow: 0 0 10px rgb(255 92 168 / 0.6);
+	}
+	.bj-side {
+		color: var(--t-muted);
+	}
+	.bj-side[data-won='true'] {
+		background: #1d5a2a;
+		color: #b8ff9a;
+		box-shadow: 0 0 0 1.5px #7dff6a, 0 0 10px rgb(125 255 106 / 0.45);
+	}
+	.bj-sides-label {
+		color: var(--t-muted);
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+	}
+	.bj-side-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 44px;
+		padding: 0 12px;
+		border: 2px solid #c9a050;
+		border-radius: 999px;
+		background: #0b3e1d;
+		color: #fff6d0;
+		font-size: 12.5px;
+		font-weight: 800;
+	}
+	.bj-side-btn[aria-pressed='true'] {
+		background: #1f7a3a;
+		box-shadow: 0 0 0 2px #ffd23a, 0 0 10px rgb(255 210 58 / 0.5);
+	}
+	.bj-side-tick {
+		display: inline-grid;
+		place-items: center;
+		width: 18px;
+		height: 18px;
+		border-radius: 4px;
+		background: #fffdf6;
+		color: #0b3e1d;
+		font-size: 12px;
+	}
 	@media (prefers-reduced-motion: reduce) {
-		.bj-card {
+		.bj-card,
+		.bj-streak[data-hot='true'] {
 			animation: none;
 		}
 	}

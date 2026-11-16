@@ -306,6 +306,88 @@ export function handNet(result: HandResult, stake: number, doubled = false): num
 	}
 }
 
+// Boosts and side bets (2026-11-16, the user's ask: "boosts in blackjack when you win several in a row, get a
+// perfect pair or a straight etc"; asked free small boosts or real side bets, they said "both"):
+//  - Free boosts: a won hand's burgers are multiplied (no extra stake) by the best card boost (a pair in
+//    your first two cards, or a straight / trips … made with the dealer's up card) and by the streak boost
+//    (the 3rd win in a row and up; a push keeps the streak, a loss ends it). Kept small: anything bigger
+//    would pay out more than goes in. Long-run return with good play ≈ 100–101 % (most players play worse).
+//  - Side bets, like a real table: "Perfect Pairs" on your first two cards and "21+3" on those two with the
+//    dealer's up card, each a chip the size of your bet, paid at the real tables' usual rates; the house
+//    keeps ≈ 5–6 % of them in the long run (6 decks). All tested in scripts/blackjack-boosts.test.js.
+
+export type PairKind = 'pair' | 'colourPair' | 'perfectPair';
+export type ThreeKind = 'flush' | 'straight' | 'trips' | 'straightFlush' | 'suitedTrips';
+export type BjBoost = PairKind | Exclude<ThreeKind, 'flush'>;
+/** Free card boosts, × a won hand's burgers (a plain flush is too common to boost for free). */
+export const BJ_BOOSTS: Record<BjBoost, number> = {
+	pair: 1.1,
+	colourPair: 1.2,
+	perfectPair: 1.5,
+	straight: 1.2,
+	trips: 1.5,
+	straightFlush: 2,
+	suitedTrips: 4
+};
+/** Streak boosts by wins in a row (this one included): 3 → ×1.05, 4 → ×1.1, 5 or more → ×1.2. */
+export const STREAK_BOOSTS = [1, 1, 1, 1.05, 1.1, 1.2];
+export const streakBoost = (streak: number) => STREAK_BOOSTS[Math.min(Math.max(streak, 0), STREAK_BOOSTS.length - 1)];
+/** Side bets: what each hand pays, times the side bet (and the chip comes back). */
+export const PERFECT_PAIRS_PAYS: Record<PairKind, number> = { pair: 6, colourPair: 12, perfectPair: 25 };
+export const PLUS3_PAYS: Record<ThreeKind, number> = { flush: 5, straight: 10, trips: 30, straightFlush: 40, suitedTrips: 100 };
+export type SideBet = 'pairs' | 'plus3';
+export const SIDE_BETS: SideBet[] = ['pairs', 'plus3'];
+const isRed = (s: Suit) => s === 'H' || s === 'D';
+
+/** A pair in the first two cards: mixed colours, the same colour, or the same suit (perfect). */
+export function pairKind(player: Card[]): PairKind | null {
+	if (player.length < 2) return null;
+	const [a, b] = player;
+	if (a.r !== b.r) return null;
+	return a.s === b.s ? 'perfectPair' : isRed(a.s) === isRed(b.s) ? 'colourPair' : 'pair';
+}
+
+/** The three-card poker hand of your first two cards and the dealer's up card. */
+export function threeKind(player: Card[], dealerUp?: Card): ThreeKind | null {
+	if (player.length < 2 || !dealerUp) return null;
+	const cards = [player[0], player[1], dealerUp];
+	const suited = cards.every((c) => c.s === cards[0].s);
+	const rs = cards.map((c) => c.r).sort((x, y) => x - y);
+	if (rs[0] === rs[2]) return suited ? 'suitedTrips' : 'trips';
+	// A-2-3 up to Q-K-A (the ace goes low or high, never round the corner)
+	const straight = (rs[1] === rs[0] + 1 && rs[2] === rs[1] + 1) || (rs[0] === 1 && rs[1] === 12 && rs[2] === 13);
+	if (straight) return suited ? 'straightFlush' : 'straight';
+	return suited ? 'flush' : null;
+}
+
+/** The best free card boost of a hand. */
+export function cardBoost(player: Card[], dealerUp?: Card): BjBoost | null {
+	const kinds = [pairKind(player), threeKind(player, dealerUp)].filter((k): k is BjBoost => !!k && k in BJ_BOOSTS);
+	return kinds.sort((x, y) => BJ_BOOSTS[y] - BJ_BOOSTS[x])[0] ?? null;
+}
+
+/** What a side bet won (or lost, negative): its hand and burgers. */
+export function sideResult(bet: SideBet, player: Card[], dealerUp: Card, chip: number): { kind: PairKind | ThreeKind | null; net: number } {
+	if (bet === 'pairs') {
+		const kind = pairKind(player);
+		return { kind, net: kind ? chip * PERFECT_PAIRS_PAYS[kind] : -chip };
+	}
+	const kind = threeKind(player, dealerUp);
+	return { kind, net: kind ? chip * PLUS3_PAYS[kind] : -chip };
+}
+
+export const isWin = (r: HandResult) => r === 'win' || r === 'dealerBust' || r === 'blackjack';
+/** The streak after a hand: a win adds one, a push keeps it, a loss or bust ends it. */
+export const nextStreak = (streak: number, r: HandResult) => (isWin(r) ? streak + 1 : r === 'push' ? streak : 0);
+
+/** A hand's burgers with its boosts: a win × card boost × streak boost (rounded down); losses / pushes as they are. */
+export function boostedNet(net: number, boost: BjBoost | null, streak: number): { net: number; mult: number } {
+	if (net <= 0) return { net, mult: 1 };
+	const mult = (boost ? BJ_BOOSTS[boost] : 1) * streakBoost(streak);
+	// a hair over, so 1.5 × 1.2 (= 1.7999…) × 100 still gives 180
+	return { net: Math.floor(net * mult + 1e-9), mult };
+}
+
 /** "A", "2" … "10", "J", "Q", "K" */
 export const rankLabel = (r: number) => (r === 1 ? 'A' : r === 11 ? 'J' : r === 12 ? 'Q' : r === 13 ? 'K' : String(r));
 export const SUIT_SYMBOL: Record<Suit, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
