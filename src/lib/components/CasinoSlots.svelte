@@ -5,16 +5,28 @@
 	A cabinet with a marquee of chasing bulbs, 5 reels that spin and stop one by one, the 10 paylines
 	drawn over the winning cells, free spins, BIG / MEGA WIN / BURGER JACKPOT, and the lever: a big
 	holk with a glowing ember and Abscar's own smoke (abscarOperator.ts), pulled down to spin.
-	The whole spin and its free spins are worked out and booked at once (squad.recordGame), then shown;
-	`hidden` = burgers won but not shown yet, so the balance above doesn't give the result away.
+	Bonuses (2026-11-16, the user's "add free spins and bonus", all four picks): the Burger Box pick game
+	and the bonus wheel open over the whole cabinet; a Buy bonus row starts free spins, the Burger Box or
+	a wheel spin at once (asked first); free spins get an intro, the marquee turns into their counter,
+	"+8 FREE SPINS" when they come again and the total at the end.
+	The whole spin with its bonuses and free spins is worked out and booked at once (squad.recordGame),
+	then shown; the boxes you tap only decide the order the worked-out prizes come in. `hidden` = burgers
+	won but not shown yet, so the balance above doesn't give the result away.
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { holk, smoke } from '#lib/abscarOperator.ts';
 	import {
+		buy,
 		evaluate,
 		play,
+		spinsFrom,
 		winTier,
+		BOX_COUNT,
+		BOX_REELS,
+		BUY_FREE_SPINS,
+		BUY_KINDS,
+		BUY_PRICE,
 		FREE_SPINS,
 		LINES,
 		PAYS,
@@ -25,10 +37,15 @@
 		SLOT_BETS,
 		STRIPS,
 		SYMBOLS,
+		WHEEL,
+		WHEEL_REELS,
+		type BoxBonus,
+		type BuyKind,
 		type LineWin,
+		type PaySymbol,
 		type Play,
-		type SlotSymbol,
 		type SpinResult,
+		type WheelBonus,
 		type WinTier
 	} from '#lib/casino-slots.ts';
 	import { t } from '#lib/i18n/en.ts';
@@ -70,7 +87,21 @@
 	let message = $state('');
 	let tier = $state<WinTier>('none');
 	let celebrate = $state(false);
-	let free = $state<{ left: number; total: number } | null>(null);
+	/** Bonus symbols that opened a bonus on the screen shown (for the glow). */
+	let boxHit = $state(false);
+	let wheelHit = $state(false);
+	/** Free spins running: which one, of how many, burgers won in them so far (the marquee shows it). */
+	let freeState = $state<{ n: number; total: number; won: number } | null>(null);
+	/** A free-spins screen over the reels: the intro, "+8 more", the total at the end. */
+	let banner = $state<{ kind: 'intro' | 'more'; spins: number } | { kind: 'outro'; spins: number; won: number } | null>(null);
+	/** The Burger Box pick game: what each box showed once opened (null = closed). */
+	let boxGame = $state<{ bonus: BoxBonus; cells: (number | 'collect' | null)[]; next: number; won: number; done: boolean } | null>(null);
+	/** The bonus wheel: its turn in degrees (the stop is worked out already). */
+	let wheelGame = $state<{ bonus: WheelBonus; angle: number; turning: boolean; done: boolean } | null>(null);
+	/** Buy bonus: the feature waiting for a yes. */
+	let buyAsk = $state<BuyKind | null>(null);
+	let spinBtn = $state<HTMLButtonElement>();
+	let bonusEl = $state<HTMLDivElement>();
 
 	/** What each reel shows: during a spin a long strip that slides up; at rest the 3 visible symbols. */
 	let cols = $state(START.grid.map((items) => ({ items, y: 0, dur: 0 })));
@@ -80,6 +111,8 @@
 		const set = new Set<string>();
 		for (const w of wins) LINES[w.line].slice(0, w.count).forEach((row, r) => set.add(`${r}-${row}`));
 		if (scatterHit) screen.grid.forEach((col, r) => col.forEach((sym, row) => sym === 'scatter' && set.add(`${r}-${row}`)));
+		if (boxHit) for (const r of BOX_REELS) screen.grid[r].forEach((sym, row) => sym === 'box' && set.add(`${r}-${row}`));
+		if (wheelHit) for (const r of WHEEL_REELS) screen.grid[r].forEach((sym, row) => sym === 'wheel' && set.add(`${r}-${row}`));
 		return set;
 	});
 	const LINE_COLORS = ['#ffd23a', '#ff5ca8', '#5ce1ff', '#7dff6a', '#ff8a1a', '#c98bff', '#ff4b4b', '#4bffd1', '#fff6b0', '#9ab8ff'];
@@ -103,52 +136,209 @@
 	function show(result: SpinResult) {
 		wins = result.lines;
 		scatterHit = result.scatters >= 3;
+		boxHit = result.box;
+		wheelHit = result.wheel;
 		hidden = Math.max(0, hidden - result.win);
 		lastWin = result.win;
 		const parts = [
 			...result.lines.map((l) => s.lineWin(l.line + 1, l.count, s.symbols[l.symbol], l.win)),
-			...(result.scatterWin || result.freeSpins ? [s.scatterWin(result.scatters, result.scatterWin, result.freeSpins)] : [])
+			...(result.scatterWin || result.freeSpins ? [s.scatterWin(result.scatters, result.scatterWin, result.freeSpins)] : []),
+			...(result.box ? [s.boxHit] : []),
+			...(result.wheel ? [s.wheelHit] : [])
 		];
 		message = parts.length ? parts.join(' · ') : s.noWin;
-		if (result.win > 0) sound.play('camo');
+		if (result.box || result.wheel) sound.play('maxed');
+		else if (result.win > 0) sound.play('camo');
 	}
 
-	async function spin() {
-		if (spinning) return;
-		if (bet > shown) {
-			toast.show(t.casino.broke, undefined, 6000);
+	/* ----- waiting: a tap on a screen or a timeout; everything waiting lets go when the machine goes away ----- */
+	let tapGo: (() => void) | null = null;
+	function waitTap(ms: number): Promise<void> {
+		return new Promise((res) => {
+			const done = () => {
+				clearTimeout(timer);
+				if (tapGo === done) tapGo = null;
+				res();
+			};
+			const timer = setTimeout(done, ms);
+			tapGo = done;
+		});
+	}
+	let bonusDone: (() => void) | null = null;
+	/** Wait until the open bonus screen is closed (Continue, or a timer once it's finished). */
+	const untilClosed = () => new Promise<void>((res) => (bonusDone = res));
+	function closeBonus() {
+		const done = bonusDone;
+		bonusDone = null;
+		const focusBack = !!bonusEl && bonusEl.contains(document.activeElement);
+		boxGame = null;
+		wheelGame = null;
+		if (focusBack) void tick().then(() => spinBtn?.focus());
+		done?.();
+	}
+	/** A finished bonus closes by itself after a while (sooner in auto spin). */
+	function closeLater() {
+		const done = bonusDone;
+		setTimeout(() => bonusDone === done && closeBonus(), autoLeft > 0 ? 1900 : reduce() ? 3500 : 4800);
+	}
+	async function focusFirst() {
+		await tick();
+		if (autoLeft === 0) bonusEl?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+	}
+
+	/* ----- the Burger Box ----- */
+	async function runBox(bonus: BoxBonus) {
+		await sleep(reduce() ? 200 : 900);
+		boxGame = { bonus, cells: Array(BOX_COUNT).fill(null), next: 0, won: 0, done: false };
+		void focusFirst();
+		// auto spin opens the boxes by itself (the player can stop auto and pick)
+		void (async () => {
+			while (alive && boxGame && !boxGame.done && autoLeft > 0) {
+				await sleep(reduce() ? 150 : 700);
+				const g = boxGame;
+				if (!g || g.done || autoLeft === 0) break;
+				const closed = g.cells.flatMap((c, i) => (c === null ? [i] : []));
+				openBox(closed[Math.floor(rand() * closed.length)]);
+			}
+		})();
+		await untilClosed();
+	}
+	function openBox(i: number) {
+		const g = boxGame;
+		if (!g || g.done || g.cells[i] !== null) return;
+		const prize = g.next < g.bonus.picks.length ? g.bonus.picks[g.next] : 'collect';
+		g.cells[i] = prize;
+		g.next += 1;
+		if (prize !== 'collect') {
+			g.won += prize;
+			sound.play('camo');
 			return;
 		}
-		const p: Play = play(bet, rand);
+		g.done = true;
+		hidden = Math.max(0, hidden - g.bonus.win);
+		lastWin = g.bonus.win;
+		message = s.boxEvent(g.bonus.win);
+		sound.play('maxed');
+		void tick().then(() => bonusEl?.querySelector<HTMLButtonElement>('.bonus-go')?.focus());
+		closeLater();
+	}
+
+	/* ----- the bonus wheel ----- */
+	const SLICE = 360 / WHEEL.length;
+	/** Where the wheel was left (it starts the next bonus from there). */
+	let wheelRest = 0;
+	async function runWheel(bonus: WheelBonus) {
+		await sleep(reduce() ? 200 : 900);
+		wheelGame = { bonus, angle: wheelRest, turning: false, done: false };
+		void focusFirst();
+		if (autoLeft > 0) setTimeout(() => void spinWheel(), reduce() ? 200 : 1000);
+		await untilClosed();
+	}
+	async function spinWheel() {
+		const g = wheelGame;
+		if (!g || g.turning || g.done) return;
+		// the worked-out slice comes to the pointer at the top, a few turns on, a little off its middle
+		const target = -g.bonus.slice * SLICE + (rand() - 0.5) * SLICE * 0.6;
+		const from = g.angle;
+		g.angle = from + 360 * 5 + ((((target - from) % 360) + 360) % 360);
+		g.turning = true;
+		await sleep(reduce() ? 60 : 4300);
+		if (wheelGame !== g) return;
+		wheelRest = g.angle % 360;
+		g.turning = false;
+		g.done = true;
+		hidden = Math.max(0, hidden - g.bonus.win);
+		lastWin = g.bonus.win;
+		const slice = WHEEL[g.bonus.slice];
+		const what = slice.jackpot ? s.wheelJackpot(g.bonus.win) : g.bonus.spins ? s.wheelSpins(g.bonus.spins) : s.wheelWin(g.bonus.win);
+		message = s.wheelEvent(what);
+		sound.play(slice.jackpot ? 'divergence' : 'maxed');
+		void tick().then(() => bonusEl?.querySelector<HTMLButtonElement>('.bonus-go')?.focus());
+		closeLater();
+	}
+	/** A wheel slice's words: burgers at the current bet (short), free spins or the jackpot. */
+	const short = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${+(n / 1000).toFixed(1)}k` : String(n));
+	const sliceLabel = (i: number, b: number) => (WHEEL[i].spins ? s.freeSlice(WHEEL[i].spins!) : short((WHEEL[i].win ?? 0) * b));
+
+	/** The bonuses a spin opened, one after the other; what they won. */
+	async function bonusesOf(sp: SpinResult): Promise<number> {
+		let n = 0;
+		if (sp.boxBonus) {
+			await runBox(sp.boxBonus);
+			n += sp.boxBonus.win;
+		}
+		if (sp.wheelBonus) {
+			await runWheel(sp.wheelBonus);
+			n += sp.wheelBonus.win;
+		}
+		return n;
+	}
+
+	/* ----- free spins: intro, the marquee as the counter, "+n more", the total ----- */
+	async function runFree(p: Play) {
+		let total = Math.min(p.freeStart, p.free.length);
+		let won = 0;
+		await sleep(reduce() ? 200 : 700);
+		banner = { kind: 'intro', spins: total };
+		sound.play('maxed');
+		await waitTap(reduce() ? 1200 : 2400);
+		banner = null;
+		for (let i = 0; i < p.free.length && alive; i++) {
+			const fs = p.free[i];
+			freeState = { n: i + 1, total, won };
+			wins = [];
+			scatterHit = false;
+			boxHit = false;
+			wheelHit = false;
+			await spinReels(fs);
+			show(fs);
+			won += fs.win;
+			freeState = { n: i + 1, total, won };
+			won += await bonusesOf(fs);
+			const more = Math.min(spinsFrom(fs), p.free.length - total);
+			if (more > 0) {
+				total += more;
+				freeState = { n: i + 1, total, won };
+				banner = { kind: 'more', spins: more };
+				await sleep(reduce() ? 700 : 1500);
+				banner = null;
+			} else freeState = { n: i + 1, total, won };
+			await sleep(reduce() ? 250 : 800);
+		}
+		freeState = null;
+		banner = { kind: 'outro', spins: p.free.length, won };
+		lastWin = won;
+		await waitTap(reduce() ? 1500 : 3000);
+		banner = null;
+	}
+
+	/** Book a paid spin or a bought feature at once, then show it all. */
+	async function run(p: Play) {
 		// booked now (closing the page changes nothing), shown below
 		squad.recordGame(p.net);
 		hidden = p.win;
 		spinning = true;
-		pulled = true;
-		setTimeout(() => (pulled = false), 520);
 		wins = [];
 		scatterHit = false;
+		boxHit = false;
+		wheelHit = false;
 		tier = 'none';
 		celebrate = false;
-		message = s.spinning;
 		lastWin = 0;
-		await spinReels(p.base);
-		show(p.base);
-		if (p.free.length) {
-			let total = p.base.freeSpins;
-			free = { left: total, total };
-			message = `${s.freeWon(total)} ${message}`;
-			await sleep(reduce() ? 300 : 1500);
-			for (const fs of p.free) {
-				wins = [];
-				scatterHit = false;
-				await spinReels(fs);
-				show(fs);
-				total += fs.freeSpins;
-				free = { left: free!.left - 1 + fs.freeSpins, total };
-				await sleep(reduce() ? 250 : 900);
-			}
-			free = null;
+		const bonuses = !!(p.box || p.wheel || p.free.length || p.base?.boxBonus || p.base?.wheelBonus);
+		if (p.base) {
+			pulled = true;
+			setTimeout(() => (pulled = false), 520);
+			message = s.spinning;
+			await spinReels(p.base);
+			show(p.base);
+			await bonusesOf(p.base);
+		}
+		if (p.box) await runBox(p.box);
+		if (p.wheel) await runWheel(p.wheel);
+		if (p.free.length) await runFree(p);
+		if (!alive) return;
+		if (bonuses) {
 			lastWin = p.win;
 			message = `${s.lastWin}: ${p.win.toLocaleString('en-US')} 🍔`;
 		}
@@ -161,6 +351,34 @@
 			squad.casinoNews(t.casino.event.slots(p.win, tier));
 		}
 		spinning = false;
+	}
+
+	async function spin() {
+		if (spinning) return;
+		if (bet > shown) {
+			toast.show(t.casino.broke, undefined, 6000);
+			return;
+		}
+		buyAsk = null;
+		await run(play(bet, rand));
+	}
+
+	/* ----- buy bonus: asked first, since it's a big stake ----- */
+	const price = (k: BuyKind) => BUY_PRICE[k] * bet;
+	const buyWhat = (k: BuyKind) => (k === 'free' ? s.buyWhat.free(BUY_FREE_SPINS) : s.buyWhat[k]);
+	function askBuy(k: BuyKind) {
+		if (price(k) > shown) {
+			toast.show(t.casino.broke, undefined, 6000);
+			return;
+		}
+		buyAsk = k;
+	}
+	async function confirmBuy() {
+		const k = buyAsk;
+		buyAsk = null;
+		if (!k || spinning || price(k) > shown) return;
+		message = s.buyKinds[k];
+		await run(buy(k, bet, rand));
 	}
 
 	// ----- auto spin (2026-11-16, the user's ask: "an auto spin button for Abscar's Fortune") -----
@@ -203,6 +421,9 @@
 			alive = false;
 			autoLeft = 0;
 			document.removeEventListener('visibilitychange', hide);
+			// let anything waiting on a screen go (the machine is gone)
+			tapGo?.();
+			bonusDone?.();
 		};
 	});
 
@@ -218,12 +439,18 @@
 <div class="bandit" class:spinning>
 	<div class="cabinet">
 		<!-- the marquee: chasing bulbs round "ABSCAR'S FORTUNE" -->
-		<div class="marquee">
+		<div class="marquee" class:free-on={!!freeState}>
 			<div class="bulbs" aria-hidden="true">
 				{#each Array.from({ length: 22 }) as _, i (i)}<span style:--i={i}></span>{/each}
 			</div>
-			<p class="title font-head">Abscar’s Fortune</p>
-			<p class="subtitle font-head">{t.casino.games.slotsSub} · {s.lines}</p>
+			{#if freeState}
+				<!-- in free spins the marquee is their counter -->
+				<p class="title free-title font-head" role="status">{s.freeTitle(freeState.n, freeState.total)}</p>
+				<p class="subtitle font-head">{s.freeSub(freeState.won)}</p>
+			{:else}
+				<p class="title font-head">Abscar’s Fortune</p>
+				<p class="subtitle font-head">{t.casino.games.slotsSub} · {s.lines}</p>
+			{/if}
 		</div>
 
 		<!-- the reels -->
@@ -242,7 +469,7 @@
 				{/each}
 			</div>
 			<!-- the winning paylines, drawn over the cells -->
-			{#if !spinning || free}
+			{#if !spinning || freeState}
 				<svg class="paylines" viewBox="0 0 500 300" preserveAspectRatio="none" aria-hidden="true">
 					{#each wins as w (w.line)}
 						<polyline
@@ -257,8 +484,24 @@
 					{/each}
 				</svg>
 			{/if}
-			{#if free}
-				<p class="free-banner font-head" role="status">{s.free(free.left, free.total)}</p>
+			{#if banner?.kind === 'more'}
+				<p class="fs-more font-head" role="status">{s.freeMore(banner.spins)}</p>
+			{:else if banner}
+				<!-- the free-spins intro / total: tap anywhere to go on -->
+				<button type="button" class="fs-screen" data-kind={banner.kind} onclick={() => tapGo?.()}>
+					<span class="rain" aria-hidden="true">
+						{#each RAIN as drop, i (i)}<span style:left="{drop.x}%" style:animation-delay="{drop.d}s" style:animation-duration="{drop.dur}s"><SlotSymbolView symbol={banner.kind === 'intro' ? 'scatter' : i % 3 ? 'burger' : 'fries'} size={28} /></span>{/each}
+					</span>
+					{#if banner.kind === 'intro'}
+						<span class="big font-head">{s.freeIntro(banner.spins)}</span>
+						<span class="fs-sub">{s.freeIntroSub}</span>
+					{:else if banner.kind === 'outro'}
+						<span class="fs-kicker font-head">{s.freeOutro}</span>
+						<span class="amount font-head num">+{banner.won.toLocaleString('en-US')} 🍔</span>
+						<span class="fs-sub">{s.freeOutroSub(banner.spins)}</span>
+					{/if}
+					<span class="fs-tap">{s.continue} ▸</span>
+				</button>
 			{/if}
 			{#if celebrate}
 				<div class="celebrate" data-tier={tier} role="status">
@@ -285,7 +528,7 @@
 				</div>
 			</div>
 			<div class="led win"><span>{s.lastWin}</span><b class="num">{lastWin.toLocaleString('en-US')}</b></div>
-			<button type="button" class="spin font-head" disabled={spinning || autoLeft > 0} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
+			<button type="button" class="spin font-head" bind:this={spinBtn} disabled={spinning || autoLeft > 0} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
 		</div>
 
 		<!-- auto spin: how many, then AUTO (it turns into STOP while running) -->
@@ -299,6 +542,124 @@
 				{/each}
 			{/if}
 		</div>
+
+		<!-- buy bonus: free spins, the Burger Box or a wheel spin at the current bet; asked first -->
+		<div class="buy" role="group" aria-label={s.buy}>
+			{#if buyAsk}
+				<p class="buy-ask" role="status">{s.buyAsk(buyWhat(buyAsk), price(buyAsk))}</p>
+				<div class="flex gap-1.5">
+					<button type="button" class="buy-yes font-head" disabled={spinning || price(buyAsk) > shown} onclick={() => void confirmBuy()}>{s.buyYes}</button>
+					<button type="button" class="buy-no font-head" onclick={() => (buyAsk = null)}>{s.buyNo}</button>
+				</div>
+			{:else}
+				<span class="buy-label font-head">{s.buy}</span>
+				<div class="buy-list">
+					{#each BUY_KINDS as k (k)}
+						<button type="button" class="buy-btn" disabled={spinning || autoLeft > 0 || price(k) > shown} onclick={() => askBuy(k)}>
+							<SlotSymbolView symbol={k === 'free' ? 'scatter' : k} size={28} />
+							<span class="min-w-0 text-left">
+								<b class="block font-head">{s.buyKinds[k]}</b>
+								<span class="num">{s.buyPrice(price(k))}</span>
+							</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
+
+		<!-- the Burger Box: open boxes until one says COLLECT (the prizes are worked out already) -->
+		{#if boxGame}
+			<div class="bonus-screen box-screen" role="group" aria-label={s.box} bind:this={bonusEl}>
+				<p class="bonus-title font-head">{s.box}</p>
+				<p class="bonus-help">{s.boxHelp}</p>
+				<p class="bonus-sofar font-head num" aria-live="polite">{s.boxSoFar(boxGame.won)}</p>
+				<div class="boxes">
+					{#each boxGame.cells as c, i (i)}
+						<button
+							type="button"
+							class="pick"
+							class:opened={c !== null}
+							class:collect={c === 'collect'}
+							disabled={boxGame.done || c !== null}
+							aria-label={c === null ? s.boxClosed(i + 1) : s.boxOpen(i + 1, c === 'collect' ? s.collect : s.boxPrize(c))}
+							onclick={() => openBox(i)}
+						>
+							{#if c === null}
+								<SlotSymbolView symbol="box" size={40} />
+							{:else if c === 'collect'}
+								<span class="pick-text font-head">{s.collect}</span>
+							{:else}
+								<span class="pick-text font-head num">{s.boxPrize(c)}</span>
+							{/if}
+						</button>
+					{/each}
+				</div>
+				{#if boxGame.done}
+					<div class="bonus-result" role="status">
+						<p class="fs-kicker font-head">{s.boxWon}</p>
+						<p class="amount font-head num">+{boxGame.bonus.win.toLocaleString('en-US')} 🍔</p>
+						<button type="button" class="bonus-go font-head" onclick={closeBonus}>{s.continue}</button>
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		<!-- the bonus wheel: every slice as likely; it turns to the slice worked out already -->
+		{#if wheelGame}
+			<div class="bonus-screen wheel-screen" role="group" aria-label={s.wheel} bind:this={bonusEl}>
+				<p class="bonus-title font-head">{s.wheel}</p>
+				<p class="bonus-help">{s.wheelHelp}</p>
+				<div class="wheel-wrap">
+					<svg viewBox="-116 -124 232 240" role="img" aria-label={s.wheelLabel(WHEEL.map((_, i) => (WHEEL[i].jackpot ? `${s.jackpot} ${sliceLabel(i, bet)}` : sliceLabel(i, bet))).join(', '))}>
+						<defs>
+							<radialGradient id="{u}-wgold" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#fff6b0" /><stop offset="0.45" stop-color="#ffc928" /><stop offset="1" stop-color="#b86e00" /></radialGradient>
+						</defs>
+						<circle r="112" fill="url(#{u}-wgold)" stroke="#2a1408" stroke-width="4" />
+						<g class="wheel-rot" style:transform="rotate({wheelGame.angle}deg)" style:transition={wheelGame.turning && !reduce() ? 'transform 4.2s cubic-bezier(0.15, 0.85, 0.25, 1)' : 'none'}>
+							{#each WHEEL as sl, i (i)}
+								{@const a0 = ((i * SLICE - SLICE / 2) * Math.PI) / 180}
+								{@const a1 = ((i * SLICE + SLICE / 2) * Math.PI) / 180}
+								<path
+									d="M0 0 L{(100 * Math.sin(a0)).toFixed(2)} {(-100 * Math.cos(a0)).toFixed(2)} A100 100 0 0 1 {(100 * Math.sin(a1)).toFixed(2)} {(-100 * Math.cos(a1)).toFixed(2)} Z"
+									fill={sl.jackpot ? `url(#${u}-wgold)` : sl.spins ? '#7a3fd0' : i % 2 ? '#ffb020' : '#e2261f'}
+									stroke="#2a1408"
+									stroke-width="1.6"
+								/>
+								<g transform="rotate({i * SLICE})">
+									{#if sl.jackpot}
+										<text y="-80" class="w-small" fill="#7a1a00">{s.jackpot}</text>
+										<text y="-63" class="w-big" fill="#7a1a00">{sliceLabel(i, bet)}</text>
+									{:else if sl.spins}
+										<text y="-74" class="w-big" fill="#fff6b0">{sl.spins}</text>
+										<text y="-60" class="w-small" fill="#fff6b0">FREE</text>
+									{:else}
+										<text y="-68" class="w-big" fill={i % 2 ? '#3d0508' : '#fff6b0'}>{sliceLabel(i, bet)}</text>
+									{/if}
+								</g>
+							{/each}
+						</g>
+						{#each Array.from({ length: 24 }) as _, i (i)}
+							<circle class="w-bulb" cx={(106 * Math.sin((i * 15 * Math.PI) / 180)).toFixed(2)} cy={(-106 * Math.cos((i * 15 * Math.PI) / 180)).toFixed(2)} r="3" style:--i={i} />
+						{/each}
+						<circle r="17" fill="url(#{u}-wgold)" stroke="#2a1408" stroke-width="3" />
+						<path d="M-9 -8 Q0 -16 9 -8" fill="none" stroke="#fff6d0" stroke-width="2.4" stroke-linecap="round" />
+						<!-- the pointer at the top -->
+						<path d="M-13 -123 L13 -123 L0 -96 Z" fill="#e2261f" stroke="#2a1408" stroke-width="3" stroke-linejoin="round" />
+					</svg>
+				</div>
+				{#if wheelGame.done}
+					<div class="bonus-result" role="status">
+						<p class="fs-kicker font-head">
+							{WHEEL[wheelGame.bonus.slice].jackpot ? s.jackpot : wheelGame.bonus.spins ? s.wheelSpins(wheelGame.bonus.spins) : s.wheel}
+						</p>
+						{#if wheelGame.bonus.win}<p class="amount font-head num">+{wheelGame.bonus.win.toLocaleString('en-US')} 🍔</p>{/if}
+						<button type="button" class="bonus-go font-head" onclick={closeBonus}>{s.continue}</button>
+					</div>
+				{:else}
+					<button type="button" class="wheel-btn font-head" disabled={wheelGame.turning} onclick={() => void spinWheel()}>{wheelGame.turning ? s.wheelSpinning : s.wheelSpin}</button>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	<!-- the lever: a big smoking holk, pulled down to spin -->
@@ -333,14 +694,19 @@
 					<b class="block text-fg">{s.symbols[sym]}</b>
 					{#if sym === 'scatter'}
 						{s.scatterRow(...SCATTER_PAYS, ...FREE_SPINS)}
+					{:else if sym === 'box'}
+						{s.boxRow}
+					{:else if sym === 'wheel'}
+						{s.wheelRow}
 					{:else}
-						{s.payRow(...PAYS[sym], PAYS2[sym])}
+						{s.payRow(...PAYS[sym as PaySymbol], PAYS2[sym as PaySymbol])}
 					{/if}
 				</span>
 			</li>
 		{/each}
 	</ul>
 	<p class="pb-1">{s.payNote}</p>
+	<p class="pb-1">{s.buyNote(BUY_PRICE.free, BUY_PRICE.box, BUY_PRICE.wheel)}</p>
 </details>
 
 <style>
@@ -491,21 +857,340 @@
 		pointer-events: none;
 		filter: drop-shadow(0 0 4px rgb(0 0 0 / 0.8));
 	}
-	.free-banner {
+	/* ---------- free spins ---------- */
+	/* the marquee turns purple and counts the free spins */
+	.marquee.free-on {
+		background: linear-gradient(180deg, #3a0a5a, #170326);
+		box-shadow:
+			inset 0 0 0 2px #ff5ca8,
+			0 0 16px rgb(255 92 168 / 0.6);
+	}
+	.free-title {
+		font-size: clamp(20px, 6.4cqi, 36px);
+		background: linear-gradient(180deg, #ffffff 0%, #ffb3d9 45%, #ff5ca8 55%, #ffd23a 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-stroke: 1px #4a0a3a;
+	}
+	.bandit:has(.free-on) .cabinet {
+		border-color: #ff5ca8;
+		box-shadow:
+			0 0 0 3px #3a0a5a,
+			0 0 28px rgb(255 92 168 / 0.55),
+			inset 0 2px 0 rgb(255 255 255 / 0.25);
+	}
+	/* "+8 FREE SPINS!" when they come again */
+	.fs-more {
 		position: absolute;
 		left: 50%;
 		top: 50%;
+		z-index: 3;
 		transform: translate(-50%, -50%);
-		padding: 6px 12px;
-		border: 3px solid #ffc928;
-		border-radius: 10px;
-		background: rgb(179 20 27 / 0.92);
+		padding: 8px 16px;
+		border: 3px solid #ffd23a;
+		border-radius: 12px;
+		background: rgb(122 20 160 / 0.94);
 		color: #fff6b0;
+		font-size: clamp(15px, 5cqi, 24px);
+		font-weight: 900;
+		letter-spacing: 0.08em;
+		white-space: nowrap;
+		pointer-events: none;
+		box-shadow: 0 0 20px rgb(255 92 168 / 0.7);
+		animation: big-in 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+	}
+	/* the intro and the total: over the reels, tap to go on */
+	.fs-screen {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 2px;
+		width: 100%;
+		border-radius: 12px;
+		background: radial-gradient(circle, rgb(90 10 120 / 0.8), rgb(10 0 20 / 0.92));
+		color: #fff6b0;
+		overflow: hidden;
+		text-align: center;
+	}
+	.fs-screen .big {
+		position: relative;
+		color: #ffd23a;
+		text-shadow: 0 3px 0 #7a1aa0, 0 0 18px rgb(255 92 168 / 0.9);
+	}
+	.fs-sub {
+		position: relative;
+		font-size: 12.5px;
+		font-weight: 700;
+	}
+	.fs-kicker {
+		position: relative;
+		color: #ffb3d9;
+		font-size: clamp(14px, 4.4cqi, 20px);
+		font-weight: 900;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+	}
+	.fs-tap {
+		position: relative;
+		margin-top: 6px;
+		padding: 2px 10px;
+		border-radius: 999px;
+		background: rgb(255 255 255 / 0.12);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+	/* ---------- the bonus screens (over the whole cabinet) ---------- */
+	.bonus-screen {
+		position: absolute;
+		inset: 0;
+		z-index: 6;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: safe center;
+		gap: 4px;
+		padding: 12px 10px;
+		border-radius: 18px 18px 10px 10px;
+		overflow-y: auto;
+		color: #fff6b0;
+		text-align: center;
+		animation: bonus-in 0.35s ease-out both;
+	}
+	@keyframes bonus-in {
+		from {
+			opacity: 0;
+			transform: scale(0.96);
+		}
+	}
+	.box-screen {
+		background:
+			radial-gradient(90% 60% at 50% 0%, rgb(255 210 58 / 0.3), transparent 60%),
+			linear-gradient(180deg, #8a0a10, #3d0508);
+	}
+	.wheel-screen {
+		background:
+			radial-gradient(90% 60% at 50% 40%, rgb(255 92 168 / 0.25), transparent 65%),
+			linear-gradient(180deg, #2a0a4a, #0e0218);
+	}
+	.bonus-title {
+		font-size: clamp(22px, 7cqi, 36px);
+		font-weight: 900;
+		line-height: 1;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		background: linear-gradient(180deg, #fff6b0 0%, #ffc928 45%, #e07a00 55%, #ffd23a 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		-webkit-text-stroke: 1px #5a2a00;
+		filter: drop-shadow(0 2px 0 #3d0508);
+	}
+	.bonus-help {
+		max-width: 34em;
+		color: #ffe1c0;
+		font-size: 11.5px;
+		line-height: 1.3;
+	}
+	.bonus-sofar {
+		color: #7dff6a;
+		font-size: 15px;
+		font-weight: 900;
+		text-shadow: 0 0 8px rgb(100 255 90 / 0.6);
+	}
+	.boxes {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(44px, 72px));
+		gap: 8px;
+		margin-top: 2px;
+	}
+	.pick {
+		display: grid;
+		place-items: center;
+		aspect-ratio: 1;
+		min-height: 44px;
+		border: 2px solid #ffc928;
+		border-radius: 12px;
+		background: radial-gradient(circle at 40% 30%, #5a0a10, #2a0306);
+		box-shadow: 0 3px 0 #1a0203;
+		transition: transform 0.15s;
+	}
+	.pick:not(:disabled):hover {
+		transform: translateY(-2px) rotate(-3deg);
+	}
+	.pick:not(.opened):disabled {
+		opacity: 0.45;
+	}
+	.pick.opened {
+		background: radial-gradient(circle, #fff6d0, #ffc928 80%);
+		border-color: #fff6b0;
+		animation: pick-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+	}
+	.pick.collect {
+		background: radial-gradient(circle, #ff7a6a, #b3141b 80%);
+	}
+	@keyframes pick-pop {
+		from {
+			transform: rotateY(90deg) scale(0.8);
+		}
+	}
+	.pick-text {
+		color: #3d0508;
+		font-size: clamp(12px, 3.6cqi, 17px);
+		font-weight: 900;
+	}
+	.pick.collect .pick-text {
+		color: #fff6b0;
+		font-size: clamp(9px, 2.6cqi, 12px);
+		letter-spacing: 0.04em;
+	}
+	.bonus-result {
+		display: grid;
+		justify-items: center;
+		gap: 2px;
+		margin-top: 4px;
+		animation: big-in 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+	}
+	.bonus-go,
+	.wheel-btn {
+		min-height: 48px;
+		margin-top: 4px;
+		padding: 0 22px;
+		border: 3px solid #ffe9a0;
+		border-radius: 999px;
+		background: radial-gradient(circle at 40% 30%, #ff7a4a, #e2261f 55%, #8a0a10);
+		color: #fff;
+		font-size: 15px;
+		font-weight: 900;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		text-shadow: 0 2px 0 #5a0508;
+		box-shadow: 0 4px 0 #5a0508;
+	}
+	.wheel-btn:disabled {
+		filter: grayscale(0.4) brightness(0.85);
+	}
+	.wheel-wrap {
+		width: min(270px, 88%);
+		margin-top: 2px;
+	}
+	.wheel-wrap svg {
+		display: block;
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.6));
+	}
+	.wheel-rot {
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+	.w-big,
+	.w-small {
+		font-family: Bahnschrift, 'Arial Black', sans-serif;
+		font-weight: 900;
+		text-anchor: middle;
+		paint-order: stroke;
+	}
+	.w-big {
+		font-size: 15px;
+	}
+	.w-small {
+		font-size: 9px;
+		letter-spacing: 0.06em;
+	}
+	.w-bulb {
+		fill: #fff6b0;
+		animation: bulb 1.1s steps(1) infinite;
+		animation-delay: calc(var(--i) * -0.12s);
+	}
+	/* ---------- buy bonus ---------- */
+	.buy {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		margin-top: 8px;
+		padding-top: 8px;
+		border-top: 1px dashed rgb(255 201 40 / 0.4);
+	}
+	.buy-label {
+		color: #ffd23a;
+		font-size: 11px;
+		font-weight: 900;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+	}
+	.buy-list {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
+		width: 100%;
+	}
+	.buy-btn {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		min-height: 48px;
+		padding: 4px 6px;
+		border-radius: 10px;
+		background: #0c0201;
+		box-shadow: inset 0 0 0 2px #5a1a0a;
+		color: #ffb27a;
+		font-size: 11px;
+		line-height: 1.15;
+	}
+	.buy-btn b {
+		color: #ffd23a;
+		font-size: 11.5px;
+		overflow-wrap: anywhere;
+	}
+	.buy-btn:not(:disabled):hover {
+		box-shadow: inset 0 0 0 2px #ffc928;
+	}
+	.buy-btn:disabled {
+		opacity: 0.45;
+	}
+	.buy-btn :global(.slot-sym) {
+		flex: none;
+	}
+	.buy-ask {
+		flex: 1 1 14em;
+		color: #fff6b0;
+		font-size: 13px;
+		font-weight: 700;
+	}
+	.buy-yes,
+	.buy-no {
+		min-height: 44px;
+		padding: 0 16px;
+		border-radius: 999px;
 		font-size: 13px;
 		font-weight: 900;
 		letter-spacing: 0.1em;
-		white-space: nowrap;
-		pointer-events: none;
+		text-transform: uppercase;
+	}
+	.buy-yes {
+		border: 2px solid #ffe9a0;
+		background: #e2261f;
+		color: #fff;
+	}
+	.buy-yes:disabled {
+		opacity: 0.5;
+	}
+	.buy-no {
+		border: 2px solid #ffc928;
+		background: #3d0508;
+		color: #ffd23a;
+	}
+	@container (max-width: 420px) {
+		.buy-btn :global(.slot-sym) {
+			display: none;
+		}
 	}
 	.celebrate {
 		position: absolute;
@@ -743,7 +1428,12 @@
 	@media (prefers-reduced-motion: reduce) {
 		.bulbs span,
 		.cell.win,
-		.rain {
+		.rain,
+		.w-bulb,
+		.pick.opened,
+		.bonus-screen,
+		.bonus-result,
+		.fs-more {
 			animation: none;
 		}
 		.rain {

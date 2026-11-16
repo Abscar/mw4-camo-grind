@@ -8,6 +8,17 @@
 	let { symbol, size = 56 }: { symbol: SlotSymbol; size?: number } = $props();
 	const uid = $props.id();
 	const O = '#2a1408';
+	/** the bonus wheel symbol's 8 slices (radius 21 round 32,33), red / gold / purple / gold … */
+	const WEDGES = Array.from({ length: 8 }, (_, i) => {
+		const a0 = ((i * 45 - 22.5) * Math.PI) / 180;
+		const a1 = ((i * 45 + 22.5) * Math.PI) / 180;
+		const p = (a: number) => `${(32 + 21 * Math.sin(a)).toFixed(2)} ${(33 - 21 * Math.cos(a)).toFixed(2)}`;
+		return { d: `M32 33 L${p(a0)} A21 21 0 0 1 ${p(a1)} Z`, fill: ['#e2261f', '#ffc928', '#7a3fd0', '#ffc928'][i % 4] };
+	});
+	const BULBS = Array.from({ length: 12 }, (_, i) => {
+		const a = (i * 30 * Math.PI) / 180;
+		return { x: +(32 + 24.5 * Math.sin(a)).toFixed(2), y: +(33 - 24.5 * Math.cos(a)).toFixed(2) };
+	});
 </script>
 
 <svg class="slot-sym" data-sym={symbol} viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
@@ -93,6 +104,24 @@
 		<rect x="16" y="36" width="32" height="14" rx="3" fill="#fff6f0" stroke={O} stroke-width="2.2" />
 		<text x="32" y="46.5" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="9.5" fill="#e2261f" letter-spacing="0.6">FREE</text>
 		<path d="M54 10 q3 5 0 7 q-3 -2 0 -7 Z M9 14 q2.5 4 0 6 q-2.5 -2 0 -6 Z" fill="#e2261f" stroke={O} stroke-width="1.2" />
+	{:else if symbol === 'box'}
+		<!-- the BONUS box: a red takeaway burger box, lid ajar with burger peeking out, a gold BONUS band -->
+		<path d="M10 28 Q11 10 32 9 Q53 10 54 28 Z" fill="#e2261f" stroke={O} stroke-width="3" stroke-linejoin="round" />
+		<path d="M18 20 Q32 12 46 20" fill="none" stroke="#ff8a7a" stroke-width="2.6" stroke-linecap="round" />
+		<path d="M12 29 Q32 24 52 29 L52 32 L12 32 Z" fill="url(#{uid}-bun)" stroke={O} stroke-width="2" stroke-linejoin="round" />
+		<path d="M11 33 Q16 30 21 34 Q27 30 32 34 Q37 30 43 34 Q48 30 53 33" fill="none" stroke="#4fb23a" stroke-width="2.6" stroke-linecap="round" />
+		<path d="M7 34 L57 34 L53 57 Q52.5 59 50.5 59 L13.5 59 Q11.5 59 11 57 Z" fill="#e2261f" stroke={O} stroke-width="3" stroke-linejoin="round" />
+		<rect x="9" y="39" width="46" height="13" rx="3" fill="url(#{uid}-gold)" stroke={O} stroke-width="2.4" />
+		<text x="32" y="49.4" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="10.5" fill="#b3141b" letter-spacing="0.8">BONUS</text>
+		<path d="M56 6 l1.4 3.6 l3.6 1.4 l-3.6 1.4 l-1.4 3.6 l-1.4 -3.6 l-3.6 -1.4 l3.6 -1.4 Z M7 8 l1 2.4 l2.4 1 l-2.4 1 l-1 2.4 l-1 -2.4 l-2.4 -1 l2.4 -1 Z" fill="#fff6b0" stroke="#b86e00" stroke-width="0.8" />
+	{:else if symbol === 'wheel'}
+		<!-- the bonus wheel: coloured slices in a gold rim with bulbs, a pointer on top -->
+		<circle cx="32" cy="33" r="27" fill="url(#{uid}-gold)" stroke={O} stroke-width="3" />
+		{#each WEDGES as w, i (i)}<path d={w.d} fill={w.fill} stroke={O} stroke-width="1.2" />{/each}
+		{#each BULBS as b, i (i)}<circle cx={b.x} cy={b.y} r="1.5" fill={i % 2 ? '#fff6b0' : '#ffffff'} stroke="#b86e00" stroke-width="0.6" />{/each}
+		<circle cx="32" cy="33" r="6.5" fill="url(#{uid}-gold)" stroke={O} stroke-width="2.2" />
+		<path d="M28.6 31.4 Q32 28 35.4 31.4" fill="none" stroke="#fff6d0" stroke-width="1.4" stroke-linecap="round" />
+		<path d="M26 1.5 L38 1.5 L32 12 Z" fill="#e2261f" stroke={O} stroke-width="2.4" stroke-linejoin="round" />
 	{/if}
 </svg>
 
