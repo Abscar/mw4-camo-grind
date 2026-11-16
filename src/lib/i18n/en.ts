@@ -980,7 +980,6 @@ export const en = {
 			shuffle: 'New shoe shuffled',
 			handLabel: (who: string, cards: string, total: string) => `${who}: ${cards} (${total})`,
 			hidden: 'face-down card',
-			how: 'Six decks. Get closer to 21 than the dealer without going over. Picture cards count 10, an ace 1 or 11. Blackjack (an ace and a 10 as your first two cards) pays 3 to 2. The dealer draws to 17 and stands on a soft 17. Double: one more card and your bet doubled.',
 			/** boosts + side bets (2026-11-16) */
 			streak: (n: number) => `🔥 ${n} in a row`,
 			streakNone: 'Win 3 in a row for a streak boost',
@@ -1002,7 +1001,44 @@ export const en = {
 			sideWin: (name: string, kind: string, n: number) => `${name}: ${kind}! +${n.toLocaleString('en-US')} 🍔`,
 			sideLose: (name: string, n: number) => `${name}: no luck −${n.toLocaleString('en-US')} 🍔`,
 			boostsHow: 'Free boosts on a won hand (no extra bet): a pair in your first two cards ×1.1, a colour pair ×1.2, a perfect pair (same suit) ×1.5; with the dealer’s up card a straight ×1.2, three of a kind ×1.5, a straight flush ×2, suited trips ×4 (the best one counts). Wins in a row add more: the 3rd ×1.05, the 4th ×1.1, the 5th and on ×1.2. A push keeps the streak, a loss ends it.',
-			sidesHow: 'Side bets, like a real table: each costs a chip the size of your bet and is settled on the deal. Perfect Pairs (your first two cards): pair 6×, colour pair 12×, perfect pair 25×. 21+3 (your two cards and the dealer’s up card): flush 5×, straight 10×, three of a kind 30×, straight flush 40×, suited trips 100×. The house keeps a few percent of side bets in the long run.'
+			sidesHow: 'Side bets, like a real table: each costs a chip the size of your bet and is settled on the deal. Perfect Pairs (your first two cards): pair 6×, colour pair 12×, perfect pair 25×. 21+3 (your two cards and the dealer’s up card): flush 5×, straight 10×, three of a kind 30×, straight flush 40×, suited trips 100×. The house keeps a few percent of side bets in the long run.',
+			sideOn: (name: string) => `${name} side bet`,
+			how: 'Six decks, shuffled for every hand. Get closer to 21 than the dealer without going over. Picture cards count 10, an ace 1 or 11. Blackjack (an ace and a 10 as your first two cards) pays 3 to 2. The dealer draws to 17 and stands on a soft 17. Double: one more card and your bet doubled. It’s one table for the whole squad: everyone who opens Blackjack sits down (5 seats) and sees the others’ cards. Everyone plays their own hand against the same dealer at the same time. With friends at the table, bets stay open for 10 seconds after the first one (or until everyone’s in, or someone presses Deal now). You have 20 seconds per move, then your hand stands by itself.',
+			/** The shared table (2026-11-16, the user: "see when others play at the blackjack table, and several can play at once"). */
+			atTable: (n: number) => `${n} at the table`,
+			seatsLabel: 'Players at the table',
+			alone: 'You’re alone at the table. Friends who open Blackjack sit down here and play the same hands against the dealer.',
+			otherDevice: 'You’re at the table on another device, so you’re watching here.',
+			full: 'All 5 seats are taken, so you’re watching.',
+			trouble: 'Can’t reach the table right now. Trying again…',
+			openHand: 'Open a hand',
+			join: 'Join',
+			dealNow: 'Deal now',
+			betsClose: (s: number) => `Bets close in ${s} s`,
+			betsCloseJoin: (who: string, s: number) => `${who} opened a hand: join within ${s} s`,
+			waitingOthers: 'Waiting for the others…',
+			inProgress: 'A hand is being played. Bet on the next one.',
+			pause: 'Next hand in a moment…',
+			dealerTurn: 'Dealer’s turn…',
+			yourMove: (s: number) => `Your move · ${s} s`,
+			lastHand: (result: string, net: string) => `Your last hand: ${result} ${net}`,
+			betChip: (n: number) => `Bet ${n.toLocaleString('en-US')} burgers`,
+			failed: 'That didn’t go through: the table moved on or the connection dropped. Try again.',
+			seatStatus: {
+				waiting: 'Sitting out',
+				betting: 'Bet in',
+				playing: (s: number) => `Thinking… ${s} s`,
+				late: 'Time’s up',
+				stood: 'Stands',
+				bust: 'Bust',
+				blackjack: 'Blackjack!',
+				twentyOne: '21',
+				doubled: 'Doubled',
+				timeout: 'Too slow: stands',
+				away: 'Left the table'
+			},
+			othersResult: { blackjack: 'Blackjack!', win: 'Wins', dealerBust: 'Wins', push: 'Push', lose: 'Loses', bust: 'Bust' },
+			satEvent: 'sat down at the blackjack table: pull up a chair 🃏'
 		}
 	},
 	/** The Squad tab (SquadSection; squad.svelte.ts): friends' grind side by side, Online / Offline (2026-11-14). */

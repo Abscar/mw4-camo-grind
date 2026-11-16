@@ -23,8 +23,13 @@
 	import CasinoAdmin from './CasinoAdmin.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
+	import { bjTable } from '#lib/bjTable.svelte.ts';
 
 	let { onSquad }: { onSquad?: () => void } = $props();
+	/** The blackjack table's "n at the table" on its button (read now and then while this is on screen). */
+	let casinoEl = $state<HTMLElement>();
+	$effect(() => (casinoEl && squad.on ? bjTable.lobby(casinoEl) : undefined));
+	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
 	const GAMES: Game[] = ['slots', 'roulette', 'blackjack', 'bank'];
@@ -76,7 +81,7 @@
 	const signed = (n: number) => (n > 0 ? `+${n.toLocaleString('en-US')}` : n < 0 ? `−${(-n).toLocaleString('en-US')}` : '±0');
 </script>
 
-<section class="class-card meta-list casino overflow-hidden rounded-card bg-panel shadow-card" style:--c="#ffc928" aria-labelledby="casino-h">
+<section bind:this={casinoEl} class="class-card meta-list casino overflow-hidden rounded-card bg-panel shadow-card" style:--c="#ffc928" aria-labelledby="casino-h">
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-4 pb-3 sm:px-5">
 		<!-- at least 13rem, so on a phone the burgers pill goes to its own line instead of squeezing the names -->
 		<div class="flex min-w-[13rem] flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -110,6 +115,9 @@
 					<button type="button" class="casino-game" data-game={g} aria-pressed={game === g} onclick={() => pick(g)}>
 						<CasinoTabArt kind={g} />
 						<span class="casino-game-name font-head">{c.games[g]}</span>
+						{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
+								><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span
+							>{/if}
 					</button>
 				{/each}
 			</div>
@@ -326,6 +334,24 @@
 		.casino-game[aria-pressed='true'] {
 			transform: none;
 		}
+	}
+	/* people at the blackjack table: a green "live" count in the corner of its tile */
+	.casino-live {
+		position: absolute;
+		top: 6px;
+		right: 6px;
+		display: inline-grid;
+		place-items: center;
+		min-width: 22px;
+		height: 22px;
+		padding: 0 6px;
+		border-radius: 999px;
+		background: #1f9a45;
+		box-shadow: 0 0 0 1.5px #7dff6a, 0 0 8px rgb(125 255 106 / 0.6);
+		color: #fff;
+		font-size: 12px;
+		font-weight: 900;
+		line-height: 1;
 	}
 	.casino-row.mine {
 		border-color: var(--t-accent);

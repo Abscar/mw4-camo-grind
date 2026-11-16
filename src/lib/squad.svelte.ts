@@ -183,14 +183,14 @@ export async function peekSquad(code: string): Promise<Peek> {
 	}
 }
 
-type Outcome = 'ok' | 'offline' | 'error' | 'refused' | 'gone';
+export type Outcome = 'ok' | 'offline' | 'error' | 'refused' | 'gone';
 
 /**
- * One document on the sync service (the squad, or its radio): read it, or change it with
+ * One document on the sync service (the squad, its radio, the blackjack table): read it, or change it with
  * `change(latest) → next` (null = refuse). A refused write (someone else wrote first) is redone on
  * their newer copy; one network step at a time.
  */
-class Channel<T> {
+export class Channel<T> {
 	code: string | null = null;
 	rev = 0;
 	doc = $state<T | null>(null);
@@ -363,6 +363,11 @@ class Squad {
 
 	get radio(): RadioDoc | null {
 		return this.#radio.doc;
+	}
+
+	/** This device's id (BurgiCasino's tally is kept per device; the blackjack table books by it). */
+	get device(): string {
+		return this.#device;
 	}
 
 	/** Radio messages from the others since you last read it. */
