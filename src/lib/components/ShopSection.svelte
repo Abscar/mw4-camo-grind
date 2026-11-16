@@ -2,7 +2,8 @@
 	BurgiShop (shop.ts; 2026-11-16, the user's ask: "a shop where you can buy cosmetics with your burgers,
 	that you can then equip on your operator"). In the BurgiCasino tab. Your operator at the top wearing
 	what you have on (tap an item's picture to try it on first), then the items of one kind: auras,
-	effects, pins, name styles, titles. Buy with burgers (worn at once), wear or take off what you own.
+	effects, pins, mouth (the Golden Holk, drawn by the operator's own emblem), name styles, titles. Buy with
+	burgers (worn at once), wear or take off what you own.
 	What you wear shows on your operator in the header's squad frame (OperatorTag + OpGear).
 -->
 <script lang="ts">
@@ -82,7 +83,7 @@
 
 {#snippet face(l: Partial<Record<ShopSlot, ShopItem>>, size: number, pin: number)}
 	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} {pin}>
-		<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} />
+		<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} mouth={l.mouth?.id} />
 	</OpGear>
 {/snippet}
 
@@ -148,6 +149,9 @@
 						<span class="og-title" data-rarity={it.rarity}>{it.text}</span>
 					{:else if it.slot === 'badge'}
 						<ShopPin id={it.id} size={40} />
+					{:else if it.slot === 'mouth'}
+						<!-- bigger, so the thing in the mouth reads -->
+						{@render face({ mouth: it }, 64, 18)}
 					{:else}
 						{@render face({ [it.slot]: it }, 46, 18)}
 					{/if}

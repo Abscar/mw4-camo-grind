@@ -795,7 +795,7 @@ export const en = {
 		noOp: 'You haven’t picked an operator from the header (Squad tab → Edit), so your look only shows here and on your squad card.',
 		preview: 'Your operator',
 		tryOn: 'Trying on',
-		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', name: 'Name styles', title: 'Titles', pranks: '😈 Pranks' },
+		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', mouth: 'Mouth', name: 'Name styles', title: 'Titles', pranks: '😈 Pranks' },
 		slotsLabel: 'Kind',
 		rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
 		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} 🍔`,

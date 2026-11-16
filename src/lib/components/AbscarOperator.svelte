@@ -11,16 +11,19 @@
 	let {
 		variant,
 		smoke = 0.9,
+		mouth = null,
 		class: cls = ''
 	}: {
 		variant: OperatorVariant;
 		/** size of the smoke column: 0.9 = the header's full one, ~0.45 = a small one that stays round the head */
 		smoke?: number;
+		/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' turns his holk gold */
+		mouth?: string | null;
 		class?: string;
 	} = $props();
 
 	const uid = $props.id();
-	const markup = $derived(operatorMarkup(variant, uid, smoke));
+	const markup = $derived(operatorMarkup(variant, uid, smoke, mouth === 'mouth-goldholk'));
 </script>
 
 <svg viewBox="0 0 64 64" class="abscar-op overflow-visible {cls}" aria-hidden="true" focusable="false">

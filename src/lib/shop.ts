@@ -2,8 +2,8 @@
  * BurgiShop (2026-11-16, the user's ask: "a shop where you can buy cosmetics with your burgers, that you
  * can then equip on your operator"). Pretend burgers from the squad's burger bank (squad-fun.ts), never
  * money. What you buy is yours to keep; one item per slot is worn on your header operator (OperatorTag,
- * OpGear.svelte): an aura behind the emblem, an effect around it, a pin on it, a style for the callsign
- * and a title under it.
+ * OpGear.svelte): an aura behind the emblem, an effect around it, a pin on it, something in its mouth
+ * (drawn by the emblem itself), a style for the callsign and a title under it.
  *
  * Stored as member field `shop` (squad-codec.ts): what you own with the price paid (so a later price
  * change never moves anyone's balance), what's worn, and when that last changed. Spending goes to the
@@ -14,7 +14,7 @@
  * squad-codec.ts (which imports this file).
  */
 
-export const SLOTS = ['aura', 'effect', 'badge', 'name', 'title'] as const;
+export const SLOTS = ['aura', 'effect', 'badge', 'mouth', 'name', 'title'] as const;
 export type ShopSlot = (typeof SLOTS)[number];
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -51,7 +51,11 @@ export const SHOP_ITEMS: ShopItem[] = [
 	item('pin-7s', 'badge', 'Lucky 7s', 350, 'rare'),
 	item('pin-crown', 'badge', 'Crown', 1000, 'epic'),
 	item('pin-diamond', 'badge', 'Diamond', 2000, 'epic'),
-	item('pin-holk', 'badge', 'Golden Holk', 2500, 'legendary'),
+	// renamed from "Golden Holk" (2026-11-16) when the real one went in the mouth; same id, so owners keep it
+	item('pin-holk', 'badge', 'Holk Pin', 2500, 'legendary'),
+	// in the mouth (2026-11-16, the user: "golden holk in the shop for 2500 burgers", then picked "a gold holk
+	// in the mouth"): drawn by each operator's own emblem at its mouth (`mouth` prop; SquadAvatar passes it on)
+	item('mouth-goldholk', 'mouth', 'Golden Holk', 2500, 'legendary'),
 	// name styles: how the callsign is written
 	item('name-gold', 'name', 'Gold Letters', 500, 'rare'),
 	item('name-chrome', 'name', 'Chrome', 700, 'rare'),

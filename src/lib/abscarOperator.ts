@@ -85,24 +85,49 @@ const MOUTH: [number, number] = [f(TX + S * 40), f(TY + S * 40.6)]; // the holk'
 /**
  * A cone joint from the narrow filter tip P to the wide burning end Q. Exported for Da Jeeven's emblem
  * (DaJeevenEmblem.svelte, "a big smoking thing in his mouth like Abscar"); needs `${u}-ember` in defs.
+ * `gold` = BurgiShop's Golden Holk (shop.ts `mouth-goldholk`): polished gold paper with a bright band, a dark
+ * crutch with gold lines, a soft gold halo and two twinkling sparkles (`holk-halo` / `holk-spark` in
+ * grind.css). Its gradient and halo blur come with it (ids `${u}-hg` / `${u}-hglow`), so callers only need
+ * the ember, as before.
  */
-export function holk(u: string, px: number, py: number, qx: number, qy: number, w1 = 2.2, w2 = 7, glowR?: number): string {
+export function holk(u: string, px: number, py: number, qx: number, qy: number, w1 = 2.2, w2 = 7, glowR?: number, gold = false): string {
 	const dx = qx - px, dy = qy - py, L = Math.hypot(dx, dy);
 	const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
 	const a = f((Math.atan2(dy, dx) * 180) / Math.PI);
-	const pt = (t: number, off: number) => {
+	const at = (t: number, off: number): [number, number] => {
 		const w = w1 + (w2 - w1) * t;
-		return `${f(px + ux * L * t + (nx * off * w) / 2)} ${f(py + uy * L * t + (ny * off * w) / 2)}`;
+		return [f(px + ux * L * t + (nx * off * w) / 2), f(py + uy * L * t + (ny * off * w) / 2)];
 	};
+	const pt = (t: number, off: number) => at(t, off).join(' ');
 	const ex = f(qx + ux * 0.7), ey = f(qy + uy * 0.7);
 	const ashR = f(Math.max(1.3, w2 * 0.22));
-	return `<path d="M${pt(0, 1)} L${pt(1, 1)} L${pt(1, -1)} L${pt(0, -1)} Z" fill="#f3efe4" stroke="#b9b09a" stroke-width="0.45" stroke-linejoin="round"/>
+	const body = `M${pt(0, 1)} L${pt(1, 1)} L${pt(1, -1)} L${pt(0, -1)} Z`;
+	const end = `<ellipse cx="${f(qx)}" cy="${f(qy)}" rx="${ashR}" ry="${f(w2 / 2)}" transform="rotate(${a} ${f(qx)} ${f(qy)})" fill="#7a7672"/>
+	<circle class="op-ember-glow" cx="${ex}" cy="${ey}" r="${f(glowR ?? w2 * 0.95)}" fill="url(#${u}-ember)"/>
+	<ellipse cx="${ex}" cy="${ey}" rx="${f(ashR * 0.62)}" ry="${f(w2 * 0.37)}" transform="rotate(${a} ${ex} ${ey})" fill="#ff8a1a"/>`;
+	if (!gold) {
+		return `<path d="${body}" fill="#f3efe4" stroke="#b9b09a" stroke-width="0.45" stroke-linejoin="round"/>
 	<path d="M${pt(0, 1)} L${pt(0.2, 1)} L${pt(0.2, -1)} L${pt(0, -1)} Z" fill="#cdb98f"/>
 	<path d="M${pt(0.08, 0.85)} L${pt(0.08, -0.85)} M${pt(0.14, 0.85)} L${pt(0.14, -0.85)}" stroke="#a8935f" stroke-width="0.35"/>
 	<path d="M${pt(0.3, 0.45)} L${pt(0.9, 0.45)} M${pt(0.38, -0.4)} L${pt(0.95, -0.4)}" stroke="#d6cfbb" stroke-width="0.5" stroke-linecap="round"/>
-	<ellipse cx="${f(qx)}" cy="${f(qy)}" rx="${ashR}" ry="${f(w2 / 2)}" transform="rotate(${a} ${f(qx)} ${f(qy)})" fill="#7a7672"/>
-	<circle class="op-ember-glow" cx="${ex}" cy="${ey}" r="${f(glowR ?? w2 * 0.95)}" fill="url(#${u}-ember)"/>
-	<ellipse cx="${ex}" cy="${ey}" rx="${f(ashR * 0.62)}" ry="${f(w2 * 0.37)}" transform="rotate(${a} ${ex} ${ey})" fill="#ff8a1a"/>`;
+	${end}`;
+	}
+	// the gold runs across the cone (edge → bright line → edge), so it reads as a round, polished roll
+	const [g1x, g1y] = at(0.55, 1), [g2x, g2y] = at(0.55, -1);
+	const spark = (t: number, off: number, r: number, delay: number) => {
+		const [cx, cy] = at(t, off), s = f(r * 0.28);
+		return `<path class="holk-spark" style="animation-delay:-${delay}s" d="M${cx} ${f(cy - r)} L${f(cx + s)} ${f(cy - s)} L${f(cx + r)} ${cy} L${f(cx + s)} ${f(cy + s)} L${cx} ${f(cy + r)} L${f(cx - s)} ${f(cy + s)} L${f(cx - r)} ${cy} L${f(cx - s)} ${f(cy - s)} Z" fill="#fffbe6"/>`;
+	};
+	return `<defs><linearGradient id="${u}-hg" gradientUnits="userSpaceOnUse" x1="${g1x}" y1="${g1y}" x2="${g2x}" y2="${g2y}"><stop offset="0" stop-color="#6b4306"/><stop offset="0.2" stop-color="#d9a52e"/><stop offset="0.4" stop-color="#fff4c0"/><stop offset="0.54" stop-color="#f6cf5a"/><stop offset="0.8" stop-color="#b8810f"/><stop offset="1" stop-color="#5a3804"/></linearGradient>
+	<filter id="${u}-hglow" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>
+	<path class="holk-halo" d="${body}" fill="#ffd23a" filter="url(#${u}-hglow)"/>
+	<path d="${body}" fill="url(#${u}-hg)" stroke="#5a3a06" stroke-width="0.5" stroke-linejoin="round"/>
+	<path d="M${pt(0, 1)} L${pt(0.2, 1)} L${pt(0.2, -1)} L${pt(0, -1)} Z" fill="#2e1d05"/>
+	<path d="M${pt(0.07, 0.85)} L${pt(0.07, -0.85)} M${pt(0.13, 0.85)} L${pt(0.13, -0.85)}" stroke="#e9bd4a" stroke-width="0.35"/>
+	<path d="M${pt(0.215, 1)} L${pt(0.215, -1)}" stroke="#fff1b0" stroke-width="0.7"/>
+	<path d="M${pt(0.32, 0.5)} L${pt(0.9, 0.5)} M${pt(0.4, -0.42)} L${pt(0.95, -0.42)}" stroke="#fff6d0" stroke-opacity="0.75" stroke-width="0.45" stroke-linecap="round"/>
+	${end}
+	${spark(0.5, 0.3, Math.max(1.3, w2 * 0.22), 0)}${spark(0.78, -0.25, Math.max(1, w2 * 0.17), 1.1)}`;
 }
 
 /* the old emblem's thick smoke (13 puffs + 6 wisps), moved to (x, y) and scaled by k
@@ -278,7 +303,7 @@ function mossPattern(u: string): string {
 }
 
 /** The moss ghillie poncho: hood widening out over the shoulders, the face + chest open in front. */
-function ghillie(u: string): string {
+function ghillie(u: string, gold = false): string {
 	const PONCHO = `${OUTER} L65 67 L-1 67 Z ${INNER} Z`;
 	const r = seeded(13);
 	/* loose jute strands poking out of the outline */
@@ -314,16 +339,16 @@ function ghillie(u: string): string {
 	</g>
 	<g fill="none" stroke-width="1.9" stroke-dasharray="0.9 1.1" stroke-linecap="round"><path d="${INNER}" stroke="#4c8a2a"/><path d="${OUTER}" stroke="#2a5219"/></g>
 	${hang}${over}${buds}${tuftMarkup}
-	${holk(u, ...MOUTH, 57.4, 34)}`;
+	${holk(u, ...MOUTH, 57.4, 34, 2.2, 7, undefined, gold)}`;
 }
 
 /* ---------- the other three ---------- */
 
 /** Draft 3: a fist comes up from below, the thumb is a lighter and its flame licks the holk's end. */
-function lighter(u: string): string {
+function lighter(u: string, gold = false): string {
 	const B = `url(#${u}-bronze)`;
 	return `${neck(u)}${shoulders(u)}${headAt(u)}
-	${holk(u, ...MOUTH, 57.4, 34, 2.2, 7, 9)}
+	${holk(u, ...MOUTH, 57.4, 34, 2.2, 7, 9, gold)}
 	<g transform="translate(1.9 2.2)">
 	${forearm(u, 58.6, 52, 61, 70)}
 	${fist(u, 50.4, 43.4)}
@@ -338,7 +363,7 @@ function lighter(u: string): string {
 }
 
 /** Draft 8: helmet with flipped-up quad night vision (green lenses), headset + mic, vest with pouches. */
-function nvg(u: string): string {
+function nvg(u: string, gold = false): string {
 	const tube = (x: number, rot: number) => `<g transform="rotate(${rot} ${f(x + 1.8)} 3)"><rect x="${x}" y="-6.4" width="3.6" height="9" rx="1.2" fill="#22271f" stroke="${OUT}" stroke-width="0.6"/>
 		<circle cx="${f(x + 1.8)}" cy="-5.6" r="1.75" fill="#0b120b" stroke="#596152" stroke-width="0.5"/>
 		<circle class="aop-nvg" cx="${f(x + 1.8)}" cy="-5.6" r="1.05" fill="#7dff9a" filter="url(#${u}-glow)"/></g>`;
@@ -355,11 +380,11 @@ function nvg(u: string): string {
 	${tube(22.4, -12)}${tube(26.8, -4)}${tube(33.6, 4)}${tube(38, 12)}
 	<path d="M17.6 25 C18.4 29.4 21.4 31.2 25 30.8" fill="none" stroke="#15180f" stroke-width="1.2" stroke-linecap="round"/>
 	<rect x="24.2" y="29.4" width="3.4" height="2.5" rx="1.2" fill="#15180f" stroke="#3d4635" stroke-width="0.4"/>
-	${holk(u, ...MOUTH, 57.4, 34)}`;
+	${holk(u, ...MOUTH, 57.4, 34, 2.2, 7, undefined, gold)}`;
 }
 
 /** Draft 10: a sniper rifle stood up on his left shoulder, his fist round the grip. */
-function sniper(u: string): string {
+function sniper(u: string, gold = false): string {
 	const B = `url(#${u}-bronze)`;
 	/* drawn lying along +x (stock left, muzzle right), then stood up */
 	const rifle = `<g transform="translate(15.4 60.6) rotate(-106) scale(0.9)">
@@ -386,20 +411,21 @@ function sniper(u: string): string {
 	<rect x="8.4" y="48.4" width="5" height="10" rx="2.2" fill="url(#${u}-bronze-dark)" stroke="${OUT}" stroke-width="0.6"/>
 	${[49.8, 52, 54.2, 56.4].map((y) => cap(10.6, y, 18.4, y - 0.6, 2.3, B)).join('')}
 	${cap(10.8, 48.4, 16, 46.8, 2.4, B)}
-	${holk(u, ...MOUTH, 57.4, 34)}`;
+	${holk(u, ...MOUTH, 57.4, 34, 2.2, 7, undefined, gold)}`;
 }
 
-const BODIES: Record<OperatorVariant, (u: string) => string> = { ghillie, lighter, nvg, sniper };
+const BODIES: Record<OperatorVariant, (u: string, gold?: boolean) => string> = { ghillie, lighter, nvg, sniper };
 /** Where the smoke leaves the holk's burning end, per figure. */
 const SMOKE_AT: Record<OperatorVariant, [number, number]> = { ghillie: [57.5, 31.2], lighter: [57.8, 31.4], nvg: [57.5, 31.2], sniper: [57.5, 31.2] };
 
 /**
  * The inner markup of one figure, for an <svg viewBox="0 0 64 64"> with overflow visible.
  * `uid` keeps the gradient / clip ids unique per figure; `smoke` scales the smoke column (0 = none,
- * 0.9 = the header's full column, ~0.45 = a small one that stays round the head).
+ * 0.9 = the header's full column, ~0.45 = a small one that stays round the head). `goldHolk` = BurgiShop's
+ * Golden Holk is worn: the same holk, in gold.
  */
-export function operatorMarkup(variant: OperatorVariant, uid: string, smokeScale = 0.9): string {
+export function operatorMarkup(variant: OperatorVariant, uid: string, smokeScale = 0.9, goldHolk = false): string {
 	const u = `aop-${uid}`;
 	const [sx, sy] = SMOKE_AT[variant];
-	return `${defs(u, variant)}<g clip-path="url(#${u}-box)">${BODIES[variant](u)}</g>${smoke(u, sx, sy, smokeScale)}`;
+	return `${defs(u, variant)}<g clip-path="url(#${u}-box)">${BODIES[variant](u, goldHolk)}</g>${smoke(u, sx, sy, smokeScale)}`;
 }

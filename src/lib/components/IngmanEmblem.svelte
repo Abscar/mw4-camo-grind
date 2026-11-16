@@ -13,7 +13,11 @@
 	Our own cartoon, decoration only (aria-hidden; the callsign next to it is the text). No skin names.
 -->
 <script lang="ts">
-	import { smoke } from '#lib/abscarOperator.ts';
+	import { holk, smoke } from '#lib/abscarOperator.ts';
+
+	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' = a gold holk in place of his pipe */
+	let { mouth = null }: { mouth?: string | null } = $props();
+	const gold = $derived(mouth === 'mouth-goldholk');
 
 	const uid = $props.id();
 	const u = `ig-${uid}`;
@@ -43,7 +47,10 @@
 		[6.5, 62.8, 1.1]
 	];
 	const BULLETS = [26.2, 28.1, 30, 31.9, 33.8];
-	const SMOKE = smoke(u, 44.6, 30.6, 0.6);
+	const PIPE_SMOKE = smoke(u, 44.6, 30.6, 0.6);
+	/** the Golden Holk at the right of his mouth, under the moustache; smoke from its burning end */
+	const GOLD_HOLK = holk(u, 35.2, 33.9, 50.4, 38.4, 2.2, 6.6, undefined, true);
+	const HOLK_SMOKE = smoke(u, 50.6, 35.8, 0.6);
 </script>
 
 {#snippet leaf(x: number, y: number, s: number, fill: string)}
@@ -79,7 +86,8 @@
 			<stop offset="0" stop-color="#5a616a" /><stop offset=".4" stop-color="#2c3036" /><stop offset="1" stop-color="#111316" />
 		</linearGradient>
 		<clipPath id={id('crown-clip')}><path d={CROWN} /></clipPath>
-		<!-- for the pipe's smoke (abscarOperator.ts) -->
+		<!-- for the pipe's / holk's smoke and the holk's ember (abscarOperator.ts) -->
+		<radialGradient id={id('ember')}><stop offset="0" stop-color="#ff8a1a" stop-opacity="0.95" /><stop offset="1" stop-color="#ff5a00" stop-opacity="0" /></radialGradient>
 		<filter id={id('puff-blur')} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.4" /></filter>
 		<filter id={id('blur')} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" /></filter>
 	</defs>
@@ -155,15 +163,21 @@
 	{/each}
 	<path d="M30.9 25 Q32 24.2 33.1 25" fill="none" stroke="#d6b34a" stroke-width=".55" />
 
-	<!-- the wooden pipe at the right of his mouth, smoke from the bowl -->
-	<path d="M35.4 33.6 C38.4 34.4 40.8 35 42.4 35.2" fill="none" stroke="#3b1f0d" stroke-width="1.7" stroke-linecap="round" />
-	<path d="M35.4 33.6 C38.4 34.4 40.8 35 42.4 35.2" fill="none" stroke="#7a4420" stroke-width=".8" stroke-linecap="round" />
-	<path d="M41.6 30.4 h5 l-.6 5.6 q-1.9 1.4 -3.8 0 Z" fill="#7a4420" stroke="#2a1608" stroke-width=".6" stroke-linejoin="round" />
-	<ellipse cx="44.1" cy="30.5" rx="2.5" ry=".8" fill="#2a1608" />
-	<ellipse class="ig-ember" cx="44.1" cy="30.4" rx="1.5" ry=".45" fill="#ff7a1a" />
+	{#if gold}
+		<!-- BurgiShop's Golden Holk in place of the pipe -->
+		{@html GOLD_HOLK}
+		{@html HOLK_SMOKE}
+	{:else}
+		<!-- the wooden pipe at the right of his mouth, smoke from the bowl -->
+		<path d="M35.4 33.6 C38.4 34.4 40.8 35 42.4 35.2" fill="none" stroke="#3b1f0d" stroke-width="1.7" stroke-linecap="round" />
+		<path d="M35.4 33.6 C38.4 34.4 40.8 35 42.4 35.2" fill="none" stroke="#7a4420" stroke-width=".8" stroke-linecap="round" />
+		<path d="M41.6 30.4 h5 l-.6 5.6 q-1.9 1.4 -3.8 0 Z" fill="#7a4420" stroke="#2a1608" stroke-width=".6" stroke-linejoin="round" />
+		<ellipse cx="44.1" cy="30.5" rx="2.5" ry=".8" fill="#2a1608" />
+		<ellipse class="ig-ember" cx="44.1" cy="30.4" rx="1.5" ry=".45" fill="#ff7a1a" />
 
-	<!-- the pipe smoke rises behind the hat's brim and comes out above it -->
-	{@html SMOKE}
+		<!-- the pipe smoke rises behind the hat's brim and comes out above it -->
+		{@html PIPE_SMOKE}
+	{/if}
 
 	<!-- the wizard hat: wide brim, pointed crown, rainbow band with a green leaf, gold stars -->
 	<path d={BRIM} fill="url(#{id('hat')})" stroke={O} stroke-width="1" stroke-linejoin="round" />

@@ -14,9 +14,18 @@
 	names on the page, only the callsign.
 -->
 <script lang="ts">
+	import { holk, smoke } from '#lib/abscarOperator.ts';
+
+	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' = a gold holk through the balaclava's mouth */
+	let { mouth = null }: { mouth?: string | null } = $props();
+
 	const uid = $props.id(); // ids must be unique per drawing
 	const u = (name: string) => `${uid}-${name}`;
 	const O = '#0f0d0b';
+	/** the Golden Holk: filter tip at his mouth, burning end down to the left past the mic (the beer is on the
+	    right), smoke rising past the ear cup (abscarOperator.ts helpers; ids `${uid}-…`) */
+	const GOLD_HOLK = holk(uid, 29.6, 38.4, 14.6, 47.6, 2.2, 6.8, undefined, true);
+	const HOLK_SMOKE = smoke(uid, 14.2, 45, 0.7);
 
 	/** the goggles: black frame and the lime lens inside it (also the glow and the glint's clip) */
 	const FRAME =
@@ -94,6 +103,10 @@
 			<stop offset="0" stop-color="#c3c8cd" /><stop offset=".6" stop-color="#959ca2" /><stop offset="1" stop-color="#6c7379" />
 		</linearGradient>
 		<clipPath id={u('mug-clip')}><path d={MUG} /></clipPath>
+		<!-- for the Golden Holk's ember and smoke (abscarOperator.ts) -->
+		<radialGradient id={u('ember')}><stop offset="0" stop-color="#ff8a1a" stop-opacity="0.95" /><stop offset="1" stop-color="#ff5a00" stop-opacity="0" /></radialGradient>
+		<filter id={u('puff-blur')} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.4" /></filter>
+		<filter id={u('blur')} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" /></filter>
 	</defs>
 
 	<!-- broad shoulders in a black T-shirt, brown tattooed arms under grey sleeve hems -->
@@ -169,6 +182,12 @@
 	<path d="M14.6 34.4 C15 39.6 19.6 41.6 25.4 40.6" fill="none" stroke="#3d4146" stroke-width=".6" stroke-linecap="round" />
 	<ellipse cx="26.4" cy="40.4" rx="1.9" ry="1.3" fill="#26282c" stroke={O} stroke-width=".6" />
 	<circle class="la-led" cx="49" cy="25.6" r=".8" fill="#a6ff52" filter="url(#{u('led')})" />
+
+	{#if mouth === 'mouth-goldholk'}
+		<!-- BurgiShop's Golden Holk -->
+		{@html GOLD_HOLK}
+		{@html HOLK_SMOKE}
+	{/if}
 
 	<!-- a big cold beer, held up in his grey-gloved fist (lime wristband, tattooed forearm) -->
 	<g class="la-beer">

@@ -10,7 +10,9 @@ const T = Date.UTC(2026, 10, 16, 20);
 
 test('the catalogue: unique ids, every slot stocked, sane prices, titles have words', () => {
 	assert.equal(new Set(SHOP_ITEMS.map((i) => i.id)).size, SHOP_ITEMS.length);
-	for (const slot of SLOTS) assert.ok(SHOP_ITEMS.filter((i) => i.slot === slot).length >= 4, slot);
+	// the mouth slot starts with one thing (the Golden Holk); the others are stocked
+	for (const slot of SLOTS) assert.ok(SHOP_ITEMS.filter((i) => i.slot === slot).length >= (slot === 'mouth' ? 1 : 4), slot);
+	assert.equal(new Set(SHOP_ITEMS.map((i) => i.name)).size, SHOP_ITEMS.length, 'no two items share a name');
 	for (const i of SHOP_ITEMS) {
 		assert.ok(Number.isInteger(i.price) && i.price > 0, i.id);
 		assert.match(i.id, /^[a-z0-9-]{2,24}$/);
@@ -34,6 +36,23 @@ test('buying: needs the burgers, once, and is worn at once', () => {
 	const r2 = buy(r.state, 'aura-fire', 1500, T + 1);
 	assert.deepEqual(r2.state.eq, { aura: 'aura-fire' }, 'a new aura replaces the old one on');
 	assert.equal(shopSpent(r2.state), 1900);
+});
+
+test('the Golden Holk: 2,500 burgers, worn in the mouth next to a pin, survives cleaning and the squad document', () => {
+	const it = ITEM_BY_ID.get('mouth-goldholk');
+	assert.deepEqual({ slot: it.slot, price: it.price, name: it.name, rarity: it.rarity }, { slot: 'mouth', price: 2500, name: 'Golden Holk', rarity: 'legendary' });
+	assert.equal(ITEM_BY_ID.get('pin-holk').name, 'Holk Pin', 'the old pin kept its id, new name');
+	assert.equal(buy(undefined, 'mouth-goldholk', 2499, T).result, 'broke');
+	const pin = buy(undefined, 'pin-holk', 9999, T).state;
+	const s = buy(pin, 'mouth-goldholk', 9999, T + 1).state;
+	assert.deepEqual(s.eq, { badge: 'pin-holk', mouth: 'mouth-goldholk' });
+	assert.equal(shopSpent(s), 5000);
+	assert.deepEqual(cleanShop(JSON.parse(JSON.stringify(s))), s);
+	assert.equal(worn(s).mouth?.id, 'mouth-goldholk');
+	assert.equal(equip(s, 'badge', 'mouth-goldholk', T + 2), null, 'not a pin');
+	const entry = memberEntry({ name: 'Abscar', op: 'abscar' }, { weapons: {}, mastery: {}, lastTickAt: null }, T, false, { shop: s });
+	const doc = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire({ members: { aaaaaaaa1111: entry } }))));
+	assert.deepEqual(doc.members.aaaaaaaa1111.shop.eq, { badge: 'pin-holk', mouth: 'mouth-goldholk' });
 });
 
 test('wearing: only what you own, in its slot; taking off', () => {

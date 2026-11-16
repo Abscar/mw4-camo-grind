@@ -4,6 +4,7 @@
 	Decoration: the name is always written next to it.
 -->
 <script lang="ts">
+	import { holk } from '#lib/abscarOperator.ts';
 	import type { SquadOp } from '#lib/squad-codec.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
@@ -11,7 +12,22 @@
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
 
-	let { name, op, size = 32, emblem = true }: { name: string; op?: SquadOp; size?: number; emblem?: boolean } = $props();
+	let {
+		name,
+		op,
+		size = 32,
+		emblem = true,
+		mouth = null
+	}: {
+		name: string;
+		op?: SquadOp;
+		size?: number;
+		emblem?: boolean;
+		/** BurgiShop's mouth slot (shop.ts): the emblem draws it at its own mouth; on initials it pokes out low right */
+		mouth?: string | null;
+	} = $props();
+	const uid = $props.id();
+	const INITIALS_HOLK = `sqa-${uid}`;
 
 	const initials = $derived(
 		name
@@ -28,17 +44,24 @@
 
 <span class="sq-avatar" style:--size="{size}px" style:--c={colour} aria-hidden="true">
 	{#if emblem && op === 'abscar'}
-		<AbscarOperator variant="ghillie" smoke={0} />
+		<AbscarOperator variant="ghillie" smoke={0} {mouth} />
 	{:else if emblem && op === 'phillestar'}
-		<PhillestarEmblem />
+		<PhillestarEmblem {mouth} />
 	{:else if emblem && op === 'lars'}
-		<LarsAkeEmblem />
+		<LarsAkeEmblem {mouth} />
 	{:else if emblem && op === 'jeeven'}
-		<DaJeevenEmblem />
+		<DaJeevenEmblem {mouth} />
 	{:else if emblem && op === 'ingman'}
-		<IngmanEmblem />
+		<IngmanEmblem {mouth} />
 	{:else}
 		<span class="sq-initials font-head">{initials}</span>
+		{#if mouth === 'mouth-goldholk'}
+			<svg class="sq-mouth" viewBox="0 0 64 64" focusable="false">
+				<defs><radialGradient id="{INITIALS_HOLK}-ember"><stop offset="0" stop-color="#ff8a1a" stop-opacity="0.95" /><stop offset="1" stop-color="#ff5a00" stop-opacity="0" /></radialGradient></defs>
+				<!-- trusted: built from our own constants -->
+				{@html holk(INITIALS_HOLK, 40, 45, 62, 52, 3, 9, undefined, true)}
+			</svg>
+		{/if}
 	{/if}
 </span>
 
@@ -54,6 +77,13 @@
 	.sq-avatar > :global(svg) {
 		width: var(--size);
 		height: var(--size);
+	}
+	/* the Golden Holk over a member's initials (no operator to draw it at a mouth) */
+	.sq-mouth {
+		position: absolute;
+		inset: 0;
+		overflow: visible;
+		pointer-events: none;
 	}
 	.sq-initials {
 		display: grid;

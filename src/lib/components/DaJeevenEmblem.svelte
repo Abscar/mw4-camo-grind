@@ -15,6 +15,9 @@
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
 
+	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' turns his holk gold */
+	let { mouth = null }: { mouth?: string | null } = $props();
+
 	const uid = $props.id(); // ids must be unique per drawing
 	const u = `dj-${uid}`;
 	const id = (name: string) => `${u}-${name}`;
@@ -31,7 +34,7 @@
 	const TEETH_UP = [27.2, 29.1, 31, 32.9, 34.8];
 	const TEETH_DOWN = [27.9, 29.8, 31.7, 33.6, 35.5];
 	/** the big holk: filter tip between his teeth, burning end out to the right; smoke from its end */
-	const HOLK = holk(u, 34, 38.8, 56.5, 45.4, 2.6, 8.4);
+	const HOLK = $derived(holk(u, 34, 38.8, 56.5, 45.4, 2.6, 8.4, undefined, mouth === 'mouth-goldholk'));
 	const SMOKE = smoke(u, 57, 43.6, 0.95);
 </script>
 

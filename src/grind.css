@@ -1089,3 +1089,33 @@ html[data-squadup] .hdr-buddy .buddy {
 		animation: none;
 	}
 }
+
+/* BurgiShop's Golden Holk (2026-11-16; `holk(…, gold)` in abscarOperator.ts, drawn in every operator's mouth):
+   a soft gold halo that breathes and two sparkles that twinkle on the paper. Reduced motion (app.css stops
+   every animation) leaves the halo at rest and both sparkles showing. */
+.holk-halo {
+	opacity: 0.45;
+	animation: holk-halo 2.8s ease-in-out infinite;
+}
+@keyframes holk-halo {
+	50% {
+		opacity: 0.85;
+	}
+}
+.holk-spark {
+	opacity: 0.9;
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: holk-spark 2.4s ease-in-out infinite;
+}
+@keyframes holk-spark {
+	0%,
+	100% {
+		opacity: 0;
+		transform: scale(0.2) rotate(0deg);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.15) rotate(45deg);
+	}
+}

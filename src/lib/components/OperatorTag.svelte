@@ -266,7 +266,7 @@
 		<span class="squad-legend font-hud">{t.operator.squad}</span>
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id} smoked={!!pr.abscar['smoke-bomb']}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" /></OpGear>
+				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id} smoked={!!pr.abscar['smoke-bomb']}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" mouth={gear.abscar.mouth?.id} /></OpGear>
 				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
 			{@render stamp('abscar', t.operator.callsign)}
@@ -276,7 +276,7 @@
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id} smoked={!!pr.phillestar['smoke-bomb']}><PhillestarEmblem /></OpGear>
+				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id} smoked={!!pr.phillestar['smoke-bomb']}><PhillestarEmblem mouth={gear.phillestar.mouth?.id} /></OpGear>
 				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
 			{@render stamp('phillestar', t.operator.mate)}
@@ -286,7 +286,7 @@
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id} smoked={!!pr.lars['smoke-bomb']}><LarsAkeEmblem /></OpGear>
+				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id} smoked={!!pr.lars['smoke-bomb']}><LarsAkeEmblem mouth={gear.lars.mouth?.id} /></OpGear>
 				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
 			{@render stamp('lars', t.operator.lars)}
@@ -296,7 +296,7 @@
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id} smoked={!!pr.jeeven['smoke-bomb']}><DaJeevenEmblem /></OpGear>
+				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id} smoked={!!pr.jeeven['smoke-bomb']}><DaJeevenEmblem mouth={gear.jeeven.mouth?.id} /></OpGear>
 				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
 			{@render stamp('jeeven', t.operator.jeeven)}
@@ -320,7 +320,7 @@
 		<!-- Ingman, the wizard (2026-11-14, the user's friend), with his sign "Jim and Pro player" -->
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id} smoked={!!pr.ingman['smoke-bomb']}><IngmanEmblem /></OpGear>
+				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id} smoked={!!pr.ingman['smoke-bomb']}><IngmanEmblem mouth={gear.ingman.mouth?.id} /></OpGear>
 				{@render callsign(t.operator.ingman, 'ingman')}
 			</div>
 			{@render stamp('ingman', t.operator.ingman)}

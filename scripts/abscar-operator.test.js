@@ -26,6 +26,22 @@ test('operator figures: every id belongs to this figure, and every reference poi
 	}
 });
 
+test('the Golden Holk (BurgiShop): every figure turns its holk gold, ids still scoped, nothing else changes', () => {
+	for (const v of VARIANTS) {
+		const plain = operatorMarkup(v, 'g1');
+		const gold = operatorMarkup(v, 'g1', 0.9, true);
+		assert.doesNotMatch(plain, /holk-spark|aop-g1-hg/, `${v}: no gold unless worn`);
+		assert.match(gold, /url\(#aop-g1-hg\)/, `${v}: gold paper`);
+		assert.equal((gold.match(/holk-spark/g) ?? []).length, 2, `${v}: two sparkles`);
+		assert.doesNotMatch(gold, /NaN|undefined|Infinity/, `${v}: a coordinate went wrong`);
+		assert.ok(gold.length < 38_000, `${v}: ${gold.length} chars`);
+		const ids = [...gold.matchAll(/\sid="([^"]+)"/g)].map((x) => x[1]);
+		assert.equal(new Set(ids).size, ids.length, `${v}: duplicate id`);
+		for (const r of [...gold.matchAll(/url\(#([^)]+)\)/g)].map((x) => x[1])) assert.ok(ids.includes(r), `${v}: #${r} not defined`);
+		assert.equal(gold.replace(/<defs><linearGradient id="aop-g1-hg"[\s\S]*$/, ''), plain.replace(/<path d="M[^"]*" fill="#f3efe4"[\s\S]*$/, ''), `${v}: the drawing before the holk is untouched`);
+	}
+});
+
 test('operator figures: smoke 0 leaves the smoke out, ghillie has its leaves and buds', () => {
 	assert.doesNotMatch(operatorMarkup('lighter', 'a', 0), /op-puff/);
 	assert.match(operatorMarkup('lighter', 'a', 0.45), /op-puff/);

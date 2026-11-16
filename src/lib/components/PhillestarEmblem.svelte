@@ -7,9 +7,18 @@
 	Our own cartoon, decoration only (aria-hidden; the callsign next to it is the text).
 -->
 <script lang="ts">
+	import { holk, smoke } from '#lib/abscarOperator.ts';
+
+	/** BurgiShop's mouth slot (shop.ts): 'mouth-goldholk' = a gold holk in the left corner of his mouth */
+	let { mouth = null }: { mouth?: string | null } = $props();
+
 	const uid = $props.id(); // ids must be unique per drawing
 	const u = (name: string) => `${uid}-${name}`;
 	const O = '#0f0d0b';
+	/** the Golden Holk: filter tip in the left corner of his teeth, burning end out to the left (the burger
+	    is on the right), smoke rising past the ear cup (abscarOperator.ts helpers; ids `${uid}-…`) */
+	const GOLD_HOLK = holk(uid, 25.6, 43.2, 8.4, 47.6, 2.2, 6.8, undefined, true);
+	const HOLK_SMOKE = smoke(uid, 8, 45, 0.7);
 
 	const TEETH = [87.4, 91.8, 96.2, 100.6, 105, 109.4];
 	/** sesame seeds on the top bun: [x, y, angle] */
@@ -56,6 +65,10 @@
 		<filter id={u('steam-blur')} x="-100%" y="-30%" width="300%" height="160%">
 			<feGaussianBlur stdDeviation=".55" />
 		</filter>
+		<!-- for the Golden Holk's ember and smoke (abscarOperator.ts) -->
+		<radialGradient id={u('ember')}><stop offset="0" stop-color="#ff8a1a" stop-opacity="0.95" /><stop offset="1" stop-color="#ff5a00" stop-opacity="0" /></radialGradient>
+		<filter id={u('puff-blur')} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.4" /></filter>
+		<filter id={u('blur')} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" /></filter>
 		<!-- the bite out of the burger's top-left corner -->
 		<mask id={u('bite')} maskUnits="userSpaceOnUse" x="38" y="30" width="30" height="26">
 			<rect x="38" y="30" width="30" height="26" fill="#fff" />
@@ -96,6 +109,12 @@
 		<path d="M134 44 L146 26" stroke={O} stroke-width="2.2" />
 		<circle cx="146" cy="26" r="2.6" fill="#39f3e2" filter="url(#{u('glow')})" />
 	</g>
+
+	{#if mouth === 'mouth-goldholk'}
+		<!-- BurgiShop's Golden Holk -->
+		{@html GOLD_HOLK}
+		{@html HOLK_SMOKE}
+	{/if}
 
 	<!-- the hamburger, held up in the glowing radioactive hand -->
 	<g class="pe-burger">
