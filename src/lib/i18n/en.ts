@@ -876,7 +876,7 @@ export const en = {
 			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
 		},
 		bet: 'Bet',
-		betLabel: (n: number) => `Bet ${n} burgers`,
+		betLabel: (n: number) => `Bet ${n.toLocaleString('en-US')} burgers`,
 		slots: {
 			spin: 'Spin',
 			credits: 'Burgers',

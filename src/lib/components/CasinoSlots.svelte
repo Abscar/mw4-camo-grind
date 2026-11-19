@@ -282,7 +282,8 @@
 		closeLater();
 	}
 	/** A wheel slice's words: burgers at the current bet (short), free spins or the jackpot. */
-	const short = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${+(n / 1000).toFixed(1)}k` : String(n));
+	const short = (n: number) =>
+		n >= 1_000_000 ? `${+(n / 1_000_000).toFixed(1)}M` : n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${+(n / 1000).toFixed(1)}k` : String(n);
 	const sliceLabel = (i: number, b: number) => (WHEEL[i].spins ? s.freeSlice(WHEEL[i].spins!) : short((WHEEL[i].win ?? 0) * b));
 
 	/** The bonuses a spin opened, one after the other; what they won. */
@@ -580,11 +581,11 @@
 		<div class="panel">
 			<div class="led"><span>{s.credits}</span><b class="num">{shown.toLocaleString('en-US')}</b></div>
 			<div class="led bet">
-				<span>{t.casino.bet}</span>
-				<div class="flex items-center gap-1">
-					<button type="button" class="stepper" aria-label="−" disabled={spinning || bet === SLOT_BETS[0]} onclick={() => stepBet(-1)}>−</button>
-					<b class="num" aria-live="polite" aria-label={t.casino.betLabel(bet)}>{bet}</b>
-					<button type="button" class="stepper" aria-label="+" disabled={spinning || bet === SLOT_BETS[SLOT_BETS.length - 1]} onclick={() => stepBet(1)}>+</button>
+				<div class="bet-ctl">
+					<span class="bet-lbl">{t.casino.bet}</span>
+					<button type="button" class="stepper minus" aria-label="−" disabled={spinning || bet === SLOT_BETS[0]} onclick={() => stepBet(-1)}>−</button>
+					<b class="num" aria-live="polite" aria-label={t.casino.betLabel(bet)}>{bet.toLocaleString('en-US')}</b>
+					<button type="button" class="stepper plus" aria-label="+" disabled={spinning || bet === SLOT_BETS[SLOT_BETS.length - 1]} onclick={() => stepBet(1)}>+</button>
 				</div>
 			</div>
 			<div class="led win"><span>{s.lastWin}</span><b class="num">{lastWin.toLocaleString('en-US')}</b></div>
@@ -1419,6 +1420,55 @@
 	}
 	.led.bet {
 		grid-area: bet;
+		container-type: inline-size;
+	}
+	/* BET over − 1,000 +; when the box is too narrow for "10,000" between the buttons (phones, 4 columns
+	   at ≈ 560–700 px): − BET + on top, the number under them */
+	.bet-ctl {
+		display: grid;
+		justify-self: stretch;
+		grid-template-columns: auto auto auto;
+		grid-template-areas:
+			'lbl lbl lbl'
+			'minus num plus';
+		justify-content: center;
+		justify-items: center;
+		align-items: center;
+		column-gap: 4px;
+	}
+	.bet-lbl {
+		grid-area: lbl;
+	}
+	.bet-ctl .minus {
+		grid-area: minus;
+	}
+	.bet-ctl b {
+		grid-area: num;
+	}
+	.bet-ctl .plus {
+		grid-area: plus;
+	}
+	@container (max-width: 135px) {
+		.bet-ctl {
+			grid-template-areas:
+				'minus lbl plus'
+				'num num num';
+			column-gap: 8px;
+			row-gap: 1px;
+		}
+	}
+	/* very narrow (4 columns at ≈ 560 px): smaller rings, the tap area stays 44 px */
+	@container (max-width: 104px) {
+		.bet-ctl {
+			column-gap: 3px;
+		}
+		.bet-ctl .stepper {
+			width: 24px;
+			height: 24px;
+		}
+		.bet-ctl .stepper::after {
+			inset: -10px;
+		}
 	}
 	.led.win {
 		grid-area: win;

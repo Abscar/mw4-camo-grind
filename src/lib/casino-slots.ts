@@ -181,8 +181,11 @@ export const LINES: number[][] = [
 	[0, 1, 0, 1, 0]
 ];
 
-/** Bets on offer (multiples of 10, so every line bet is a whole burger). */
-export const SLOT_BETS = [10, 20, 50, 100, 250, 500];
+/**
+ * Bets on offer (multiples of 10, so every line bet is a whole burger). Up to 500 until 2026-11-19, when
+ * the user asked to be able to bet higher: now up to 10,000. The odds don't depend on the bet.
+ */
+export const SLOT_BETS = [10, 20, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 
 /* ---------- the Burger Box (pick game) ---------- */
 
