@@ -86,7 +86,7 @@ test('the strips: ketchup, bonus and weed stops are spread out, so a reel never 
 test('a payline: left to right, wilds stand in, ketchup and bonus symbols break it, the best win counts', () => {
 	assert.deepEqual(lineWin(['burger', 'burger', 'burger', 'fries', 'pickle']), { symbol: 'burger', count: 3, pays: PAYS.burger[0] });
 	assert.deepEqual(lineWin(['wild', 'burger', 'wild', 'burger', 'pickle']), { symbol: 'burger', count: 4, pays: PAYS.burger[1] });
-	assert.equal(lineWin(['pickle', 'pickle', 'fries', 'pickle', 'pickle']), null, 'not from the first reel');
+	assert.equal(lineWin(['pickle', 'fries', 'pickle', 'pickle', 'pickle']), null, 'not from the first reel');
 	assert.equal(lineWin(['fries', 'scatter', 'fries', 'fries', 'fries']), null);
 	assert.equal(lineWin(['fries', 'box', 'fries', 'fries', 'fries']), null);
 	assert.equal(lineWin(['wheel', 'fries', 'fries', 'fries', 'fries']), null);
@@ -96,12 +96,13 @@ test('a payline: left to right, wilds stand in, ketchup and bonus symbols break 
 	// three wilds then pickles: the wild run (150) beats five pickles (70)
 	assert.deepEqual(lineWin(['wild', 'wild', 'wild', 'pickle', 'pickle']), { symbol: 'wild', count: 3, pays: PAYS.wild[0] });
 	assert.deepEqual(lineWin(['wild', 'wild', 'wild', 'wild', 'wild']), { symbol: 'wild', count: 5, pays: PAYS.wild[2] });
-	// the top symbols pay for 2 in a row; the others don't
+	// every symbol pays for 2 in a row (party odds, 2026-11-19)
+	for (const sym of Object.keys(PAYS)) assert.ok(PAYS2[sym] > 0, `${sym} pays for 2`);
 	assert.deepEqual(lineWin(['burger', 'burger', 'fries', 'pickle', 'pickle']), { symbol: 'burger', count: 2, pays: PAYS2.burger });
 	assert.deepEqual(lineWin(['wild', 'wild', 'scatter', 'pickle', 'pickle']), { symbol: 'wild', count: 2, pays: PAYS2.wild });
 	// two wilds before fries count as three fries when that pays more
 	assert.deepEqual(lineWin(['wild', 'wild', 'fries', 'pickle', 'pickle']), { symbol: 'fries', count: 3, pays: PAYS.fries[0] });
-	assert.equal(lineWin(['pickle', 'pickle', 'fries', 'onion', 'onion']), null);
+	assert.deepEqual(lineWin(['pickle', 'pickle', 'fries', 'onion', 'onion']), { symbol: 'pickle', count: 2, pays: PAYS2.pickle });
 	assert.equal(lineWin(['scatter', 'scatter', 'scatter', 'pickle', 'pickle']), null);
 });
 
@@ -248,7 +249,7 @@ test('the Burger Box: at least the safe picks, never more than the boxes, prizes
 
 test('the wheel: 12 slices, every slice comes up, wins × the bet, free-spin slices give spins', () => {
 	assert.equal(WHEEL.length, 12);
-	assert.equal(WHEEL.filter((s) => s.jackpot).length, 1);
+	assert.equal(WHEEL.filter((s) => s.jackpot).length, 2);
 	const rand = seeded(5);
 	const seen = new Set();
 	for (let i = 0; i < 5000; i++) {
@@ -275,7 +276,44 @@ test('buy bonus: costs its price, gives what it says, net = win − cost', () =>
 	for (const p of [free, box, wheel]) assert.equal(p.net, p.win - p.cost);
 });
 
-test('long run: ≈ 97 % back (still under 100 %), about 1 in 4 spins win, the features now and then', () => {
+test('random WILDs and FULL SCREEN: dropped cells show a WILD (sticking only in free spins), a full screen pays all 10 lines', () => {
+	const stops = [0, 0, 0, 0, 0];
+	const drop = [cellKey(1, 0), cellKey(3, 2)];
+	const base = evaluate(stops, 100, 1, { drop });
+	for (const k of drop) {
+		const [reel, row] = k.split('-').map(Number);
+		assert.equal(base.grid[reel][row], 'wild');
+	}
+	assert.deepEqual(base.drops, drop);
+	assert.deepEqual(base.newSticky, [], 'normal spins: nothing sticks');
+	const free = evaluate(stops, 100, 1, { strips: FREE_STRIPS, sticky: [cellKey(2, 1)], drop: [...drop, cellKey(2, 1)] });
+	assert.deepEqual(free.drops, drop, 'a drop on a held cell is no new drop');
+	for (const k of drop) assert.ok(free.newSticky.includes(k), 'free spins: dropped WILDs stick');
+	// a full screen of fries: every line pays five fries
+	const full = evaluate(stops, 100, 1, { full: 'fries' });
+	assert.equal(full.full, 'fries');
+	assert.ok(full.grid.flat().every((s) => s === 'fries'));
+	assert.equal(full.lines.length, 10);
+	for (const l of full.lines) assert.deepEqual([l.symbol, l.count, l.win], ['fries', 5, PAYS.fries[2] * 10]);
+	// a full screen of WILDs is the BURGER JACKPOT; in free spins it sticks only on reels 2–4
+	const jack = evaluate(stops, 100, 1, { full: 'wild', strips: FREE_STRIPS, sticky: [] });
+	assert.ok(jack.newSticky.every((k) => [1, 2, 3].includes(Number(k.split('-')[0]))));
+	assert.equal(jack.newSticky.length, 9);
+	const fake = { kind: 'spin', bet: 100, cost: 100, base: jack, box: null, wheel: null, freeStart: 0, free: [], win: 1, net: -99 };
+	assert.equal(winTier(fake), 'jackpot');
+	// in a long run both happen
+	const rand = seeded(4);
+	let drops = 0;
+	let fulls = 0;
+	for (let i = 0; i < 20_000; i++) {
+		const p = play(10, rand);
+		if (p.base.drops.length) drops++;
+		if (p.base.full) fulls++;
+	}
+	assert.ok(drops > 1000 && fulls > 5, `${drops} drops, ${fulls} full screens`);
+});
+
+test('long run: party odds, several times the bet back, most spins win, the features often', () => {
 	const rand = seeded(2026);
 	const N = 300_000;
 	let bet = 0;
@@ -299,15 +337,16 @@ test('long run: ≈ 97 % back (still under 100 %), about 1 in 4 spins win, the f
 		if (p.free.length) assert.equal(p.freeStart, p.base.freeSpins + (p.base.wheelBonus?.spins ?? 0));
 	}
 	const rtp = won / bet;
-	assert.ok(rtp > 0.94 && rtp < 1, `RTP ${rtp}`);
-	assert.ok(hits / N > 0.24 && hits / N < 0.35, `hit rate ${hits / N}`);
-	assert.ok(N / frees > 40 && N / frees < 80, `free spins every ${N / frees}`);
-	assert.ok(N / boxes > 150 && N / boxes < 400, `Burger Box every ${N / boxes}`);
-	assert.ok(N / wheels > 150 && N / wheels < 400, `wheel every ${N / wheels}`);
+	// heavy tail (free spins, full screens); slot-sim4.mjs over millions of spins lands ≈ 4×
+	assert.ok(rtp > 2.8 && rtp < 6, `RTP ${rtp}`);
+	assert.ok(hits / N > 0.6 && hits / N < 0.8, `hit rate ${hits / N}`);
+	assert.ok(N / frees > 35 && N / frees < 70, `free spins every ${N / frees}`);
+	assert.ok(N / boxes > 90 && N / boxes < 180, `Burger Box every ${N / boxes}`);
+	assert.ok(N / wheels > 90 && N / wheels < 180, `wheel every ${N / wheels}`);
 	assert.ok(N / weeds > 12 && N / weeds < 35, `a weed lands every ${N / weeds} spins`);
 });
 
-test('long run, bought features: each gives back 93–100 % of its price', () => {
+test('long run, bought features: each gives back several times its price, like spinning', () => {
 	for (const kind of BUY_KINDS) {
 		const rand = seeded(31 + kind.length);
 		const N = 60_000;
@@ -319,7 +358,7 @@ test('long run, bought features: each gives back 93–100 % of its price', () =>
 			won += p.win;
 		}
 		const rtp = won / paid;
-		assert.ok(rtp > 0.93 && rtp < 1.0, `${kind}: ${rtp}`);
+		assert.ok(rtp > 2.5 && rtp < 6, `${kind}: ${rtp}`);
 	}
 });
 

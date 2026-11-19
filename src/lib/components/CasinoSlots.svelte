@@ -113,6 +113,10 @@
 	let weedPop = $state<number | null>(null);
 	/** Which pop is showing (a later one isn't cleared by an earlier one's timer). */
 	let popId = 0;
+	/** FULL SCREEN: its words popping up over the reels; random WILDs that just dropped in (they flash). */
+	let fullPop = $state<string | null>(null);
+	let fullId = 0;
+	let dropCells = $state<string[]>([]);
 	/** A weed's ×value on the screen shown. */
 	const weedAt = (reel: number, row: number) => screen.weeds.find((w) => w.reel === reel && w.row === row)?.x;
 	let spinBtn = $state<HTMLButtonElement>();
@@ -158,8 +162,19 @@
 		hidden = Math.max(0, hidden - result.win);
 		lastWin = result.win;
 		const weedHit = result.weedMult > 0 && result.raw > 0;
+		// in free spins the dropped WILDs flash on the sticky layer instead
+		dropCells = freeState ? [] : result.drops;
+		if (result.full) {
+			fullPop = result.full === 'wild' ? s.tiers.jackpot : s.fullScreen(s.symbols[result.full]);
+			const id = ++fullId;
+			setTimeout(() => fullId === id && (fullPop = null), reduce() ? 1800 : 2600);
+		}
+		const lineWins = result.lines.reduce((n, l) => n + l.win, 0);
 		const parts = [
-			...result.lines.map((l) => s.lineWin(l.line + 1, l.count, s.symbols[l.symbol], l.win)),
+			// a full screen pays all 10 lines: one line instead of ten
+			...(result.full ? [s.fullWin(s.symbols[result.full], lineWins)] : []),
+			...(result.drops.length ? [s.randomWilds(result.drops.length)] : []),
+			...(result.full ? [] : result.lines.map((l) => s.lineWin(l.line + 1, l.count, s.symbols[l.symbol], l.win))),
 			...(result.scatterWin || result.freeSpins ? [s.scatterWin(result.scatters, result.scatterWin, result.freeSpins)] : []),
 			...(weedHit ? [s.weedWin(result.weedMult, result.raw, result.win)] : []),
 			...(result.newSticky.length ? [s.sticky(result.newSticky.length)] : []),
@@ -172,7 +187,8 @@
 			const id = ++popId;
 			setTimeout(() => popId === id && (weedPop = null), reduce() ? 1400 : 1900);
 		}
-		if (result.box || result.wheel || weedHit) sound.play('maxed');
+		if (result.full) sound.play(result.full === 'wild' ? 'divergence' : 'maxed');
+		else if (result.box || result.wheel || weedHit) sound.play('maxed');
 		else if (result.win > 0 || result.newSticky.length) sound.play('camo');
 	}
 
@@ -317,6 +333,7 @@
 			boxHit = false;
 			wheelHit = false;
 			weedPop = null;
+			dropCells = [];
 			// the WILDs held so far stay on their layer while the reels spin under them
 			stickyNew = [];
 			stickyCells = fs.sticky;
@@ -364,6 +381,7 @@
 		celebrate = false;
 		lastWin = 0;
 		weedPop = null;
+		dropCells = [];
 		stickyCells = [];
 		stickyNew = [];
 		const bonuses = !!(p.box || p.wheel || p.free.length || p.base?.boxBonus || p.base?.wheelBonus);
@@ -505,7 +523,11 @@
 					<div class="reel" role="img" aria-label={reelText(r)}>
 						<div class="strip" style:transform={`translateY(calc(var(--cell) * ${-col.y}))`} style:transition={col.dur ? `transform ${col.dur}ms cubic-bezier(0.18, 0.7, 0.28, 1.06)` : 'none'}>
 							{#each col.items as sym, i (i)}
-								<div class="cell" class:win={(!spinning || !!freeState) && col.items.length === ROWS && winCells.has(`${r}-${i}`)}>
+								<div
+									class="cell"
+									class:win={(!spinning || !!freeState) && col.items.length === ROWS && winCells.has(`${r}-${i}`)}
+									class:dropped={col.items.length === ROWS && dropCells.includes(`${r}-${i}`)}
+								>
 									<SlotSymbolView symbol={sym} size={48} value={sym === 'weed' && col.items.length === ROWS ? weedAt(r, i) : undefined} />
 								</div>
 							{/each}
@@ -544,6 +566,10 @@
 			{#if weedPop && !banner}
 				<!-- the weeds' sum, after a winning spin with weeds -->
 				<p class="weed-pop font-head num" aria-hidden="true">×{weedPop}</p>
+			{/if}
+			{#if fullPop && !banner}
+				<!-- FULL SCREEN: the whole screen turned into one symbol -->
+				<p class="full-pop font-head" aria-hidden="true">{fullPop}</p>
 			{/if}
 			{#if banner?.kind === 'more'}
 				<p class="fs-more font-head" role="status">{s.freeMore(banner.spins)}</p>
@@ -769,6 +795,7 @@
 		{/each}
 	</ul>
 	<p class="pb-1">{s.payNote}</p>
+	<p class="pb-1">{s.partyNote}</p>
 	<p class="pb-1">{s.buyNote(BUY_PRICE.free, BUY_PRICE.box, BUY_PRICE.wheel)}</p>
 	<p class="pb-1">{s.maxNote(MAX_WIN)}</p>
 </details>
@@ -1012,9 +1039,53 @@
 			opacity: 0;
 		}
 	}
+	/* FULL SCREEN / BURGER JACKPOT words over the reels */
+	.full-pop {
+		position: absolute;
+		left: 50%;
+		top: 30%;
+		z-index: 3;
+		margin: 0;
+		max-width: 94%;
+		transform: translate(-50%, -50%);
+		padding: 4px 18px;
+		border: 3px solid #fff6b0;
+		border-radius: 14px;
+		background: linear-gradient(180deg, #ffd23a, #ff8a1a 55%, #d8202a);
+		color: #fff;
+		font-size: clamp(20px, 7cqi, 40px);
+		font-weight: 900;
+		line-height: 1.1;
+		text-align: center;
+		text-shadow:
+			0 3px 0 #7a1010,
+			0 0 12px rgb(0 0 0 / 0.5);
+		box-shadow: 0 0 28px rgb(255 210 58 / 0.9);
+		pointer-events: none;
+		animation: weed-pop 2.5s ease-out both;
+	}
+	/* a random WILD that just dropped into a normal spin */
+	.cell.dropped {
+		animation: wild-drop 0.9s ease-out both;
+	}
+	@keyframes wild-drop {
+		0% {
+			transform: translateY(-60%) scale(1.5);
+			filter: drop-shadow(0 0 0 #ffd23a);
+		}
+		45% {
+			transform: translateY(0) scale(1);
+			filter: drop-shadow(0 0 14px #ffd23a);
+		}
+		100% {
+			filter: drop-shadow(0 0 6px #ffd23a);
+		}
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.sticky-cell.fresh,
-		.weed-pop {
+		.weed-pop,
+		.full-pop,
+		.cell.dropped {
 			animation: none;
 		}
 	}

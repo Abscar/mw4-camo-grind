@@ -31,6 +31,7 @@
 		LEVEL_PAYS,
 		MAX_WIN,
 		METER_MAX,
+		MULT_MAX,
 		MUNCH_CORNERS,
 		MUNCH_SIDE,
 		SIDE,
@@ -229,8 +230,11 @@
 						rp.fx = 'swap';
 					}
 				}
-				pop(-1, s.pops.swap, 'big');
-				await wait(MS.swap);
+				if (ev.storm) {
+					pop(-1, s.pops.storm(s.items[ev.who]), 'abscar', 1500);
+					sound.play('maxed');
+				} else pop(-1, s.pops.swap, 'big');
+				await wait(ev.storm ? MS.swap * 1.6 : MS.swap);
 				for (const x of pieces) if (x.fx === 'swap') x.fx = '';
 				break;
 			case 'boom': {
@@ -771,7 +775,8 @@
 		{/each}
 	</ul>
 	<p class="pb-1">{s.meterNote(METER_MAX)}</p>
-	<p class="pb-1">{s.freeNote}</p>
+	<p class="pb-1">{s.freeNote(MULT_MAX)}</p>
+	<p class="pb-1">{s.partyNote}</p>
 	<p class="pb-1">{s.munchNote}</p>
 	<p class="pb-1">{s.buyNote(BUY_PRICE.hotbox, BUY_PRICE.super, BUY_PRICE.munchies)}</p>
 	<p class="pb-1">{s.rtpNote}</p>

@@ -895,13 +895,18 @@ export const en = {
 			freeTitle: (n: number, total: number) => `Free spin ${n} / ${total}`,
 			freeSub: (won: number) => `Sticky WILDs · ${won.toLocaleString('en-US')} 🍔 so far`,
 			freeIntro: (n: number) => `${n} FREE SPINS`,
-			freeIntroSub: 'WILDs stick until the free spins end, and weeds land on every reel',
+			freeIntroSub: 'WILDs stick until the free spins end, and random WILDs drop in and stick too',
 			/** sticky WILDs + weed multipliers (2026-11-16, the user: "sticky wilds in the free spins, and special weed symbols that give ×2, ×5, ×10 and so on") */
 			sticky: (n: number) => (n === 1 ? 'A WILD sticks!' : `${n} WILDs stick!`),
 			stickyTag: 'STICKY',
 			weedWin: (x: number, raw: number, win: number) => `Weeds ×${x}: ${raw.toLocaleString('en-US')} → ${win.toLocaleString('en-US')} 🍔`,
 			weedLabel: (x: number) => `weed ×${x}`,
 			weedRow: 'Every weed on a winning screen adds up and multiplies its win (lines + ketchup), ×2 up to ×100. In normal spins only on reel 3, in free spins on every reel.',
+			/** party odds (2026-11-19, the user: "more wilds, double the wins, everyone should win, the jackpot more often, full screens") */
+			randomWilds: (n: number) => (n === 1 ? 'A random WILD drops in!' : `${n} random WILDs drop in!`),
+			fullScreen: (symbol: string) => `FULL SCREEN: ${symbol}!`,
+			fullWin: (symbol: string, win: number) => `FULL SCREEN: ${symbol}! All 10 lines = ${win.toLocaleString('en-US')} 🍔`,
+			partyNote: 'Party odds: every pay is doubled and every symbol pays from 2 in a row. Random WILDs drop onto reels 2–4 now and then (in free spins on most spins, and they stick). Now and then the whole screen turns into one symbol (FULL SCREEN, all 10 lines pay five in a row); a screen full of WILDs is the BURGER JACKPOT. The wheel has two jackpot slices.',
 			maxWin: (x: number) => `MAX WIN: ${x.toLocaleString('en-US')}× your bet`,
 			maxNote: (x: number) => `One play (a spin with everything it starts, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`,
 			freeMore: (n: number) => `+${n} FREE SPINS!`,
@@ -940,14 +945,14 @@ export const en = {
 			buyWhat: { free: (n: number) => `${n} free spins`, box: 'the Burger Box', wheel: 'a spin of the bonus wheel' },
 			buyYes: 'Buy',
 			buyNo: 'Cancel',
-			buyNote: (free: number, box: number, wheel: number) => `Prices are times your bet: free spins ${free}×, Burger Box ${box}×, wheel ${wheel}×. They give back about the same share as spinning.`,
+			buyNote: (free: number, box: number, wheel: number) => `Prices are times your bet: free spins ${free}×, Burger Box ${box}×, wheel ${wheel}×. They give back about as much as spinning (several times the price).`,
 			lastWin: 'Win',
 			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', jackpot: 'BURGER JACKPOT' },
 			lineWin: (line: number, count: number, symbol: string, win: number) => `Line ${line}: ${count} × ${symbol} = ${win} 🍔`,
 			scatterWin: (count: number, win: number, spins: number) => `${count} × Ketchup = ${win} 🍔 + ${spins} free spins`,
 			noWin: 'No win this time.',
 			paytable: 'Paytable & how it works',
-			how: 'Like a real video slot: 5 reels, 3 rows and 10 paylines. Each reel is a weighted strip, so pickles are common and burgers rare; every stop is equally likely (no near-miss tricks). Wins pay left to right from the first reel, 3, 4 or 5 in a row (burgers and WILD already from 2), times your bet ÷ 10, the best win per line. WILD stands in for every paying symbol and pays the most itself. Ketchup pays anywhere on the screen and 3 or more give free spins (they can come again): every WILD that lands in them sticks where it is until they end (WILDs only land on reels 2, 3 and 4 there), and weeds land on every reel. A weed carries a multiplier from ×2 up to ×100; when a spin wins, all the weeds on the screen add up and multiply its win. In normal spins weeds land only on reel 3. A BONUS box on each of reels 1, 3 and 5 opens the Burger Box: open boxes for burgers until one says COLLECT. A wheel on each of reels 2, 3 and 4 spins the bonus wheel: burgers, free spins or the jackpot. Both can come in free spins too. Or buy free spins, the Burger Box or a wheel spin straight away. Everything is decided the moment you pay; which box you tap only changes the order. In the long run the machine gives back about 97% of what goes in (real ones keep a bit more), so the house still wins in the end, just slowly.',
+			how: 'Like a real video slot: 5 reels, 3 rows and 10 paylines. Each reel is a weighted strip, so pickles are common and burgers rare; every stop is equally likely (no near-miss tricks). Wins pay left to right from the first reel, 2, 3, 4 or 5 in a row, times your bet ÷ 10, the best win per line. WILD stands in for every paying symbol and pays the most itself. Ketchup pays anywhere on the screen and 3 or more give free spins (they can come again): every WILD that lands in them sticks where it is until they end (WILDs only land on reels 2, 3 and 4 there), random WILDs drop in and stick too, and weeds land on every reel. A weed carries a multiplier from ×2 up to ×100; when a spin wins, all the weeds on the screen add up and multiply its win. In normal spins weeds land only on reel 3. A BONUS box on each of reels 1, 3 and 5 opens the Burger Box: open boxes for burgers until one says COLLECT. A wheel on each of reels 2, 3 and 4 spins the bonus wheel: burgers, free spins or the jackpot. Both can come in free spins too. Or buy free spins, the Burger Box or a wheel spin straight away. Everything is decided the moment you pay; which box you tap only changes the order. This machine runs on party odds: in the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.',
 			symbols: {
 				pickle: 'Pickle',
 				onion: 'Onion ring',
@@ -1000,12 +1005,13 @@ export const en = {
 				grow: (n: number) => `WALL DOWN! ${n}×${n}`,
 				drop: 'ABSCAR DROPS IN!',
 				mult: (n: number) => `HOTBOX ×${n}`,
-				munchies: 'THE MUNCHIES!'
+				munchies: 'THE MUNCHIES!',
+				storm: (name: string) => `MUNCHIE STORM! ALL ${name.toUpperCase()}`
 			},
 			free: {
 				intro: { hotbox: 'HOTBOX SPINS', super: 'SUPER HOTBOX' },
 				introSub: {
-					hotbox: (n: number) => `${n} free spins. Everything carries over: levels only go up, the field only grows, and every time Abscar’s holk fills up the room gets smokier: +1 to the multiplier.`,
+					hotbox: (n: number) => `${n} free spins. Abscar drops WILDs next to the squad on every spin, and everything carries over: levels only go up, the field only grows, and every time his holk fills up the room gets smokier: +1 to the multiplier.`,
 					super: (n: number) => `${n} free spins on the full 8 × 8, every level at least 3, starting at ×2. Everything carries over.`
 				},
 				title: (n: number, total: number) => `Hotbox spin ${n} / ${total}`,
@@ -1050,10 +1056,12 @@ export const en = {
 				ketchup: '3 on the board when a spin ends = 10 Hotbox Spins, 4 or more = Super Hotbox. In free spins 3 give 3 more spins, 4 give 5.'
 			},
 			meterNote: (max: number) => `Abscar’s holk meter: every munchie taken fills it; at ${max} Abscar (the house) drops 3 features next to the squad.`,
-			freeNote: 'Hotbox Spins start from where the spin ended and keep everything: levels only go up, the field only grows, letters and the holk meter carry over, and every time the holk meter fills up the Hotbox multiplier goes up by 1 (up to ×15) and multiplies every burger taken. Super Hotbox starts on the full 8 × 8 with every level at least 3, at ×2.',
+			freeNote: (max: number) =>
+				`Hotbox Spins start from where the spin ended and keep everything: levels only go up, the field only grows, letters and the holk meter carry over, Abscar drops 2 WILDs next to the squad on every spin, and every time the holk meter fills up the Hotbox multiplier goes up by 1 (up to ×${max}) and multiplies every burger taken. Super Hotbox starts on the full 8 × 8 with every level at least 3, at ×2.`,
+			partyNote: 'Party odds: every pay is doubled (levels, coins and the coin game), WILDs, features and letters land far more often, Abscar drops WILDs into normal spins now and then, and now and then a MUNCHIE STORM turns every munchie on the board into one squad member’s.',
 			munchNote: 'The Munchies: burger coins land on a 6 × 6 board with the squad in the corners and stay; 3 respins, and every new coin gives 3 again. ×2 / ×3 coins add up into one multiplier for the end, SQUAD coins take the value of every coin in their row and column, and a full board doubles everything.',
 			buyNote: (h: number, s: number, m: number) => `Buy bonus prices are times your bet: Hotbox Spins ${h}×, Super Hotbox ${s}×, The Munchies ${m}×. They give back about the same share as spinning.`,
-			rtpNote: 'Small wins come on most spins and the big ones in the bonuses. Hotbox Spins come about once every 150 spins and The Munchies about once every 500. In the long run it gives back about 99% of what goes in, so the house still wins in the end, very slowly. Pretend burgers, never money.',
+			rtpNote: 'Hotbox Spins come about once every 75 spins and The Munchies about once every 90. In the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.',
 			maxNote: (x: number) => `One play (a spin with everything it starts, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`
 		},
 		roulette: {

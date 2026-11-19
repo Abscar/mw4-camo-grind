@@ -38,6 +38,15 @@
  *    (retriggers included).
  *  - A play never pays more than MAX_WIN × the bet (real slots cap their wins too).
  *
+ * PARTY ODDS (2026-11-19, the user: "more wilds, more free spins, bonus symbols, more wins, double them,
+ * everyone should win, more random sticky wilds, as if the money was free", then "the jackpot more often,
+ * full screens of the same symbol, lots of crazy stuff, not like boring normal slots"): every pay doubled,
+ * every symbol pays from 2 in a row, more WILD / ketchup / bonus stops, random WILDs (RANDOM_WILD_REELS),
+ * FULL SCREEN (FULL_CHANCE; all WILDs = the BURGER JACKPOT), two jackpot slices on the wheel, cheaper buys.
+ * It now gives back about 4× what goes in on purpose (pretend burgers): ≈ 68 % of spins win, free spins
+ * about every 50 spins, Burger Box / wheel about every 125, the jackpot about 1 in 15,000 (it was ≈ 1 in
+ * 330,000). The ≈ 97 % notes above are history. Simulated with slot-sim4.mjs; the test checks the ranges.
+ *
  * Pure, the randomness passed in, so Node tests it. No browser APIs and no runes.
  */
 
@@ -64,13 +73,30 @@ const WEIGHTS: Record<PaySymbol, number> = {
 	burger: 2,
 	wild: 2
 };
-/** Ketchup stops per reel (reels 1–3 got one more: free spins a little more often). */
-const SCATTER_STOPS = [3, 3, 2, 2, 2];
+/** Ketchup stops per reel. */
+const SCATTER_STOPS = [3, 3, 3, 2, 2];
 /** The reels each bonus symbol sits on (one visible on each of them = the bonus). */
 export const BOX_REELS = [0, 2, 4];
 export const WHEEL_REELS = [1, 2, 3];
-/** Stops per bonus symbol on its reels. */
-const BONUS_STOPS = 3;
+/** Stops per bonus symbol on each reel (0 on the reels it doesn't sit on). */
+const BOX_STOPS = [4, 0, 4, 0, 4];
+const WHEEL_STOPS = [0, 4, 4, 4, 0];
+/**
+ * Random WILDs (2026-11-19, the user: "more wilds, more random sticky wilds"): they drop onto reels 2–4
+ * (never reels 1 or 5, so they always stand in for a symbol rather than making a WILD-only line). In free
+ * spins some drop on every spin and stick like landed ones; in normal spins now and then a few drop in.
+ */
+export const RANDOM_WILD_REELS = [1, 2, 3];
+export const FREE_RANDOM_WILDS: [number, number][] = [
+	[0, 88],
+	[1, 12]
+];
+export const BASE_RANDOM_CHANCE = 0.06;
+export const BASE_RANDOM_WILDS: [number, number][] = [
+	[1, 60],
+	[2, 30],
+	[3, 10]
+];
 /**
  * Weed stops per reel: in normal spins only on the middle reel (one lands about every 20 spins), on the
  * free spins' own reels one on every reel (one in about every 4 free spins).
@@ -121,8 +147,8 @@ function spread(reel: number, weeds: number, wilds: number): SlotSymbol[] {
 	// the special stops, taken in turn (ketchup, box, wheel, weed, ketchup …) so equal ones are far apart
 	const left: [SlotSymbol, number][] = [
 		['scatter', SCATTER_STOPS[reel]],
-		['box', BOX_REELS.includes(reel) ? BONUS_STOPS : 0],
-		['wheel', WHEEL_REELS.includes(reel) ? BONUS_STOPS : 0],
+		['box', BOX_STOPS[reel]],
+		['wheel', WHEEL_STOPS[reel]],
 		['weed', weeds]
 	];
 	const specials: SlotSymbol[] = [];
@@ -139,30 +165,44 @@ function spread(reel: number, weeds: number, wilds: number): SlotSymbol[] {
 
 /** What 3, 4 and 5 in a row pay, times the line bet (= the bet ÷ 10). */
 export const PAYS: Record<PaySymbol, [number, number, number]> = {
-	pickle: [8, 20, 70],
-	onion: [8, 20, 70],
-	tomato: [8, 25, 100],
-	cheese: [15, 40, 150],
-	fries: [20, 60, 200],
-	shake: [30, 80, 350],
-	hotdog: [35, 150, 600],
-	burger: [75, 300, 1500],
-	wild: [150, 750, 5000]
+	pickle: [16, 40, 140],
+	onion: [16, 40, 140],
+	tomato: [16, 50, 200],
+	cheese: [30, 80, 300],
+	fries: [40, 120, 400],
+	shake: [60, 160, 700],
+	hotdog: [70, 300, 1200],
+	burger: [150, 600, 3000],
+	wild: [300, 1500, 10000]
 };
 /**
- * The top symbols also pay for just 2 in a row from the first reel (times the line bet), like real
- * slots do for their premium symbols (2026-11-16, the user's ask: "raise the odds a bit").
+ * Symbols that also pay for just 2 in a row from the first reel (times the line bet). Wild and burger
+ * since 2026-11-16 ("raise the odds a bit"); every pay doubled and hot dog + shake added on 2026-11-19
+ * (the user: "more wins, double them, everyone should win, as if the money was free").
  */
-export const PAYS2: Partial<Record<PaySymbol, number>> = { wild: 8, burger: 4 };
+export const PAYS2: Partial<Record<PaySymbol, number>> = { pickle: 1, onion: 1, tomato: 1, cheese: 2, fries: 2, shake: 4, hotdog: 6, burger: 8, wild: 16 };
 /** Ketchup anywhere: what 3, 4, 5 pay times the whole bet, and the free spins they give. */
-export const SCATTER_PAYS: [number, number, number] = [2, 10, 50];
-export const FREE_SPINS: [number, number, number] = [7, 10, 16];
-/**
- * Free spins' line and ketchup wins multiplier. It was ×2 until the sticky WILDs and the weeds came
- * (2026-11-16); they're worth more than that, so wins are no longer doubled and the free spins start
- * from 7 / 10 / 16 instead of 8 / 12 / 20 (both measured by simulation to keep the return ≈ 97 %).
- */
+export const SCATTER_PAYS: [number, number, number] = [4, 20, 100];
+export const FREE_SPINS: [number, number, number] = [8, 10, 15];
+/** Free spins' line and ketchup wins multiplier (×1 from 2026-11-16, ×2 again since the party odds of 2026-11-19). */
 export const FREE_MULT = 1;
+/**
+ * FULL SCREEN (2026-11-19, the user: "the jackpot more often, full screens of the same symbol, lots of
+ * crazy stuff"): now and then the whole screen turns into one paying symbol, so all 10 lines pay five in a
+ * row; a screen full of WILDs is the BURGER JACKPOT. Sticky WILDs stay WILDs.
+ */
+export const FULL_CHANCE = 1 / 1500;
+export const FULL_SYMBOLS: [PaySymbol, number][] = [
+	['pickle', 25],
+	['onion', 25],
+	['tomato', 16],
+	['cheese', 10],
+	['fries', 7],
+	['shake', 5],
+	['hotdog', 3],
+	['burger', 2],
+	['wild', 7]
+];
 /** No endless free spins: at most this many in one feature. */
 export const FREE_MAX = 100;
 export const LINES_COUNT = 10;
@@ -193,14 +233,14 @@ export const SLOT_BETS = [10, 20, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 export const BOX_COUNT = 12;
 /** What a box can hold: [× the bet, how often]. */
 export const BOX_PRIZES: [number, number][] = [
-	[1, 30],
-	[2, 26],
-	[3, 18],
-	[5, 12],
-	[8, 7],
-	[12, 4],
-	[25, 2],
-	[50, 1]
+	[2, 30],
+	[4, 26],
+	[6, 18],
+	[10, 12],
+	[16, 7],
+	[24, 4],
+	[50, 2],
+	[100, 1]
 ];
 /** The first picks never say COLLECT. */
 export const BOX_SAFE = 3;
@@ -218,18 +258,18 @@ export interface WheelSlice {
 }
 /** The wheel's 12 slices, clockwise from the top; each as likely as any other. */
 export const WHEEL: WheelSlice[] = [
-	{ win: 5 },
-	{ spins: 8 },
-	{ win: 8 },
-	{ win: 12 },
-	{ spins: 10 },
-	{ win: 5 },
-	{ win: 20 },
 	{ win: 10 },
 	{ spins: 8 },
-	{ win: 8 },
+	{ win: 16 },
+	{ win: 200, jackpot: true },
+	{ spins: 10 },
+	{ win: 10 },
 	{ win: 40 },
-	{ win: 100, jackpot: true }
+	{ win: 20 },
+	{ spins: 8 },
+	{ win: 16 },
+	{ win: 80 },
+	{ win: 200, jackpot: true }
 ];
 
 /* ---------- buy bonus ---------- */
@@ -237,7 +277,7 @@ export const WHEEL: WheelSlice[] = [
 export type BuyKind = 'free' | 'box' | 'wheel';
 export const BUY_KINDS: BuyKind[] = ['free', 'box', 'wheel'];
 /** What a bought feature costs, × the bet. */
-export const BUY_PRICE: Record<BuyKind, number> = { free: 20, box: 21, wheel: 22 };
+export const BUY_PRICE: Record<BuyKind, number> = { free: 20, box: 11, wheel: 17 };
 /** Free spins you get when you buy them. */
 export const BUY_FREE_SPINS = 10;
 
@@ -294,6 +334,10 @@ export interface SpinResult {
 	/** Free spins: WILDs held from earlier spins / WILDs that landed now and stick from here ("reel-row"). */
 	sticky: string[];
 	newSticky: string[];
+	/** Random WILDs that dropped in this spin ("reel-row"; in free spins they stick too). */
+	drops: string[];
+	/** FULL SCREEN: the symbol the whole screen turned into. */
+	full?: PaySymbol;
 	/** A bonus box on each of reels 1, 3, 5 / a wheel on each of reels 2, 3, 4. */
 	box: boolean;
 	wheel: boolean;
@@ -342,6 +386,10 @@ export interface EvalOptions {
 	sticky?: readonly string[];
 	/** The landed weeds' multipliers, in reading order (missing ones count ×2). */
 	values?: readonly number[];
+	/** Random WILDs dropping in on these cells ("reel-row"). */
+	drop?: readonly string[];
+	/** FULL SCREEN: every cell (but the sticky WILDs) shows this symbol. */
+	full?: PaySymbol;
 }
 
 /**
@@ -349,11 +397,16 @@ export interface EvalOptions {
  * sticky WILDs (free spins) and its bonus triggers.
  */
 export function evaluate(stops: number[], bet: number, mult = 1, opts: EvalOptions = {}): SpinResult {
-	const landed = gridAt(stops, opts.strips);
+	const full = opts.full;
+	const landed = full ? gridAt(stops, opts.strips).map((col) => col.map((): SlotSymbol => full)) : gridAt(stops, opts.strips);
 	const held = opts.sticky ?? [];
-	const grid = landed.map((col, r) => col.map((sym, row) => (held.includes(cellKey(r, row)) ? 'wild' : sym)));
-	const newSticky = opts.sticky ? cellsOf(landed, 'wild').filter((k) => !held.includes(k)) : [];
-	const weeds = weedCells(landed, held).map(([reel, row], i) => ({ reel, row, x: opts.values?.[i] ?? 2 }));
+	const drops = (opts.drop ?? []).filter((k) => !held.includes(k));
+	const wildAt = [...held, ...drops];
+	const grid = landed.map((col, r) => col.map((sym, row) => (wildAt.includes(cellKey(r, row)) ? 'wild' : sym)));
+	// only reels 2–4 hold sticky WILDs (a full screen of WILDs in free spins doesn't stick on reels 1 and 5)
+	const stickable = (k: string) => RANDOM_WILD_REELS.includes(Number(k.split('-')[0]));
+	const newSticky = opts.sticky ? [...new Set([...cellsOf(landed, 'wild'), ...drops])].filter((k) => !held.includes(k) && stickable(k)) : [];
+	const weeds = weedCells(landed, wildAt).map(([reel, row], i) => ({ reel, row, x: opts.values?.[i] ?? 2 }));
 	const weedMult = weeds.reduce((n, w) => n + w.x, 0);
 	const lineBet = bet / LINES_COUNT;
 	const lines: LineWin[] = [];
@@ -369,7 +422,7 @@ export function evaluate(stops: number[], bet: number, mult = 1, opts: EvalOptio
 	const win = raw > 0 && weedMult > 0 ? raw * weedMult : raw;
 	const box = BOX_REELS.every((r) => grid[r].includes('box'));
 	const wheel = WHEEL_REELS.every((r) => grid[r].includes('wheel'));
-	return { stops, grid, lines, scatters, scatterWin, freeSpins, raw, weeds, weedMult, win, mult, sticky: [...held], newSticky, box, wheel };
+	return { stops, grid, lines, scatters, scatterWin, freeSpins, raw, weeds, weedMult, win, mult, sticky: [...held], newSticky, drops, ...(full ? { full } : {}), box, wheel };
 }
 
 function cellsOf(grid: Grid, sym: SlotSymbol): string[] {
@@ -380,7 +433,7 @@ function cellsOf(grid: Grid, sym: SlotSymbol): string[] {
 
 export const randomStops = (rand: () => number, strips: SlotSymbol[][] = STRIPS) => strips.map((strip) => randInt(strip.length, rand));
 
-function weighted(table: [number, number][], rand: () => number): number {
+function weighted<T>(table: [T, number][], rand: () => number): T {
 	let roll = rand() * table.reduce((n, [, w]) => n + w, 0);
 	for (const [value, w] of table) if ((roll -= w) < 0) return value;
 	return table[table.length - 1][0];
@@ -409,8 +462,14 @@ export const weedValue = (rand: () => number) => weighted(WEED_VALUES, rand);
 /** One spin with its weeds and bonuses played out (`sticky` given = free spins: sticky WILDs). */
 function spinOnce(bet: number, mult: number, rand: () => number, strips: SlotSymbol[][] = STRIPS, sticky?: readonly string[]): SpinResult {
 	const stops = randomStops(rand, strips);
-	const values = weedCells(gridAt(stops, strips), sticky).map(() => weedValue(rand));
-	const s = evaluate(stops, bet, mult, { strips, sticky, values });
+	const full = rand() < FULL_CHANCE ? weighted(FULL_SYMBOLS, rand) : undefined;
+	// random WILDs: some on every free spin, now and then in a normal spin
+	const n = sticky ? weighted(FREE_RANDOM_WILDS, rand) : rand() < BASE_RANDOM_CHANCE ? weighted(BASE_RANDOM_WILDS, rand) : 0;
+	const pool = RANDOM_WILD_REELS.flatMap((r) => Array.from({ length: ROWS }, (_, row) => cellKey(r, row))).filter((k) => !sticky?.includes(k));
+	const drop: string[] = [];
+	for (let i = 0; i < n && pool.length; i++) drop.push(...pool.splice(randInt(pool.length, rand), 1));
+	const values = full ? [] : weedCells(gridAt(stops, strips), [...(sticky ?? []), ...drop]).map(() => weedValue(rand));
+	const s = evaluate(stops, bet, mult, { strips, sticky, values, drop, full });
 	if (s.box) s.boxBonus = boxBonus(bet, rand);
 	if (s.wheel) s.wheelBonus = wheelBonus(bet, rand);
 	return s;

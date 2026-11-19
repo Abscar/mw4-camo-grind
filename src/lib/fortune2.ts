@@ -89,7 +89,7 @@ export const fieldSize = (open: number) => OPEN[open].r1 - OPEN[open].r0 + 1;
 
 export const LEVELS = 7;
 /** What one munchie pays at its colour's level 1–7, in hundredths of the bet. */
-export const LEVEL_PAYS = [2, 5, 10, 16, 26, 42, 70];
+export const LEVEL_PAYS = [4, 10, 20, 32, 52, 84, 140];
 export const LETTERS = ['M', 'U', 'N', 'C', 'H'];
 /** Munchies taken to fill Abscar's holk meter, and the features he drops when it's full. */
 export const METER_MAX = 30;
@@ -104,12 +104,12 @@ const DROP_TABLE: [Kind, number][] = [
 
 /** Burger coins on the board: [hundredths of the bet, how often]. */
 export const COIN_VALUES: [number, number][] = [
-	[10, 38],
-	[20, 30],
-	[50, 17],
-	[100, 10],
-	[250, 4],
-	[500, 1]
+	[20, 38],
+	[40, 30],
+	[100, 17],
+	[200, 10],
+	[500, 4],
+	[1000, 1]
 ];
 
 /** What a new cell holds: [kind, weight] (items are split evenly over the four colours). */
@@ -134,22 +134,30 @@ const table = (ketchup: number, f: Partial<Record<Kind, number>>): Table => [
 	['ketchup', ketchup]
 ];
 /*
- * Odds raised the same day before launch (the user: "raise the odds so it's a bit more fun"): more ketchup,
- * letters and SUPERSIZE in normal spins, level 1 pays a little less and the top levels more, free spins and
- * coin game a touch smaller, buys cheaper. Simulated over 1.2M spins (fortune2-sim.mjs): RTP ≈ 99 % (was
- * ≈ 96 %), Hotbox Spins ≈ 1 in 150 (was 200), Super ≈ 1 in 1,500 (was 2,400), The Munchies ≈ 1 in 500 (was
- * 720), each bought feature ≈ 97 %.
+ * PARTY ODDS (2026-11-19, the user, after a first raise to ≈ 99 %: "more wilds, more free spins, bonus
+ * symbols, more wins, double them, everyone should win, more random sticky wilds, as if the money was free",
+ * then "the jackpot more often, full screens of the same symbol, lots of crazy stuff, not like normal boring
+ * slots"): every pay doubled (levels, coins, coin game), far more WILDs, features, letters and ketchup,
+ * Abscar drops WILDs next to the squad on every free spin (and now and then in a normal one), and a MUNCHIE
+ * STORM now and then turns every munchie on the board into one squad member's. It gives back far more than
+ * it takes on purpose (pretend burgers); fortune2-sim.mjs has the numbers.
  */
-const BASE_FEATURES = { wild: 2.2, up: 2.2, swap: 0.7, coin: 1.35, frag: 1.0, letter: 4.2 };
-const FREE_FEATURES = { wild: 2.0, up: 1.5, swap: 0.8, coin: 1.2, frag: 1.0, letter: 1.4 };
-export const BASE_TABLES: Tables = { fill: table(1.38, BASE_FEATURES), fall: table(0.05, BASE_FEATURES) };
-export const FREE_TABLES: Tables = { fill: table(1.23, FREE_FEATURES), fall: table(0.05, FREE_FEATURES) };
+const BASE_FEATURES = { wild: 4, up: 3, swap: 1.0, coin: 2, frag: 1.4, letter: 6 };
+const FREE_FEATURES = { wild: 1.7, up: 1.3, swap: 0.8, coin: 1.2, frag: 1.0, letter: 1.8 };
+export const BASE_TABLES: Tables = { fill: table(1.9, BASE_FEATURES), fall: table(0.05, BASE_FEATURES) };
+export const FREE_TABLES: Tables = { fill: table(1.3, FREE_FEATURES), fall: table(0.05, FREE_FEATURES) };
+/** MUNCHIE STORM: chance per spin (normal and free) that every munchie turns into one squad member's. */
+export const STORM_CHANCE = 1 / 120;
+/** Abscar's WILD drop: WILDs next to the squad on every free spin; in a normal spin now and then. */
+export const FREE_WILD_DROPS = 2;
+export const BASE_WILD_CHANCE = 0.15;
+export const BASE_WILD_DROPS = 2;
 
 export const FREE_SPINS = 10;
 /** Ketchups in a free spin → more spins. */
 export const RETRIGGER: [number, number][] = [
-	[4, 5],
-	[3, 3]
+	[4, 6],
+	[3, 4]
 ];
 export const FREE_MAX = 60;
 export const SUPER_LEVEL = 3;
@@ -159,7 +167,7 @@ export const SUPER_LEVEL = 3;
  * free spins is multiplied by it (the coin game isn't).
  */
 export const SUPER_MULT = 2;
-export const MULT_MAX = 15;
+export const MULT_MAX = 3;
 /** Safety nets: walking rounds per spin, steps per walk. */
 const MAX_ROUNDS = 120;
 const MAX_STEPS = 64;
@@ -175,13 +183,13 @@ export const MUNCH_RESPINS = 3;
 /** Chance per empty cell per respin that a coin lands there. */
 export const MUNCH_CHANCE = 0.04;
 export const MUNCH_CASH: [number, number][] = [
-	[12, 34],
-	[25, 30],
-	[50, 18],
-	[120, 11],
-	[280, 5],
-	[600, 1.5],
-	[1500, 0.5]
+	[24, 34],
+	[50, 30],
+	[100, 18],
+	[240, 11],
+	[560, 5],
+	[1200, 1.5],
+	[3000, 0.5]
 ];
 /** What kind a landing coin is: [kind, weight]. */
 const MUNCH_KINDS: ['cash' | 'mult' | 'squad', number][] = [
@@ -229,7 +237,8 @@ export type Ev =
 	| { t: 'walk'; who: Crew; to: Cell; took: Piece; pay: number }
 	| { t: 'level'; who: Crew; level: number }
 	/** every munchie of `from` turns into `who`'s */
-	| { t: 'swap'; who: Crew; from: Crew; ids: number[] }
+	/** storm: a MUNCHIE STORM turned every munchie on the board (from = who then) */
+	| { t: 'swap'; who: Crew; from: Crew; ids: number[]; storm?: true }
 	/** a frag goes off: what it took (pay per piece, hundredths of the bet) */
 	| { t: 'boom'; at: Cell; who: Crew; took: { piece: Piece; pay: number }[] }
 	| { t: 'grow'; open: number }
@@ -274,7 +283,7 @@ export interface F2Spin {
 export type F2Buy = 'hotbox' | 'super' | 'munchies';
 export const BUY_KINDS: F2Buy[] = ['hotbox', 'super', 'munchies'];
 /** What a bought feature costs, × the bet. */
-export const BUY_PRICE: Record<F2Buy, number> = { hotbox: 53, super: 170, munchies: 26 };
+export const BUY_PRICE: Record<F2Buy, number> = { hotbox: 30, super: 75, munchies: 12 };
 export type Bonus = 'hotbox' | 'super';
 
 export interface F2Play {
@@ -432,28 +441,47 @@ function runSpin(ctx: Ctx, st: State, tables: Tables, place: boolean): F2Spin {
 	events.push({ t: 'fill', add: fill });
 	let pay = 0;
 
+	/** Abscar drops pieces next to the squad (on munchies), else anywhere on munchies. */
+	const abscarDrops = (kinds: Kind[]) => {
+		const near = new Set(CREW.flatMap((w) => neighbours(st.open, st.crew[w])));
+		const spots = (pool: Cell[]) => pool.filter((cell) => st.grid[cell]?.kind === 'item');
+		const add: [Piece, Cell][] = [];
+		const gone: number[] = [];
+		for (const kind of kinds) {
+			let pool = spots([...near]);
+			if (!pool.length) pool = spots(openCells(st.open));
+			if (!pool.length) break;
+			const cell = pool[randInt(pool.length, ctx.rand)];
+			gone.push(st.grid[cell]!.id);
+			const p = makePiece(ctx, kind);
+			st.grid[cell] = p;
+			add.push([{ ...p }, cell]);
+		}
+		if (add.length) events.push({ t: 'drop', add, gone });
+	};
+
+	// MUNCHIE STORM: now and then every munchie on the board turns into one squad member's
+	if (ctx.rand() < STORM_CHANCE) {
+		const who = CREW[randInt(CREW.length, ctx.rand)];
+		const ids: number[] = [];
+		for (const q of st.grid)
+			if (q?.kind === 'item' && q.crew !== who) {
+				q.crew = who;
+				ids.push(q.id);
+			}
+		if (ids.length) events.push({ t: 'swap', who, from: who, ids, storm: true });
+	}
+	// Abscar's WILD drop: on every free spin, now and then in a normal one
+	const wilds = st.free ? FREE_WILD_DROPS : ctx.rand() < BASE_WILD_CHANCE ? BASE_WILD_DROPS : 0;
+	if (wilds) abscarDrops(Array<Kind>(wilds).fill('wild'));
+
 	const meterUp = (n: number) => {
 		if (!n) return;
 		st.meter += n;
 		events.push({ t: 'meter', n: Math.min(st.meter, METER_MAX) });
 		while (st.meter >= METER_MAX) {
 			st.meter -= METER_MAX;
-			// Abscar drops features next to the squad (on munchies), else anywhere on munchies
-			const near = new Set(CREW.flatMap((w) => neighbours(st.open, st.crew[w])));
-			const spots = (pool: Cell[]) => pool.filter((cell) => st.grid[cell]?.kind === 'item');
-			const add: [Piece, Cell][] = [];
-			const gone: number[] = [];
-			for (let i = 0; i < DROPS; i++) {
-				let pool = spots([...near]);
-				if (!pool.length) pool = spots(openCells(st.open));
-				if (!pool.length) break;
-				const cell = pool[randInt(pool.length, ctx.rand)];
-				gone.push(st.grid[cell]!.id);
-				const p = makePiece(ctx, weighted(DROP_TABLE, ctx.rand));
-				st.grid[cell] = p;
-				add.push([{ ...p }, cell]);
-			}
-			events.push({ t: 'drop', add, gone });
+			abscarDrops(Array.from({ length: DROPS }, () => weighted(DROP_TABLE, ctx.rand)));
 			events.push({ t: 'meter', n: st.meter });
 			if (st.free && st.mult < MULT_MAX) {
 				st.mult += 1;
