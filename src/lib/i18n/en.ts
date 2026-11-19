@@ -1853,9 +1853,10 @@ export const en = {
 	/** The Cosmetics tab (CosmeticsSection; data/cosmetics.ts). */
 	cosmetics: {
 		heading: 'Cosmetics',
-		sub: (n: number) => `${n} large stickers, stickers and charms`,
+		sub: (n: number, bundles: number) => `${n} large stickers, stickers and charms · ${bundles} store bundles`,
 		typeGroup: 'Kind of item',
 		types: { decal: 'Large stickers', sticker: 'Stickers', charm: 'Charms' },
+		bundlesTab: 'Bundles',
 		typeHelp: {
 			decal: 'Large stickers (“Large Decals” in game): the big one along the side of your weapon.',
 			sticker: 'Stickers (“Weapon Stickers” in game): the small ones you place on your weapon.',
@@ -1906,6 +1907,64 @@ export const en = {
 		clear: 'Clear search',
 		honest:
 			'Nobody publishes a complete list, so this is every large sticker, sticker and charm we found a source for. The pictures are our own drawings made after pictures of the real items; the few nobody has shown yet are our guess from the name and are marked “Our guess”. A plain symbol means no picture found yet. Tap an item for where to get it.',
+		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
+	},
+
+	/** Cosmetics → Bundles: every MW4 store bundle with everything in it. */
+	bundles: {
+		help: 'Every Modern Warfare 4 bundle in the store, with everything you get when you buy it.',
+		search: 'Search bundles',
+		searchPlaceholder: 'Search bundle, gun, skin, operator…',
+		results: (shown: number, total: number) => (shown === total ? `${total} bundles` : `${shown} of ${total} bundles`),
+		cp: 'CP',
+		cpLong: (n: string) => `${n} COD Points`,
+		platform: 'Platform stores',
+		platformLong: 'Bought for real money in the PlayStation, Xbox or PC store, not with COD Points',
+		since: (day: string) => `In the store since ${day}`,
+		left: (day: string) => `Left the store ${day}`,
+		count: (n: number) => (n === 1 ? '1 item' : `${n} items`),
+		newTag: 'New',
+		sections: { operator: 'Operator skins', operatorOne: 'Operator skin', weapon: 'Weapon blueprints', weaponOne: 'Weapon blueprint', other: 'Also in it' },
+		kinds: {
+			operator: 'Operator skin',
+			weapon: 'Weapon blueprint',
+			finisher: 'Finishing move',
+			camo: 'Weapon camo',
+			decal: 'Large sticker',
+			sticker: 'Sticker',
+			charm: 'Charm',
+			reticle: 'Reticle',
+			equipment: 'Equipment skin',
+			card: 'Calling card',
+			emblem: 'Emblem',
+			loading: 'Loading screen',
+			spray: 'Spray',
+			token: 'XP token',
+			cp: 'COD Points'
+		},
+		forOperator: (op: string) => `for ${op}`,
+		rarity: { rare: 'Rare', epic: 'Epic', legendary: 'Legendary', ultra: 'Ultra' },
+		tags: { mastercraft: 'Mastercraft', reactive: 'Reactive', tracers: 'Tracers', deathfx: 'Death effect' },
+		reactiveSkin: 'Reactive',
+		openWeapon: (gun: string) => `${gun}: open the weapon card`,
+		openItem: 'opens where to get it',
+		store: 'See it in Activision’s store',
+		newTab: '(opens in a new tab)',
+		wordsHeading: 'What the words mean',
+		words: [
+			['Mastercraft', 'a blueprint with its own one-of-a-kind look, often its own sounds and animations too.'],
+			['Reactive', 'the look changes as you get kills in a match.'],
+			['Tracers', 'your bullets leave coloured trails.'],
+			['Death effect', 'enemies you kill go out with a special effect.'],
+			['Ultra Skin', 'an operator skin with animated effects; the top rarity.'],
+			['Tracer Pack / Legends Pack / Elite Squad', 'Activision’s names for kinds of bundle.'],
+			['Rarity', 'Rare → Epic → Legendary → Ultra, the game’s own grading of how fancy an item is.'],
+			['Weapon blueprint', 'a ready-built gun with its own look and attachments, for that weapon only.']
+		] as [string, string][],
+		none: 'No bundle matches.',
+		clear: 'Clear search',
+		honest:
+			'Read from Activision’s own store pages. The in-game store can have more than the web store shows (personal offers, bundles that come back), and bundles come and go. Tap a gun to open its weapon card, or a sticker or charm to see our drawing of it.',
 		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
 

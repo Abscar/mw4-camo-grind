@@ -20,11 +20,15 @@
 		type CosmeticType
 	} from '#lib/data/cosmetics.ts';
 	import { cosmeticArt } from '#lib/cosmeticArt.ts';
+	import { BUNDLES } from '#lib/data/bundles.ts';
+	import CosmeticsBundles from './CosmeticsBundles.svelte';
 	import Dialog from './Dialog.svelte';
 	import { t } from '#lib/i18n/en.ts';
 	import { shortDate } from '#lib/ui.ts';
 
 	let type = $state<CosmeticType>('decal');
+	/** The fourth switch button: the store bundles with everything in them (2026-11-20). */
+	let bundles = $state(false);
 	let source = $state<CosmeticSource | null>(null);
 	let query = $state('');
 	// worked out after load, so the prerendered page and the first render match
@@ -51,6 +55,7 @@
 	const newHere = $derived(ofType.filter((c) => cosmeticIsNew(c, todayIso)).length);
 
 	function chooseType(next: CosmeticType) {
+		bundles = false;
 		type = next;
 		// a "where from" that this kind doesn't have would show an empty list
 		if (source !== null && !COSMETICS.some((c) => c.type === next && c.source === source)) source = null;
@@ -102,22 +107,31 @@
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-4 pb-3 sm:px-5">
 		<div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
 			<h2 id="cos-heading" class="font-head text-base font-bold tracking-wide uppercase">{t.cosmetics.heading}</h2>
-			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{t.cosmetics.sub(COSMETICS.length)}</span>
+			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{t.cosmetics.sub(COSMETICS.length, BUNDLES.length)}</span>
 		</div>
-		<!-- phones: the switch gets its own row, three equal parts -->
-		<div class="flex gap-1.5 max-sm:w-full" role="group" aria-label={t.cosmetics.typeGroup}>
+		<!-- phones: the switch gets its own rows, two by two -->
+		<div class="flex gap-1.5 max-sm:grid max-sm:w-full max-sm:grid-cols-2" role="group" aria-label={t.cosmetics.typeGroup}>
 			{#each COSMETIC_TYPES as k (k)}
 				<button
 					type="button"
-					class="meta-mode font-head min-h-11 rounded-full border px-3 text-[13px] leading-tight font-semibold max-sm:flex-1 sm:px-4"
-					aria-pressed={type === k}
+					class="meta-mode font-head min-h-11 rounded-full border px-3 text-[13px] leading-tight font-semibold sm:px-4"
+					aria-pressed={!bundles && type === k}
 					onclick={() => chooseType(k)}
 					>{t.cosmetics.types[k]} <span class="num font-normal opacity-80">{COSMETICS.filter((c) => c.type === k).length}</span></button
 				>
 			{/each}
+			<button
+				type="button"
+				class="meta-mode font-head min-h-11 rounded-full border px-3 text-[13px] leading-tight font-semibold sm:px-4"
+				aria-pressed={bundles}
+				onclick={() => (bundles = true)}>{t.cosmetics.bundlesTab} <span class="num font-normal opacity-80">{BUNDLES.length}</span></button
+			>
 		</div>
 	</header>
 
+	{#if bundles}
+		<CosmeticsBundles onitem={show} />
+	{:else}
 	<div class="grid gap-3 border-t border-line px-4 py-4 sm:px-5">
 		<p class="text-[13px] text-fg">{t.cosmetics.typeHelp[type]}</p>
 
@@ -228,6 +242,7 @@
 		<p>{t.cosmetics.honest}</p>
 		<p>{t.cosmetics.snapshot(COSMETICS_SOURCES, shortDate(COSMETICS_CHECKED))}</p>
 	</div>
+	{/if}
 </section>
 
 <Dialog bind:open={infoOpen} title={picked?.name ?? ''}>

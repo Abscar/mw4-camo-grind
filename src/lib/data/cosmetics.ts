@@ -9,8 +9,9 @@
  *   (levels 8 / 12) and the support pages for bonus content and the Monster Energy promotions
  *   → `verified: true`
  * - Store bundles: every bundle's contents read on Activision's own store pages
- *   (callofduty.com/store/bundles/<id>, 16 Nov) and matched against itemshop.gg's store tracker
- *   → `verified: true`; a bundle only itemshop.gg shows → `verified: false`
+ *   (callofduty.com/store/bundles/<id>, 16 Nov, again 20 Nov for the Bundles list in bundles.ts,
+ *   which also found the Emerald Reaper Starter Pack there) and matched against itemshop.gg's store
+ *   tracker → `verified: true`; a bundle only itemshop.gg shows → `verified: false`
  * - Prestige 2–10: Destructoid, GameRant and Dexerto agree on every name → `verified: true`
  * - Battle Pass tiers Activision didn't list: Detonated's and CODCentral's tier 1–100 lists agree on
  *   every name and tier (16 Nov) → `verified: true`; "free" marks are CODCentral's
@@ -27,7 +28,7 @@
  * scripts/cosmetics.test.js.
  */
 
-export const COSMETICS_CHECKED = '2026-11-16';
+export const COSMETICS_CHECKED = '2026-11-20';
 export const COSMETICS_SOURCES =
 	'Activision (callofduty.com blogs, store pages, support pages), itemshop.gg, Destructoid, GameRant, Dexerto, Detonated, CODCentral, games.gg, Insider Gaming, TheGamer, mmoexp, codskins.co.uk, codmw4.wiki, cod-mw4.wiki';
 
@@ -110,8 +111,8 @@ const NEW = { added: '2026-11-16' };
 const BETA_END = '2026-09-01';
 const BETA_NOTE = 'Named in Activision’s own open beta guide. Beta rewards carried over to the full game.';
 const BOOT_CAMP_END = '2026-11-06';
-const EMERALD =
-	'Only itemshop.gg’s store tracker lists this bundle (in the shop since 13 Nov, sold in the console / PC platform stores rather than for COD Points). Activision’s store website doesn’t show it.';
+/** Items added in the 20 Nov refresh (with the Bundles list). */
+const NEW20 = { added: '2026-11-20' };
 
 export const COSMETICS: Cosmetic[] = [
 	// ----- Large decals -----
@@ -143,8 +144,9 @@ export const COSMETICS: Cosmetic[] = [
 	item('sticker', 'store', 'Regal Snake', 'Store: Jadefire Bundle', NEW),
 	item('sticker', 'store', 'Knife Way', 'Store: Northern Elite Bundle', NEW),
 	item('sticker', 'store', 'Maple Patrol', 'Store: Northern Elite Bundle', NEW),
-	item('sticker', 'store', 'Greens Eat You', 'Store: Emerald Reaper Bundle (platform stores)', { ...NEW, verified: false, note: EMERALD }),
-	item('sticker', 'store', 'Finders Keepers', 'Store: Emerald Reaper Bundle (platform stores)', { ...NEW, verified: false, note: EMERALD }),
+	item('sticker', 'store', 'Greens Eat You', 'Store: Emerald Reaper Starter Pack (platform stores)', NEW),
+	item('sticker', 'store', 'Finders Keepers', 'Store: Emerald Reaper Starter Pack (platform stores)', NEW),
+	item('sticker', 'store', 'Bad Landing', 'Store: Drone Out Bundle', NEW20),
 	item('sticker', 'promo', 'Death Grip', 'Stater Bros. Markets + Monster Energy (US stores)', {
 		verified: false,
 		until: '2026-10-31',
@@ -184,7 +186,9 @@ export const COSMETICS: Cosmetic[] = [
 	item('charm', 'store', 'Nice Try', 'Store: C.O.D.E. Valor Pack (charity pack, platform stores)'),
 	item('charm', 'store', 'Bleed Out', 'Store: Crimson Ritual Mastercraft Bundle', NEW),
 	item('charm', 'store', 'Hoot', 'Store: Steadfast Bundle', NEW),
-	item('charm', 'store', 'Gem Heart', 'Store: Emerald Reaper Bundle (platform stores)', { ...NEW, verified: false, note: EMERALD }),
+	item('charm', 'store', 'Gem Heart', 'Store: Emerald Reaper Starter Pack (platform stores)', NEW),
+	item('charm', 'store', 'Reina de la Muerte', 'Store: Las Almas Eternal Mastercraft Bundle', NEW20),
+	item('charm', 'store', 'Las Almas Eternal', 'Store: Las Almas Eternal Mastercraft Bundle', NEW20),
 	item('charm', 'promo', 'Ghost Tag', 'Micromania stores (France): code with MW4 merchandise', { until: '2026-12-31' }),
 	item('charm', 'promo', 'Hucks charm (name not announced)', 'Hucks + Monster Energy (US stores)', {
 		until: '2026-12-31',

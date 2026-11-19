@@ -140,6 +140,49 @@ export const MORE_ART: Record<string, CosmeticArt> = {
 			chain([[56, 26], [60, 32], [59, 39], [54, 44], [51, 51], [55, 57], [62, 59], [67, 54], [66, 48], [60, 48], [55, 54], [54, 62], [59, 68], [66, 71], [70, 76]])
 	},
 
+	// Drone Out: an operator in a red hooded suit with a dark visor, both arms thrown up, in front of a
+	// wall of yellow-orange explosions with yellow drones tumbling out of it (a wide die-cut, navy shade)
+	'sticker-bad-landing': {
+		viewBox: STICKER,
+		after: 'Activision’s store picture of the Drone Out bundle',
+		svg:
+			CUT(
+				'M6 46C2 38 8 30 14 30C12 22 20 14 28 18C30 10 40 8 44 14C50 8 60 10 60 18C68 14 76 22 72 30C78 34 78 44 72 48C76 56 70 64 62 62C58 70 48 72 42 68C36 72 26 70 22 64C14 66 6 58 10 52C6 52 4 48 6 46Z',
+				'#f08a1e'
+			) +
+			`<path d="M10 50c-2-8 4-14 10-14M70 50c2-8-4-14-10-14M24 64c6 4 26 4 32 0" fill="none" stroke="#d6381e" stroke-width="3" stroke-linecap="round"/>` +
+			`<g fill="#ffd23f" stroke="#e2561c" stroke-width="1"><circle cx="20" cy="33" r="7.5"/><circle cx="29" cy="23" r="6.5"/><circle cx="51" cy="22" r="7.5"/><circle cx="61" cy="32" r="6.5"/><circle cx="15" cy="47" r="5.5"/><circle cx="66" cy="48" r="5.5"/><circle cx="40" cy="15" r="4.5"/></g>` +
+			`<g fill="#fff3b0"><circle cx="18" cy="31" r="2.6"/><circle cx="53" cy="20" r="2.8"/><circle cx="28" cy="21" r="2"/><circle cx="63" cy="30" r="2"/></g>` +
+			`<path d="M8 40l3-1-2 3zM73 25l3 1-3 2zM36 9l2 2-3 0zM70 58l3 0-2 2z" fill="#d6381e"/>` +
+			// the drones: yellow bodies, dark arms and rotor blades
+			[
+				[11, 31, -18],
+				[62, 23, 14],
+				[71, 41, -10]
+			]
+				.map(
+					([x, y, a]) =>
+						`<g transform="translate(${x} ${y}) rotate(${a})" stroke="${INK}" stroke-linecap="round">` +
+						`<path d="M-7 0h14M-6 2l-2 3M6 2l2 3" stroke-width="1.4"/><path d="M-10-2.4h5M5-2.4h5" stroke="#3a3d44" stroke-width="1.2"/>` +
+						`<ellipse rx="4.2" ry="2.5" fill="#d8b040" stroke-width="1"/><path d="M-2-1h3" stroke="#f6e08a" stroke-width=".9"/></g>`
+				)
+				.join('') +
+			// the operator: arms up (red sleeves, navy gloves, fingers spread), torso with a chest rig
+			bone('M28 48L20 36L18 26', 5, '#b3283a', INK) +
+			bone('M52 48L60 36L62 26', 5, '#b3283a', INK) +
+			bone('M18.6 29L18 24M61.4 29L62 24', 4.4, '#2f3352', INK) +
+			bone('M18 23l-4-5M18 23l-1-7M18 23l2.4-6M18 23l5-3', 1.5, '#2f3352', INK) +
+			bone('M62 23l4-5M62 23l1-7M62 23l-2.4-6M62 23l-5-3', 1.5, '#2f3352', INK) +
+			`<path d="M24 70L26 51Q28 44 34 43H46Q52 44 54 51L56 70Z" fill="#b3283a" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>` +
+			`<path d="M27 52l-1 16M53 52l1 16" stroke="#2b2f4f" stroke-width="1.6" stroke-linecap="round"/>` +
+			`<rect x="33" y="50" width="14" height="10" rx="1.5" fill="#7c1b29" stroke="${INK}" stroke-width="1"/><rect x="35.5" y="52.5" width="5" height="3" rx=".6" fill="#d8b040"/><path d="M42 53h3M42 56h3" stroke="#e05060" stroke-width=".9"/>` +
+			`<path d="M29 63h22M31 66h18" stroke="#2b2f4f" stroke-width="1.6" stroke-linecap="round"/>` +
+			`<path d="M32 44Q40 49 48 44" fill="#7c1b29" stroke="${INK}" stroke-width="1.1"/>` +
+			`<path d="M32 44Q30 30 34 24Q40 18 46 24Q50 30 48 44Z" fill="#9a1f2a" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>` +
+			`<path d="M33.4 41Q32.4 32 35.4 26.4" fill="none" stroke="#2b2f4f" stroke-width="1.3" stroke-linecap="round"/>` +
+			`<path d="M34.5 30Q40 27 45.5 30L45 36Q40 38.4 35 36Z" fill="#5c0f1c" stroke="${INK}" stroke-width="1"/><path d="M36 31.6q4-2 8 0" fill="none" stroke="#e05060" stroke-width=".9" stroke-linecap="round"/>`
+	},
+
 	// Northern Elite: a red-and-cyan "x-ray" operator aiming a scoped rifle to the right, his ribs and
 	// teeth showing through, in front of a red maple leaf
 	'sticker-maple-patrol': {
