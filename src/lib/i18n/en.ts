@@ -47,15 +47,6 @@ export const en = {
 	nav: {
 		skip: 'Skip to the weapon list'
 	},
-	/** The page's two big tabs (2026-11-12): the camo tracker and Ranked prep. */
-	/** The Camo list / Ranked prep switch above the weapon list (PageTabs.svelte). */
-	rankTabs: {
-		label: 'Camo list or Ranked prep',
-		tabs: {
-			grind: { name: 'Camo list', sub: 'Your camos, weapon by weapon' },
-			ranked: { name: 'Ranked prep', sub: 'CDL rules, bans and ranked classes' }
-		}
-	},
 	/** The Ranked prep tab (RankedSection; data in data/ranked.ts). */
 	ranked: {
 		heading: 'Ranked prep',
@@ -725,6 +716,9 @@ export const en = {
 	pageTabs: {
 		label: 'Pages',
 		grind: 'Camo grind',
+		/** Ranked prep (RankedSection), second since 2026-11-20 (the user: "next to camos, second place");
+		    until then a switch inside Camo grind */
+		ranked: 'Ranked',
 		/** soft hyphens: with six tabs a phone breaks it as "Cosmet-/ics", not anywhere */
 		cosmetics: 'Cos­met­ics',
 		extras: 'Extra camos',

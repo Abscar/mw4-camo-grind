@@ -47,9 +47,7 @@
 	import DivergenceUnlock from '#lib/components/DivergenceUnlock.svelte';
 	import BootSequence from '#lib/components/BootSequence.svelte';
 	import AbscarTerminal from '#lib/components/AbscarTerminal.svelte';
-	import PageTabs from '#lib/components/PageTabs.svelte';
 	import RankedSection from '#lib/components/RankedSection.svelte';
-	import { pageTab } from '#lib/pageTab.svelte.ts';
 	import SquadSection from '#lib/components/SquadSection.svelte';
 	import CasinoSection from '#lib/components/CasinoSection.svelte';
 	import ShopPage from '#lib/components/ShopPage.svelte';
@@ -59,8 +57,10 @@
 	import SquadUpFire from '#lib/components/SquadUpFire.svelte';
 	import { squad } from '#lib/squad.svelte.ts';
 
-	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16). All stay mounted; the others are only hidden. */
-	const PAGE_TABS = ['grind', 'cosmetics', 'extras', 'squad', 'casino', 'shop'] as const;
+	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
+	    moved up here from its own switch inside Camo grind, second place, 2026-11-20). All stay mounted; the
+	    others are only hidden. Like the rest, the page always opens on Camo grind. */
+	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'extras', 'squad', 'casino', 'shop'] as const;
 	let view = $state<(typeof PAGE_TABS)[number]>('grind');
 
 	// a squad link was opened: show the Squad tab, where it asks for your name
@@ -153,7 +153,13 @@
 
 	onMount(() => {
 		const result = progress.load();
-		pageTab.load();
+		// the old "Camo list | Ranked prep" switch remembered Ranked here (until 2026-11-20); Ranked is a page
+		// tab now and the page opens on Camo grind, so the leftover choice is just cleared
+		try {
+			localStorage.removeItem('mw4-camo-grind:tab');
+		} catch {
+			// storage blocked: nothing to clear
+		}
 		if (result === 'migrated-v1') toast.show(t.toast.importedOld, undefined, 7000);
 		else if (result === 'unreadable') toast.show(t.toast.corruptSave, undefined, 10000);
 		if (!progress.canSave) toast.show(t.toast.notSaving, undefined, 10000);
@@ -243,7 +249,7 @@
 		<SquadUpBanner />
 		<Four20Banner />
 
-		<!-- page tabs: the tracker, the Cosmetics list, Extra camos or the Squad -->
+		<!-- page tabs: the tracker, Ranked prep, the Cosmetics list, Extra camos, the Squad, BurgiCasino, BurgiShop -->
 		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label}>
 			{#each PAGE_TABS as tab (tab)}
 				<button
@@ -258,6 +264,10 @@
 					onkeydown={tabKey}>{t.pageTabs[tab]}{#if tab === 'squad' && squad.unread > 0 && view !== 'squad'}<span class="tab-badge num">{squad.unread}<span class="sr-only"> ({t.squad.radio.unread(squad.unread)})</span></span>{/if}</button
 				>
 			{/each}
+		</div>
+
+		<div id="panel-ranked" role="tabpanel" aria-labelledby="tab-ranked" hidden={view !== 'ranked'}>
+			<div class="mt-5"><RankedSection /></div>
 		</div>
 
 		<div id="panel-cosmetics" role="tabpanel" aria-labelledby="tab-cosmetics" hidden={view !== 'cosmetics'}>
@@ -290,16 +300,8 @@
 		<!-- overall progress and the next milestone -->
 		<div class="mt-4"><KpiBar /></div>
 
-		<!-- the two big tabs right above the weapon list (2026-11-12, the user's ask): the camo
-		     checklist or Ranked prep -->
-		<div class="mt-6"><PageTabs panelId="page-panel" /></div>
-
-		<div id="page-panel" role="tabpanel" aria-labelledby="page-tab-{pageTab.current}">
-		{#if pageTab.current === 'ranked'}
-			<div class="mt-4"><RankedSection /></div>
-		{:else}
-		<!-- 4. search and filters -->
-		<div id="weapons" class="mt-4 scroll-mt-4">
+		<!-- 4. search and filters (Ranked prep had a switch here until 2026-11-20; it's a page tab now) -->
+		<div id="weapons" class="mt-6 scroll-mt-4">
 			<Toolbar bind:query shown={shownCount} total={WEAPONS.length} onclear={clearFilters} />
 		</div>
 
@@ -335,8 +337,6 @@
 
 		<!-- 7. news and everything else -->
 		<div class="compact-hide mt-7"><MetaSection /></div>
-		{/if}
-		</div>
 
 		<div class="abscar-only compact-hide mt-7">
 			<!-- the five banners share one height (the user's ask: "same size so they look in proportion");
@@ -421,26 +421,29 @@
 	.page-tab:hover {
 		color: var(--t-fg);
 	}
-	/* narrower screens: the six tabs share the row equally; a long name wraps onto two lines (BurgiCasino /
-	   BurgiShop at their soft hyphens) */
-	@media (max-width: 899px) {
+	/* narrower screens: the seven tabs share the row equally; a long name wraps onto two lines (BurgiCasino /
+	   BurgiShop at their soft hyphens). Their natural widths add up to ≈ 900 px, so this starts below 1024 px
+	   (was 900 with six tabs). A tab is never narrower than its longest word ("RANKED" broke as "RANKE / D"
+	   in an equal seventh at 375 px), so a few px go from the others to it; break-word, not anywhere, or that
+	   minimum would count every letter as a break */
+	@media (max-width: 1023px) {
 		.page-tabs {
 			gap: 4px;
 		}
 		.page-tab {
 			flex: 1 1 0;
-			min-width: 0;
+			min-width: min-content;
 			padding: 0 0.3rem;
 			font-size: 12.5px;
 			line-height: 1.1;
 			letter-spacing: 0.04em;
 			hyphens: auto;
-			overflow-wrap: anywhere;
+			overflow-wrap: break-word;
 		}
 	}
 	@media (max-width: 639px) {
 		.page-tab {
-			padding: 0 0.15rem;
+			padding: 0 1px; /* seven tabs on a phone: every px goes to the names */
 			font-size: 10.5px;
 			letter-spacing: 0.01em;
 		}
