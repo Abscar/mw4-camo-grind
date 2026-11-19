@@ -923,7 +923,7 @@ export const en = {
 		intro: 'Only you see this tab. Changes reach the others’ pages within half a minute. Nothing goes on the radio, and the games look exactly as usual.',
 		saved: 'Saved',
 		failed: 'Couldn’t reach the squad. Try again in a moment.',
-		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', roulette: 'Roulette', blackjack: 'Blackjack' },
+		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', book: 'Book Of Skedd', roulette: 'Roulette', blackjack: 'Blackjack' },
 		odds: {
 			heading: 'Odds per game',
 			intro: 'For everyone who plays that game. Plus = the players win more (the house takes less), minus = they lose more.'
@@ -942,7 +942,7 @@ export const en = {
 			return `${head}: every game ${which} of ${draws}${chance ? `, ${which} of ${draws + 1} in ${chance} %` : ''}`;
 		},
 		how: 'How luck works: the game is played out as usual, then (as often as the setting says) once or twice more behind the scenes, and the best result counts (or the worst, for minus). ±50 = always two tries, ±100 = always three.',
-		guide: 'Small steps go a long way. With the party odds the slot machines give back about 4× what goes in; at +50 about 8×, at −50 less than goes in (roughly half), at −100 almost nothing. On red at roulette, +50 wins about 3 spins in 4 and −50 about 1 in 4. At blackjack a player normally wins about 4 hands in 10; at +50 about 6, at −50 about 2.5.',
+		guide: 'Small steps go a long way. With the party odds the slot machines give back about 4× what goes in; at +50 about 8×, at −50 less than goes in (roughly half), at −100 almost nothing. Book Of Skedd runs on real odds (about 96 % back): at +50 about 1.8×, at −50 about a tenth; its gamble card follows luck too (+50 guesses the colour right 3 times in 4). On red at roulette, +50 wins about 3 spins in 4 and −50 about 1 in 4. At blackjack a player normally wins about 4 hands in 10; at +50 about 6, at −50 about 2.5.',
 		changed: (n: number) => (n ? `${n} changed` : 'all normal'),
 		resetAll: 'Everything back to normal',
 		resetAsk: 'Put all odds, luck and picked results back to normal?',
@@ -986,6 +986,11 @@ export const en = {
 			heading: 'Mybots 5: pick what happens',
 			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does).',
 			kinds: { hotbox: 'Hotbox Spins', super: 'Super Hotbox', munchies: 'The Munchies', big: 'A big win (25× or more)', blank: 'Nothing at all' }
+		},
+		book: {
+			heading: 'Book Of Skedd: pick what happens',
+			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does). Their luck also steers the gamble’s card.',
+			kinds: { free: 'Free spins', abscar: 'Free spins with Abscar expanding', big: 'A big win (25× or more)', blank: 'Nothing at all' }
 		},
 		roulette: {
 			heading: 'Roulette: pick the number',
@@ -1135,12 +1140,12 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune · Mybots 5 · Roulette · Blackjack · BurgiBank · Donations',
+		sub: 'Abscar’s Fortune · Mybots 5 · Book Of Skedd · Roulette · Blackjack · BurgiBank · Donations',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', book: 'Book Of Skedd', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
@@ -1175,6 +1180,8 @@ export const en = {
 		event: {
 			slots: (net: number, tier: string) => `${tier === 'jackpot' ? 'hit the BURGER JACKPOT' : tier === 'mega' ? 'hit a MEGA WIN' : tier === 'big' ? 'hit a BIG WIN' : 'won'} on Abscar’s Fortune: +${net.toLocaleString('en-US')} 🍔 🎰`,
 			fortune2: (net: number, tier: string) => `${tier === 'epic' ? 'got an EPIC MUNCH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Mybots 5: +${net.toLocaleString('en-US')} 🍔 🍟`,
+			book: (net: number, tier: string) => `hit ${tier === 'epic' ? 'an EPIC WIN' : tier === 'mega' ? 'a MEGA WIN' : 'a BIG WIN'} on Book Of Skedd: +${net.toLocaleString('en-US')} 🍔 📖`,
+			bookGamble: (n: number, steps: number) => `gambled ${steps} time${steps === 1 ? '' : 's'} on Book Of Skedd and collected ${n.toLocaleString('en-US')} 🍔 🃏`,
 			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
 			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`),
 			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
@@ -1372,6 +1379,74 @@ export const en = {
 			buyNote: (h: number, s: number, m: number) => `Buy bonus prices are times your bet: Hotbox Spins ${h}×, Super Hotbox ${s}×, The Munchies ${m}×. They give back about the same share as spinning.`,
 			rtpNote: 'Hotbox Spins come about once every 75 spins and The Munchies about once every 65. In the long run it gives back about 4½ times what goes in, so everybody wins. Pretend burgers, never money.',
 			maxNote: (x: number) => `One play (a spin with everything it starts, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`
+		},
+		/** Book Of Skedd (book.ts, CasinoBook.svelte; 2026-11-20, the user: "a slot like Book Of Dead called Book Of Skedd, a cannabis leaf on the book, the bonus working the same, and gamble") */
+		book: {
+			sub: 'Expanding symbol · Gamble',
+			spin: 'Spin',
+			credits: 'Burgers',
+			lastWin: 'Win',
+			lines: 'Lines',
+			linesLabel: (n: number) => `${n} line${n === 1 ? '' : 's'} played`,
+			perLine: (n: number) => `${n.toLocaleString('en-US')} a line`,
+			betLabel: (bet: number, perLine: number) => `Bet ${bet.toLocaleString('en-US')} burgers (${perLine.toLocaleString('en-US')} a line)`,
+			spinning: 'Spinning…',
+			noWin: 'No win this time.',
+			lineWin: (line: number, count: number, symbol: string, win: number) => `Line ${line}: ${count} × ${symbol} = ${win.toLocaleString('en-US')} 🍔`,
+			bookWin: (count: number, win: number, spins: number) => `${count} × Book = ${win.toLocaleString('en-US')} 🍔 + ${spins} free spins`,
+			/** free spins: the book opens on the special symbol */
+			bookOpens: 'The book opens…',
+			special: 'Special symbol',
+			specialPick: (symbol: string, need: number) => `${symbol} spreads over whole reels in the free spins (from ${need} reels, on every line you play)`,
+			freeIntro: (n: number) => `${n} FREE SPINS`,
+			freeTitle: (n: number, total: number) => `Free spin ${n} / ${total}`,
+			freeSub: (symbol: string, won: number) => `${symbol} expands · ${won.toLocaleString('en-US')} 🍔 so far`,
+			expandWin: (symbol: string, reels: number, win: number) => `${symbol} expands on ${reels} reels = ${win.toLocaleString('en-US')} 🍔`,
+			freeMore: (n: number) => `+${n} FREE SPINS!`,
+			freeOutro: 'FREE SPINS WON',
+			freeOutroSub: (n: number) => `${n} free spins played`,
+			continue: 'Continue',
+			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', epic: 'EPIC WIN' },
+			maxWin: (x: number) => `MAX WIN: ${x.toLocaleString('en-US')}× your bet`,
+			/** the gamble */
+			gambleOffer: (n: number) => `Gamble ${n.toLocaleString('en-US')} 🍔`,
+			gambleTitle: 'Gamble',
+			gambleHelp: 'Guess the card: the right colour doubles your win, the right suit gives you 4 times it. A wrong guess loses it.',
+			gambleAmount: 'At stake',
+			colourWin: 'Colour pays',
+			suitWin: 'Suit pays',
+			red: 'Red',
+			black: 'Black',
+			suits: { H: 'Hearts', D: 'Diamonds', C: 'Clubs', S: 'Spades' },
+			collect: 'Collect',
+			gamblesLeft: (n: number) => `Gambles left: ${n}`,
+			history: 'Last cards',
+			cardBack: 'Face-down card',
+			cardIs: (rank: string, suit: string) => `${rank} of ${suit}`,
+			gambleRight: (n: number) => `Right! ${n.toLocaleString('en-US')} 🍔`,
+			gambleWrong: 'Wrong card: the win is gone.',
+			collected: (n: number) => `Collected ${n.toLocaleString('en-US')} 🍔`,
+			gambleLimit: (x: number) => `The gamble closes once it would pay over ${x}× your bet.`,
+			paytable: 'Paytable & how it works',
+			how: 'A classic book slot: 5 reels, 3 rows and up to 10 paylines (pick how many with LINES; your bet = the bet per line × the lines). Wins pay left to right from the first reel, the best win per line: the four big symbols from 2 in a row, the letters from 3. THE BOOK stands in for every symbol on the lines, and 3 or more anywhere pay times your whole bet and give 10 free spins. Before they start the book opens on a special symbol, picked at random from the other nine. In every free spin, once the normal wins are paid, the special symbol spreads over each whole reel it’s on when it’s on enough reels to win (2 for the big symbols, 3 for the letters), and pays again on every line you play, even when those reels aren’t next to each other. 3 books in the free spins give 10 more with the same symbol. After a win you can gamble it on a face-down card: the colour doubles it, the suit gives 4 times it; up to 5 times in a row, or collect. Everything in a spin is decided the moment you pay. Pretend burgers, never money.',
+			symbols: {
+				ten: '10',
+				jack: 'Jack',
+				queen: 'Queen',
+				king: 'King',
+				ace: 'Ace',
+				lighter: 'Rasta lighter',
+				grinder: 'Grinder',
+				bong: 'Golden bong',
+				abscar: 'Abscar',
+				book: 'The Book of Skedd'
+			},
+			payRow: (two: number, three: number, four: number, five: number) => `${two ? `2 → ${two} · ` : ''}3 → ${three} · 4 → ${four} · 5 → ${five}`,
+			bookRow: (a: number, b: number, c: number, spins: number) => `WILD on the lines and scatter: 3 → ${a}× bet · 4 → ${b}× · 5 → ${c}×, + ${spins} free spins`,
+			payNote: 'Line wins are times the bet per line. The spreading symbol pays its line win on every line you play.',
+			gambleNote: (steps: number, limit: number) => `Gamble: at most ${steps} times in a row, and only while what it would pay is at most ${limit}× your bet. A fair card from a full deck.`,
+			oddsNote: (x: number) => `Real odds like the real thing, not the party odds of the other machines: in the long run it gives back about 96 % of what goes in. Free spins come about once every 200 spins, and that’s where the big wins are. One spin with its free spins pays at most ${x.toLocaleString('en-US')}× your bet.`,
+			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`
 		},
 		roulette: {
 			spin: 'Spin',

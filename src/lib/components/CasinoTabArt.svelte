@@ -11,15 +11,18 @@
 	and a big red button.
 	Donations (BurgiGives, 2026-11-20) = a glass donation jar full of burgers and burger coins, a heart on
 	its label, a burger coin dropping into the slot in its gold lid.
+	Book Of Skedd (2026-11-20) = the green leather book with gold corners and the gold cannabis leaf on its
+	cover, glowing, with sparkles (the halo breathes on the selected tab).
 	Our own chunky cartoons in the Burger Bandit's style (SlotSymbol.svelte). Decorative: the tab says
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'fortune2' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
+	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
 </script>
 
 <script lang="ts">
 	import { holk } from '#lib/abscarOperator.ts';
+	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
 
 	let { kind, size = 64 }: { kind: CasinoTab; size?: number } = $props();
 	const uid = $props.id();
@@ -48,6 +51,10 @@
 		<linearGradient id="{u}-bag" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#b265ff" /><stop offset=".6" stop-color="#7a2fc8" /><stop offset="1" stop-color="#4a1580" /></linearGradient>
 		<radialGradient id="{u}-wood" cx=".5" cy=".5" r=".5"><stop offset=".78" stop-color="#8a4a1c" /><stop offset=".9" stop-color="#5a2a0c" /><stop offset="1" stop-color="#3a1806" /></radialGradient>
 		<radialGradient id="{u}-ember"><stop offset="0" stop-color="#ff8a1a" stop-opacity="0.95" /><stop offset="1" stop-color="#ff5a00" stop-opacity="0" /></radialGradient>
+		{#if kind === 'book'}
+			<linearGradient id="{u}-cover" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f7a3a" /><stop offset=".55" stop-color="#14502a" /><stop offset="1" stop-color="#0a2c16" /></linearGradient>
+			<radialGradient id="{u}-halo"><stop offset="0" stop-color="#ffe680" stop-opacity=".85" /><stop offset="1" stop-color="#ffb000" stop-opacity="0" /></radialGradient>
+		{/if}
 	</defs>
 
 	{#if kind === 'slots'}
@@ -92,6 +99,24 @@
 		<path d="M51.6 42 H60.4 M51.4 45.6 H60.6 M56 38 V50" stroke="#3e5418" stroke-width=".8" />
 		<rect x="53.6" y="36" width="5" height="3" rx="1" fill="#9aa6b2" stroke={O} stroke-width=".9" />
 		<g class="ta-spark" fill="#fff36a"><path d="M59 30.5 l1 2.4 l2.4 1 l-2.4 1 l-1 2.4 l-1 -2.4 l-2.4 -1 l2.4 -1 z" /></g>
+	{:else if kind === 'book'}
+		<!-- Book Of Skedd: the glowing green book with gold corners and the gold leaf, pages on the side, sparkles -->
+		<circle class="ta-halo" cx="32" cy="28" r="27" fill="url(#{u}-halo)" />
+		<path d="M18 7 H48 L51 10 V51 L48 54 H18 Z" fill="#f6ecd0" stroke={O} stroke-width="1.4" stroke-linejoin="round" />
+		{#each [14, 22, 30, 38, 46] as y (y)}<path d="M48.6 {y} H50.4" stroke="#b9a77a" stroke-width=".7" />{/each}
+		<rect x="13" y="4" width="35" height="48" rx="2.6" fill="url(#{u}-cover)" stroke={O} stroke-width="1.8" />
+		<rect x="13" y="4" width="6" height="48" rx="1.6" fill="#0a2c16" stroke={O} stroke-width="1.2" />
+		<path d="M13.6 10 H18.4 M13.6 46 H18.4" stroke="url(#{u}-gold)" stroke-width="1.6" />
+		<rect x="21.6" y="7.6" width="23.4" height="40.8" rx="1.2" fill="none" stroke="url(#{u}-gold)" stroke-width="1.2" />
+		<path d="M38 4 H48 V14 Z M38 52 H48 V42 Z" fill="url(#{u}-gold)" stroke={O} stroke-width="1" stroke-linejoin="round" />
+		<g transform="translate(19.4 13.4) scale(1.16)" fill="url(#{u}-gold)" stroke="#5a3a00" stroke-width=".7" stroke-linejoin="round">
+			{#each LEAF_PATHS as d (d)}<path {d} />{/each}
+			<path d={LEAF_STEM} fill="none" stroke="url(#{u}-gold)" stroke-width="1.2" stroke-linecap="round" />
+		</g>
+		<g class="ta-spark" fill="#fff6b0">
+			<path d="M54 8 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z" />
+			<path d="M7 38 l.8 2.2 l2.2 .8 l-2.2 .8 l-.8 2.2 l-.8 -2.2 l-2.2 -.8 l2.2 -.8 z" />
+		</g>
 	{:else if kind === 'roulette'}
 		<!-- the wheel from above: wooden bowl, red / black pockets with one green, gold turret, the ball -->
 		<ellipse cx="32" cy="50" rx="22" ry="3.4" fill="#000" opacity=".35" />
@@ -274,6 +299,14 @@
 		100% {
 			transform: translateY(8px);
 			opacity: 0;
+		}
+	}
+	:global([aria-pressed='true']) > .ta .ta-halo {
+		animation: ta-halo 2.2s ease-in-out infinite alternate;
+	}
+	@keyframes ta-halo {
+		from {
+			opacity: 0.35;
 		}
 	}
 	@keyframes ta-slide {

@@ -8,6 +8,7 @@
 	player's own page applies it to its plays. Nothing goes on the radio.
 -->
 <script lang="ts">
+	import { BOOK_FORCES, type BookForce } from '#lib/book.ts';
 	import { evaluate, FREE_SPINS, SYMBOLS, type SlotSymbol } from '#lib/casino-slots.ts';
 	import {
 		luckWords,
@@ -68,7 +69,7 @@
 
 	/* ---------- picked results: who, how long, what; saved with a new id each time ---------- */
 	const start = squad.tune;
-	const KINDS: ForceKind[] = ['slots', 'fortune2', 'roulette', 'blackjack'];
+	const KINDS: ForceKind[] = ['slots', 'fortune2', 'book', 'roulette', 'blackjack'];
 	let who = $state(Object.fromEntries(KINDS.map((k) => [k, start[k]?.who ?? '*'])) as Record<ForceKind, string>);
 	let every = $state(Object.fromEntries(KINDS.map((k) => [k, !!start[k]?.every])) as Record<ForceKind, boolean>);
 	const nameOf = (id: string | undefined) => (id ? (squad.byId(id)?.member.name ?? '?') : '?');
@@ -113,6 +114,7 @@
 
 	/* ---------- Fortune II, roulette ---------- */
 	let f2 = $state<F2Force>(start.fortune2?.what ?? 'hotbox');
+	let bookForce = $state<BookForce>(start.book?.what ?? 'free');
 	let number = $state<number>(start.roulette?.what ?? 0);
 	const colourName = t.casino.roulette.colors;
 
@@ -304,6 +306,19 @@
 			</div>
 			{@render whoMode('fortune2')}
 			{@render saveRow('fortune2', f2)}
+		</div>
+	</details>
+
+	<!-- Book Of Skedd: free spins (with Abscar expanding), a big win or nothing -->
+	<details class="rig-box" data-rig="book">
+		<summary><span class="rig-h font-head">📖 {r.book.heading}</span><span class="rig-sum">{tune.book ? (tune.book.used ? '✔' : '●') : ''}</span></summary>
+		<div class="rig-body">
+			<p class="text-xs text-muted">{r.book.intro}</p>
+			<div class="flex flex-wrap gap-1.5">
+				{#each BOOK_FORCES as k (k)}<button type="button" class="chip" data-book={k} aria-pressed={bookForce === k} onclick={() => (bookForce = k)}>{r.book.kinds[k]}</button>{/each}
+			</div>
+			{@render whoMode('book')}
+			{@render saveRow('book', bookForce)}
 		</div>
 	</details>
 

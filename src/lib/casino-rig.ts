@@ -15,16 +15,19 @@
  * - Forced results (`Forced`): the next play only (marked `used` by the page that took it, and kept in
  *   that device's own list so a slow write can't give it twice) or every play until switched off; for
  *   one member or whoever plays first ('*'). Slots: the whole 5 × 3 screen. Fortune II: a feature (the
- *   page draws spins until one has it). Roulette: the number. Blackjack: the dealer's cards in order.
+ *   page draws spins until one has it). Book Of Skedd (2026-11-20): free spins (optionally with Abscar
+ *   as the special symbol), a big win or nothing, drawn the same way; its gamble follows luck too.
+ *   Roulette: the number. Blackjack: the dealer's cards in order.
  *
  * No browser APIs and no runes (scripts/casino-rig.test.js).
  */
 
+import { BOOK_FORCES, type BookForce } from './book.ts';
 import { REELS, ROWS, SYMBOLS, type SlotSymbol } from './casino-slots.ts';
 import type { F2Play } from './fortune2.ts';
 
-export type RigGame = 'slots' | 'fortune2' | 'roulette' | 'blackjack';
-export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'roulette', 'blackjack'];
+export type RigGame = 'slots' | 'fortune2' | 'book' | 'roulette' | 'blackjack';
+export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'book', 'roulette', 'blackjack'];
 /** Luck and odds run from −LUCK_MAX to +LUCK_MAX. */
 export const LUCK_MAX = 100;
 /** Draws per ±50 of luck past the first: +50 = best of two, +100 = best of three. */
@@ -54,7 +57,7 @@ export interface Forced<T> {
 	by?: string;
 }
 
-export type ForceKind = 'slots' | 'fortune2' | 'roulette' | 'blackjack';
+export type ForceKind = 'slots' | 'fortune2' | 'book' | 'roulette' | 'blackjack';
 
 export interface CasinoTune {
 	/** Per game, added to every member's luck there. */
@@ -64,6 +67,8 @@ export interface CasinoTune {
 	/** Abscar's Fortune: the screen, grid[reel][row]. */
 	slots?: Forced<SlotSymbol[][]>;
 	fortune2?: Forced<F2Force>;
+	/** Book Of Skedd (2026-11-20): free spins / free spins with Abscar spreading / a big win / nothing. */
+	book?: Forced<BookForce>;
 	/** Roulette: the number (0–36). */
 	roulette?: Forced<number>;
 	/** Blackjack: the dealer's cards in order (who is always '*': the dealer deals to everyone). */
@@ -105,6 +110,7 @@ export function cleanScreen(x: unknown): SlotSymbol[][] | null {
 	return x.map((col: SlotSymbol[]) => [...col]);
 }
 const cleanF2 = (x: unknown): F2Force | null => ((F2_FORCES as unknown[]).includes(x) ? (x as F2Force) : null);
+const cleanBook = (x: unknown): BookForce | null => ((BOOK_FORCES as unknown[]).includes(x) ? (x as BookForce) : null);
 const cleanNumber = (x: unknown): number | null => (Number.isInteger(x) && (x as number) >= 0 && (x as number) <= 36 ? (x as number) : null);
 /** Dealer cards: 1 … DEALER_MAX ranks 1–13, or null. */
 export function cleanDealer(x: unknown): number[] | null {
@@ -136,6 +142,8 @@ export function cleanTune(raw: unknown): CasinoTune | undefined {
 	if (slots) tune.slots = slots;
 	const f2 = cleanForced(raw.fortune2, cleanF2);
 	if (f2) tune.fortune2 = f2;
+	const book = cleanForced(raw.book, cleanBook);
+	if (book) tune.book = book;
 	const roulette = cleanForced(raw.roulette, cleanNumber);
 	if (roulette) tune.roulette = roulette;
 	const bj = cleanForced(raw.blackjack, cleanDealer);

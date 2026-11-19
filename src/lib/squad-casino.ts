@@ -178,12 +178,15 @@ export function casinoTotal(l: CasinoLedger | undefined): { net: number; games: 
 	return { net, games, lost };
 }
 
-/** One finished game on this device (a lost one adds to `lost`). */
-export function withGame(l: CasinoLedger | undefined, device: string, net: number, at: number): CasinoLedger {
+/**
+ * One finished game on this device (a lost one adds to `lost`). `games` = 0 books burgers without a new
+ * game (Book Of Skedd's gamble: part of the spin it gambles).
+ */
+export function withGame(l: CasinoLedger | undefined, device: string, net: number, at: number, games = 1): CasinoLedger {
 	const t = l?.[device] ?? { net: 0, games: 0, at: 0 };
 	const n = Math.round(net);
 	const lost = (t.lost ?? Math.max(0, -t.net)) + Math.max(0, -n);
-	return pruneLedger({ ...l, [device]: { net: t.net + n, games: t.games + 1, at: Math.max(at, t.at + 1), lost } });
+	return pruneLedger({ ...l, [device]: { net: t.net + n, games: t.games + games, at: Math.max(at, t.at + 1), lost } });
 }
 
 /** A random whole number 0 … n−1 from a [0, 1) source. */

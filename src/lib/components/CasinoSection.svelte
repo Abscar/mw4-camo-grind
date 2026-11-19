@@ -10,8 +10,9 @@
 	tab of its own: loans, the house and (Abscar only) the admin menu, under a big bank. BurgiShop moved
 	out to a page tab of its own the same evening (ShopPage.svelte; the user: "BurgiShop can have a tab of
 	its own instead of being among the casino games"); a saved 'shop' pick opens the slot machine.
-	Abscar's Fortune II (CasinoFortune2, 2026-11-19) is the second tile. Donations (BurgiGives,
-	CasinoDonate, 2026-11-20) sits next to BurgiBank: six tiles for everyone, seven for Abscar (Admin).
+	Abscar's Fortune II (CasinoFortune2, 2026-11-19) is the second tile, Book Of Skedd (CasinoBook, 2026-11-20)
+	the third. Donations (BurgiGives, CasinoDonate, 2026-11-20) sits next to BurgiBank: seven tiles for everyone,
+	Abscar also sees Admin (a slim strip under the others until there's room for all eight in one row).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -22,6 +23,7 @@
 	import CasinoRoulette from './CasinoRoulette.svelte';
 	import CasinoSlots from './CasinoSlots.svelte';
 	import CasinoFortune2 from './CasinoFortune2.svelte';
+	import CasinoBook from './CasinoBook.svelte';
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import MybotsLogo from './MybotsLogo.svelte';
 	import CasinoRig from './CasinoRig.svelte';
@@ -37,7 +39,7 @@
 	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
-	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
+	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let savedGame = $state<string | null>(null);
@@ -121,7 +123,14 @@
 			</div>
 
 			<!-- which game: big picture tiles -->
-			<div class="casino-tabs" class:seven={GAMES.length > 6} role="group" aria-label={c.gamesLabel}>
+			<div
+				class="casino-tabs"
+				class:admin={GAMES.includes('admin')}
+				style:--n={GAMES.length}
+				style:--half={Math.ceil(GAMES.filter((g) => g !== 'admin').length / 2)}
+				role="group"
+				aria-label={c.gamesLabel}
+			>
 				{#each GAMES as g (g)}
 					<button type="button" class="casino-game" data-game={g} aria-pressed={game === g} onclick={() => pick(g)}>
 						{#if g === 'fortune2'}<MybotsLogo tile />{:else}<CasinoTabArt kind={g} />{/if}
@@ -138,6 +147,8 @@
 					<CasinoSlots {balance} bind:hidden bind:pending />
 				{:else if game === 'fortune2'}
 					<CasinoFortune2 {balance} bind:hidden bind:pending />
+				{:else if game === 'book'}
+					<CasinoBook {balance} bind:hidden bind:pending />
 				{:else if game === 'roulette'}
 					<CasinoRoulette {balance} bind:hidden bind:pending />
 				{:else if game === 'blackjack'}
@@ -233,12 +244,19 @@
 		background: rgb(255 201 40 / 0.06);
 	}
 	/* the game tabs: a picture tile each, in its own casino colours (the same in every theme) */
-	/* six tiles (Donations came 2026-11-20): three a row until there's room for all six in one row. Abscar
-	   sees a seventh, Admin: under 900 px it's a slim strip under the two rows, from 900 px all seven in a row */
+	/* --n tiles in rows of --cols, each row centred (seven since Book Of Skedd and Donations, 2026-11-20): three a
+	   row on phones, half of them (--half, rounded up) a row from 560 px, all in one row from 1000 px. Abscar's
+	   Admin tile is a slim strip under the others until then */
 	.casino-tabs {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		--cols: 3;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
 		gap: 8px;
+	}
+	.casino-tabs > .casino-game {
+		flex: 0 0 calc((100% - (var(--cols) - 1) * 8px) / var(--cols));
+		min-width: 0;
 	}
 	.casino-tabs :global(svg.ta) {
 		width: 56px;
@@ -246,7 +264,8 @@
 	}
 	@media (min-width: 560px) {
 		.casino-tabs {
-			max-width: 560px;
+			--cols: var(--half, 4);
+			max-width: calc(var(--half, 4) * 180px);
 		}
 		/* more room per tile here: bigger pictures */
 		.casino-tabs :global(svg.ta) {
@@ -254,15 +273,16 @@
 			height: 70px;
 		}
 	}
-	@media (min-width: 820px) {
-		.casino-tabs:not(.seven) {
-			grid-template-columns: repeat(6, minmax(0, 1fr));
-			max-width: 920px;
+	@media (min-width: 1000px) {
+		.casino-tabs {
+			--cols: var(--n, 7);
+			max-width: calc(var(--n, 7) * 152px);
 		}
 	}
-	@media (max-width: 899px) {
-		.casino-tabs.seven .casino-game[data-game='admin'] {
-			grid-column: 1 / -1;
+	/* Abscar's Admin tile: a slim full-width strip under the game tiles until all of them fit in one row */
+	@media (max-width: 999px) {
+		.casino-tabs.admin > .casino-game[data-game='admin'] {
+			flex-basis: 100%;
 			grid-auto-flow: column;
 			justify-content: center;
 			align-items: center;
@@ -270,15 +290,9 @@
 			min-height: 56px;
 			padding: 6px 12px;
 		}
-		.casino-tabs.seven .casino-game[data-game='admin'] :global(svg.ta) {
+		.casino-tabs.admin .casino-game[data-game='admin'] :global(svg.ta) {
 			width: 46px;
 			height: 40px;
-		}
-	}
-	@media (min-width: 900px) {
-		.casino-tabs.seven {
-			grid-template-columns: repeat(7, minmax(0, 1fr));
-			max-width: 1040px;
 		}
 	}
 	.casino-game[data-game='admin'] {
@@ -313,6 +327,10 @@
 	.casino-game[data-game='fortune2'] {
 		--tile: #4a1a86;
 		--tile-2: #14062a;
+	}
+	.casino-game[data-game='book'] {
+		--tile: #145a2e;
+		--tile-2: #04170a;
 	}
 	.casino-game[data-game='roulette'] {
 		--tile: #11683a;

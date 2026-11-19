@@ -943,9 +943,10 @@ class Squad {
 	 * One finished casino game on this device: added to your tally, published, and (for a big one) a
 	 * line on the radio. Pretend burgers, never money.
 	 */
-	recordGame(net: number, event?: string): void {
+	recordGame(net: number, event?: string, opts: { sameGame?: boolean } = {}): void {
 		if (!this.me) return;
-		this.casino = withGame(this.casino, this.#device, net, Math.round(this.serverNow()));
+		// sameGame: burgers that belong to a game already booked (Book Of Skedd's gamble), not a new game
+		this.casino = withGame(this.casino, this.#device, net, Math.round(this.serverNow()), opts.sameGame ? 0 : 1);
 		writeJson(CASINO_KEY, this.casino);
 		this.#schedulePublish();
 		if (event) void this.#event(event);
