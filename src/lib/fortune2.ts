@@ -295,8 +295,11 @@ export interface F2Play {
 	capped?: true;
 }
 
-/** Bets on offer. */
-export const F2_BETS = [10, 20, 50, 100, 250, 500];
+/**
+ * Bets on offer. Up to 500 at launch; on 2026-11-19 the user asked to be able to bet higher, like on the first
+ * Abscar's Fortune: now up to 10,000. The odds don't depend on the bet.
+ */
+export const F2_BETS = [10, 20, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 /** The most one play pays: × the bet. */
 export const MAX_WIN = 10_000;
 

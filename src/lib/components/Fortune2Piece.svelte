@@ -10,8 +10,9 @@
 	export const CREW_COLOUR: Record<Crew, string> = { phil: '#e23a2e', lars: '#f2a91c', jeeven: '#2d8cf0', ingman: '#9b4be6' };
 	/** the rim per level 1–7: dark, bronze, silver, gold, jade, diamond, rainbow */
 	export const LEVEL_RIM = ['#2a1408', '#c07a3a', '#e3e8ee', '#ffcf2e', '#4ff0b8', '#9fe6ff', 'rainbow'];
-	/** burgers, short: 0.3 / 5 / 25 / 1.2k */
+	/** burgers, short: 0.3 / 5 / 25 / 1.2k / 1.5M (bets go up to 10,000, so a coin can be worth millions) */
 	export function short(n: number): string {
+		if (n >= 999_500) return `${+(n / 1_000_000).toFixed(1)}M`;
 		if (n >= 10_000) return `${Math.round(n / 1000)}k`;
 		if (n >= 1000) return `${+(n / 1000).toFixed(1)}k`;
 		if (n >= 10) return String(Math.round(n));

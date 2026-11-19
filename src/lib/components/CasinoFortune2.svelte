@@ -159,6 +159,9 @@
 	let cur: F2Play | null = null;
 	let shownCents = 0;
 	let lastWin = $state(0);
+	// the LED texts; their length shrinks the digits so millions fit a phone's narrow box (see .f2-led b)
+	const shownText = $derived(shown.toLocaleString('en-US'));
+	const winText = $derived(lastWin.toLocaleString('en-US'));
 	let message = $state('');
 	let tier = $state<WinTier>('none');
 	let celebrate = $state(false);
@@ -696,16 +699,16 @@
 
 		<!-- credits, bet, win, spin -->
 		<div class="f2-panel">
-			<div class="f2-led"><span>{s.credits}</span><b class="num">{shown.toLocaleString('en-US')}</b></div>
-			<div class="f2-led">
-				<span>{t.casino.bet}</span>
-				<div class="flex items-center gap-1">
-					<button type="button" class="f2-step" aria-label="−" disabled={busy || bet === F2_BETS[0]} onclick={() => stepBet(-1)}>−</button>
-					<b class="num" aria-live="polite" aria-label={t.casino.betLabel(bet)}>{bet}</b>
-					<button type="button" class="f2-step" aria-label="+" disabled={busy || bet === F2_BETS[F2_BETS.length - 1]} onclick={() => stepBet(1)}>+</button>
+			<div class="f2-led"><span>{s.credits}</span><b class="num" style:--n={shownText.length}>{shownText}</b></div>
+			<div class="f2-led f2-bet">
+				<div class="f2-bet-ctl">
+					<span class="f2-bet-lbl">{t.casino.bet}</span>
+					<button type="button" class="f2-step minus" aria-label="−" disabled={busy || bet === F2_BETS[0]} onclick={() => stepBet(-1)}>−</button>
+					<b class="num" aria-live="polite" aria-label={t.casino.betLabel(bet)}>{bet.toLocaleString('en-US')}</b>
+					<button type="button" class="f2-step plus" aria-label="+" disabled={busy || bet === F2_BETS[F2_BETS.length - 1]} onclick={() => stepBet(1)}>+</button>
 				</div>
 			</div>
-			<div class="f2-led win"><span>{s.lastWin}</span><b class="num">{lastWin.toLocaleString('en-US')}</b></div>
+			<div class="f2-led win"><span>{s.lastWin}</span><b class="num" style:--n={winText.length}>{winText}</b></div>
 			<button type="button" class="f2-spin font-head" bind:this={spinBtn} disabled={busy || autoLeft > 0} onclick={() => void spin()}>{busy ? '…' : s.spin}</button>
 		</div>
 
@@ -1546,7 +1549,7 @@
 		gap: 6px;
 	}
 	@container (max-width: 420px) {
-		/* the bet box gets the most room: − 500 + has to fit */
+		/* the bet box gets the most room: − 10,000 + has to fit (it stacks when it can't, see .f2-bet) */
 		.f2-panel {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
 		}
@@ -1565,6 +1568,7 @@
 		}
 	}
 	.f2-led {
+		container-type: inline-size;
 		display: grid;
 		align-content: center;
 		gap: 1px;
@@ -1581,8 +1585,10 @@
 		text-transform: uppercase;
 		color: #9aff8e;
 	}
+	/* 17 px, smaller when the number (--n characters) wouldn't fit the box: 2,154,285 on a phone */
 	.f2-led b {
-		font-size: 17px;
+		font-size: min(17px, calc(100cqi / (var(--n, 1) * 0.6)));
+		white-space: nowrap;
 		font-weight: 900;
 		color: #7dff6a;
 		text-shadow: 0 0 6px rgb(125 255 106 / 0.7);
@@ -1610,6 +1616,48 @@
 	}
 	.f2-step:disabled {
 		opacity: 0.35;
+	}
+	/* the bet: BET on top, − 10,000 + under it; in a narrow box − BET + on top and the number under them */
+	.f2-bet-ctl {
+		display: grid;
+		grid-template-columns: auto auto auto;
+		grid-template-areas: 'lbl lbl lbl' 'minus num plus';
+		justify-content: start;
+		align-items: center;
+		column-gap: 4px;
+		row-gap: 1px;
+	}
+	.f2-bet-lbl {
+		grid-area: lbl;
+	}
+	.f2-bet-ctl .minus {
+		grid-area: minus;
+	}
+	.f2-bet-ctl b {
+		grid-area: num;
+	}
+	.f2-bet-ctl .plus {
+		grid-area: plus;
+	}
+	@container (max-width: 133px) {
+		.f2-bet-ctl {
+			grid-template-areas: 'minus lbl plus' 'num num num';
+			justify-content: center;
+			justify-items: center;
+			column-gap: 8px;
+		}
+	}
+	@container (max-width: 100px) {
+		.f2-bet-ctl {
+			column-gap: 3px;
+		}
+		.f2-bet-ctl .f2-step {
+			width: 24px;
+			height: 24px;
+		}
+		.f2-bet-ctl .f2-step::after {
+			inset: -10px;
+		}
 	}
 	.f2-spin {
 		min-height: 52px;
