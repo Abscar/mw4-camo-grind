@@ -19,8 +19,10 @@
  *    the 3 × 3 round it and pays everything in it, chains into other frags, and blows a wall open: the
  *    field grows 6 × 6 → 7 × 7 → 8 × 8), the letters M-U-N-C-H (all five = THE MUNCHIES coin game) and
  *    KETCHUP (nobody can take it; 3 on the board when the spin ends = free spins).
- *  - ABSCAR'S HOLK METER: every munchie taken fills it; full = Abscar (the house) drops 3 features next to
- *    the squad.
+ *  - ABSCAR'S HOLK METER: every munchie taken fills it; full = THE BIG HOLK: a giant holk smokes out the
+ *    whole board and sticky WILDs land all over it. A sticky WILD holds its cell (everything falls past it,
+ *    like past the squad) until somebody takes it, and in Hotbox Spins the ones nobody took stay put into
+ *    the next spin.
  *  - HOTBOX SPINS (3 ketchups): 10 free spins that start from where the spin ended (field size, levels,
  *    where the squad stands) and keep everything between spins: levels only go up, the field only grows,
  *    letters and the meter carry over. SUPER HOTBOX (4+ ketchups): the same on the full 8 × 8 with every
@@ -56,6 +58,8 @@ export interface Piece {
 	coin?: number;
 	/** letter: 0–4 (M U N C H) */
 	letter?: number;
+	/** wild: a sticky WILD from the big holk (holds its cell, carries over between free spins) */
+	sticky?: true;
 }
 
 /** A cell = row × SIDE + column on the 8 × 8 frame. */
@@ -91,16 +95,15 @@ export const LEVELS = 7;
 /** What one munchie pays at its colour's level 1–7, in hundredths of the bet. */
 export const LEVEL_PAYS = [4, 10, 20, 32, 52, 84, 140];
 export const LETTERS = ['M', 'U', 'N', 'C', 'H'];
-/** Munchies taken to fill Abscar's holk meter, and the features he drops when it's full. */
+/** Munchies taken to fill Abscar's holk meter. */
 export const METER_MAX = 30;
-export const DROPS = 3;
-const DROP_TABLE: [Kind, number][] = [
-	['wild', 30],
-	['up', 24],
-	['coin', 20],
-	['frag', 14],
-	['swap', 12]
-];
+/**
+ * THE BIG HOLK (2026-11-19, the user: "make Abscar's holk a big holk over the whole screen that lands WILDs
+ * everywhere, sticky WILDs"; until then a full meter dropped 3 random features next to the squad): sticky
+ * WILDs on this many munchies all over the field (fewer in free spins, where they carry over).
+ */
+export const HOLK_WILDS = 10;
+export const HOLK_WILDS_FREE = 8;
 
 /** Burger coins on the board: [hundredths of the bet, how often]. */
 export const COIN_VALUES: [number, number][] = [
@@ -246,8 +249,10 @@ export type Ev =
 	| { t: 'meter'; n: number }
 	/** free spins: the Hotbox multiplier went up */
 	| { t: 'mult'; mult: number }
-	/** Abscar's holk meter is full: features replace these pieces */
+	/** Abscar drops pieces next to the squad: they replace these pieces */
 	| { t: 'drop'; add: [Piece, Cell][]; gone: number[] }
+	/** THE BIG HOLK: Abscar's holk meter is full; sticky WILDs replace these munchies all over the board */
+	| { t: 'holk'; add: [Piece, Cell][]; gone: number[] }
 	/** everything falls: pieces that moved, and new ones from the top */
 	| { t: 'fall'; moves: [number, Cell][]; add: [Piece, Cell][] }
 	/** the squad goes to its places for a new spin */
@@ -347,7 +352,7 @@ interface State {
 }
 
 const snap = (st: State): SpinStart => ({ mult: st.mult, open: st.open, levels: { ...st.levels }, crew: { ...st.crew }, letters: [...st.letters], meter: st.meter });
-const crewAt = (st: State, cell: Cell) => CREW.some((w) => st.crew[w] === cell);
+const crewAt = (st: Pick<State, 'crew'>, cell: Cell) => CREW.some((w) => st.crew[w] === cell);
 const levelPay = (level: number) => LEVEL_PAYS[Math.min(Math.max(level, 1), LEVELS) - 1];
 
 function neighbours(open: number, cell: Cell): Cell[] {
@@ -369,20 +374,49 @@ function neighbours(open: number, cell: Cell): Cell[] {
 	return out;
 }
 
-/** Where a collector goes next: features first, then its own munchies, then WILDs (random among equals); −1 = stuck. */
-function nextStep(st: State, who: Crew, rand: () => number): Cell {
+/** Can `who` walk onto this cell: a feature, a WILD or their own munchie, nobody standing there. */
+function walkable(st: Pick<State, 'open' | 'crew' | 'grid'>, who: Crew, cell: Cell): boolean {
+	if (crewAt(st, cell)) return false;
+	const p = st.grid[cell];
+	if (!p || p.kind === 'ketchup') return false;
+	return p.kind !== 'item' || p.crew === who;
+}
+
+/** How many pieces `who` could go on to take from `from`: the patch of walkable cells joined to it (the cell they leave is empty by then). */
+function patch(st: Pick<State, 'open' | 'crew' | 'grid'>, who: Crew, from: Cell): number {
+	const leaving = st.crew[who];
+	const seen = new Set<Cell>([leaving, from]);
+	const todo = [from];
+	while (todo.length) {
+		const cell = todo.pop()!;
+		for (const n of neighbours(st.open, cell))
+			if (!seen.has(n) && walkable(st, who, n)) {
+				seen.add(n);
+				todo.push(n);
+			}
+	}
+	return seen.size - 1;
+}
+
+/**
+ * Where a collector goes next; −1 = stuck. SMARTER SQUAD (2026-11-19, the user: "make the squad smarter, so
+ * they go more where they get more symbols"): they look ahead and step towards the biggest patch of things
+ * they can take (their own munchies, WILDs and features joined together), so nobody walks into a one-piece
+ * dead end with a big pile on the other side. Between equal patches: features first, then their own munchies,
+ * then WILDs, then at random. (Until then: features, own munchies, WILDs next door, at random.) Exported for
+ * the tests.
+ */
+export function nextStep(st: Pick<State, 'open' | 'crew' | 'grid'>, who: Crew, rand: () => number): Cell {
 	let best: Cell[] = [];
-	let bestRank = 9;
+	let bestScore = -1;
 	for (const n of neighbours(st.open, st.crew[who])) {
-		if (crewAt(st, n)) continue;
-		const p = st.grid[n];
-		if (!p || p.kind === 'ketchup') continue;
-		const rank = p.kind === 'item' ? (p.crew === who ? 1 : 9) : p.kind === 'wild' ? 2 : 0;
-		if (rank === 9) continue;
-		if (rank < bestRank) {
-			bestRank = rank;
+		if (!walkable(st, who, n)) continue;
+		const p = st.grid[n]!;
+		const score = patch(st, who, n) * 4 + (p.kind === 'item' ? 2 : p.kind === 'wild' ? 1 : 3);
+		if (score > bestScore) {
+			bestScore = score;
 			best = [n];
-		} else if (rank === bestRank) best.push(n);
+		} else if (score === bestScore) best.push(n);
 	}
 	return best.length ? best[randInt(best.length, rand)] : -1;
 }
@@ -399,14 +433,15 @@ function placeCrew(st: State, rand: () => number): Record<Crew, Cell> {
 	return out;
 }
 
-/** Everything falls down past the squad; new pieces fill the empty cells from the top. */
+/** Everything falls down past the squad and the sticky WILDs; new pieces fill the empty cells from the top. */
 function fall(ctx: Ctx, st: State, table: Table): Ev {
 	const moves: [number, Cell][] = [];
 	const add: [Piece, Cell][] = [];
 	const o = OPEN[st.open];
+	const held = (cell: Cell) => crewAt(st, cell) || !!st.grid[cell]?.sticky;
 	for (let c = o.c0; c <= o.c1; c++) {
 		const cells: Cell[] = [];
-		for (let r = o.r1; r >= o.r0; r--) if (!crewAt(st, cellOf(r, c))) cells.push(cellOf(r, c));
+		for (let r = o.r1; r >= o.r0; r--) if (!held(cellOf(r, c))) cells.push(cellOf(r, c));
 		const pieces = cells.map((cell) => st.grid[cell]).filter((p): p is Piece => !!p);
 		cells.forEach((cell, i) => {
 			const p = pieces[i] ?? null;
@@ -430,11 +465,14 @@ function runSpin(ctx: Ctx, st: State, tables: Tables, place: boolean): F2Spin {
 		events.push({ t: 'place', crew: { ...st.crew } });
 	}
 	const start = snap(st);
+	// sticky WILDs nobody took stay where they are (free spins carry the board over); the rest is new
+	const before = st.grid;
 	st.grid = Array(SIDE * SIDE).fill(null);
 	const fill: [Piece, Cell][] = [];
 	for (const cell of openCells(st.open)) {
 		if (crewAt(st, cell)) continue;
-		const p = drawPiece(ctx, tables.fill);
+		const kept = before[cell];
+		const p = kept?.sticky ? kept : drawPiece(ctx, tables.fill);
 		st.grid[cell] = p;
 		fill.push([{ ...p }, cell]);
 	}
@@ -475,13 +513,28 @@ function runSpin(ctx: Ctx, st: State, tables: Tables, place: boolean): F2Spin {
 	const wilds = st.free ? FREE_WILD_DROPS : ctx.rand() < BASE_WILD_CHANCE ? BASE_WILD_DROPS : 0;
 	if (wilds) abscarDrops(Array<Kind>(wilds).fill('wild'));
 
+	/** THE BIG HOLK: sticky WILDs replace munchies all over the field. */
+	const bigHolk = () => {
+		const pool = openCells(st.open).filter((cell) => st.grid[cell]?.kind === 'item');
+		const add: [Piece, Cell][] = [];
+		const gone: number[] = [];
+		for (let i = st.free ? HOLK_WILDS_FREE : HOLK_WILDS; i > 0 && pool.length; i--) {
+			const cell = pool.splice(randInt(pool.length, ctx.rand), 1)[0];
+			gone.push(st.grid[cell]!.id);
+			const p: Piece = { id: ctx.id++, kind: 'wild', sticky: true };
+			st.grid[cell] = p;
+			add.push([{ ...p }, cell]);
+		}
+		events.push({ t: 'holk', add, gone });
+	};
+
 	const meterUp = (n: number) => {
 		if (!n) return;
 		st.meter += n;
 		events.push({ t: 'meter', n: Math.min(st.meter, METER_MAX) });
 		while (st.meter >= METER_MAX) {
 			st.meter -= METER_MAX;
-			abscarDrops(Array.from({ length: DROPS }, () => weighted(DROP_TABLE, ctx.rand)));
+			bigHolk();
 			events.push({ t: 'meter', n: st.meter });
 			if (st.free && st.mult < MULT_MAX) {
 				st.mult += 1;
@@ -751,6 +804,7 @@ export function applyEvent(v: View, ev: Ev): void {
 			break;
 		case 'fill':
 		case 'drop':
+		case 'holk':
 			for (const [p, cell] of ev.add) v.grid[cell] = { ...p };
 			break;
 		case 'walk':

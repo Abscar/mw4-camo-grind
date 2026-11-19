@@ -1008,10 +1008,15 @@ export const en = {
 				munchies: 'THE MUNCHIES!',
 				storm: (name: string) => `MUNCHIE STORM! ALL ${name.toUpperCase()}`
 			},
+			/** Abscar's holk meter fills: the giant holk over the machine, then sticky WILDs all over the board */
+			holk: {
+				title: 'THE BIG HOLK',
+				sub: (n: number) => (n === 1 ? '1 sticky WILD lands!' : `${n} sticky WILDs land!`)
+			},
 			free: {
 				intro: { hotbox: 'HOTBOX SPINS', super: 'SUPER HOTBOX' },
 				introSub: {
-					hotbox: (n: number) => `${n} free spins. Abscar drops WILDs next to the squad on every spin, and everything carries over: levels only go up, the field only grows, and every time his holk fills up the room gets smokier: +1 to the multiplier.`,
+					hotbox: (n: number) => `${n} free spins. Abscar drops WILDs next to the squad on every spin, and everything carries over: levels only go up, the field only grows, sticky WILDs stay put, and every time his holk fills up the big holk lands more of them and the room gets smokier: +1 to the multiplier.`,
 					super: (n: number) => `${n} free spins on the full 8 × 8, every level at least 3, starting at ×2. Everything carries over.`
 				},
 				title: (n: number, total: number) => `Hotbox spin ${n} / ${total}`,
@@ -1044,7 +1049,7 @@ export const en = {
 			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', epic: 'EPIC MUNCH' },
 			maxWin: (x: number) => `MAX WIN: ${x.toLocaleString('en-US')}× your bet`,
 			paytable: 'Paytable & how it works',
-			how: 'A collector slot, our own take: the board is 6 × 6 inside a walled 8 × 8. Four of the squad stand on it, each with a munchie of their own: Phillestar takes burgers, Drängen Lars Åke beer, Da Jeeven energy drinks and Ingman purple buds. One after another they walk to a neighbouring cell (up, down, left or right) that holds their own munchie, a WILD or a feature, take it and go on until nothing next to them is theirs. Then everything falls down into the holes (the squad stays where it stands), new munchies drop in from the top, and they walk again, until nobody can move. Every munchie pays by its colour’s level, 1 to 7. Ketchup can’t be taken: 3 on the board when the spin ends start the free spins.',
+			how: 'A collector slot, our own take: the board is 6 × 6 inside a walled 8 × 8. Four of the squad stand on it, each with a munchie of their own: Phillestar takes burgers, Drängen Lars Åke beer, Da Jeeven energy drinks and Ingman purple buds. One after another they walk to a neighbouring cell (up, down, left or right) that holds their own munchie, a WILD or a feature, take it and go on until nothing next to them is theirs. They look ahead and head for the biggest patch of things they can take, so nobody walks into a dead end with a pile on the other side. Then everything falls down into the holes (the squad stays where it stands), new munchies drop in from the top, and they walk again, until nobody can move. Every munchie pays by its colour’s level, 1 to 7. Ketchup can’t be taken: 3 on the board when the spin ends start the free spins.',
 			levelTable: 'What one munchie pays at your bet, by level',
 			features: {
 				wild: 'Anybody can take it: counts as their own munchie.',
@@ -1055,13 +1060,14 @@ export const en = {
 				letter: 'M-U-N-C-H: take all five letters in one spin (in free spins they add up over the spins) and THE MUNCHIES coin game starts.',
 				ketchup: '3 on the board when a spin ends = 10 Hotbox Spins, 4 or more = Super Hotbox. In free spins 3 give 3 more spins, 4 give 5.'
 			},
-			meterNote: (max: number) => `Abscar’s holk meter: every munchie taken fills it; at ${max} Abscar (the house) drops 3 features next to the squad.`,
+			meterNote: (max: number, wilds: number, free: number) =>
+				`Abscar’s holk meter: every munchie taken fills it; at ${max} comes THE BIG HOLK: a giant holk smokes out the whole machine and ${wilds} sticky WILDs land all over the board (${free} in free spins). A sticky WILD stays in its cell (everything falls past it) until somebody takes it.`,
 			freeNote: (max: number) =>
-				`Hotbox Spins start from where the spin ended and keep everything: levels only go up, the field only grows, letters and the holk meter carry over, Abscar drops 2 WILDs next to the squad on every spin, and every time the holk meter fills up the Hotbox multiplier goes up by 1 (up to ×${max}) and multiplies every burger taken. Super Hotbox starts on the full 8 × 8 with every level at least 3, at ×2.`,
+				`Hotbox Spins start from where the spin ended and keep everything: levels only go up, the field only grows, letters and the holk meter carry over, sticky WILDs nobody took stay put into the next spin, Abscar drops 2 WILDs next to the squad on every spin, and every time the holk meter fills up the Hotbox multiplier goes up by 1 (up to ×${max}) and multiplies every burger taken. Super Hotbox starts on the full 8 × 8 with every level at least 3, at ×2.`,
 			partyNote: 'Party odds: every pay is doubled (levels, coins and the coin game), WILDs, features and letters land far more often, Abscar drops WILDs into normal spins now and then, and now and then a MUNCHIE STORM turns every munchie on the board into one squad member’s.',
 			munchNote: 'The Munchies: burger coins land on a 6 × 6 board with the squad in the corners and stay; 3 respins, and every new coin gives 3 again. ×2 / ×3 coins add up into one multiplier for the end, SQUAD coins take the value of every coin in their row and column, and a full board doubles everything.',
 			buyNote: (h: number, s: number, m: number) => `Buy bonus prices are times your bet: Hotbox Spins ${h}×, Super Hotbox ${s}×, The Munchies ${m}×. They give back about the same share as spinning.`,
-			rtpNote: 'Hotbox Spins come about once every 75 spins and The Munchies about once every 90. In the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.',
+			rtpNote: 'Hotbox Spins come about once every 75 spins and The Munchies about once every 65. In the long run it gives back about 4½ times what goes in, so everybody wins. Pretend burgers, never money.',
 			maxNote: (x: number) => `One play (a spin with everything it starts, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`
 		},
 		roulette: {

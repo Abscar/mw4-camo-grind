@@ -27,6 +27,8 @@
 		CREW,
 		F2_BETS,
 		FREE_SPINS,
+		HOLK_WILDS,
+		HOLK_WILDS_FREE,
 		LETTERS,
 		LEVEL_PAYS,
 		MAX_WIN,
@@ -50,6 +52,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import Fortune2Piece, { CREW_COLOUR, short } from './Fortune2Piece.svelte';
+	import Fortune2Holk from './Fortune2Holk.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import IngmanEmblem from './IngmanEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
@@ -98,7 +101,7 @@
 	/** how long things take: 0 = at once (skip); reduced motion = nothing moves but it still goes step by step, quicker */
 	const k = () => (skip ? 0 : reduce() ? 0.3 : turbo ? 0.45 : 1);
 	const still = () => skip || reduce();
-	const MS = { step: 230, fall: 340, fill: 520, place: 380, boom: 600, level: 560, swap: 640, grow: 700, drop: 850, mult: 850 };
+	const MS = { step: 230, fall: 340, fill: 520, place: 380, boom: 600, level: 560, swap: 640, grow: 700, drop: 850, mult: 850, holk: 2600 };
 	const ms = (n: number) => Math.round(n * k());
 	const wait = (n: number) => (k() ? sleep(ms(n)) : Promise.resolve());
 
@@ -112,6 +115,8 @@
 		fx: '' | 'taken' | 'boom' | 'pop' | 'swap';
 		/** no movement this frame (placed above the board before falling in) */
 		snap: boolean;
+		/** popping in: wait this many seconds first (the big holk's WILDs land one after another) */
+		d?: number;
 	}
 	let gen = 0;
 	let pieces = $state<RP[]>([]);
@@ -125,6 +130,8 @@
 	let letterFlash = $state(-1);
 	let pops = $state<{ id: number; cell: number; text: string; kind: string }[]>([]);
 	let booms = $state<{ id: number; cell: number }[]>([]);
+	/** THE BIG HOLK on screen: how many WILDs it lands, how long it lasts (s) */
+	let holk = $state<{ id: number; n: number; dur: number } | null>(null);
 	let popId = 0;
 	const ketchups = $derived(pieces.filter((x) => x.p.kind === 'ketchup' && x.fx === '').length);
 	const find = (id: number) => pieces.find((x) => x.k === `${gen}-${id}`);
@@ -135,11 +142,13 @@
 		setTimeout(() => (pops = pops.filter((x) => x.id !== id)), Math.max(400, ms(life)) + 200);
 	}
 
-	/** New pieces: above the board, then falling into their cells (or popping in where they are). */
-	async function enter(add: [Piece, number][], how: 'fall' | 'pop' = 'fall') {
+	/** New pieces: above the board, then falling into their cells (or popping in where they are, `stagger` seconds apart). */
+	async function enter(add: [Piece, number][], how: 'fall' | 'pop' = 'fall', stagger = 0) {
 		if (!add.length) return;
 		const instant = still();
-		for (const [p, cell] of add) pieces.push({ k: `${gen}-${p.id}`, p: { ...p }, r: instant || how === 'pop' ? rowOf(cell) : rowOf(cell) - SIDE, c: colOf(cell), fx: how === 'pop' && !instant ? 'pop' : '', snap: true });
+		add.forEach(([p, cell], i) =>
+			pieces.push({ k: `${gen}-${p.id}`, p: { ...p }, r: instant || how === 'pop' ? rowOf(cell) : rowOf(cell) - SIDE, c: colOf(cell), fx: how === 'pop' && !instant ? 'pop' : '', snap: true, d: stagger * i })
+		);
 		if (instant || how === 'pop') return;
 		await tick();
 		await frame();
@@ -188,17 +197,18 @@
 				await wait(MS.place);
 				break;
 			case 'fill': {
-				// the last spin's pieces fall away, the new ones fall in
-				const old = pieces.length;
-				if (old && !still()) {
-					for (const x of pieces) {
+				// the last spin's pieces fall away (sticky WILDs stay where they are), the new ones fall in
+				const stays = new Set(ev.add.filter(([p]) => p.sticky).map(([p]) => `${gen}-${p.id}`));
+				const going = pieces.filter((x) => !stays.has(x.k));
+				if (going.length && !still()) {
+					for (const x of going) {
 						x.snap = false;
 						x.r += SIDE + 1;
 					}
 					await wait(MS.fall * 0.7);
 				}
-				pieces = [];
-				await enter(ev.add);
+				pieces = pieces.filter((x) => stays.has(x.k));
+				await enter(ev.add.filter(([p]) => !pieces.some((x) => x.k === `${gen}-${p.id}`)));
 				await wait(MS.fill);
 				break;
 			}
@@ -276,6 +286,25 @@
 				sound.play('maxed');
 				await wait(MS.mult);
 				break;
+			case 'holk': {
+				// THE BIG HOLK over the whole screen; halfway through, as the smoke clears, the sticky WILDs land.
+				// It's the big moment, so turbo only shortens it a little (skip leaves it out).
+				const hd = skip ? 0 : reduce() ? MS.holk * 0.35 : turbo ? MS.holk * 0.65 : MS.holk;
+				if (hd) {
+					holk = { id: ++popId, n: ev.add.length, dur: hd / 1000 };
+					sound.play('maxed');
+					await sleep(hd * 0.5);
+				}
+				pieces = pieces.filter((x) => !ev.gone.some((id) => x.k === `${gen}-${id}`));
+				await enter(ev.add, 'pop', (hd / 1000) * 0.025);
+				if (hd) {
+					sound.play('camo');
+					await sleep(hd * 0.5);
+				}
+				holk = null;
+				for (const x of pieces) if (x.fx === 'pop') x.fx = '';
+				break;
+			}
 			case 'drop': {
 				pop(-1, s.pops.drop, 'abscar', 1300);
 				pieces = pieces.filter((x) => !ev.gone.some((id) => x.k === `${gen}-${id}`));
@@ -579,7 +608,7 @@
 					</div>
 					<div class="f2-layer" aria-hidden="true">
 						{#each pieces as rp (rp.k)}
-							<div class="f2-piece" class:snap={rp.snap} data-fx={rp.fx || undefined} style:--r={rp.r} style:--c={rp.c}>
+							<div class="f2-piece" class:snap={rp.snap} class:sticky={rp.p.sticky} data-fx={rp.fx || undefined} style:--r={rp.r} style:--c={rp.c} style:--d={rp.d || undefined}>
 								<div class="f2-in"><Fortune2Piece piece={rp.p} level={rp.p.crew ? levels[rp.p.crew] : 1} {bet} /></div>
 							</div>
 						{/each}
@@ -754,6 +783,11 @@
 				</div>
 			{/if}
 		</div>
+
+		<!-- THE BIG HOLK: over the whole screen while Abscar's holk lands its sticky WILDs -->
+		{#if holk}
+			{#key holk.id}<Fortune2Holk n={holk.n} dur={holk.dur} />{/key}
+		{/if}
 	</div>
 </div>
 
@@ -774,7 +808,7 @@
 			</li>
 		{/each}
 	</ul>
-	<p class="pb-1">{s.meterNote(METER_MAX)}</p>
+	<p class="pb-1">{s.meterNote(METER_MAX, HOLK_WILDS, HOLK_WILDS_FREE)}</p>
 	<p class="pb-1">{s.freeNote(MULT_MAX)}</p>
 	<p class="pb-1">{s.partyNote}</p>
 	<p class="pb-1">{s.munchNote}</p>
@@ -957,6 +991,17 @@
 	}
 	.f2-piece[data-fx='pop'] .f2-in {
 		animation: f2-popin 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+		animation-delay: calc(var(--d, 0) * 1s);
+	}
+	/* a sticky WILD from the big holk: it breathes a lime glow (it holds its cell; everything falls past it) */
+	.f2-piece.sticky:not([data-fx]) .f2-in {
+		filter: drop-shadow(0 0 4px rgb(125 255 106 / 0.9));
+		animation: f2-sticky 1.6s ease-in-out infinite alternate;
+	}
+	@keyframes f2-sticky {
+		to {
+			filter: drop-shadow(0 0 9px rgb(125 255 106 / 1)) brightness(1.12);
+		}
 	}
 	.f2-piece[data-fx='swap'] .f2-in {
 		animation: f2-swap 0.6s ease-in-out;

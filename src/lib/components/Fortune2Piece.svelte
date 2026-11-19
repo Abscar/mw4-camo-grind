@@ -24,7 +24,7 @@
 	import { LETTERS, type Piece } from '#lib/fortune2.ts';
 	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
 
-	let { piece, level = 1, bet = 10, size }: { piece: Pick<Piece, 'kind' | 'crew' | 'coin' | 'letter'>; level?: number; bet?: number; size?: number } = $props();
+	let { piece, level = 1, bet = 10, size }: { piece: Pick<Piece, 'kind' | 'crew' | 'coin' | 'letter' | 'sticky'>; level?: number; bet?: number; size?: number } = $props();
 	const uid = $props.id();
 	const O = '#2a1408';
 	const rim = $derived(LEVEL_RIM[Math.min(Math.max(level, 1), 7) - 1]);
@@ -101,6 +101,13 @@
 		</g>
 		<rect x="11" y="40" width="42" height="14" rx="4" fill="#e2261f" stroke={O} stroke-width="2.4" />
 		<text x="32" y="51.2" text-anchor="middle" class="f2p-word" font-size="11" fill="#fff6b0">WILD</text>
+		{#if piece.sticky}
+			<!-- a sticky WILD from the big holk: a lime rim, a little smoke curl and a STICKY tag on top -->
+			<rect x="2" y="2" width="60" height="60" rx="13" fill="none" stroke="#7dff6a" stroke-width="3" />
+			<path d="M50 14 q5 -4 2 -8 q-3 -4 2 -6" fill="none" stroke="#e8f5e0" stroke-width="2" stroke-linecap="round" opacity="0.85" />
+			<rect x="9" y="0.5" width="38" height="12" rx="4" fill="#7dff6a" stroke={O} stroke-width="2" />
+			<text x="28" y="9.6" text-anchor="middle" class="f2p-word" font-size="8.6" fill="#143a08">STICKY</text>
+		{/if}
 	{:else if piece.kind === 'up'}
 		<!-- SUPERSIZE: an XL cup with a fat arrow up -->
 		<rect x="3.5" y="3.5" width="57" height="57" rx="12" fill="#ff7a1a" stroke="#ffd23a" stroke-width="3" />

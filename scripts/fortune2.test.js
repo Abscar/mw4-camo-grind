@@ -11,6 +11,7 @@ import {
 	colOf,
 	isOpen,
 	munchies,
+	nextStep,
 	openCells,
 	play,
 	rowOf,
@@ -21,11 +22,14 @@ import {
 	BUY_PRICE,
 	CREW,
 	FREE_SPINS,
+	HOLK_WILDS,
+	HOLK_WILDS_FREE,
 	LETTERS,
 	LEVEL_PAYS,
 	LEVELS,
 	MAX_OPEN,
 	MAX_WIN,
+	METER_MAX,
 	MULT_MAX,
 	MUNCH_CELLS,
 	MUNCH_CORNERS,
@@ -223,6 +227,85 @@ test('party extras: Abscar drops WILDs on every free spin, a MUNCHIE STORM turns
 	}
 	assert.ok(storms > 5, `${storms} storms`);
 	assert.ok(baseDrops > 100, `${baseDrops} WILD drops in normal spins`);
+});
+
+test('the big holk: a full meter lands sticky WILDs all over the board; they hold their cell and stay into the next free spin', () => {
+	const rand = seeded(31);
+	let holks = 0;
+	let freeHolks = 0;
+	let far = 0;
+	let carried = 0;
+	for (let i = 0; i < 1500; i++) {
+		const p = i % 15 === 0 ? buy('hotbox', 10, rand) : play(10, rand);
+		const spins = spinsOf(p);
+		spins.forEach((s, si) => {
+			const isFree = p.free.includes(s);
+			const v = startView(s);
+			s.events.forEach((ev, ei) => {
+				if (ev.t === 'holk') {
+					holks++;
+					if (isFree) freeHolks++;
+					// right when the meter is full
+					const before = s.events[ei - 1];
+					assert.ok(before?.t === 'meter' && before.n === METER_MAX, 'the meter was full');
+					assert.ok(ev.add.length > 0 && ev.add.length <= (isFree ? HOLK_WILDS_FREE : HOLK_WILDS));
+					for (const [q, cell] of ev.add) {
+						assert.ok(q.kind === 'wild' && q.sticky, 'sticky WILDs');
+						assert.equal(v.grid[cell]?.kind, 'item', 'on a munchie');
+						assert.ok(ev.gone.includes(v.grid[cell].id));
+						if (!CREW.some((w) => adjacent(v.crew[w], cell))) far++;
+					}
+				}
+				if (ev.t === 'fall') for (const [id] of ev.moves) assert.ok(!v.grid.find((q) => q?.id === id)?.sticky, 'a sticky WILD never falls');
+				applyEvent(v, ev);
+			});
+			// free spins: sticky WILDs nobody took are back in the same cell next spin
+			const next = spins[si + 1];
+			if (next && p.free.includes(next)) {
+				const fill = next.events.find((e) => e.t === 'fill');
+				s.board.forEach((q, cell) => {
+					if (!q?.sticky) return;
+					carried++;
+					assert.ok(
+						fill.add.some(([r, c]) => r.id === q.id && c === cell),
+						'carried over'
+					);
+				});
+			}
+		});
+	}
+	assert.ok(holks > 100, `${holks} big holks`);
+	assert.ok(freeHolks > 30, `${freeHolks} in free spins`);
+	assert.ok(far > holks, 'WILDs land all over, not only next to the squad');
+	assert.ok(carried > 10, `${carried} carried over`);
+});
+
+test('a smarter squad: they step towards the bigger patch of things to take, not into a dead end', () => {
+	const at = (r, c) => cellOf(r, c);
+	let id = 1;
+	const piece = (kind, crew) => ({ id: id++, kind, ...(crew ? { crew } : {}) });
+	// a 6 × 6 field full of Drängen's beer (nothing Phillestar may take)…
+	const grid = Array(SIDE * SIDE).fill(null);
+	for (const cell of openCells(0)) grid[cell] = piece('item', 'lars');
+	const crew = { phil: at(3, 3), lars: at(6, 1), jeeven: at(6, 2), ingman: at(6, 3) };
+	for (const w of CREW) grid[crew[w]] = null;
+	// …a lone SUPERSIZE above him and a lone burger to the left (dead ends), a row of five burgers to the right
+	grid[at(2, 3)] = piece('up');
+	grid[at(3, 2)] = piece('item', 'phil');
+	for (const cell of [at(3, 4), at(3, 5), at(3, 6), at(2, 6), at(1, 6)]) grid[cell] = piece('item', 'phil');
+	const st = { open: 0, crew, grid };
+	for (let seed = 1; seed <= 60; seed++) assert.equal(nextStep(st, 'phil', seeded(seed)), at(3, 4), 'towards the big patch');
+	// equal patches: a feature first
+	grid[at(3, 2)] = piece('item', 'lars');
+	grid[at(4, 3)] = piece('item', 'phil');
+	grid[at(2, 3)] = piece('item', 'lars');
+	grid[at(3, 4)] = piece('coin');
+	for (const cell of [at(3, 5), at(3, 6), at(2, 6), at(1, 6)]) grid[cell] = piece('item', 'lars');
+	for (let seed = 1; seed <= 60; seed++) assert.equal(nextStep(st, 'phil', seeded(seed)), at(3, 4), 'the coin before a lone burger');
+	// stuck: nothing to take next door
+	grid[at(3, 4)] = piece('item', 'lars');
+	grid[at(4, 3)] = piece('ketchup');
+	assert.equal(nextStep(st, 'phil', seeded(3)), -1);
 });
 
 test('a play pays its spins and coin games rounded, capped at MAX_WIN × the bet', () => {
