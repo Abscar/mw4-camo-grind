@@ -4,7 +4,7 @@
 	ändra individuell 'luck' på alla operators"). The Admin tile, only for the member who is Abscar
 	(HOUSE_OP): the burger admin menu (CasinoAdmin, moved here from BurgiBank), odds per game, luck per
 	player, and a picked result per game: Abscar's Fortune's whole screen, a Fortune II feature, a Kushburst
-	result (2026-11-20), the roulette number, the blackjack dealer's cards. Saved in the squad document (casino-rig.ts, squad.setTune); each
+	result (2026-11-20), what an Abscar's Stash spin has, the roulette number, the blackjack dealer's cards. Saved in the squad document (casino-rig.ts, squad.setTune); each
 	player's own page applies it to its plays. Nothing goes on the radio.
 -->
 <script lang="ts">
@@ -20,7 +20,9 @@
 		LUCK_MAX,
 		RIG_GAMES,
 		SCREEN_PRESETS,
+		STASH_FORCES,
 		type CasinoTune,
+		type StashForce,
 		type DealerPreset,
 		type F2Force,
 		type KushForce,
@@ -71,7 +73,7 @@
 
 	/* ---------- picked results: who, how long, what; saved with a new id each time ---------- */
 	const start = squad.tune;
-	const KINDS: ForceKind[] = ['slots', 'fortune2', 'book', 'kushburst', 'roulette', 'blackjack'];
+	const KINDS: ForceKind[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'roulette', 'blackjack'];
 	let who = $state(Object.fromEntries(KINDS.map((k) => [k, start[k]?.who ?? '*'])) as Record<ForceKind, string>);
 	let every = $state(Object.fromEntries(KINDS.map((k) => [k, !!start[k]?.every])) as Record<ForceKind, boolean>);
 	const nameOf = (id: string | undefined) => (id ? (squad.byId(id)?.member.name ?? '?') : '?');
@@ -118,6 +120,7 @@
 	let f2 = $state<F2Force>(start.fortune2?.what ?? 'hotbox');
 	let bookForce = $state<BookForce>(start.book?.what ?? 'free');
 	let kush = $state<KushForce>(start.kushburst?.what ?? 'kushburst');
+	let stashPick = $state<StashForce>(start.stash?.what ?? 'free');
 	let number = $state<number>(start.roulette?.what ?? 0);
 	const colourName = t.casino.roulette.colors;
 
@@ -335,6 +338,19 @@
 			</div>
 			{@render whoMode('kushburst')}
 			{@render saveRow('kushburst', kush)}
+		</div>
+	</details>
+
+	<!-- Abscar's Stash: what the next spin has -->
+	<details class="rig-box" data-rig="stash">
+		<summary><span class="rig-h font-head">💨 {r.stash.heading}</span><span class="rig-sum">{tune.stash ? (tune.stash.used ? '✔' : '●') : ''}</span></summary>
+		<div class="rig-body">
+			<p class="text-xs text-muted">{r.stash.intro}</p>
+			<div class="flex flex-wrap gap-1.5">
+				{#each STASH_FORCES as k (k)}<button type="button" class="chip" data-stash={k} aria-pressed={stashPick === k} onclick={() => (stashPick = k)}>{r.stash.kinds[k]}</button>{/each}
+			</div>
+			{@render whoMode('stash')}
+			{@render saveRow('stash', stashPick)}
 		</div>
 	</details>
 

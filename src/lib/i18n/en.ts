@@ -998,7 +998,7 @@ export const en = {
 		intro: 'Only you see this tab. Changes reach the others’ pages within half a minute. Nothing goes on the radio, and the games look exactly as usual.',
 		saved: 'Saved',
 		failed: 'Couldn’t reach the squad. Try again in a moment.',
-		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', roulette: 'Roulette', blackjack: 'Blackjack' },
+		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', stash: 'Abscar’s Stash', roulette: 'Roulette', blackjack: 'Blackjack' },
 		odds: {
 			heading: 'Odds per game',
 			intro: 'For everyone who plays that game. Plus = the players win more (the house takes less), minus = they lose more.'
@@ -1071,6 +1071,11 @@ export const en = {
 			heading: 'Kushburst: pick what happens',
 			intro: 'Their next spin has it (a leaf or a KUSHBURST from the start; for a big win or nothing the machine plays spins behind the scenes until one is).',
 			kinds: { leaf: 'A leaf (respin)', kushburst: 'KUSHBURST (all three leaves)', big: 'A big win (25× or more)', blank: 'Nothing at all' }
+		},
+		stash: {
+			heading: 'Abscar’s Stash: pick what happens',
+			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does). Bought bonuses stay random.',
+			kinds: { free: 'Sky High Spins', cloud: 'A smoke-cloud win', big: 'A big win (25× or more)', blank: 'Nothing at all' }
 		},
 		roulette: {
 			heading: 'Roulette: pick the number',
@@ -1220,12 +1225,12 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune · Mybots 5 · Book Of Skedd · Kushburst · Roulette · Blackjack · BurgiBank · Donations',
+		sub: 'Abscar’s Fortune · Mybots 5 · Book Of Skedd · Kushburst · Abscar’s Stash · Roulette · Blackjack · BurgiBank · Donations',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', stash: 'Abscar’s Stash', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
@@ -1281,6 +1286,7 @@ export const en = {
 			book: (net: number, tier: string) => `hit ${tier === 'epic' ? 'an EPIC WIN' : tier === 'mega' ? 'a MEGA WIN' : 'a BIG WIN'} on Book Of Skedd: +${net.toLocaleString('en-US')} 🍔 📖`,
 			bookGamble: (n: number, steps: number) => `gambled ${steps} time${steps === 1 ? '' : 's'} on Book Of Skedd and collected ${n.toLocaleString('en-US')} 🍔 🃏`,
 			kushburst: (net: number, tier: string) => `${tier === 'kushburst' ? 'hit a KUSHBURST' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Kushburst: +${net.toLocaleString('en-US')} 🍔 🍃`,
+			stash: (net: number, tier: string) => `${tier === 'epic' ? 'got SKY HIGH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Abscar’s Stash: +${net.toLocaleString('en-US')} 🍔 💨`,
 			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
 			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`),
 			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
@@ -1595,6 +1601,72 @@ export const en = {
 			gambleNote: (steps: number, limit: number) => `Gamble: at most ${steps} times in a row, and only while what it would pay is at most ${limit}× your bet. A fair card from a full deck.`,
 			oddsNote: (x: number) => `Real odds like the real thing, not the party odds of the other machines: in the long run it gives back about 96 % of what goes in. Free spins come about once every 200 spins, and that’s where the big wins are. One spin with its free spins pays at most ${x.toLocaleString('en-US')}× your bet.`,
 			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`
+		},
+		/** Abscar's Stash, the tumble slot (2026-11-20, the user: "a slot that works like 'sweet bonanza', an Abscar-friendly name, drugs instead of sweets") */
+		stash: {
+			sub: 'Tumble till you’re high',
+			spin: 'Spin',
+			credits: 'Burgers',
+			lastWin: 'Win',
+			tumbleWin: 'Tumble win',
+			holks: 'Holks',
+			clouds: 'Clouds',
+			spinning: 'Tumbling…',
+			noWin: 'Nothing this time.',
+			winLine: (count: number, sym: string, n: string) => `${count} × ${sym} = ${n} 🍔`,
+			spinWon: (n: string, tumbles: number) => `Win: ${n} 🍔${tumbles > 1 ? ` · ${tumbles} tumbles` : ''}`,
+			cloudWin: (x: number, raw: string, win: string) => `Smoke clouds ×${x}: ${raw} → ${win} 🍔`,
+			holkWin: (n: number, pay: string, spins: number) => `${n} HOLKS: +${pay} 🍔 and ${spins} SKY HIGH SPINS!`,
+			holkMore: (n: number, spins: number) => `${n} HOLKS: +${spins} SKY HIGH SPINS!`,
+			won: (n: string) => `Win: ${n} 🍔`,
+			betAnte: (cost: number) => `Bet · pays ${cost.toLocaleString('en-US')}`,
+			boardLabel: (what: string) => `The screen, 6 reels × 5 rows: ${what || 'empty'}.`,
+			countLabel: (n: number, sym: string) => `${n} × ${sym}`,
+			cloudsLabel: (x: number) => `smoke clouds worth ×${x} together`,
+			symbols: {
+				bud: 'Bud',
+				shroom: 'Shroom',
+				brownie: 'Brownie',
+				tab: 'Acid tab',
+				lean: 'Lean',
+				blue: 'Blue star',
+				green: 'Green leaf',
+				purple: 'Purple bolt',
+				heart: 'Red heart',
+				holk: 'THE HOLK',
+				cloud: 'Smoke cloud'
+			},
+			free: {
+				title: (n: number, total: number) => `Sky High Spin ${n} / ${total}`,
+				sub: (won: string) => `${won} 🍔 so far`,
+				intro: { free: 'SKY HIGH SPINS', super: 'SUPER SKY HIGH' },
+				introSub: {
+					free: (n: number) => `${n} spins. Smoke clouds land far more often, and every cloud on a winning screen multiplies its win.`,
+					super: (n: number) => `${n} spins, and every smoke cloud is worth at least ×10.`
+				},
+				more: (n: number) => `+${n} SKY HIGH SPINS!`,
+				outro: 'SKY HIGH SPINS WON',
+				outroSub: (n: number) => `${n} spins played`
+			},
+			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', epic: 'SKY HIGH!' },
+			ante: 'Double chance',
+			anteOn: 'on',
+			anteOff: 'off',
+			anteHelp: (cost: number) => `Holks land more often (Sky High Spins about twice as often). A spin then costs ${cost.toLocaleString('en-US')} 🍔 (+25 %); buying a bonus is off.`,
+			buyKinds: { free: 'Sky High Spins', super: 'Super Sky High' },
+			buyWhat: { free: (n: number) => `${n} Sky High Spins`, super: (n: number) => `${n} Super Sky High spins (every cloud ×10 or more)` },
+			buyOff: 'switch Double chance off to buy',
+			turbo: 'Turbo',
+			skip: 'Skip',
+			skipLabel: 'Skip to the result',
+			how: 'A tumble slot, our own take: 6 reels and 5 rows, and there are no lines: 8 or more of one symbol ANYWHERE on the screen pay (10 or more pay more, 12 or more the most). The winning symbols go up in smoke, everything above falls down, new symbols drop in from the top, and it goes on as long as something wins. THE HOLK (Abscar’s golden cone joint, at most one per reel) pays and starts SKY HIGH SPINS when 4 or more are on the screen as the tumbling stops; 3 or more in them give 5 more. Smoke clouds carry a multiplier from ×2 up to ×100 and never tumble away: when a spin’s tumbling stops with a win, every cloud on the screen adds up and multiplies the tumble win. They come now and then in normal spins and far more often in Sky High Spins. Everything is decided the moment you pay.',
+			payNote: (bet: string) => `What 8–9, 10–11 and 12+ of a symbol pay at your bet (${bet} 🍔):`,
+			payRow: (a: string, b: string, c: string) => `8–9 → ${a} · 10–11 → ${b} · 12+ → ${c}`,
+			holkRow: (a: number, b: number, c: number, spins: number, re: number, more: number) => `4 → ${a}× bet · 5 → ${b}× · 6 → ${c}×, and ${spins} Sky High Spins (${re} in them: +${more})`,
+			cloudRow: '×2 up to ×100. On a winning screen every cloud adds up and multiplies the tumble win (not the holk pay).',
+			anteNote: 'Double chance: holks land more often, so Sky High Spins come about twice as often (about every 35 spins instead of every 53). A spin costs 25 % more; the win is worked out on your bet. Buying a bonus is off while it’s on.',
+			buyNote: (free: number, sup: number) => `Buy bonus prices are times your bet: Sky High Spins ${free}×, Super Sky High ${sup}× (every cloud ×10 or more). They give back about as much as spinning (several times the price).`,
+			rtpNote: 'Party odds like the other two machines: a win on almost every second spin, Sky High Spins about once every 53 spins, and in the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.'
 		},
 		roulette: {
 			spin: 'Spin',

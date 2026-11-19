@@ -7,7 +7,8 @@
 	Mybots 5 (Abscar's Fortune II until 2026-11-20; 2026-11-19) = a purple neon cabinet with a green "5" marquee,
 	a 3 × 3 board in the squad's munchie
 	colours, a gold star in the middle and a frag beside it.
-	Admin (Abscar's control room, the same day) = a mixing desk: a screen showing 777, three slider knobs
+	Abscar's Stash (2026-11-20) = an open wooden stash box full of the slot's symbols, a ×10 smoke cloud on top.
+	Admin (Abscar's control room, 2026-11-19) = a mixing desk: a screen showing 777, three slider knobs
 	and a big red button.
 	Donations (BurgiGives, 2026-11-20) = a glass donation jar full of burgers and burger coins, a heart on
 	its label, a burger coin dropping into the slot in its gold lid.
@@ -19,7 +20,7 @@
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
+	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
 </script>
 
 <script lang="ts">
@@ -199,6 +200,30 @@
 			<path d="M52 8 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z" />
 			<path d="M57 22 l.7 2 l2 .7 l-2 .7 l-.7 2 l-.7 -2 l-2 -.7 l2 -.7 z" />
 		</g>
+	{:else if kind === 'stash'}
+		<!-- Abscar's Stash (2026-11-20): an open wooden stash box, lid up behind, full of the slot's symbols (a
+		     bud, a red mushroom, a red heart pill, a blue star pill), a smoke cloud with ×10 drifting off the top -->
+		<path d="M9 31 L13 9 L51 9 L55 31 Z" fill="#5a2e10" stroke={O} stroke-width="1.6" stroke-linejoin="round" />
+		<path d="M13.4 28.5 L16.2 12.4 L47.8 12.4 L50.6 28.5 Z" fill="#7a4220" />
+		<path d="M17 15 H47" stroke="#9a5a2a" stroke-width="1" />
+		{#each [[18, 28, 6, 5], [26, 27, 5.5, 5], [22, 22.5, 5, 4.5]] as [x, y, rx, ry], i (i)}<ellipse cx={x} cy={y} rx={rx} ry={ry} fill={['#3fa63f', '#4fb846', '#6fd65a'][i]} stroke={O} stroke-width="1.1" />{/each}
+		<path d="M19 27 q1.5 -1 1 -2.5 M25 25.5 q1.5 -1 1 -2.5" fill="none" stroke="#ff9a2e" stroke-width=".9" stroke-linecap="round" />
+		<path d="M34 33 Q35.4 28.6 35 25" stroke="#fff3dc" stroke-width="3.4" stroke-linecap="round" />
+		<path d="M28.4 26 Q28.4 18.6 35.2 18.6 Q42 18.6 42 26 Q35.2 28 28.4 26 Z" fill="#e6262e" stroke={O} stroke-width="1.1" />
+		<circle cx="33" cy="22.4" r="1.3" fill="#fffaf0" /><circle cx="37.8" cy="21.8" r="1.1" fill="#fffaf0" /><circle cx="39.8" cy="24.6" r=".9" fill="#fffaf0" />
+		<path d="M48 34 Q40.4 28.8 40.4 24.4 Q40.4 20.4 43.8 20.4 Q46.4 20.4 48 23 Q49.6 20.4 52.2 20.4 Q55.6 20.4 55.6 24.4 Q55.6 28.8 48 34 Z" fill="#ff3b5c" stroke={O} stroke-width="1.1" />
+		<circle cx="12.5" cy="30" r="5" fill="#3d8bff" stroke={O} stroke-width="1.1" />
+		<path d="M12.5 26.8 l.9 2.1 l2.3 .2 l-1.8 1.5 l.6 2.2 l-2 -1.2 l-2 1.2 l.6 -2.2 l-1.8 -1.5 l2.3 -.2 z" fill="#dbeaff" />
+		<path d="M5 31 H59 L56 52 H8 Z" fill="url(#{u}-stashwood)" stroke={O} stroke-width="1.6" stroke-linejoin="round" />
+		<path d="M5 31 H59 L58.6 34 H5.4 Z" fill="#b8763a" stroke={O} stroke-width="1" stroke-linejoin="round" />
+		<path d="M10 40 H54 M11 46 H53" stroke="#4a240c" stroke-width=".8" opacity=".6" />
+		<rect x="28" y="36" width="8" height="7" rx="1.4" fill="url(#{u}-gold)" stroke={O} stroke-width="1" />
+		<circle cx="32" cy="39.6" r="1.2" fill="#5a2e10" />
+		<defs><linearGradient id="{u}-stashwood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a5a28" /><stop offset="1" stop-color="#4e260c" /></linearGradient></defs>
+		<g class="ta-cloud">
+			<path d="M45 18 Q40.5 18 41 14.2 Q41.5 11 45 11.6 Q45.4 6.6 50.2 7 Q53 3.6 57 5.6 Q61.6 6.2 61 10.6 Q63.8 11.6 63 14.8 Q62.2 18 59 18 Z" fill="#c69cff" stroke={O} stroke-width="1.2" stroke-linejoin="round" />
+			<text x="52.2" y="15.6" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="7" fill="#fff" stroke={O} stroke-width=".5" paint-order="stroke">×10</text>
+		</g>
 	{:else if kind === 'admin'}
 		<!-- Abscar's control room: a desk with a screen (777), three slider knobs and a big red button -->
 		<path d="M4 30 H60 L63 52 H1 Z" fill="#3a3f48" stroke={O} stroke-width="1.6" stroke-linejoin="round" />
@@ -359,6 +384,18 @@
 		}
 		88% {
 			opacity: 0.4;
+		}
+	}
+	:global([aria-pressed='true']) > .ta .ta-cloud {
+		animation: ta-drift 2.8s ease-in-out infinite;
+	}
+	@keyframes ta-drift {
+		0%,
+		100% {
+			transform: translate(0, 0);
+		}
+		50% {
+			transform: translate(-1.5px, -2.5px);
 		}
 	}
 	@keyframes ta-slide {

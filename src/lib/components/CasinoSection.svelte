@@ -11,9 +11,9 @@
 	out to a page tab of its own the same evening (ShopPage.svelte; the user: "BurgiShop can have a tab of
 	its own instead of being among the casino games"); a saved 'shop' pick opens the slot machine.
 	Abscar's Fortune II (CasinoFortune2, 2026-11-19; Mybots 5 since 2026-11-20) is the second tile, Book Of
-	Skedd (CasinoBook, 2026-11-20) the third, Kushburst (CasinoKushburst, 2026-11-20) the fourth. Donations
-	(BurgiGives, CasinoDonate, 2026-11-20) sits next to BurgiBank: eight tiles for everyone, Abscar also sees
-	Admin (a slim strip under the others until there's room for all of them in one row).
+	Skedd (CasinoBook, 2026-11-20) the third, Kushburst (CasinoKushburst, 2026-11-20) the fourth, Abscar's Stash (CasinoStash, the tumble slot) the fifth. Donations
+	(BurgiGives, CasinoDonate, 2026-11-20) sits next to BurgiBank: the games are big tiles,
+	BurgiBank, Donations and (Abscar only) Admin a row of smaller tiles under them.
 	The casino floor (2026-11-20, the user: "snygga till hela 'Burgicasino' fliken, mycket dopamin och kul
 	grejer på skärmen"): the box is a dark casino in every theme (carpet, drifting lights and props,
 	CasinoFloorFx), a marquee sign with chasing bulbs and the counting balance pill (CasinoSign,
@@ -41,6 +41,7 @@
 	import CasinoFortune2 from './CasinoFortune2.svelte';
 	import CasinoBook from './CasinoBook.svelte';
 	import CasinoKushburst from './CasinoKushburst.svelte';
+	import CasinoStash from './CasinoStash.svelte';
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import MybotsLogo from './MybotsLogo.svelte';
 	import CasinoRig from './CasinoRig.svelte';
@@ -55,7 +56,9 @@
 	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
-	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
+	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
+	/** Not games: a row of smaller tiles of their own under the game tiles. */
+	const UTIL: Game[] = ['bank', 'donate', 'admin'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let savedGame = $state<string | null>(null);
@@ -93,6 +96,15 @@
 	const houseTake = $derived(houseId && squad.doc ? (burgerBank(squad.doc, members, squad.now)[houseId]?.house ?? 0) : 0);
 	/** The tiles: Admin (Abscar's control room, CasinoRig) only for the member who is the house. */
 	const GAMES = $derived(houseEntry?.mine ? ALL_GAMES : ALL_GAMES.filter((g) => g !== 'admin'));
+	const PLAY = $derived(GAMES.filter((g) => !UTIL.includes(g)));
+	const UTILS = $derived(GAMES.filter((g) => UTIL.includes(g)));
+	/** Game tiles a row from 560 px: all of them up to five, else half (rounded up) until 900 px, then all. */
+	const colsMd = $derived(PLAY.length <= 5 ? PLAY.length : Math.ceil(PLAY.length / 2));
+	/** Phones: three game tiles a row (a 6-column grid), the last row's tiles share their row. */
+	const spanOf = (i: number, n: number) => {
+		const last = n % 3 || 3;
+		return i >= n - last ? 6 / last : 2;
+	};
 	const game = $derived.by((): Game => {
 		const want = picked ?? savedGame;
 		return want && (GAMES as string[]).includes(want) ? (want as Game) : 'slots';
@@ -151,25 +163,24 @@
 			</div>
 
 			<!-- which game: big picture tiles -->
-			<div
-				class="casino-tabs"
-				class:admin={GAMES.includes('admin')}
-				style:--n={GAMES.length}
-				style:--half={Math.ceil(GAMES.filter((g) => g !== 'admin').length / 2)}
-				role="group"
-				aria-label={c.gamesLabel}
-			>
-				{#each GAMES as g (g)}
-					<button type="button" class="casino-game" data-game={g} aria-pressed={game === g} onclick={() => pick(g)}>
-						<span class="tile-fx" aria-hidden="true"></span>
-						{#if g === hot}<span class="casino-hot font-head" title={hotWon ? f.hotLabel : f.hotParty}><span aria-hidden="true">🔥</span> {f.hot}</span>{/if}
-						{#if g === 'fortune2'}<MybotsLogo tile />{:else}<CasinoTabArt kind={g} />{/if}
-						<span class="casino-game-name font-head">{c.games[g]}</span>
-						{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
-								><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span
-							>{/if}
-					</button>
-				{/each}
+			{#snippet tile(g: Game, span: number)}
+				<button type="button" class="casino-game" class:util={!span} data-game={g} aria-pressed={game === g} style:--span={span || undefined} onclick={() => pick(g)}>
+					<span class="tile-fx" aria-hidden="true"></span>
+					{#if g === hot}<span class="casino-hot font-head" title={hotWon ? f.hotLabel : f.hotParty}><span aria-hidden="true">🔥</span> {f.hot}</span>{/if}
+					{#if g === 'fortune2'}<MybotsLogo tile />{:else}<CasinoTabArt kind={g} />{/if}
+					<span class="casino-game-name font-head">{c.games[g]}</span>
+					{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
+							><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span
+						>{/if}
+				</button>
+			{/snippet}
+			<div class="casino-pick" style:--n={PLAY.length} style:--n-md={colsMd} style:--u={UTILS.length} role="group" aria-label={c.gamesLabel}>
+				<div class="casino-tabs">
+					{#each PLAY as g, i (g)}{@render tile(g, spanOf(i, PLAY.length))}{/each}
+				</div>
+				<div class="casino-utils">
+					{#each UTILS as g (g)}{@render tile(g, 0)}{/each}
+				</div>
 			</div>
 
 			{#key game}
@@ -181,6 +192,8 @@
 					<CasinoBook {balance} bind:hidden bind:pending />
 				{:else if game === 'kushburst'}
 					<CasinoKushburst {balance} bind:hidden bind:pending />
+				{:else if game === 'stash'}
+					<CasinoStash {balance} bind:hidden bind:pending />
 				{:else if game === 'roulette'}
 					<CasinoRoulette {balance} bind:hidden bind:pending />
 				{:else if game === 'blackjack'}
@@ -321,45 +334,55 @@
 		background: rgb(255 201 40 / 0.06);
 	}
 	/* the game tabs: a picture tile each, in its own casino colours (the same in every theme) */
-	/* --n tiles in rows of --cols, each row centred (seven since Book Of Skedd and Donations, 2026-11-20): three a
-	   row on phones, half of them (--half, rounded up) a row from 560 px, all in one row from 1000 px. Abscar's
-	   Admin tile is a slim strip under the others until then */
-	.casino-tabs {
-		--cols: 3;
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
+	/* the game tiles: on phones three a row (a 6-column grid; the last row's tiles share it), from 560 px all in
+	   one row up to five games, else two rows (--n-md a row) until 900 px, then all (--n) in one row. BurgiBank,
+	   Donations and (Abscar only) Admin aren't games: a row of smaller tiles under them (--u), standing up on
+	   phones, picture beside the name from 560 px (2026-11-20, when Abscar's Stash made it five games) */
+	.casino-pick {
+		display: grid;
 		gap: 8px;
 	}
-	.casino-tabs > .casino-game {
-		flex: 0 0 calc((100% - (var(--cols) - 1) * 8px) / var(--cols));
-		min-width: 0;
+	.casino-tabs {
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 8px;
+	}
+	.casino-tabs .casino-game {
+		grid-column: span var(--span, 2);
+	}
+	.casino-utils {
+		display: grid;
+		grid-template-columns: repeat(var(--u), minmax(0, 1fr));
+		gap: 8px;
 	}
 	.casino-tabs :global(svg.ta) {
 		width: 56px;
 		height: 49px;
 	}
+	.casino-game.util {
+		min-height: 76px;
+		padding: 6px 4px;
+	}
+	.casino-game.util :global(svg.ta) {
+		width: 42px;
+		height: 37px;
+	}
 	@media (min-width: 560px) {
+		.casino-pick {
+			max-width: calc(var(--n-md) * 160px);
+		}
 		.casino-tabs {
-			--cols: var(--half, 4);
-			max-width: calc(var(--half, 4) * 180px);
+			grid-template-columns: repeat(var(--n-md), minmax(0, 1fr));
+		}
+		.casino-tabs .casino-game {
+			grid-column: auto;
 		}
 		/* more room per tile here: bigger pictures */
 		.casino-tabs :global(svg.ta) {
 			width: 80px;
 			height: 70px;
 		}
-	}
-	@media (min-width: 1000px) {
-		.casino-tabs {
-			--cols: var(--n, 7);
-			max-width: calc(var(--n, 7) * 152px);
-		}
-	}
-	/* Abscar's Admin tile: a slim full-width strip under the game tiles until all of them fit in one row */
-	@media (max-width: 999px) {
-		.casino-tabs.admin > .casino-game[data-game='admin'] {
-			flex-basis: 100%;
+		.casino-game.util {
 			grid-auto-flow: column;
 			justify-content: center;
 			align-items: center;
@@ -367,9 +390,17 @@
 			min-height: 56px;
 			padding: 6px 12px;
 		}
-		.casino-tabs.admin .casino-game[data-game='admin'] :global(svg.ta) {
+		.casino-game.util :global(svg.ta) {
 			width: 46px;
 			height: 40px;
+		}
+	}
+	@media (min-width: 900px) {
+		.casino-pick {
+			max-width: calc(var(--n) * 160px);
+		}
+		.casino-tabs {
+			grid-template-columns: repeat(var(--n), minmax(0, 1fr));
 		}
 	}
 	.casino-game[data-game='admin'] {
@@ -414,6 +445,10 @@
 		--tile: #2a0a5a;
 		--tile-2: #0b021c;
 		border-color: rgb(141 255 90 / 0.5);
+	}
+	.casino-game[data-game='stash'] {
+		--tile: #5e4214;
+		--tile-2: #1f1405;
 	}
 	.casino-game[data-game='roulette'] {
 		--tile: #11683a;
