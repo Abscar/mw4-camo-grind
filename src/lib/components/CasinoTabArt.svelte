@@ -4,11 +4,13 @@
 	a little red slot machine with burgers on its reels and a holk for a lever, roulette = the wheel seen
 	from above, blackjack = an ace and a king fanned out with a chip stack, BurgiShop = a shopping bag
 	with a burger on it, BurgiBank = a big bank with columns and a burger coin in its gable.
+	Abscar's Fortune II (2026-11-19) = a purple neon cabinet with a 3 × 3 board in the squad's munchie
+	colours, a gold star in the middle and a frag beside it.
 	Our own chunky cartoons in the Burger Bandit's style (SlotSymbol.svelte). Decorative: the tab says
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'roulette' | 'blackjack' | 'shop' | 'bank';
+	export type CasinoTab = 'slots' | 'fortune2' | 'roulette' | 'blackjack' | 'shop' | 'bank';
 </script>
 
 <script lang="ts">
@@ -61,6 +63,30 @@
 		<rect x="34" y="39.6" width="9" height="2.6" rx="1.3" fill="#120302" />
 		<rect x="12" y="45.5" width="33" height="5" rx="1.6" fill="#3d0508" stroke={O} stroke-width="1" />
 		<ellipse cx="22" cy="47.6" rx="2.4" ry="1" fill="url(#{u}-gold)" /><ellipse cx="27" cy="48" rx="2.4" ry="1" fill="url(#{u}-gold)" />
+	{:else if kind === 'fortune2'}
+		<!-- Abscar's Fortune II: a purple neon cabinet, a green "II" marquee, a 3 × 3 board of the squad's
+		     munchie colours with a gold WILD star in the middle, a frag with a lit spark on the side -->
+		<rect x="8" y="11" width="44" height="42" rx="5" fill="#3a1468" stroke={O} stroke-width="1.6" />
+		<path d="M8 15 Q8 4 30 4 Q52 4 52 15 Z" fill="#160626" stroke="#7dff6a" stroke-width="1.6" stroke-linejoin="round" />
+		<g class="ta-bulbs">
+			{#each [14, 21, 39, 46] as x, i (x)}<circle cx={x} cy={i === 0 || i === 3 ? 12 : 8.6} r="1.4" fill="#b9ffb0" stroke="#1f6a18" stroke-width=".5" />{/each}
+		</g>
+		<text x="30" y="13.4" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="9" fill="#7dff6a" stroke="#0a2a06" stroke-width=".6" paint-order="stroke">II</text>
+		<rect x="11.5" y="17" width="37" height="31" rx="3" fill="#0b0414" stroke="#ffc928" stroke-width="1.2" />
+		{#each [0, 1, 2] as row (row)}
+			{#each [0, 1, 2] as col (col)}
+				{@const i = row * 3 + col}
+				{#if i !== 4}
+					<rect x={13.6 + col * 11.4} y={18.6 + row * 9.6} width="10" height="8.4" rx="2" fill={['#e23a2e', '#f2a91c', '#2d8cf0', '#9b4be6'][(i * 3 + 1) % 4]} stroke={O} stroke-width=".8" />
+					<rect x={14.6 + col * 11.4} y={19.4 + row * 9.6} width="8" height="2" rx="1" fill="#fff" opacity=".3" />
+				{/if}
+			{/each}
+		{/each}
+		<path class="ta-star" d="M30 26.6 L31.7 30 L35.4 30.3 L32.6 32.6 L33.5 36.2 L30 34.2 L26.5 36.2 L27.4 32.6 L24.6 30.3 L28.3 30 Z" fill="url(#{u}-gold)" stroke={O} stroke-width=".8" stroke-linejoin="round" />
+		<ellipse cx="56" cy="44" rx="5" ry="6" fill="#5f7a2a" stroke={O} stroke-width="1.2" />
+		<path d="M51.6 42 H60.4 M51.4 45.6 H60.6 M56 38 V50" stroke="#3e5418" stroke-width=".8" />
+		<rect x="53.6" y="36" width="5" height="3" rx="1" fill="#9aa6b2" stroke={O} stroke-width=".9" />
+		<g class="ta-spark" fill="#fff36a"><path d="M59 30.5 l1 2.4 l2.4 1 l-2.4 1 l-1 2.4 l-1 -2.4 l-2.4 -1 l2.4 -1 z" /></g>
 	{:else if kind === 'roulette'}
 		<!-- the wheel from above: wooden bowl, red / black pockets with one green, gold turret, the ball -->
 		<ellipse cx="32" cy="50" rx="22" ry="3.4" fill="#000" opacity=".35" />
@@ -161,6 +187,11 @@
 	}
 	:global([aria-pressed='true']) > .ta .ta-spark path:nth-child(2) {
 		animation-delay: -0.9s;
+	}
+	:global([aria-pressed='true']) > .ta .ta-star {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: ta-twinkle 1.6s ease-in-out infinite;
 	}
 	:global([aria-pressed='true']) > .ta .ta-coin {
 		transform-box: fill-box;

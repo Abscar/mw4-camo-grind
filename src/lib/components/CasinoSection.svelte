@@ -10,6 +10,7 @@
 	tab of its own: loans, the house and (Abscar only) the admin menu, under a big bank. BurgiShop moved
 	out to a page tab of its own the same evening (ShopPage.svelte; the user: "BurgiShop can have a tab of
 	its own instead of being among the casino games"); a saved 'shop' pick opens the slot machine.
+	Abscar's Fortune II (CasinoFortune2, 2026-11-19) is the second tile: five tiles, three + two on phones.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -19,6 +20,7 @@
 	import CasinoBlackjack from './CasinoBlackjack.svelte';
 	import CasinoRoulette from './CasinoRoulette.svelte';
 	import CasinoSlots from './CasinoSlots.svelte';
+	import CasinoFortune2 from './CasinoFortune2.svelte';
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import CasinoAdmin from './CasinoAdmin.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
@@ -32,7 +34,7 @@
 	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
-	const GAMES: Game[] = ['slots', 'roulette', 'blackjack', 'bank'];
+	const GAMES: Game[] = ['slots', 'fortune2', 'roulette', 'blackjack', 'bank'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let game = $state<Game>('slots');
@@ -125,6 +127,8 @@
 			{#key game}
 				{#if game === 'slots'}
 					<CasinoSlots {balance} bind:hidden bind:pending />
+				{:else if game === 'fortune2'}
+					<CasinoFortune2 {balance} bind:hidden bind:pending />
 				{:else if game === 'roulette'}
 					<CasinoRoulette {balance} bind:hidden bind:pending />
 				{:else if game === 'blackjack'}
@@ -217,20 +221,20 @@
 		background: rgb(255 201 40 / 0.06);
 	}
 	/* the game tabs: a picture tile each, in its own casino colours (the same in every theme) */
-	/* four tiles: two by two on phones, one row from 560 px */
+	/* five tiles (Abscar's Fortune II came 2026-11-19): three then two on phones, one row from 560 px */
 	.casino-tabs {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 8px;
 	}
 	.casino-tabs :global(svg.ta) {
-		width: 64px;
-		height: 56px;
+		width: 56px;
+		height: 49px;
 	}
 	@media (min-width: 560px) {
 		.casino-tabs {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-			max-width: 640px;
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+			max-width: 800px;
 		}
 		/* more room per tile here: bigger pictures */
 		.casino-tabs :global(svg.ta) {
@@ -261,6 +265,10 @@
 			transform 0.15s ease,
 			box-shadow 0.15s ease,
 			border-color 0.15s ease;
+	}
+	.casino-game[data-game='fortune2'] {
+		--tile: #4a1a86;
+		--tile-2: #14062a;
 	}
 	.casino-game[data-game='roulette'] {
 		--tile: #11683a;

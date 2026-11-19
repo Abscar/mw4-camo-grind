@@ -832,12 +832,12 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune · Roulette · Blackjack · BurgiBank',
+		sub: 'Abscar’s Fortune I & II · Roulette · Blackjack · BurgiBank',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Abscar’s Fortune II', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
@@ -871,6 +871,7 @@ export const en = {
 		},
 		event: {
 			slots: (net: number, tier: string) => `${tier === 'jackpot' ? 'hit the BURGER JACKPOT' : tier === 'mega' ? 'hit a MEGA WIN' : tier === 'big' ? 'hit a BIG WIN' : 'won'} on Abscar’s Fortune: +${net.toLocaleString('en-US')} 🍔 🎰`,
+			fortune2: (net: number, tier: string) => `${tier === 'epic' ? 'got an EPIC MUNCH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Abscar’s Fortune II: +${net.toLocaleString('en-US')} 🍔 🍟`,
 			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
 			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`),
 			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
@@ -968,6 +969,92 @@ export const en = {
 			scatterRow: (a: number, b: number, c: number, fa: number, fb: number, fc: number) => `3 → ${a}× bet + ${fa} free · 4 → ${b}× + ${fb} · 5 → ${c}× + ${fc}`,
 			payNote: 'Line wins are times the line bet (your bet ÷ 10).',
 			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`
+		},
+		/** Abscar's Fortune II, the Munchie Squad (2026-11-19, the user: "a new Abscar's Fortune like Pirots 5, our own symbols, crazy bonuses and free spins") */
+		fortune2: {
+			sub: 'Munchie Squad',
+			spin: 'Spin',
+			credits: 'Burgers',
+			lastWin: 'Win',
+			spinning: 'The squad is munching…',
+			noWin: 'Nothing munched this time.',
+			crumbs: 'Only crumbs this time (less than half a burger).',
+			spinWon: (n: string, ketchups: number) => `Munched ${n} 🍔${ketchups ? ` · ${ketchups} ketchup${ketchups === 1 ? '' : 's'} on the board` : ''}`,
+			won: (n: number) => `Win: ${n.toLocaleString('en-US')} 🍔`,
+			boardLabel: (size: number, levels: string, ketchups: number) => `The board, ${size} × ${size}. ${levels}. Ketchups on the board: ${ketchups} of 3.`,
+			crew: { phil: 'Phillestar', lars: 'Drängen Lars Åke', jeeven: 'Da Jeeven', ingman: 'Ingman' },
+			items: { phil: 'Burgers', lars: 'Beer', jeeven: 'Energy drinks', ingman: 'Purple buds' },
+			levels: 'The squad',
+			levelLabel: (name: string, item: string, level: number, each: string) => `${name}: ${item}, level ${level}, ${each} 🍔 each`,
+			lv: 'LV',
+			each: (n: string) => `${n} 🍔 each`,
+			letters: 'Collect M-U-N-C-H',
+			lettersLabel: (got: string) => `Letters collected: ${got || 'none'}`,
+			meter: 'Abscar’s holk',
+			meterLabel: (n: number, max: number) => `Abscar’s holk meter: ${n} of ${max}`,
+			ketchup: 'Ketchup',
+			hotbox: 'Hotbox',
+			pops: {
+				level: (n: number) => `LEVEL ${n}!`,
+				swap: 'SMOKE SWAP!',
+				grow: (n: number) => `WALL DOWN! ${n}×${n}`,
+				drop: 'ABSCAR DROPS IN!',
+				mult: (n: number) => `HOTBOX ×${n}`,
+				munchies: 'THE MUNCHIES!'
+			},
+			free: {
+				intro: { hotbox: 'HOTBOX SPINS', super: 'SUPER HOTBOX' },
+				introSub: {
+					hotbox: (n: number) => `${n} free spins. Everything carries over: levels only go up, the field only grows, and every time Abscar’s holk fills up the room gets smokier: +1 to the multiplier.`,
+					super: (n: number) => `${n} free spins on the full 8 × 8, every level at least 3, starting at ×2. Everything carries over.`
+				},
+				title: (n: number, total: number) => `Hotbox spin ${n} / ${total}`,
+				sub: (mult: number, won: number) => `×${mult} · ${won.toLocaleString('en-US')} 🍔 so far`,
+				more: (n: number) => `+${n} FREE SPINS!`,
+				outro: 'HOTBOX WON',
+				outroSub: (n: number) => `${n} free spins played`
+			},
+			munch: {
+				title: 'THE MUNCHIES',
+				short: 'Every new coin gives 3 respins again. SQUAD coins take their row and column, ×2 / ×3 multiply it all, a full board doubles it.',
+				respins: (n: number) => `Respins left: ${n}`,
+				coins: (n: string) => `${n} 🍔 in coins`,
+				full: 'FULL BOARD ×2',
+				won: 'MUNCHIES WON',
+				squad: 'SQUAD',
+				cell: (i: number, what: string) => `Cell ${i}: ${what}`,
+				empty: 'empty',
+				coinLabel: (n: string) => `${n} burgers`,
+				multLabel: (x: number) => `×${x} coin`,
+				squadLabel: (n: string) => `squad coin, ${n} burgers`
+			},
+			continue: 'Continue',
+			skip: 'Skip',
+			skipLabel: 'Skip to the result',
+			turbo: 'Turbo',
+			buy: 'Buy bonus',
+			buyKinds: { hotbox: 'Hotbox Spins', super: 'Super Hotbox', munchies: 'The Munchies' },
+			buyWhat: { hotbox: (n: number) => `${n} Hotbox Spins`, super: (n: number) => `${n} Super Hotbox spins`, munchies: 'The Munchies coin game' },
+			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', epic: 'EPIC MUNCH' },
+			maxWin: (x: number) => `MAX WIN: ${x.toLocaleString('en-US')}× your bet`,
+			paytable: 'Paytable & how it works',
+			how: 'A collector slot, our own take: the board is 6 × 6 inside a walled 8 × 8. Four of the squad stand on it, each with a munchie of their own: Phillestar takes burgers, Drängen Lars Åke beer, Da Jeeven energy drinks and Ingman purple buds. One after another they walk to a neighbouring cell (up, down, left or right) that holds their own munchie, a WILD or a feature, take it and go on until nothing next to them is theirs. Then everything falls down into the holes (the squad stays where it stands), new munchies drop in from the top, and they walk again, until nobody can move. Every munchie pays by its colour’s level, 1 to 7. Ketchup can’t be taken: 3 on the board when the spin ends start the free spins.',
+			levelTable: 'What one munchie pays at your bet, by level',
+			features: {
+				wild: 'Anybody can take it: counts as their own munchie.',
+				up: 'Supersize: whoever takes it goes up a level (max 7), so all their munchies pay more.',
+				swap: 'Smoke swap: every munchie of another colour on the board turns into the taker’s.',
+				coin: 'Burger coin: its burgers at once.',
+				frag: 'Frag: blows up the 3 × 3 round it and pays everything in it (a frag in the blast goes off too), and blows a wall open: the field grows to 7 × 7, then 8 × 8.',
+				letter: 'M-U-N-C-H: take all five letters in one spin (in free spins they add up over the spins) and THE MUNCHIES coin game starts.',
+				ketchup: '3 on the board when a spin ends = 10 Hotbox Spins, 4 or more = Super Hotbox. In free spins 3 give 3 more spins, 4 give 5.'
+			},
+			meterNote: (max: number) => `Abscar’s holk meter: every munchie taken fills it; at ${max} Abscar (the house) drops 3 features next to the squad.`,
+			freeNote: 'Hotbox Spins start from where the spin ended and keep everything: levels only go up, the field only grows, letters and the holk meter carry over, and every time the holk meter fills up the Hotbox multiplier goes up by 1 (up to ×15) and multiplies every burger taken. Super Hotbox starts on the full 8 × 8 with every level at least 3, at ×2.',
+			munchNote: 'The Munchies: burger coins land on a 6 × 6 board with the squad in the corners and stay; 3 respins, and every new coin gives 3 again. ×2 / ×3 coins add up into one multiplier for the end, SQUAD coins take the value of every coin in their row and column, and a full board doubles everything.',
+			buyNote: (h: number, s: number, m: number) => `Buy bonus prices are times your bet: Hotbox Spins ${h}×, Super Hotbox ${s}×, The Munchies ${m}×. They give back about the same share as spinning.`,
+			rtpNote: 'Small wins come on most spins and the big ones in the bonuses. Hotbox Spins come about once every 150 spins and The Munchies about once every 500. In the long run it gives back about 99% of what goes in, so the house still wins in the end, very slowly. Pretend burgers, never money.',
+			maxNote: (x: number) => `One play (a spin with everything it starts, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`
 		},
 		roulette: {
 			spin: 'Spin',
