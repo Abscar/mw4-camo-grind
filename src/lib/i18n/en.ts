@@ -782,7 +782,7 @@ export const en = {
 		intro: 'Only you see this tab. Changes reach the others’ pages within half a minute. Nothing goes on the radio, and the games look exactly as usual.',
 		saved: 'Saved',
 		failed: 'Couldn’t reach the squad. Try again in a moment.',
-		games: { slots: 'Abscar’s Fortune', fortune2: 'Abscar’s Fortune II', roulette: 'Roulette', blackjack: 'Blackjack' },
+		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', roulette: 'Roulette', blackjack: 'Blackjack' },
 		odds: {
 			heading: 'Odds per game',
 			intro: 'For everyone who plays that game. Plus = the players win more (the house takes less), minus = they lose more.'
@@ -842,7 +842,7 @@ export const en = {
 			weeds: 'weeds multiply a win by a random amount'
 		},
 		fortune2: {
-			heading: 'Abscar’s Fortune II: pick what happens',
+			heading: 'Mybots 5: pick what happens',
 			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does).',
 			kinds: { hotbox: 'Hotbox Spins', super: 'Super Hotbox', munchies: 'The Munchies', big: 'A big win (25× or more)', blank: 'Nothing at all' }
 		},
@@ -922,12 +922,12 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune I & II · Roulette · Blackjack · BurgiBank',
+		sub: 'Abscar’s Fortune · Mybots 5 · Roulette · Blackjack · BurgiBank',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Abscar’s Fortune II', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', admin: 'Admin' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', admin: 'Admin' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
@@ -961,7 +961,7 @@ export const en = {
 		},
 		event: {
 			slots: (net: number, tier: string) => `${tier === 'jackpot' ? 'hit the BURGER JACKPOT' : tier === 'mega' ? 'hit a MEGA WIN' : tier === 'big' ? 'hit a BIG WIN' : 'won'} on Abscar’s Fortune: +${net.toLocaleString('en-US')} 🍔 🎰`,
-			fortune2: (net: number, tier: string) => `${tier === 'epic' ? 'got an EPIC MUNCH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Abscar’s Fortune II: +${net.toLocaleString('en-US')} 🍔 🍟`,
+			fortune2: (net: number, tier: string) => `${tier === 'epic' ? 'got an EPIC MUNCH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Mybots 5: +${net.toLocaleString('en-US')} 🍔 🍟`,
 			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
 			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`),
 			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
@@ -1065,7 +1065,7 @@ export const en = {
 			payNote: 'Line wins are times the line bet (your bet ÷ 10).',
 			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`
 		},
-		/** Abscar's Fortune II, the Munchie Squad (2026-11-19, the user: "a new Abscar's Fortune like Pirots 5, our own symbols, crazy bonuses and free spins") */
+		/** Mybots 5 (called Abscar's Fortune II until 2026-11-20), the Munchie Squad (2026-11-19, the user: "a new Abscar's Fortune like Pirots 5, our own symbols, crazy bonuses and free spins") */
 		fortune2: {
 			sub: 'Munchie Squad',
 			spin: 'Spin',

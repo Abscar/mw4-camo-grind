@@ -4,7 +4,8 @@
 	a little red slot machine with burgers on its reels and a holk for a lever, roulette = the wheel seen
 	from above, blackjack = an ace and a king fanned out with a chip stack, BurgiShop = a shopping bag
 	with a burger on it, BurgiBank = a big bank with columns and a burger coin in its gable.
-	Abscar's Fortune II (2026-11-19) = a purple neon cabinet with a 3 × 3 board in the squad's munchie
+	Mybots 5 (Abscar's Fortune II until 2026-11-20; 2026-11-19) = a purple neon cabinet with a green "5" marquee,
+	a 3 × 3 board in the squad's munchie
 	colours, a gold star in the middle and a frag beside it.
 	Admin (Abscar's control room, the same day) = a mixing desk: a screen showing 777, three slider knobs
 	and a big red button.
@@ -73,7 +74,7 @@
 		<g class="ta-bulbs">
 			{#each [14, 21, 39, 46] as x, i (x)}<circle cx={x} cy={i === 0 || i === 3 ? 12 : 8.6} r="1.4" fill="#b9ffb0" stroke="#1f6a18" stroke-width=".5" />{/each}
 		</g>
-		<text x="30" y="13.4" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="9" fill="#7dff6a" stroke="#0a2a06" stroke-width=".6" paint-order="stroke">II</text>
+		<text x="30" y="13.4" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="9" fill="#7dff6a" stroke="#0a2a06" stroke-width=".6" paint-order="stroke">5</text>
 		<rect x="11.5" y="17" width="37" height="31" rx="3" fill="#0b0414" stroke="#ffc928" stroke-width="1.2" />
 		{#each [0, 1, 2] as row (row)}
 			{#each [0, 1, 2] as col (col)}

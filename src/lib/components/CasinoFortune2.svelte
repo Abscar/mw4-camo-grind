@@ -1,5 +1,6 @@
 <!--
-	Abscar's Fortune II, the Munchie Squad (fortune2.ts; 2026-11-19, the user's ask: "build a new Abscar's
+	Mybots 5 (called Abscar's Fortune II until 2026-11-20, the user: "byt namn på abscars fortune 2 till
+	'Mybots 5'"; code ids stay fortune2 / f2-*), the Munchie Squad (fortune2.ts; 2026-11-19, the user's ask: "build a new Abscar's
 	Fortune but like Pirots 5, with our own symbols; come up with crazy bonuses and free spins like the
 	Pirots games"). A neon hotbox cabinet: the 8 × 8 board with its walls, four of the squad walking about
 	taking their own munchies (Phillestar burgers, Drängen beer, Da Jeeven energy drinks, Ingman purple buds),
@@ -599,7 +600,7 @@
 				<p class="f2-title f2-free-title font-head" role="status">{s.free.title(freeState.n, freeState.total)}</p>
 				<p class="f2-sub font-head">{s.free.sub(mult, freeState.won)}</p>
 			{:else}
-				<p class="f2-title font-head">Abscar’s Fortune <span class="f2-two">II</span></p>
+				<p class="f2-title font-head">Mybots <span class="f2-two">5</span></p>
 				<p class="f2-sub font-head">{s.sub}</p>
 			{/if}
 		</div>
