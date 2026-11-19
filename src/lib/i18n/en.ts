@@ -754,6 +754,89 @@ export const en = {
 		takenEvent: (n: number) => `borrowed ${n.toLocaleString('en-US')} 🍔 from BurgiBank 🏦`,
 		paidEvent: (n: number) => `paid back ${n.toLocaleString('en-US')} 🍔 to BurgiBank 🏦`
 	},
+	/** BurgiGives, BurgiCasino's Donations tab (donations.ts, CasinoDonate.svelte; 2026-11-20). Joke causes, pretend burgers. */
+	donate: {
+		heading: 'BurgiGives',
+		line: 'Give your burgers to a good cause (sort of). Five totally real organisations, run by totally real people.',
+		gone: 'Donated burgers are gone for good: they don’t go to the house or to anyone else.',
+		yourBurgers: (n: number) => `Your burgers: ${n.toLocaleString('en-US')} 🍔`,
+		youGave: (n: number) => `You’ve given ${n.toLocaleString('en-US')} 🍔`,
+		sumHeading: 'The squad so far',
+		sumLine: (n: number, donors: number) =>
+			n ? `given by ${donors} donor${donors === 1 ? '' : 's'}` : 'Nobody has given anything yet. Be the first.',
+		favourite: (org: string) => `Favourite cause: ${org}`,
+		causes: 'The causes',
+		mission: 'Mission',
+		paysFor: 'Your burgers pay for',
+		raised: (n: number) => `${n.toLocaleString('en-US')} 🍔 raised`,
+		donors: (n: number) => `${n} donor${n === 1 ? '' : 's'}`,
+		goal: (n: number) => `Goal ${n.toLocaleString('en-US')} 🍔`,
+		goalsReached: (n: number) => `${n} goal${n === 1 ? '' : 's'} reached`,
+		top: (name: string, n: number) => `Top donor: ${name} · ${n.toLocaleString('en-US')} 🍔`,
+		noTop: 'No donors yet',
+		give: 'Donate',
+		close: 'Close',
+		amount: 'How many burgers',
+		amountHint: 'Type a number, or 10k / 2.5m',
+		all: 'All of it',
+		half: 'Half',
+		giveN: (n: number) => `Donate ${n.toLocaleString('en-US')} 🍔`,
+		bad: 'Type how many burgers (a whole number).',
+		broke: (have: number) => `You only have ${have.toLocaleString('en-US')} 🍔.`,
+		tooBig: (max: number) => `At most ${max.toLocaleString('en-US')} 🍔 in one go.`,
+		off: 'Couldn’t reach the squad. Try again in a moment.',
+		thanks: (name: string) => `THANK YOU, ${name.toUpperCase()}!`,
+		given: (n: number, org: string) => `${n.toLocaleString('en-US')} 🍔 donated to ${org} 💛`,
+		goalToast: (org: string, goal: number) => `${org} just passed ${goal.toLocaleString('en-US')} 🍔! 🎉`,
+		event: (n: number, org: string) => `donated ${n.toLocaleString('en-US')} 🍔 to ${org} 💛`,
+		goalEvent: (n: number, org: string, goal: number) => `donated ${n.toLocaleString('en-US')} 🍔 and pushed ${org} past ${goal.toLocaleString('en-US')} 🍔! 🎉`,
+		whoHeading: 'Who gave to what',
+		whoNone: 'Nobody has donated yet.',
+		whoRow: (n: number) => `${n.toLocaleString('en-US')} 🍔 in all`,
+		recentHeading: 'Latest gifts',
+		recentNone: 'No gifts yet.',
+		recentRow: (name: string, n: number, org: string) => `${name} gave ${n.toLocaleString('en-US')} 🍔 to ${org}`,
+		ago: (min: number) => (min < 1 ? 'just now' : min < 60 ? `${min} min ago` : min < 1440 ? `${Math.floor(min / 60)} h ago` : `${Math.floor(min / 1440)} d ago`),
+		you: 'You',
+		note: 'Made-up causes and pretend burgers: no real charity, no real money.',
+		orgs: {
+			holk: {
+				name: 'Holk Relief Fund',
+				short: 'Holk Relief',
+				mission: 'No operator should ever drop into a match with an empty mouth.',
+				paysFor: 'Rolling papers, a lighter that actually lights, and a fresh ashtray for the lobby.',
+				thanks: 'Puff puff, thank you!'
+			},
+			barn: {
+				name: 'Drängen’s Barn',
+				short: 'Drängen’s Barn',
+				mission: 'A quiet barn for Drängen Lars Åke, far, far away from the randoms.',
+				paysFor: 'A new pitchfork, a beer cooler, and headphones that block out randoms completely.',
+				thanks: 'Lars Åke tips his cap.'
+			},
+			campaign: {
+				name: 'Save the Campaign',
+				short: 'Save the Campaign',
+				mission: 'Rescuing lonely campaign missions that nobody in this squad will ever play.',
+				paysFor: 'Dusting off the disc, and a pity visit to the final boss, who’s been waiting since launch.',
+				thanks: 'The campaign shed a single tear.'
+			},
+			hardcore: {
+				name: 'Friendly Fire Fund',
+				short: 'Friendly Fire',
+				mission: 'Patching up everyone shot in the back by their own squad in Hardcore.',
+				paysFor: 'Band-aids, a minimap Hardcore will never give you, and an apology card from whoever did it.',
+				thanks: 'Band-aid applied. Check your fire.'
+			},
+			wrists: {
+				name: 'Camo Grinders’ Wrist Clinic',
+				short: 'Wrist Clinic',
+				mission: 'Ice packs for players who are still 30 longshots away from Harmonic Break.',
+				paysFor: 'Wrist braces, ice packs, and someone who listens while you complain about longshots.',
+				thanks: 'Your wrists say thanks.'
+			}
+		}
+	},
 	/** Abscar's casino admin menu (2026-11-16). */
 	admin: {
 		heading: 'Admin menu',
@@ -916,12 +999,12 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune · Mybots 5 · Roulette · Blackjack · BurgiBank',
+		sub: 'Abscar’s Fortune · Mybots 5 · Roulette · Blackjack · BurgiBank · Donations',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', admin: 'Admin' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
@@ -1602,7 +1685,7 @@ export const en = {
 			howLabel: 'How burgers work',
 			betsHeading: 'Bets',
 			how: (s: { start: number; gold: number; platinum: number; harmonicBreak: number; mastery: number; divergence: number }) =>
-				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (25, going up by 25 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account.`,
+				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (25, going up by 25 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account. Burgers you give away in BurgiGives (the Donations tab) are gone for good.`,
 			houseTag: (n: number) => `house +${n.toLocaleString('en-US')}`,
 			richest: 'Richest',
 			burgers: (n: number) => `${n.toLocaleString('en-US')} burger${n === 1 ? '' : 's'}`,

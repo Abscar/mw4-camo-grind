@@ -77,6 +77,7 @@ import { cleanCasino, cleanOnline, count420, countDay, mergeCasino, mergeOnline,
 import { toast } from './toast.svelte.ts';
 import { buy as shopBuy, cleanShop, equip as shopEquip, mergeShop, throwPrank as shopThrow, ITEM_BY_ID, type BuyResult, type ShopSlot, type ShopState } from './shop.ts';
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
+import { cleanDonations, giveTo, goalPassed, mergeDonations, squadGiving, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
 import { is420 } from './four20.ts';
 import { cleanTune, forcedFor, luckFor, withUsed, type CasinoTune, type ForceKind, type RigGame } from './casino-rig.ts';
 
@@ -96,6 +97,8 @@ const DEVICE_KEY = 'mw4-camo-grind:device';
 const SHOP_KEY = 'mw4-camo-grind:shop';
 /** BurgiBank loans (loans.ts), kept on this device too. */
 const LOANS_KEY = 'mw4-camo-grind:loans';
+/** BurgiGives: what you gave the joke causes (donations.ts), kept on this device too. */
+const DONATIONS_KEY = 'mw4-camo-grind:donations';
 /** Next-only casino settings this device already took (casino-rig.ts), newest last. */
 const RIG_USED_KEY = 'mw4-camo-grind:casino-taken';
 const RIG_USED_MAX = 30;
@@ -346,6 +349,8 @@ class Squad {
 	shop = $state<ShopState | undefined>(undefined);
 	/** BurgiBank loans, merged with your other device's. */
 	loans = $state<LoanBook | undefined>(undefined);
+	/** BurgiGives: what you gave the joke causes, merged with your other device's. */
+	donations = $state<DonationBook | undefined>(undefined);
 	/** Today's daily bonus when this page counted it (for the casino tab's welcome line). */
 	bonusToday = $state<{ amount: number; n: number } | null>(null);
 	#device = '';
@@ -403,7 +408,8 @@ class Squad {
 			online: this.online,
 			casino: this.casino,
 			shop: this.shop,
-			loans: this.loans
+			loans: this.loans,
+			donations: this.donations
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -448,6 +454,7 @@ class Squad {
 		this.casino = cleanCasino(readJson(CASINO_KEY)) ?? {};
 		this.shop = cleanShop(readJson(SHOP_KEY));
 		this.loans = cleanLoans(readJson(LOANS_KEY));
+		this.donations = cleanDonations(readJson(DONATIONS_KEY));
 		const taken = readJson(RIG_USED_KEY);
 		this.#rigUsed = Array.isArray(taken) ? taken.filter((x): x is string => typeof x === 'string').slice(-RIG_USED_MAX) : [];
 		const device = readJson(DEVICE_KEY);
@@ -777,6 +784,30 @@ class Squad {
 		return true;
 	}
 
+	// ----- BurgiGives (donations.ts) -----
+
+	/**
+	 * Give burgers to a joke cause: off your balance for good (to nobody, not the house). Big gifts and a
+	 * gift that pushes its cause past a goal go on the radio; `goal` = the goal it passed, if any.
+	 */
+	donate(org: OrgId, n: number): { result: 'ok'; goal: number | null } | { result: 'broke' | 'bad' | 'off' } {
+		const me = this.me;
+		const bank = this.myBank;
+		if (!me || !bank) return { result: 'off' };
+		const members = Object.fromEntries(this.entries.map((e) => [e.id, e.member]));
+		const before = squadGiving(members).byOrg[org]?.total ?? 0;
+		const r = giveTo(this.donations, this.#device, makeMemberId().slice(0, 10), org, n, bank.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r;
+		this.donations = r.book;
+		writeJson(DONATIONS_KEY, r.book);
+		this.#schedulePublish();
+		const goal = goalPassed(before, before + n);
+		const name = t.donate.orgs[org].name;
+		if (goal !== null) void this.#event(t.donate.goalEvent(n, name, goal));
+		else if (n >= DON_RADIO) void this.#event(t.donate.event(n, name));
+		return { result: 'ok', goal };
+	}
+
 	// ----- Abscar's admin menu -----
 
 	/** Give (+) or take (−) burgers for a member, out of nothing / into nothing. Only Abscar may. */
@@ -1086,6 +1117,13 @@ class Squad {
 				writeJson(LOANS_KEY, merged ?? null);
 			}
 		}
+		if (mine?.donations) {
+			const merged = mergeDonations(this.donations, mine.donations);
+			if (JSON.stringify(merged) !== JSON.stringify(this.donations)) {
+				this.donations = merged;
+				writeJson(DONATIONS_KEY, merged ?? null);
+			}
+		}
 		if (!away) this.#countToday();
 		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {
 			readyAt: this.readyAt,
@@ -1097,7 +1135,8 @@ class Squad {
 			online: this.online,
 			casino: this.casino,
 			shop: this.shop,
-			loans: this.loans
+			loans: this.loans,
+			donations: this.donations
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;

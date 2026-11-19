@@ -9,11 +9,13 @@
 	colours, a gold star in the middle and a frag beside it.
 	Admin (Abscar's control room, the same day) = a mixing desk: a screen showing 777, three slider knobs
 	and a big red button.
+	Donations (BurgiGives, 2026-11-20) = a glass donation jar full of burgers and burger coins, a heart on
+	its label, a burger coin dropping into the slot in its gold lid.
 	Our own chunky cartoons in the Burger Bandit's style (SlotSymbol.svelte). Decorative: the tab says
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'fortune2' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'admin';
+	export type CasinoTab = 'slots' | 'fortune2' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
 </script>
 
 <script lang="ts">
@@ -155,6 +157,32 @@
 		<circle cx="48" cy="40.8" r="6.6" fill="url(#{u}-red)" stroke={O} stroke-width="1" />
 		<ellipse cx="45.8" cy="38.4" rx="2.4" ry="1.3" fill="#fff" opacity=".45" />
 		<circle class="ta-led" cx="37" cy="34" r="1.3" fill="#7dff6a" />
+	{:else if kind === 'donate'}
+		<!-- BurgiGives: a glass donation jar full of burgers and burger coins, a heart on its label, a gold lid
+		     with a slot, and a burger coin dropping in -->
+		<ellipse cx="32" cy="53.4" rx="19" ry="2.4" fill="#000" opacity=".35" />
+		<path d="M15 19 H49 V48 Q49 53 44 53 H20 Q15 53 15 48 Z" fill="#bfe6ff" fill-opacity=".22" />
+		{#each [[20, 50], [27, 50.6], [35, 50.2], [43, 49.8], [24, 47.6], [40, 47.2]] as [x, y] (`${x}-${y}`)}<ellipse cx={x} cy={y} rx="4" ry="1.5" fill="url(#{u}-gold)" stroke={O} stroke-width=".6" />{/each}
+		<g transform="translate(23 43) scale(1.35) translate(-23 -43)">{@html burger(23, 43)}</g>
+		<g transform="translate(40.6 43.4) scale(1.35) translate(-40.6 -43.4)">{@html burger(40.6, 43.4, true)}</g>
+		<g transform="translate(31.6 37.2) scale(1.3) translate(-31.6 -37.2)">{@html burger(31.6, 37.2)}</g>
+		<ellipse cx="22" cy="37.6" rx="3.6" ry="1.4" fill="url(#{u}-gold)" stroke={O} stroke-width=".6" transform="rotate(-25 22 37.6)" />
+		<ellipse cx="42.6" cy="37" rx="3.6" ry="1.4" fill="url(#{u}-gold)" stroke={O} stroke-width=".6" transform="rotate(20 42.6 37)" />
+		<path d="M15 19 H49 V48 Q49 53 44 53 H20 Q15 53 15 48 Z" fill="none" stroke={O} stroke-width="1.6" stroke-linejoin="round" />
+		<path d="M18.6 23 V47" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".55" />
+		<path d="M45.4 25 V33" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".4" />
+		<rect x="20" y="22.6" width="24" height="11" rx="2" fill="#fff6e0" stroke={O} stroke-width=".9" />
+		<path d="M32 32 C27 28.6 26.6 26.6 26.6 25.6 C26.6 24.2 27.7 23.4 28.9 23.4 C30.2 23.4 31.3 24.2 32 25.4 C32.7 24.2 33.8 23.4 35.1 23.4 C36.3 23.4 37.4 24.2 37.4 25.6 C37.4 26.6 37 28.6 32 32 Z" fill="#ff3f7f" stroke="#7a0a2a" stroke-width=".8" stroke-linejoin="round" />
+		<rect x="12.6" y="13" width="38.8" height="7" rx="2.4" fill="url(#{u}-gold)" stroke={O} stroke-width="1.4" />
+		<rect x="25.6" y="15.2" width="12.8" height="2.4" rx="1.2" fill="#3a1e00" />
+		<g class="ta-drop">
+			<circle cx="32" cy="7.6" r="4.6" fill="url(#{u}-gold)" stroke={O} stroke-width="1" />
+			<g transform="translate(32 7.8) scale(.82) translate(-32 -7.8)">{@html burger(32, 7.8)}</g>
+		</g>
+		<g class="ta-spark" fill="#fff6b0">
+			<path d="M54 22 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z" />
+			<path d="M9 30 l.7 2 l2 .7 l-2 .7 l-.7 2 l-.7 -2 l-2 -.7 l2 -.7 z" />
+		</g>
 	{:else}
 		<!-- BurgiBank: a big bank with a gold gable (a burger coin in it), BANK on the frieze, four marble
 		     columns in front of the dark hall, wide steps, and a stack of burger coins by the door -->
@@ -228,6 +256,25 @@
 	}
 	:global([aria-pressed='true']) > .ta .ta-led {
 		animation: ta-blink-led 1.2s steps(1) infinite;
+	}
+	:global([aria-pressed='true']) > .ta .ta-drop {
+		animation: ta-drop 2.2s ease-in infinite;
+	}
+	@keyframes ta-drop {
+		0% {
+			transform: translateY(-5px);
+			opacity: 0;
+		}
+		25%,
+		55% {
+			transform: translateY(0);
+			opacity: 1;
+		}
+		85%,
+		100% {
+			transform: translateY(8px);
+			opacity: 0;
+		}
 	}
 	@keyframes ta-slide {
 		0%,

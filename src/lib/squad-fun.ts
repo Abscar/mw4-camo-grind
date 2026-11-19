@@ -36,6 +36,7 @@ import { isReleased } from './steps.ts';
 import { casinoTotal, dailyTotal, HOUSE_OP } from './squad-casino.ts';
 import { shopSpent } from './shop.ts';
 import { loanEffect } from './loans.ts';
+import { donationTotal } from './donations.ts';
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -229,7 +230,7 @@ export function burgersEarned(m: Pick<SquadMember, 'weapons' | 'mastery'>): numb
 
 type Members = Record<string, Pick<SquadMember, 'weapons' | 'recent' | 'name'>>;
 /** What the bank needs of a member: the grind, the daily bonus, the casino and who's the house (2026-11-16). */
-type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'> & Partial<Pick<SquadMember, 'op' | 'shop' | 'loans'>>;
+type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'> & Partial<Pick<SquadMember, 'op' | 'shop' | 'loans' | 'donations'>>;
 
 /** The member who is the house (squad-casino.ts HOUSE_OP), the lowest id if two picked that operator; null without one. */
 export function houseOf(members: Record<string, Partial<Pick<SquadMember, 'op'>>>): string | null {
@@ -295,6 +296,8 @@ export interface BankRow {
 	owed: number;
 	/** Abscar's admin menu: given (+) or taken (−). */
 	grant: number;
+	/** BurgiGives: burgers given to the joke causes (donations.ts). They go to nobody, not to the house. */
+	donated: number;
 	won: number;
 	lost: number;
 	/** Burgers on open bets. */
@@ -303,8 +306,9 @@ export interface BankRow {
 }
 
 /**
- * Everyone's burgers: earned + daily bonus + casino + bets won − bets lost − burgers on open bets, and
- * for the house (Abscar) everything the others lost in the casino and on bets. Never below zero on show.
+ * Everyone's burgers: earned + daily bonus + casino + bets won − bets lost − burgers on open bets −
+ * donations, and for the house (Abscar) everything the others lost in the casino and on bets. Never
+ * below zero on show.
  */
 export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, now = Date.now()): Record<string, BankRow> {
 	const out: Record<string, BankRow> = {};
@@ -319,6 +323,7 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 			loan: loan.balance,
 			owed: loan.owed,
 			grant: doc.grants?.[id] ?? 0,
+			donated: donationTotal(m.donations),
 			won: 0,
 			lost: 0,
 			held: 0,
@@ -340,7 +345,7 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 		}
 	}
 	for (const row of Object.values(out)) {
-		row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.won - row.lost - row.held - row.spent);
+		row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.won - row.lost - row.held - row.spent - row.donated);
 	}
 	return out;
 }

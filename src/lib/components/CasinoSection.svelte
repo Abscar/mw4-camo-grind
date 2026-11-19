@@ -10,7 +10,8 @@
 	tab of its own: loans, the house and (Abscar only) the admin menu, under a big bank. BurgiShop moved
 	out to a page tab of its own the same evening (ShopPage.svelte; the user: "BurgiShop can have a tab of
 	its own instead of being among the casino games"); a saved 'shop' pick opens the slot machine.
-	Abscar's Fortune II (CasinoFortune2, 2026-11-19) is the second tile: five tiles, three + two on phones.
+	Abscar's Fortune II (CasinoFortune2, 2026-11-19) is the second tile. Donations (BurgiGives,
+	CasinoDonate, 2026-11-20) sits next to BurgiBank: six tiles for everyone, seven for Abscar (Admin).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -24,6 +25,7 @@
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import CasinoRig from './CasinoRig.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
+	import CasinoDonate from './CasinoDonate.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 	import { bjTable } from '#lib/bjTable.svelte.ts';
 
@@ -34,7 +36,7 @@
 	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
-	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'roulette', 'blackjack', 'bank', 'admin'];
+	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let savedGame = $state<string | null>(null);
@@ -118,7 +120,7 @@
 			</div>
 
 			<!-- which game: big picture tiles -->
-			<div class="casino-tabs" class:six={GAMES.length > 5} role="group" aria-label={c.gamesLabel}>
+			<div class="casino-tabs" class:seven={GAMES.length > 6} role="group" aria-label={c.gamesLabel}>
 				{#each GAMES as g (g)}
 					<button type="button" class="casino-game" data-game={g} aria-pressed={game === g} onclick={() => pick(g)}>
 						<CasinoTabArt kind={g} />
@@ -141,6 +143,8 @@
 					<CasinoBlackjack {balance} bind:hidden />
 				{:else if game === 'admin'}
 					<CasinoRig />
+				{:else if game === 'donate'}
+					<CasinoDonate balance={shown} />
 				{:else}
 					<!-- BurgiBank: a big bank, your burgers, loans and the house -->
 					<div class="grid gap-3">
@@ -228,7 +232,8 @@
 		background: rgb(255 201 40 / 0.06);
 	}
 	/* the game tabs: a picture tile each, in its own casino colours (the same in every theme) */
-	/* five tiles (Abscar's Fortune II came 2026-11-19): three then two on phones, one row from 560 px */
+	/* six tiles (Donations came 2026-11-20): three a row until there's room for all six in one row. Abscar
+	   sees a seventh, Admin: under 900 px it's a slim strip under the two rows, from 900 px all seven in a row */
 	.casino-tabs {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -240,8 +245,7 @@
 	}
 	@media (min-width: 560px) {
 		.casino-tabs {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
-			max-width: 800px;
+			max-width: 560px;
 		}
 		/* more room per tile here: bigger pictures */
 		.casino-tabs :global(svg.ta) {
@@ -249,17 +253,31 @@
 			height: 70px;
 		}
 	}
-	/* six tiles (Abscar sees the Admin tile): three a row until there's room for all six */
-	@media (min-width: 560px) and (max-width: 819px) {
-		.casino-tabs.six {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			max-width: 560px;
-		}
-	}
 	@media (min-width: 820px) {
-		.casino-tabs.six {
+		.casino-tabs:not(.seven) {
 			grid-template-columns: repeat(6, minmax(0, 1fr));
 			max-width: 920px;
+		}
+	}
+	@media (max-width: 899px) {
+		.casino-tabs.seven .casino-game[data-game='admin'] {
+			grid-column: 1 / -1;
+			grid-auto-flow: column;
+			justify-content: center;
+			align-items: center;
+			gap: 10px;
+			min-height: 56px;
+			padding: 6px 12px;
+		}
+		.casino-tabs.seven .casino-game[data-game='admin'] :global(svg.ta) {
+			width: 46px;
+			height: 40px;
+		}
+	}
+	@media (min-width: 900px) {
+		.casino-tabs.seven {
+			grid-template-columns: repeat(7, minmax(0, 1fr));
+			max-width: 1040px;
 		}
 	}
 	.casino-game[data-game='admin'] {
@@ -310,6 +328,10 @@
 	.casino-game[data-game='bank'] {
 		--tile: #1f3a6e;
 		--tile-2: #0a1530;
+	}
+	.casino-game[data-game='donate'] {
+		--tile: #8a1f4e;
+		--tile-2: #34081c;
 	}
 	.casino-game:hover {
 		border-color: rgb(255 201 40 / 0.7);

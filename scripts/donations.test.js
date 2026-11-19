@@ -1,0 +1,171 @@
+// BurgiGives, BurgiCasino's donations tab (src/lib/donations.ts): giving, two devices, the squad's
+// totals and "who gave to what", goals, typed amounts, and how donations count in the burger bank.
+// `npm test`.
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import {
+	cleanDonations,
+	donationTotal,
+	donationsByOrg,
+	giveTo,
+	goalOf,
+	goalPassed,
+	mergeDonations,
+	parseAmount,
+	squadGiving,
+	DON_LOG,
+	DON_MAX,
+	ORG_IDS,
+	ORGS
+} from '../src/lib/donations.ts';
+import { fromSquadWire, memberEntry, toSquadWire } from '../src/lib/squad-codec.ts';
+import { burgerBank, BURGERS } from '../src/lib/squad-fun.ts';
+import { t } from '../src/lib/i18n/en.ts';
+
+const T = Date.UTC(2026, 10, 20, 18);
+const A = 'aaaaaaaa1111';
+const B = 'bbbbbbbb2222';
+const give = (book, dev, id, org, n, balance = 1e12, at = T) => {
+	const r = giveTo(book, dev, id, org, n, balance, at);
+	assert.equal(r.result, 'ok', `${org} ${n}`);
+	return r.book;
+};
+
+test('donations: five causes, each with its words and colours', () => {
+	assert.equal(ORG_IDS.length, 5);
+	assert.deepEqual(
+		ORGS.map((o) => o.id),
+		[...ORG_IDS]
+	);
+	for (const o of ORG_IDS) {
+		const s = t.donate.orgs[o];
+		assert.ok(s.name && s.short && s.mission && s.paysFor && s.thanks, o);
+	}
+	assert.equal(new Set(ORG_IDS.map((o) => t.donate.orgs[o].name)).size, 5, 'no two causes share a name');
+});
+
+test('donations: give, balance check, bad gifts refused', () => {
+	let book = give(undefined, 'devA', 'g1', 'holk', 500);
+	book = give(book, 'devA', 'g2', 'holk', 250, 1e12, T + 1);
+	book = give(book, 'devA', 'g3', 'wrists', 100, 1e12, T + 2);
+	assert.deepEqual(donationsByOrg(book), { holk: 750, barn: 0, campaign: 0, hardcore: 0, wrists: 100 });
+	assert.equal(donationTotal(book), 850);
+	assert.equal(Object.keys(book.log).length, 3);
+	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 101, 100, T), { result: 'broke' });
+	assert.equal(giveTo(book, 'devA', 'g4', 'barn', 100, 100, T).result, 'ok', 'all of it is fine');
+	assert.deepEqual(giveTo(book, 'devA', 'g4', 'redcross', 10, 1e9, T), { result: 'bad' }, 'only our causes');
+	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 0, 1e9, T), { result: 'bad' });
+	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 2.5, 1e9, T), { result: 'bad' });
+	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', DON_MAX + 1, 1e12, T), { result: 'bad' });
+	assert.deepEqual(giveTo(book, 'no!', 'g4', 'barn', 10, 1e9, T), { result: 'bad' });
+});
+
+test('donations: the log keeps the newest, the totals keep everything', () => {
+	let book;
+	for (let i = 0; i < DON_LOG + 15; i++) book = give(book, 'devA', `gift${i}`, ORG_IDS[i % 5], 10, 1e12, T + i);
+	assert.equal(Object.keys(book.log).length, DON_LOG);
+	assert.ok(book.log[`gift${DON_LOG + 14}`] && !book.log.gift0, 'oldest gifts drop off the list');
+	assert.equal(donationTotal(book), (DON_LOG + 15) * 10, 'but every burger still counts');
+});
+
+test('donations: two devices merge without losing or doubling anything', () => {
+	const base = give(undefined, 'devA', 'g1', 'holk', 500);
+	// both devices start from the same copy, then give on their own
+	const pc = give(base, 'devA', 'g2', 'holk', 100, 1e12, T + 10);
+	const phone = give(base, 'devB', 'g3', 'holk', 40, 1e12, T + 20);
+	const m1 = mergeDonations(pc, phone);
+	const m2 = mergeDonations(phone, pc);
+	assert.deepEqual(donationsByOrg(m1), donationsByOrg(m2));
+	assert.equal(donationsByOrg(m1).holk, 640);
+	assert.equal(Object.keys(m1.log).length, 3);
+	assert.deepEqual(mergeDonations(m1, m1), m1, 'merging again changes nothing');
+	assert.equal(donationTotal(mergeDonations(m1, base)), 640, 'an older copy takes nothing back');
+	assert.equal(mergeDonations(undefined, pc), pc);
+	assert.equal(mergeDonations(pc, undefined), pc);
+});
+
+test('donations: cleaning drops what isn’t a gift', () => {
+	assert.equal(cleanDonations(null), undefined);
+	assert.equal(cleanDonations({ dev: {} }), undefined);
+	const raw = {
+		dev: {
+			devA: { s: { holk: 500, barn: -4, campaign: 1.5, unicef: 99, wrists: 20 }, at: T },
+			'bad id!': { s: { holk: 9 }, at: T },
+			devB: { s: {}, at: T },
+			devC: { s: { holk: 5 }, at: 'yesterday' }
+		},
+		log: {
+			g1: { o: 'holk', n: 500, at: T },
+			g2: { o: 'nope', n: 5, at: T },
+			g3: { o: 'barn', n: 0, at: T }
+		}
+	};
+	assert.deepEqual(cleanDonations(raw), { dev: { devA: { s: { holk: 500, wrists: 20 }, at: T } }, log: { g1: { o: 'holk', n: 500, at: T } } });
+});
+
+test('donations: the squad’s totals, top donors, who gave to what, the latest gifts', () => {
+	const a = give(give(undefined, 'devA', 'ga1', 'holk', 5000, 1e12, T), 'devA', 'ga2', 'barn', 100, 1e12, T + 5);
+	const b = give(give(undefined, 'devB', 'gb1', 'holk', 6000, 1e12, T + 1), 'devB', 'gb2', 'campaign', 50, 1e12, T + 9);
+	const g = squadGiving({ [A]: { name: 'Abscar', donations: a }, [B]: { name: 'Ingman', donations: b }, cccccccc3333: { name: 'Lurker' } });
+	assert.equal(g.total, 11150);
+	assert.deepEqual(g.byOrg.holk, { total: 11000, donors: 2, top: { id: B, n: 6000 } });
+	assert.deepEqual(g.byOrg.barn, { total: 100, donors: 1, top: { id: A, n: 100 } });
+	assert.deepEqual(g.byOrg.hardcore, { total: 0, donors: 0, top: null });
+	assert.deepEqual(
+		g.donors.map((d) => d.id),
+		[B, A],
+		'most given first; nobody who gave nothing'
+	);
+	assert.deepEqual(g.donors[1].per, [
+		{ o: 'holk', n: 5000 },
+		{ o: 'barn', n: 100 }
+	]);
+	assert.deepEqual(
+		g.recent.map((x) => [x.by, x.id]),
+		[
+			[B, 'gb2'],
+			[A, 'ga2'],
+			[B, 'gb1'],
+			[A, 'ga1']
+		]
+	);
+});
+
+test('donations: goals', () => {
+	assert.deepEqual(goalOf(0), { reached: 0, from: 0, to: 10_000, frac: 0 });
+	assert.deepEqual(goalOf(5_000), { reached: 0, from: 0, to: 10_000, frac: 0.5 });
+	assert.deepEqual(goalOf(10_000), { reached: 1, from: 10_000, to: 50_000, frac: 0 });
+	assert.equal(goalOf(1_000_000).to, 2_000_000, 'after the list, each goal twice the last');
+	assert.equal(goalOf(3_000_000).reached, 7);
+	assert.equal(goalPassed(9_000, 9_999), null);
+	assert.equal(goalPassed(9_000, 10_000), 10_000);
+	assert.equal(goalPassed(9_000, 120_000), 100_000, 'the highest goal passed');
+});
+
+test('donations: typed amounts', () => {
+	assert.equal(parseAmount('1500'), 1500);
+	assert.equal(parseAmount(' 12,345 '), 12345);
+	assert.equal(parseAmount('12 345'), 12345);
+	assert.equal(parseAmount('10k'), 10000);
+	assert.equal(parseAmount('2.5M'), 2500000);
+	assert.equal(parseAmount('2.5'), null, 'no half burgers');
+	assert.equal(parseAmount('0'), null);
+	assert.equal(parseAmount('-5'), null);
+	assert.equal(parseAmount('lots'), null);
+	assert.equal(parseAmount(''), null);
+});
+
+test('donations: in the squad document and the burger bank (gone for good, not to the house)', () => {
+	const donations = give(undefined, 'devB', 'gb1', 'hardcore', 4);
+	const progress = { weapons: {}, mastery: {}, lastTickAt: null };
+	const abscar = memberEntry({ name: 'Abscar', op: 'abscar' }, progress, T);
+	const ingman = memberEntry({ name: 'Ingman', op: 'ingman' }, progress, T, false, { donations });
+	assert.deepEqual(ingman.donations, donations);
+	const doc = fromSquadWire(toSquadWire({ members: { [A]: abscar, [B]: ingman } }));
+	assert.deepEqual(doc.members[B].donations, donations, 'survives the trip through the document');
+	const bank = burgerBank(doc, doc.members, T);
+	assert.equal(bank[B].donated, 4);
+	assert.equal(bank[B].balance, BURGERS.start - 4);
+	assert.equal(bank[A].house, 0, 'the house gets none of it');
+	assert.equal(bank[A].balance, BURGERS.start);
+});

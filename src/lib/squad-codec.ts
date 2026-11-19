@@ -31,6 +31,7 @@ import { cleanTune, type CasinoTune } from './casino-rig.ts';
 import { cleanCasino, cleanOnline, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { cleanShop, type ShopState } from './shop.ts';
 import { cleanLoans, type LoanBook } from './loans.ts';
+import { cleanDonations, type DonationBook } from './donations.ts';
 import { cleanClasses, type ClassList } from './squad-classes.ts';
 import { cleanCombat, type CombatLog } from './squad-combat.ts';
 import { cleanRanked, type RankedLog } from './squad-ranked.ts';
@@ -98,6 +99,8 @@ export interface SquadMember {
 	shop?: ShopState;
 	/** BurgiBank loans (loans.ts; 2026-11-16). */
 	loans?: LoanBook;
+	/** BurgiGives: burgers given to the joke causes (donations.ts; 2026-11-20). */
+	donations?: DonationBook;
 	/** Fields a newer page wrote that this one doesn't know: kept as they are, never dropped. */
 	more?: Record<string, unknown>;
 }
@@ -192,7 +195,7 @@ export const MAX_BETS = 40;
 export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans']);
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans', 'donations']);
 const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune']);
 
 /** Admin grants: member id → whole burgers (±), within a sane range. */
@@ -289,6 +292,8 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (shop) member.shop = shop;
 	const loans = cleanLoans(raw.loans);
 	if (loans) member.loans = loans;
+	const donations = cleanDonations(raw.donations);
+	if (donations) member.donations = donations;
 	const more = unknownKeys(raw, MEMBER_KEYS);
 	if (more) member.more = more;
 	return member;
@@ -474,6 +479,7 @@ export function memberEntry(
 		casino?: CasinoLedger | null;
 		shop?: ShopState | null;
 		loans?: LoanBook | null;
+		donations?: DonationBook | null;
 	} = {}
 ): SquadMember {
 	const entry = cleanMember({
@@ -495,7 +501,8 @@ export function memberEntry(
 		online: extra.online ?? undefined,
 		casino: extra.casino ?? undefined,
 		shop: extra.shop ?? undefined,
-		loans: extra.loans ?? undefined
+		loans: extra.loans ?? undefined,
+		donations: extra.donations ?? undefined
 	});
 	if (!entry) throw new Error('bad squad entry');
 	return entry;
