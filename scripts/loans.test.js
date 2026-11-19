@@ -85,12 +85,13 @@ test('4:20: the day’s bonus once more, once a day, only when counted today', (
 });
 
 test('pranks: paid per throw, on the target for their time, kept short', () => {
-	const r = throwPrank(undefined, 'smoke-bomb', B, 1000, T, 'pr001');
+	// prices ×15 since 2026-11-20: Smoke Bomb 3,750, TOO HIGH TO PLAY 6,000
+	const r = throwPrank(undefined, 'smoke-bomb', B, 4000, T, 'pr001');
 	assert.equal(r.result, 'ok');
-	assert.equal(shopSpent(r.state), 250);
-	assert.equal(throwPrank(undefined, 'too-high', B, 399, T, 'pr002').result, 'broke');
-	assert.equal(throwPrank(undefined, 'nope', B, 9999, T, 'pr003').result, 'unknown');
-	const r2 = throwPrank(r.state, 'too-high', B, 9999, T + 1, 'pr002');
+	assert.equal(shopSpent(r.state), 3750);
+	assert.equal(throwPrank(undefined, 'too-high', B, 5999, T, 'pr002').result, 'broke');
+	assert.equal(throwPrank(undefined, 'nope', B, 99999, T, 'pr003').result, 'unknown');
+	const r2 = throwPrank(r.state, 'too-high', B, 99999, T + 1, 'pr002');
 	const members = { [A]: { shop: r2.state }, [B]: {} };
 	const on = pranksOn(B, members, T + 30 * 60_000);
 	assert.deepEqual(Object.keys(on).sort(), ['smoke-bomb', 'too-high']);
@@ -102,8 +103,8 @@ test('pranks: paid per throw, on the target for their time, kept short', () => {
 	let s;
 	for (let i = 0; i < PRANK_KEEP + 5; i++) s = throwPrank(s, 'smoke-bomb', B, 1e9, T + i, `p${String(i).padStart(4, '0')}`).state;
 	assert.equal(Object.keys(s.pranks).length, PRANK_KEEP);
-	assert.equal(shopSpent(s), (PRANK_KEEP + 5) * 250);
-	assert.equal(shopSpent(cleanShop(JSON.parse(JSON.stringify(s)))), (PRANK_KEEP + 5) * 250);
+	assert.equal(shopSpent(s), (PRANK_KEEP + 5) * 3750);
+	assert.equal(shopSpent(cleanShop(JSON.parse(JSON.stringify(s)))), (PRANK_KEEP + 5) * 3750);
 });
 
 test('the bank: loans, interest to the house, admin grants, the 4:20 extra', () => {

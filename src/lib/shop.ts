@@ -11,6 +11,12 @@
  * house (Abscar) like casino losses. Kept on the device too (`mw4-camo-grind:shop`); two devices merge:
  * everything owned on either, the worn set of the later change.
  *
+ * Prices (2026-11-20, the user: "öka priserna på allt i shoppen med x10-x20 beroende på rarity", since the
+ * slots' party odds made burger balances much bigger): every price went up by rarity, common ×10, rare ×13,
+ * epic ×16, legendary ×20, rounded to tidy numbers (the 420 items keep a 420 ending where it fits, Lucky 7s
+ * costs 4,777). The one exception is the user's own pick: the High Roller title costs 10 million (made
+ * legendary). Within a slot rarer always costs more (shop.test.js). Items bought before keep the price paid.
+ *
  * No browser APIs and no runes, so Node tests it directly (scripts/shop.test.js). Doesn't import
  * squad-codec.ts (which imports this file).
  */
@@ -36,84 +42,86 @@ const item = (id: string, slot: ShopSlot, name: string, price: number, rarity: R
 /** The catalogue. Never reuse an id for something else: owned items are kept by id. */
 export const SHOP_ITEMS: ShopItem[] = [
 	// auras: a glow behind the emblem
-	item('aura-gold', 'aura', 'Golden Glow', 400, 'rare'),
-	item('aura-toxic', 'aura', 'Toxic Cloud', 600, 'rare'),
-	item('aura-neon', 'aura', 'Neon Pulse', 900, 'epic'),
-	item('aura-fire', 'aura', 'Hellfire', 1500, 'epic'),
-	item('aura-iri', 'aura', 'Iridescent', 3000, 'legendary'),
-	item('aura-storm', 'aura', 'Thunderstorm', 4000, 'legendary'),
+	item('aura-gold', 'aura', 'Golden Glow', 5200, 'rare'),
+	item('aura-toxic', 'aura', 'Toxic Cloud', 7800, 'rare'),
+	item('aura-neon', 'aura', 'Neon Pulse', 14500, 'epic'),
+	item('aura-fire', 'aura', 'Hellfire', 24000, 'epic'),
+	item('aura-iri', 'aura', 'Iridescent', 60000, 'legendary'),
+	item('aura-storm', 'aura', 'Thunderstorm', 80000, 'legendary'),
 	// effects: something moving around the emblem
-	item('fx-sparkle', 'effect', 'Sparkles', 300, 'common'),
-	item('fx-embers', 'effect', 'Embers', 500, 'rare'),
-	item('fx-smoke', 'effect', 'Thick Smoke', 800, 'rare'),
-	item('fx-burgers', 'effect', 'Burger Orbit', 1200, 'epic'),
-	item('fx-diamonds', 'effect', 'Diamond Dust', 2500, 'legendary'),
+	item('fx-sparkle', 'effect', 'Sparkles', 3000, 'common'),
+	item('fx-embers', 'effect', 'Embers', 6500, 'rare'),
+	item('fx-smoke', 'effect', 'Thick Smoke', 10500, 'rare'),
+	item('fx-burgers', 'effect', 'Burger Orbit', 19000, 'epic'),
+	item('fx-diamonds', 'effect', 'Diamond Dust', 50000, 'legendary'),
 	// pins: a small badge on the emblem's corner
-	item('pin-burger', 'badge', 'Burger Pin', 100, 'common'),
-	item('pin-skull', 'badge', 'Skull Pin', 200, 'common'),
-	item('pin-7s', 'badge', 'Lucky 7s', 350, 'rare'),
-	item('pin-crown', 'badge', 'Crown', 1000, 'epic'),
-	item('pin-diamond', 'badge', 'Diamond', 2000, 'epic'),
+	item('pin-burger', 'badge', 'Burger Pin', 1000, 'common'),
+	item('pin-skull', 'badge', 'Skull Pin', 2000, 'common'),
+	item('pin-7s', 'badge', 'Lucky 7s', 4777, 'rare'),
+	item('pin-crown', 'badge', 'Crown', 16000, 'epic'),
+	item('pin-diamond', 'badge', 'Diamond', 32000, 'epic'),
 	// renamed from "Golden Holk" (2026-11-16) when the real one went in the mouth; same id, so owners keep it
-	item('pin-holk', 'badge', 'Holk Pin', 2500, 'legendary'),
+	item('pin-holk', 'badge', 'Holk Pin', 50000, 'legendary'),
 	// in the mouth (2026-11-16, the user: "golden holk in the shop for 2500 burgers", then picked "a gold holk
-	// in the mouth"): drawn by each operator's own emblem at its mouth (`mouth` prop; SquadAvatar passes it on)
-	item('mouth-goldholk', 'mouth', 'Golden Holk', 2500, 'legendary'),
+	// in the mouth"; 50,000 since the 2026-11-20 price rise): drawn by each operator's own emblem at its mouth
+	item('mouth-goldholk', 'mouth', 'Golden Holk', 50000, 'legendary'),
 	// name styles: how the callsign is written
-	item('name-gold', 'name', 'Gold Letters', 500, 'rare'),
-	item('name-chrome', 'name', 'Chrome', 700, 'rare'),
-	item('name-toxic', 'name', 'Toxic', 900, 'epic'),
-	item('name-fire', 'name', 'Burning Name', 1200, 'epic'),
-	item('name-rainbow', 'name', 'Rainbow', 2500, 'legendary'),
+	item('name-gold', 'name', 'Gold Letters', 6500, 'rare'),
+	item('name-chrome', 'name', 'Chrome', 9100, 'rare'),
+	item('name-toxic', 'name', 'Toxic', 14500, 'epic'),
+	item('name-fire', 'name', 'Burning Name', 19000, 'epic'),
+	item('name-rainbow', 'name', 'Rainbow', 50000, 'legendary'),
 	// titles: a plate under the callsign
-	item('title-roller', 'title', 'High Roller', 150, 'common', 'High Roller'),
-	item('title-goblin', 'title', 'Camo Goblin', 200, 'common', 'Camo Goblin'),
-	item('title-ketchup', 'title', 'Ketchup King', 250, 'common', 'Ketchup King'),
-	item('title-baron', 'title', 'Burger Baron', 300, 'rare', 'Burger Baron'),
-	item('title-degen', 'title', 'Certified Degen', 400, 'rare', 'Certified Degen'),
-	item('title-grinder', 'title', 'No-Life Grinder', 500, 'rare', 'No-Life Grinder'),
-	item('title-jackpot', 'title', 'Jackpot Junkie', 600, 'epic', 'Jackpot Junkie'),
-	item('title-whale', 'title', 'Burger Whale', 5000, 'legendary', 'Burger Whale'),
+	// 10 million (2026-11-20, the user: "high roller titeln ska kosta 10 miljoner"); was a 150-burger common,
+	// made legendary so rarer still costs more within the titles. People who bought it before keep it.
+	item('title-roller', 'title', 'High Roller', 10_000_000, 'legendary', 'High Roller'),
+	item('title-goblin', 'title', 'Camo Goblin', 2000, 'common', 'Camo Goblin'),
+	item('title-ketchup', 'title', 'Ketchup King', 2500, 'common', 'Ketchup King'),
+	item('title-baron', 'title', 'Burger Baron', 3900, 'rare', 'Burger Baron'),
+	item('title-degen', 'title', 'Certified Degen', 5200, 'rare', 'Certified Degen'),
+	item('title-grinder', 'title', 'No-Life Grinder', 6500, 'rare', 'No-Life Grinder'),
+	item('title-jackpot', 'title', 'Jackpot Junkie', 9600, 'epic', 'Jackpot Junkie'),
+	item('title-whale', 'title', 'Burger Whale', 100000, 'legendary', 'Burger Whale'),
 	// the 420 pack (2026-11-16, the user's pick "build the 420 pack": "lots of 420, we like that")
-	item('aura-kush', 'aura', 'Kush Cloud', 1100, 'epic'),
-	item('fx-leaves', 'effect', 'Leaf Storm', 700, 'rare'),
-	item('fx-munchies', 'effect', 'Munchies', 1400, 'epic'),
-	item('pin-brownie', 'badge', 'Space Brownie', 150, 'common'),
-	item('pin-leaf', 'badge', 'Weed Leaf', 180, 'common'),
-	item('pin-grinder', 'badge', 'Grinder', 420, 'rare'),
-	item('pin-420', 'badge', '420 Badge', 1420, 'epic'),
-	item('name-rasta', 'name', 'Rasta', 1100, 'epic'),
-	item('title-puff', 'title', 'Puff Puff Pass', 160, 'common', 'Puff Puff Pass'),
-	item('title-couch', 'title', 'Couch Commander', 180, 'common', 'Couch Commander'),
-	item('title-snack', 'title', 'Snack Overflow', 220, 'common', 'Snack Overflow'),
-	item('title-stoner', 'title', 'Certified Stoner', 420, 'rare', 'Certified Stoner'),
-	item('title-baked', 'title', 'Ranked While Baked', 420, 'rare', 'Ranked While Baked'),
-	item('title-hotbox', 'title', 'Hotbox Hero', 480, 'rare', 'Hotbox Hero'),
-	item('title-blazed', 'title', 'Blazed & Amazed', 650, 'epic', 'Blazed & Amazed'),
-	item('title-holklord', 'title', 'Holk Lord', 4200, 'legendary', 'Holk Lord'),
+	item('aura-kush', 'aura', 'Kush Cloud', 17500, 'epic'),
+	item('fx-leaves', 'effect', 'Leaf Storm', 9100, 'rare'),
+	item('fx-munchies', 'effect', 'Munchies', 22500, 'epic'),
+	item('pin-brownie', 'badge', 'Space Brownie', 1500, 'common'),
+	item('pin-leaf', 'badge', 'Weed Leaf', 1800, 'common'),
+	item('pin-grinder', 'badge', 'Grinder', 5420, 'rare'),
+	item('pin-420', 'badge', '420 Badge', 22420, 'epic'),
+	item('name-rasta', 'name', 'Rasta', 17500, 'epic'),
+	item('title-puff', 'title', 'Puff Puff Pass', 1600, 'common', 'Puff Puff Pass'),
+	item('title-couch', 'title', 'Couch Commander', 1800, 'common', 'Couch Commander'),
+	item('title-snack', 'title', 'Snack Overflow', 2200, 'common', 'Snack Overflow'),
+	item('title-stoner', 'title', 'Certified Stoner', 5420, 'rare', 'Certified Stoner'),
+	item('title-baked', 'title', 'Ranked While Baked', 5420, 'rare', 'Ranked While Baked'),
+	item('title-hotbox', 'title', 'Hotbox Hero', 6200, 'rare', 'Hotbox Hero'),
+	item('title-blazed', 'title', 'Blazed & Amazed', 10500, 'epic', 'Blazed & Amazed'),
+	item('title-holklord', 'title', 'Holk Lord', 84000, 'legendary', 'Holk Lord'),
 	// the 420 pack 2 (2026-11-16, the user: "kör 420 paketet"): the mouthpieces, eyes, hats, smoke colours
 	// and shoulder sidekicks left over from the first pack. Face items are drawn per emblem (faceGear.ts).
 	// "Cloud Nine" is the pack list's "Snoop mode", named without a real person's name.
-	item('mouth-blunt', 'mouth', 'Blunt', 450, 'rare'),
-	item('mouth-pipe', 'mouth', 'Long Pipe', 600, 'rare'),
-	item('mouth-double', 'mouth', 'Double Holk', 1100, 'epic'),
-	item('mouth-bong', 'mouth', 'Bong', 1800, 'epic'),
-	item('mouth-cloud9', 'mouth', 'Cloud Nine', 4200, 'legendary'),
-	item('eyes-shades', 'eyes', 'Shades', 250, 'common'),
-	item('eyes-rasta', 'eyes', 'Rasta Shades', 500, 'rare'),
-	item('eyes-baked', 'eyes', 'Baked Eyes', 650, 'rare'),
-	item('eyes-laser', 'eyes', 'Laser Eyes', 3000, 'legendary'),
-	item('hat-bucket', 'hat', 'Tie-Dye Bucket', 350, 'common'),
-	item('hat-rasta', 'hat', 'Rasta Beanie', 600, 'rare'),
-	item('hat-propeller', 'hat', 'Propeller Cap', 1200, 'epic'),
-	item('hat-leafcrown', 'hat', 'Leaf Crown', 2420, 'legendary'),
-	item('smoke-green', 'smoke', 'Green Smoke', 300, 'common'),
-	item('smoke-purple', 'smoke', 'Purple Haze', 700, 'rare'),
-	item('smoke-rainbow', 'smoke', 'Rainbow Smoke', 1600, 'epic'),
-	item('smoke-gold', 'smoke', 'Golden Smoke', 2600, 'legendary'),
-	item('pet-burger', 'pet', 'Burger Buddy', 700, 'rare'),
-	item('pet-smokey', 'pet', 'Smokey', 1400, 'epic'),
-	item('pet-bud', 'pet', 'Lil’ Bud', 4200, 'legendary')
+	item('mouth-blunt', 'mouth', 'Blunt', 5900, 'rare'),
+	item('mouth-pipe', 'mouth', 'Long Pipe', 7800, 'rare'),
+	item('mouth-double', 'mouth', 'Double Holk', 17500, 'epic'),
+	item('mouth-bong', 'mouth', 'Bong', 29000, 'epic'),
+	item('mouth-cloud9', 'mouth', 'Cloud Nine', 84000, 'legendary'),
+	item('eyes-shades', 'eyes', 'Shades', 2500, 'common'),
+	item('eyes-rasta', 'eyes', 'Rasta Shades', 6500, 'rare'),
+	item('eyes-baked', 'eyes', 'Baked Eyes', 8500, 'rare'),
+	item('eyes-laser', 'eyes', 'Laser Eyes', 60000, 'legendary'),
+	item('hat-bucket', 'hat', 'Tie-Dye Bucket', 3500, 'common'),
+	item('hat-rasta', 'hat', 'Rasta Beanie', 7800, 'rare'),
+	item('hat-propeller', 'hat', 'Propeller Cap', 19000, 'epic'),
+	item('hat-leafcrown', 'hat', 'Leaf Crown', 48400, 'legendary'),
+	item('smoke-green', 'smoke', 'Green Smoke', 3000, 'common'),
+	item('smoke-purple', 'smoke', 'Purple Haze', 9100, 'rare'),
+	item('smoke-rainbow', 'smoke', 'Rainbow Smoke', 25500, 'epic'),
+	item('smoke-gold', 'smoke', 'Golden Smoke', 52000, 'legendary'),
+	item('pet-burger', 'pet', 'Burger Buddy', 9100, 'rare'),
+	item('pet-smokey', 'pet', 'Smokey', 22500, 'epic'),
+	item('pet-bud', 'pet', 'Lil’ Bud', 84000, 'legendary')
 ];
 
 /**
@@ -121,8 +129,9 @@ export const SHOP_ITEMS: ShopItem[] = [
  * their operator in smoke for an hour; TOO HIGH TO PLAY stamps them for a day (like the BANNED stamp).
  */
 export const PRANKS = [
-	{ id: 'smoke-bomb', name: 'Smoke Bomb', price: 250, hours: 1 },
-	{ id: 'too-high', name: 'TOO HIGH TO PLAY', price: 400, hours: 24 }
+	// ×15 on 2026-11-20 (were 250 / 400; pranks have no rarity, so the middle of the shop's ×10–×20)
+	{ id: 'smoke-bomb', name: 'Smoke Bomb', price: 3750, hours: 1 },
+	{ id: 'too-high', name: 'TOO HIGH TO PLAY', price: 6000, hours: 24 }
 ] as const;
 export type PrankKind = (typeof PRANKS)[number]['id'];
 export const PRANK_BY_ID: ReadonlyMap<string, (typeof PRANKS)[number]> = new Map(PRANKS.map((p) => [p.id, p]));
@@ -151,7 +160,8 @@ export interface ShopState {
 }
 
 const ID = /^[a-z0-9-]{2,24}$/;
-const PRICE_MAX = 1_000_000;
+// a sanity cap on stored prices (was 1,000,000; raised for the 10-million High Roller title, 2026-11-20)
+const PRICE_MAX = 100_000_000;
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
 const MEMBER_ID = /^[A-Za-z0-9_-]{8,32}$/;
@@ -251,7 +261,8 @@ export function buy(s: ShopState | undefined, id: string, balance: number, at: n
 	if (!it) return { result: 'unknown' };
 	if (s?.own[id] !== undefined) return { result: 'owned' };
 	if (balance < it.price) return { result: 'broke' };
-	return { result: 'ok', state: { own: { ...s?.own, [id]: it.price }, eq: { ...s?.eq, [it.slot]: id }, at } };
+	// `...s` keeps the pranks thrown (and `pOld`): without it a buy dropped them until the next merge
+	return { result: 'ok', state: { ...s, own: { ...s?.own, [id]: it.price }, eq: { ...s?.eq, [it.slot]: id }, at } };
 }
 
 /** Wear an owned item in its slot, or take the slot off (id null). Unowned items are refused (null). */
