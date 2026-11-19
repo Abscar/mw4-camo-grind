@@ -47,6 +47,7 @@
 		type Piece,
 		type WinTier
 	} from '#lib/fortune2.ts';
+	import { drawUntil, f2Matches, lucky, F2_TRIES } from '#lib/casino-rig.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
@@ -492,7 +493,11 @@
 			return;
 		}
 		buyAsk = null;
-		await run(play(bet, rand));
+		// Abscar's control room (casino-rig.ts): a feature he picked for this spin (spins are drawn until
+		// one has it), or your luck
+		const forced = squad.takeForced('fortune2');
+		const draw = () => play(bet, rand);
+		await run(forced ? drawUntil(draw, (p) => f2Matches(p, forced.what), F2_TRIES) : lucky(squad.luck('fortune2'), rand, draw, (p) => p.net));
 	}
 
 	/* ---------- buy bonus: asked first ---------- */
@@ -511,7 +516,7 @@
 		buyAsk = null;
 		if (!kind || busy || price(kind) > shown) return;
 		message = s.buyKinds[kind];
-		await run(buy(kind, bet, rand));
+		await run(lucky(squad.luck('fortune2'), rand, () => buy(kind, bet, rand), (p) => p.net));
 	}
 
 	/* ---------- auto spin ---------- */

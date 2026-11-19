@@ -27,6 +27,7 @@ import {
 import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
 import { cleanBans, type Bans } from './squad-bans.ts';
+import { cleanTune, type CasinoTune } from './casino-rig.ts';
 import { cleanCasino, cleanOnline, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { cleanShop, type ShopState } from './shop.ts';
 import { cleanLoans, type LoanBook } from './loans.ts';
@@ -163,6 +164,8 @@ export interface SquadDoc {
 	 * total (member id → burgers). Made out of nothing / gone into nothing, not from anyone's account.
 	 */
 	grants?: Record<string, number>;
+	/** Abscar's casino control room (casino-rig.ts; 2026-11-19): odds, luck and forced results. */
+	tune?: CasinoTune;
 	/** Document fields a newer page wrote that this one doesn't know: kept as they are. */
 	more?: Record<string, unknown>;
 }
@@ -190,7 +193,7 @@ export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
 const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans']);
-const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune']);
 
 /** Admin grants: member id → whole burgers (±), within a sane range. */
 export function cleanGrants(raw: unknown): Record<string, number> | undefined {
@@ -421,6 +424,8 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 	if (bans) doc.bans = bans;
 	const grants = cleanGrants(raw.grants);
 	if (grants) doc.grants = grants;
+	const tune = cleanTune(raw.tune);
+	if (tune) doc.tune = tune;
 	const more = unknownKeys(raw, DOC_KEYS);
 	if (more) doc.more = more;
 	return doc;
@@ -438,6 +443,7 @@ export function toSquadWire(doc: SquadDoc): SquadWire {
 	if (doc.paid?.length) wire.paid = doc.paid;
 	if (doc.bans) wire.bans = doc.bans;
 	if (doc.grants) wire.grants = doc.grants;
+	if (doc.tune) wire.tune = doc.tune;
 	return wire;
 }
 

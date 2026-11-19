@@ -54,6 +54,8 @@
 		type WheelBonus,
 		type WinTier
 	} from '#lib/casino-slots.ts';
+	import { playScreen } from '#lib/casino-slots.ts';
+	import { lucky } from '#lib/casino-rig.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
@@ -419,7 +421,9 @@
 			return;
 		}
 		buyAsk = null;
-		await run(play(bet, rand));
+		// Abscar's control room (casino-rig.ts): a screen he picked for this spin, or your luck
+		const forced = squad.takeForced('slots');
+		await run(forced ? playScreen(forced.what, bet, rand) : lucky(squad.luck('slots'), rand, () => play(bet, rand), (p) => p.net));
 	}
 
 	/* ----- buy bonus: asked first, since it's a big stake ----- */
@@ -437,7 +441,7 @@
 		buyAsk = null;
 		if (!k || spinning || price(k) > shown) return;
 		message = s.buyKinds[k];
-		await run(buy(k, bet, rand));
+		await run(lucky(squad.luck('slots'), rand, () => buy(k, bet, rand), (p) => p.net));
 	}
 
 	// ----- auto spin (2026-11-16, the user's ask: "an auto spin button for Abscar's Fortune") -----

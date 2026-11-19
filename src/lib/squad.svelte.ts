@@ -78,6 +78,7 @@ import { toast } from './toast.svelte.ts';
 import { buy as shopBuy, cleanShop, equip as shopEquip, mergeShop, throwPrank as shopThrow, ITEM_BY_ID, type BuyResult, type ShopSlot, type ShopState } from './shop.ts';
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
 import { is420 } from './four20.ts';
+import { cleanTune, forcedFor, luckFor, withUsed, type CasinoTune, type ForceKind, type RigGame } from './casino-rig.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
@@ -95,6 +96,9 @@ const DEVICE_KEY = 'mw4-camo-grind:device';
 const SHOP_KEY = 'mw4-camo-grind:shop';
 /** BurgiBank loans (loans.ts), kept on this device too. */
 const LOANS_KEY = 'mw4-camo-grind:loans';
+/** Next-only casino settings this device already took (casino-rig.ts), newest last. */
+const RIG_USED_KEY = 'mw4-camo-grind:casino-taken';
+const RIG_USED_MAX = 30;
 /** What this device last saw of the others (for the kill feed), per squad code. */
 const SEEN_KEY = 'mw4-camo-grind:squad-seen';
 /** When you last looked at the radio (unread count). */
@@ -324,6 +328,8 @@ class Squad {
 	#squad = new Channel<SquadDoc>(fromSquadWire, toSquadWire, emptySquad, (doc) => this.#onSquad(doc));
 	#radio = new Channel<RadioDoc>(fromRadioWire, toRadioWire, emptyRadio);
 	#ping: { to: string; at: number } | null = null;
+	/** Next-only casino settings this device already took (RIG_USED_KEY). */
+	#rigUsed: string[] = [];
 	/** Minutes with the tracker open per day (this device; the bigger number of your devices is published). */
 	played = $state<Record<string, number>>({});
 	/** Your K/D, W/L … as you typed them in (merged with your other device's when the squad is read). */
@@ -442,6 +448,8 @@ class Squad {
 		this.casino = cleanCasino(readJson(CASINO_KEY)) ?? {};
 		this.shop = cleanShop(readJson(SHOP_KEY));
 		this.loans = cleanLoans(readJson(LOANS_KEY));
+		const taken = readJson(RIG_USED_KEY);
+		this.#rigUsed = Array.isArray(taken) ? taken.filter((x): x is string => typeof x === 'string').slice(-RIG_USED_MAX) : [];
 		const device = readJson(DEVICE_KEY);
 		this.#device = typeof device === 'string' && /^[A-Za-z0-9_-]{4,16}$/.test(device) ? device : makeMemberId().slice(0, 10);
 		writeJson(DEVICE_KEY, this.#device);
@@ -784,6 +792,57 @@ class Squad {
 		this.#done(outcome);
 		if (outcome === 'ok') await this.#event(delta > 0 ? t.admin.gaveEvent(name, delta) : t.admin.tookEvent(name, -delta));
 		return outcome === 'ok';
+	}
+
+	// ----- Abscar's control room (casino-rig.ts) -----
+
+	/** The casino settings in the squad document (empty = every game as built). */
+	get tune(): CasinoTune {
+		return this.doc?.tune ?? {};
+	}
+
+	/** Change the casino settings. Only Abscar may; nothing goes on the radio. */
+	async setTune(change: (tune: CasinoTune) => CasinoTune): Promise<boolean> {
+		if (this.me?.op !== HOUSE_OP) return false;
+		const at = Math.round(this.serverNow());
+		const outcome = await this.#squad.write((doc) => {
+			const next = cleanTune({ ...change(doc.tune ?? {}), at });
+			const { tune: _old, ...rest } = doc;
+			return next ? { ...rest, tune: next } : rest;
+		});
+		this.#done(outcome);
+		return outcome === 'ok';
+	}
+
+	/** Your luck in a game: its odds + your own luck (casino-rig.ts). */
+	luck(game: RigGame): number {
+		return luckFor(this.doc?.tune, game, this.me?.id);
+	}
+
+	/** The forced result your next play in a game would take (without taking it), or null. */
+	peekForced<K extends ForceKind>(kind: K): NonNullable<CasinoTune[K]> | null {
+		const me = this.me;
+		return me ? (forcedFor<unknown>(this.doc?.tune?.[kind], me.id, this.#rigUsed) as NonNullable<CasinoTune[K]> | null) : null;
+	}
+
+	/** The forced result your next play takes, or null; a next-only one is taken at once (markForced). */
+	takeForced<K extends ForceKind>(kind: K): NonNullable<CasinoTune[K]> | null {
+		const f = this.peekForced(kind);
+		if (f && !f.every) this.markForced(kind, f.id);
+		return f;
+	}
+
+	/** A next-only setting was used: kept in this device's list (never twice here) and marked in the squad. */
+	markForced(kind: ForceKind, id: string): void {
+		const me = this.me;
+		if (!me) return;
+		this.#rigUsed = [...this.#rigUsed.filter((x) => x !== id), id].slice(-RIG_USED_MAX);
+		writeJson(RIG_USED_KEY, this.#rigUsed);
+		const at = this.serverNow();
+		void this.#squad.write((doc) => {
+			const next = doc.tune ? withUsed(doc.tune, kind, id, me.id, at) : null;
+			return next ? { ...doc, tune: next } : null;
+		});
 	}
 
 	// ----- pranks (shop.ts PRANKS) -----

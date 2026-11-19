@@ -776,6 +776,96 @@ export const en = {
 		gaveEvent: (name: string, n: number) => `gave ${name} ${n.toLocaleString('en-US')} 🍔 (admin) 🎁`,
 		tookEvent: (name: string, n: number) => `took ${n.toLocaleString('en-US')} 🍔 from ${name} (admin) 🔨`
 	},
+	/** Abscar's control room in BurgiCasino (casino-rig.ts, CasinoRig.svelte; 2026-11-19). */
+	rig: {
+		heading: 'Control room',
+		intro: 'Only you see this tab. Changes reach the others’ pages within half a minute. Nothing goes on the radio, and the games look exactly as usual.',
+		saved: 'Saved',
+		failed: 'Couldn’t reach the squad. Try again in a moment.',
+		games: { slots: 'Abscar’s Fortune', fortune2: 'Abscar’s Fortune II', roulette: 'Roulette', blackjack: 'Blackjack' },
+		odds: {
+			heading: 'Odds per game',
+			intro: 'For everyone who plays that game. Plus = the players win more (the house takes less), minus = they lose more.'
+		},
+		luck: {
+			heading: 'Luck per player',
+			intro: 'In every game. Odds and luck add up: odds +20 and luck +30 = +50 for that player in that game.'
+		},
+		value: (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0'),
+		/** What a luck / odds value does, in words. */
+		effect: (n: number, draws: number, chance: number) => {
+			if (!n) return 'Normal';
+			const which = n > 0 ? 'best' : 'worst';
+			const head = n > 0 ? 'Lucky' : 'Unlucky';
+			if (draws === 1) return `${head}: ${which} of 2 in ${chance} % of games`;
+			return `${head}: every game ${which} of ${draws}${chance ? `, ${which} of ${draws + 1} in ${chance} %` : ''}`;
+		},
+		how: 'How luck works: the game is played out as usual, then (as often as the setting says) once or twice more behind the scenes, and the best result counts (or the worst, for minus). ±50 = always two tries, ±100 = always three.',
+		guide: 'Small steps go a long way. With the party odds the slot machines give back about 4× what goes in; at +50 about 8×, at −50 less than goes in (roughly half), at −100 almost nothing. On red at roulette, +50 wins about 3 spins in 4 and −50 about 1 in 4. At blackjack a player normally wins about 4 hands in 10; at +50 about 6, at −50 about 2.5.',
+		changed: (n: number) => (n ? `${n} changed` : 'all normal'),
+		resetAll: 'Everything back to normal',
+		resetAsk: 'Put all odds, luck and picked results back to normal?',
+		resetYes: 'Yes, back to normal',
+		resetDone: 'Everything back to normal',
+		cancel: 'Cancel',
+		// picked results
+		who: 'Who',
+		anyone: 'Whoever plays first',
+		everyone: 'Everyone',
+		mode: 'How long',
+		once: 'Next play only',
+		every: 'Every play until I switch it off',
+		save: 'Save',
+		off: 'Switch off',
+		clear: 'Clear',
+		state: {
+			none: 'Off: the game plays as usual.',
+			every: (who: string) => `On: every play, ${who}.`,
+			waiting: (who: string) => `Waiting for the next play (${who}).`,
+			used: (who: string, time: string) => `Used by ${who} at ${time} ✔`
+		},
+		whoWords: { anyone: 'whoever plays first', everyone: 'everyone' },
+		slots: {
+			heading: 'Abscar’s Fortune: pick the screen',
+			intro: 'Tap a square, then the symbol it should show. Their next spin lands on exactly this screen (bought features stay random).',
+			presets: { jackpot: '5 WILDs (jackpot)', burgers: '5 burgers', free5: '5 ketchup', free3: '3 ketchup', box: 'Burger Box', wheel: 'Bonus wheel', blank: 'Nothing' },
+			presetSpins: (label: string, n: number) => `${label} (${n} free spins)`,
+			quick: 'Quick picks',
+			palette: 'Symbol for the square',
+			cell: (reel: number, row: number, sym: string) => `Reel ${reel}, row ${row}: ${sym}`,
+			pays: (n: number) => `At a 100 🍔 bet the lines and ketchup pay ${n.toLocaleString('en-US')} 🍔`,
+			nothing: 'At a 100 🍔 bet this screen pays nothing',
+			jackpot: 'BURGER JACKPOT',
+			free: (n: number) => `${n} free spins`,
+			box: 'Burger Box',
+			wheel: 'Bonus wheel',
+			weeds: 'weeds multiply a win by a random amount'
+		},
+		fortune2: {
+			heading: 'Abscar’s Fortune II: pick what happens',
+			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does).',
+			kinds: { hotbox: 'Hotbox Spins', super: 'Super Hotbox', munchies: 'The Munchies', big: 'A big win (25× or more)', blank: 'Nothing at all' }
+		},
+		roulette: {
+			heading: 'Roulette: pick the number',
+			intro: 'The ball lands on this number on their next spin.',
+			number: (n: number, colour: string) => `${n} ${colour}`
+		},
+		blackjack: {
+			heading: 'Blackjack: the dealer’s cards',
+			intro: 'In this order: the up card, the hole card, then what he draws (he stops at 17). Goes into the next hand dealt at the table, for everyone there. The players’ own cards stay random (or follow their luck).',
+			presets: { blackjack: 'Dealer blackjack', twenty: 'Dealer 20', bust: 'Dealer busts' },
+			add: 'Add a card',
+			cards: 'Dealer’s cards',
+			removeLast: 'Remove the last card',
+			empty: 'No cards picked yet.',
+			total: (n: number, bj: boolean) => (bj ? 'Blackjack' : n > 21 ? `${n}: bust` : String(n)),
+			thenRandom: 'then random cards until he reaches 17',
+			unused: (n: number) => `${n === 1 ? 'the last card isn’t' : `the last ${n} cards aren’t`} used (he stops at 17)`,
+			onceLabel: 'Next hand only',
+			everyLabel: 'Every hand until I switch it off'
+		}
+	},
 	/** Pranks (shop.ts PRANKS; the 420 pack). */
 	pranks: {
 		heading: 'Pranks',
@@ -837,11 +927,11 @@ export const en = {
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Abscar’s Fortune II', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Abscar’s Fortune II', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', admin: 'Admin' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
-			line: 'Borrow burgers here, see what the house has taken, and (for Abscar) hand out or take back burgers.',
+			line: 'Borrow burgers here and see what the house has taken.',
 			balance: (n: number) => `Your burgers: ${n.toLocaleString('en-US')} 🍔`
 		},
 		how: 'How it works',

@@ -22,7 +22,7 @@
 	import CasinoSlots from './CasinoSlots.svelte';
 	import CasinoFortune2 from './CasinoFortune2.svelte';
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
-	import CasinoAdmin from './CasinoAdmin.svelte';
+	import CasinoRig from './CasinoRig.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 	import { bjTable } from '#lib/bjTable.svelte.ts';
@@ -34,20 +34,20 @@
 	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
-	const GAMES: Game[] = ['slots', 'fortune2', 'roulette', 'blackjack', 'bank'];
+	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'roulette', 'blackjack', 'bank', 'admin'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
-	let game = $state<Game>('slots');
+	let savedGame = $state<string | null>(null);
+	let picked = $state<Game | null>(null);
 	$effect(() => {
 		try {
-			const saved = localStorage.getItem(GAME_KEY);
-			if (saved && (GAMES as string[]).includes(saved)) game = saved as Game;
+			savedGame = localStorage.getItem(GAME_KEY);
 		} catch {
 			// storage blocked: start on the slot machine
 		}
 	});
 	function pick(g: Game) {
-		game = g;
+		picked = g;
 		hidden = 0;
 		pending = 0;
 		try {
@@ -70,6 +70,12 @@
 	const houseId = $derived(houseOf(members));
 	const houseEntry = $derived(houseId ? (squad.entries.find((e) => e.id === houseId) ?? null) : null);
 	const houseTake = $derived(houseId && squad.doc ? (burgerBank(squad.doc, members, squad.now)[houseId]?.house ?? 0) : 0);
+	/** The tiles: Admin (Abscar's control room, CasinoRig) only for the member who is the house. */
+	const GAMES = $derived(houseEntry?.mine ? ALL_GAMES : ALL_GAMES.filter((g) => g !== 'admin'));
+	const game = $derived.by((): Game => {
+		const want = picked ?? savedGame;
+		return want && (GAMES as string[]).includes(want) ? (want as Game) : 'slots';
+	});
 
 	const board = $derived(
 		squad.entries
@@ -112,7 +118,7 @@
 			</div>
 
 			<!-- which game: big picture tiles -->
-			<div class="casino-tabs" role="group" aria-label={c.gamesLabel}>
+			<div class="casino-tabs" class:six={GAMES.length > 5} role="group" aria-label={c.gamesLabel}>
 				{#each GAMES as g (g)}
 					<button type="button" class="casino-game" data-game={g} aria-pressed={game === g} onclick={() => pick(g)}>
 						<CasinoTabArt kind={g} />
@@ -133,8 +139,10 @@
 					<CasinoRoulette {balance} bind:hidden bind:pending />
 				{:else if game === 'blackjack'}
 					<CasinoBlackjack {balance} bind:hidden />
+				{:else if game === 'admin'}
+					<CasinoRig />
 				{:else}
-					<!-- BurgiBank: a big bank, your burgers, loans, the house and (Abscar only) the admin menu -->
+					<!-- BurgiBank: a big bank, your burgers, loans and the house -->
 					<div class="grid gap-3">
 						<div class="bank-stage flex flex-wrap items-center gap-x-5 gap-y-2 rounded-card px-4 py-3">
 							<CasinoTabArt kind="bank" size={132} />
@@ -152,7 +160,6 @@
 								{#if !houseEntry}{c.house.none}{:else if houseEntry.mine}{c.house.mine(houseTake)}{:else}{c.house.line(houseEntry.member.name, houseTake)}{/if}
 							</p>
 						</div>
-						{#if houseEntry?.mine}<CasinoAdmin />{/if}
 					</div>
 				{/if}
 			{/key}
@@ -241,6 +248,24 @@
 			width: 80px;
 			height: 70px;
 		}
+	}
+	/* six tiles (Abscar sees the Admin tile): three a row until there's room for all six */
+	@media (min-width: 560px) and (max-width: 819px) {
+		.casino-tabs.six {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			max-width: 560px;
+		}
+	}
+	@media (min-width: 820px) {
+		.casino-tabs.six {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			max-width: 920px;
+		}
+	}
+	.casino-game[data-game='admin'] {
+		--tile: #4a1218;
+		--tile-2: #160608;
+		border-color: rgb(255 90 90 / 0.55);
 	}
 	.casino-game {
 		--tile: #5a0a10;

@@ -6,11 +6,13 @@
 	with a burger on it, BurgiBank = a big bank with columns and a burger coin in its gable.
 	Abscar's Fortune II (2026-11-19) = a purple neon cabinet with a 3 × 3 board in the squad's munchie
 	colours, a gold star in the middle and a frag beside it.
+	Admin (Abscar's control room, the same day) = a mixing desk: a screen showing 777, three slider knobs
+	and a big red button.
 	Our own chunky cartoons in the Burger Bandit's style (SlotSymbol.svelte). Decorative: the tab says
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'fortune2' | 'roulette' | 'blackjack' | 'shop' | 'bank';
+	export type CasinoTab = 'slots' | 'fortune2' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'admin';
 </script>
 
 <script lang="ts">
@@ -136,6 +138,22 @@
 			<path d="M52 8 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z" />
 			<path d="M57 22 l.7 2 l2 .7 l-2 .7 l-.7 2 l-.7 -2 l-2 -.7 l2 -.7 z" />
 		</g>
+	{:else if kind === 'admin'}
+		<!-- Abscar's control room: a desk with a screen (777), three slider knobs and a big red button -->
+		<path d="M4 30 H60 L63 52 H1 Z" fill="#3a3f48" stroke={O} stroke-width="1.6" stroke-linejoin="round" />
+		<path d="M4 30 H60 L60.6 34 H3.4 Z" fill="#5a6270" />
+		<rect x="11" y="4" width="42" height="22" rx="3" fill="#24272e" stroke={O} stroke-width="1.6" />
+		<rect x="14" y="7" width="36" height="16" rx="1.6" fill="#140404" stroke="#ff3b3b" stroke-width=".8" />
+		<text class="ta-777" x="32" y="19.6" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="11" letter-spacing="1.2" fill="#ffd23a">777</text>
+		<rect x="29" y="26" width="6" height="4" fill="#24272e" stroke={O} stroke-width="1" />
+		{#each [10, 19, 28] as x, i (x)}
+			<rect x={x - 1} y="36" width="2" height="13" rx="1" fill="#14161a" />
+			<rect class="ta-knob" style:--k={i} x={x - 3.4} y={[39, 43, 37][i]} width="6.8" height="3.6" rx="1" fill="url(#{u}-gold)" stroke={O} stroke-width=".8" />
+		{/each}
+		<circle cx="48" cy="42" r="8.2" fill="#6a0a10" stroke={O} stroke-width="1.4" />
+		<circle cx="48" cy="40.8" r="6.6" fill="url(#{u}-red)" stroke={O} stroke-width="1" />
+		<ellipse cx="45.8" cy="38.4" rx="2.4" ry="1.3" fill="#fff" opacity=".45" />
+		<circle class="ta-led" cx="37" cy="34" r="1.3" fill="#7dff6a" />
 	{:else}
 		<!-- BurgiBank: a big bank with a gold gable (a burger coin in it), BANK on the frieze, four marble
 		     columns in front of the dark hall, wide steps, and a stack of burger coins by the door -->
@@ -202,6 +220,27 @@
 		transform-box: fill-box;
 		transform-origin: 50% 100%;
 		animation: ta-card 2.2s ease-in-out infinite;
+	}
+	:global([aria-pressed='true']) > .ta .ta-knob {
+		animation: ta-slide 2.4s ease-in-out infinite;
+		animation-delay: calc(var(--k) * -0.8s);
+	}
+	:global([aria-pressed='true']) > .ta .ta-led {
+		animation: ta-blink-led 1.2s steps(1) infinite;
+	}
+	@keyframes ta-slide {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-4px);
+		}
+	}
+	@keyframes ta-blink-led {
+		50% {
+			fill: #1a4a14;
+		}
 	}
 	@keyframes ta-turn {
 		to {

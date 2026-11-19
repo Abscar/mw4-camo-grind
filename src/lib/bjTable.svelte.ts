@@ -19,6 +19,7 @@ import {
 	act,
 	betState,
 	dealNow,
+	dealerRigDealt,
 	emptyTable,
 	finish,
 	fromTableWire,
@@ -380,10 +381,15 @@ class BjTable {
 		try {
 			if (!this.#seated) await this.#sit();
 			if (!this.#seated) return false;
-			const fresh = { id: makeMemberId(), seed: randomSeed() };
-			const extra = { sides, streak: this.streak };
+			// Abscar's control room (casino-rig.ts): the dealer's picked cards go into a round this bet opens
+			// (a next-only setting once: not again if a round already dealt it), your luck into your hand
+			const forced = squad.peekForced('blackjack');
+			const dealer = forced && (forced.every || !dealerRigDealt(this.doc, forced.id)) ? { dc: forced.what, di: forced.id } : {};
+			const fresh = { id: makeMemberId(), seed: randomSeed(), ...dealer };
+			const extra = { sides, streak: this.streak, luck: squad.luck('blackjack') };
 			const o = await this.#write((d) => placeBet(d, me, amount, this.#time(), fresh, extra));
 			if (o === 'ok') this.#hello = Date.now();
+			if (o === 'ok' && forced && !forced.every && this.doc?.round?.id === fresh.id && this.doc.round.di === forced.id) squad.markForced('blackjack', forced.id);
 			return o === 'ok';
 		} finally {
 			this.busy = false;

@@ -59,6 +59,7 @@ import {
 	type ThreeKind
 } from './squad-casino.ts';
 import { seeded } from './squad-fun.ts';
+import { cleanDealer, cleanLuck, extraDraws } from './casino-rig.ts';
 
 export const TABLE_FORMAT = 1;
 /** Seats at the table (more people watch). */
@@ -110,6 +111,8 @@ export interface TableHand {
 	sides?: string;
 	/** The player's wins in a row before this hand (the streak boost). */
 	st?: number;
+	/** The player's luck at this table when the bet went in (Abscar's control room, casino-rig.ts). */
+	lk?: number;
 	/** Booked in that device's casino tally. */
 	ok?: 1;
 }
@@ -129,6 +132,9 @@ export interface TableRound {
 	hands: Record<string, TableHand>;
 	/** Settled (sync service's clock): nothing in the round changes after this. */
 	done?: number;
+	/** The dealer's cards Abscar picked (ranks, up card first) and that setting's id (casino-rig.ts). */
+	dc?: number[];
+	di?: string;
 }
 
 export interface TableDoc {
@@ -148,6 +154,8 @@ export interface Sitter {
 }
 
 export const tableCode = (squadCode: string) => `${squadCode}-bj`;
+/** True when a round on the table (now or settled) already dealt the dealer cards of this setting. */
+export const dealerRigDealt = (doc: TableDoc | null, id: string) => !!doc && [doc.round, ...doc.past].some((r) => r?.di === id);
 export const emptyTable = (): TableDoc => ({ seats: {}, round: null, past: [] });
 
 // ---------------------------------------------------------------------------------------------
@@ -176,6 +184,8 @@ function cleanHand(raw: unknown): TableHand | null {
 	const hand: TableHand = { n: raw.n, name, ...(op ? { op } : {}), dev: raw.dev, bet: raw.bet as number, acts: raw.acts, at: Math.round(raw.at) };
 	if (typeof raw.sides === 'string' && /^(p|t|pt)$/.test(raw.sides)) hand.sides = raw.sides;
 	if (Number.isInteger(raw.st) && (raw.st as number) > 0) hand.st = Math.min(raw.st as number, STREAK_MAX);
+	const lk = cleanLuck(raw.lk);
+	if (lk) hand.lk = lk;
 	if (raw.ok === 1) hand.ok = 1;
 	return hand;
 }
@@ -195,6 +205,11 @@ function cleanRound(raw: unknown): TableRound | null {
 	if (!Object.keys(hands).length) return null;
 	const round: TableRound = { id: raw.id, seed: (raw.seed as number) >>> 0, open: Math.round(raw.open), dealAt: Math.round(raw.dealAt), hands };
 	if (isTime(raw.done)) round.done = Math.round(raw.done);
+	const dc = cleanDealer(raw.dc);
+	if (dc && typeof raw.di === 'string' && /^[A-Za-z0-9_-]{4,32}$/.test(raw.di)) {
+		round.dc = dc;
+		round.di = raw.di;
+	}
 	return round;
 }
 
@@ -245,6 +260,74 @@ export function roundShoe(seed: number): Card[] {
 
 /** The k-th card of a seat's stretch (the dealer's = SEATS). */
 export const cardAt = (shoe: Card[], stream: number, k: number): Card => shoe[stream * STREAM + Math.min(k, STREAM - 1)];
+
+/**
+ * How good a seat's stretch is against the dealer's (for luck): a plain hit-to-17 hand played out
+ * against the dealer drawing to 17. +1.5 blackjack, +1 win, 0 push, −1 loss; the first two cards'
+ * total breaks a tie (a hand the player plays differently may still go another way: it's luck).
+ */
+export function stretchScore(player: Card[], dealer: Card[]): number {
+	const p = player.slice(0, 2);
+	const d = dealer.slice(0, 2);
+	const tie = handValue(p).total / 100;
+	if (isBlackjack(p)) return (isBlackjack(d) ? 0 : 1.5) + tie;
+	if (isBlackjack(d)) return -1 + tie;
+	for (let k = 2; handValue(p).total < 17 && k < player.length; k++) p.push(player[k]);
+	const pt = handValue(p).total;
+	if (pt > 21) return -1 + tie;
+	for (let k = 2; handValue(d).total < 17 && k < dealer.length; k++) d.push(dealer[k]);
+	const dt = handValue(d).total;
+	return (dt > 21 || pt > dt ? 1 : pt === dt ? 0 : -1) + tie;
+}
+
+const rigged = new Map<string, Card[]>();
+
+/**
+ * The round's cards (Abscar's control room, casino-rig.ts): the seeded shoe, with the dealer's stretch
+ * starting with the cards Abscar picked (`dc`), and each hand with luck (`lk`) choosing between its own
+ * stretch and the spare stretches at the end of the shoe (one more per ±50 of luck, in seat order,
+ * never two seats the same one): the best one against the dealer (plus) or the worst (minus), swapped
+ * in. Worked out from the round alone, so every page deals exactly the same.
+ */
+export function tableShoe(r: Pick<TableRound, 'seed' | 'hands' | 'dc'>): Card[] {
+	const base = roundShoe(r.seed);
+	const lucky = Object.values(r.hands)
+		.filter((h) => h.lk)
+		.sort((a, b) => a.n - b.n);
+	if (!r.dc?.length && !lucky.length) return base;
+	const key = `${r.seed}|${r.dc?.join('.') ?? ''}|${lucky.map((h) => `${h.n}:${h.lk}`).join(',')}`;
+	const known = rigged.get(key);
+	if (known) return known;
+	const shoe = base.slice();
+	const at = (stream: number) => stream * STREAM;
+	(r.dc ?? []).slice(0, STREAM).forEach((rank, k) => (shoe[at(DEALER) + k] = { r: rank, s: shoe[at(DEALER) + k].s }));
+	const dealer = shoe.slice(at(DEALER), at(DEALER) + STREAM);
+	const stretch = (stream: number) => shoe.slice(at(stream), at(stream) + STREAM);
+	const streams = Math.floor(shoe.length / STREAM);
+	let spare = DEALER + 1;
+	for (const h of lucky) {
+		const lk = h.lk ?? 0;
+		const rand = seeded((r.seed ^ Math.imul(h.n + 1, 0x9e3779b1)) >>> 0);
+		const extra = extraDraws(lk, rand);
+		let best = h.n;
+		let bestScore = stretchScore(stretch(h.n), dealer);
+		for (let i = 0; i < extra && spare < streams; i++, spare++) {
+			const s = stretchScore(stretch(spare), dealer);
+			if (lk > 0 ? s > bestScore : s < bestScore) {
+				best = spare;
+				bestScore = s;
+			}
+		}
+		if (best !== h.n) {
+			const mine = stretch(h.n);
+			stretch(best).forEach((c, k) => (shoe[at(h.n) + k] = c));
+			mine.forEach((c, k) => (shoe[at(best) + k] = c));
+		}
+	}
+	rigged.set(key, shoe);
+	if (rigged.size > 6) rigged.delete(rigged.keys().next().value as string);
+	return shoe;
+}
 
 export type HandStatus = 'playing' | 'stood' | 'bust' | 'blackjack' | 'twentyOne' | 'doubled' | 'timeout';
 
@@ -332,7 +415,7 @@ export function viewRound(r: TableRound, now: number, grace = 0): RoundView {
 	if (!r.done && now < r.dealAt) {
 		return { phase: 'betting', dealer: [], dealerBj: false, seats: entries.map(([id, hand]) => ({ id, hand, play: null, deadline: null, sides: [], boost: null })) };
 	}
-	const shoe = roundShoe(r.seed);
+	const shoe = tableShoe(r);
 	const start = dealerStart(shoe);
 	const dealerBj = isBlackjack(start);
 	const seats: SeatPlay[] = entries.map(([id, hand]) => {
@@ -485,8 +568,8 @@ export function placeBet(
 	me: Sitter,
 	amount: number,
 	time: number,
-	fresh: { id: string; seed: number },
-	extra: { sides?: SideBet[]; streak?: number } = {}
+	fresh: { id: string; seed: number; dc?: number[]; di?: string },
+	extra: { sides?: SideBet[]; streak?: number; luck?: number } = {}
 ): TableDoc | null {
 	const now = Math.round(time);
 	const d = pruneTable(doc, now);
@@ -498,7 +581,8 @@ export function placeBet(
 		.map((k) => SIDE_CODE[k])
 		.join('');
 	const st = Number.isInteger(extra.streak) && (extra.streak as number) > 0 ? Math.min(extra.streak as number, STREAK_MAX) : 0;
-	const hand: TableHand = { n: seat.n, name: seat.name, ...(seat.op ? { op: seat.op } : {}), dev: me.dev, bet: amount, acts: '', at, ...(sides ? { sides } : {}), ...(st ? { st } : {}) };
+	const lk = cleanLuck(extra.luck);
+	const hand: TableHand = { n: seat.n, name: seat.name, ...(seat.op ? { op: seat.op } : {}), dev: me.dev, bet: amount, acts: '', at, ...(sides ? { sides } : {}), ...(st ? { st } : {}), ...(lk ? { lk } : {}) };
 	const r = d.round;
 	if (r && !r.done) {
 		if (now >= r.dealAt || r.hands[me.id] || Object.values(r.hands).some((h) => h.n === seat.n)) return null;
@@ -510,6 +594,11 @@ export function placeBet(
 	if (r?.done && now < nextOpenAt(r)) return null;
 	const others = seatedNow(d, now).some((s) => s.id !== me.id);
 	const round: TableRound = { id: fresh.id, seed: fresh.seed >>> 0, open: at, dealAt: others ? at + BET_WINDOW : at, hands: { [me.id]: hand } };
+	const dc = cleanDealer(fresh.dc);
+	if (dc && fresh.di) {
+		round.dc = dc;
+		round.di = fresh.di;
+	}
 	return orFinished(pruneTable({ ...d, round, past: r ? [r, ...d.past] : d.past }, now), now);
 }
 
@@ -529,7 +618,7 @@ export function act(doc: TableDoc, id: string, dev: string, kind: Act, time: num
 	const r = doc.round;
 	if (!r || !canAct(r, id, dev, now)) return null;
 	const h = r.hands[id];
-	if (kind === 'd' && playHand(roundShoe(r.seed), h.n, h.acts, false).cards.length !== 2) return null;
+	if (kind === 'd' && playHand(tableShoe(r), h.n, h.acts, false).cards.length !== 2) return null;
 	const hands = { ...r.hands, [id]: { ...h, acts: h.acts + kind, at: Math.max(now, h.at) } };
 	return orFinished({ ...doc, round: { ...r, hands } }, now);
 }
@@ -539,7 +628,7 @@ export function liveStake(doc: TableDoc | null, id: string, dev: string, now: nu
 	const r = doc?.round;
 	const h = r?.hands[id];
 	if (!r || r.done || !h || h.dev !== dev) return 0;
-	const play = now >= r.dealAt ? playHand(roundShoe(r.seed), h.n, h.acts, false) : null;
+	const play = now >= r.dealAt ? playHand(tableShoe(r), h.n, h.acts, false) : null;
 	return h.bet * ((play?.doubled ? 2 : 1) + handSides(h).length);
 }
 

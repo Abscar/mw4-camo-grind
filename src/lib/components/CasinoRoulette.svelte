@@ -11,6 +11,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { colorOf, rouletteNet, spinNumber, spotPays, CASINO_MAX_BET, WHEEL, type OutsideBet, type RouletteSpot } from '#lib/squad-casino.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { lucky } from '#lib/casino-rig.ts';
 
 	let { balance, hidden = $bindable(0), pending = $bindable(0) }: { balance: number; hidden?: number; pending?: number } = $props();
 	const r = t.casino.roulette;
@@ -58,7 +59,9 @@
 
 	async function spin() {
 		if (spinning || onTable < 1) return;
-		const n = spinNumber(rand);
+		// Abscar's control room (casino-rig.ts): the number he picked for this spin, or your luck
+		const forced = squad.takeForced('roulette');
+		const n = forced ? forced.what : lucky(squad.luck('roulette'), rand, () => spinNumber(rand), (x) => rouletteNet(bets, x));
 		const won = rouletteNet(bets, n);
 		squad.recordGame(won);
 		unrevealed = won;

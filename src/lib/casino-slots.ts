@@ -555,3 +555,17 @@ export function winTier(p: Play): WinTier {
 	if (p.win >= p.cost * 10) return 'big';
 	return p.win > 0 ? 'win' : 'none';
 }
+
+/**
+ * A paid spin whose screen is already chosen (Abscar's control room, casino-rig.ts): the screen is read
+ * like a landed one (its weeds get multipliers, its bonuses and free spins play out as usual).
+ */
+export function playScreen(grid: Grid, bet: number, rand: () => number): Play {
+	const strips = grid.map((col) => [...col]);
+	const stops = grid.map(() => 0);
+	const values = weedCells(grid).map(() => weedValue(rand));
+	const base = evaluate(stops, bet, 1, { strips, values });
+	if (base.box) base.boxBonus = boxBonus(bet, rand);
+	if (base.wheel) base.wheelBonus = wheelBonus(bet, rand);
+	return finish('spin', bet, bet, base, null, null, spinsFrom(base), rand);
+}
