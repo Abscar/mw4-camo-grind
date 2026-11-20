@@ -50,6 +50,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import SkeddSprite from './SkeddSprite.svelte';
+	import SkeddwoodLogo from './SkeddwoodLogo.svelte';
 
 	let { balance, hidden = $bindable(0), pending = $bindable(0) }: { balance: number; hidden?: number; pending?: number } = $props();
 	$effect(() => {
@@ -493,10 +494,11 @@
 	};
 	const fmt = (n: number) => +(n / 100).toFixed(2);
 	const RAIN = Array.from({ length: 14 }, (_, i) => ({ x: (i * 37) % 100, d: (i % 5) * 0.18, dur: 1.4 + (i % 4) * 0.25 }));
+	/** where on the sign (in %): clear of the logo's sheriff stars and the line under it at every width */
 	const BULLET_HOLES = [
-		[6, 30],
-		[92, 22],
-		[84, 70]
+		[3, 12],
+		[95, 78],
+		[11, 90]
 	];
 </script>
 
@@ -521,16 +523,19 @@
 
 <div class="skw" class:spinning class:free={!!freeState} data-mode={freeState?.mode}>
 	<div class="cabinet">
-		<!-- the marquee: SKEDDWOOD on a sunset sign with bullet holes (the free-spins counter in free spins) -->
+		<!-- the marquee: the logo on a sunset sign with bullet holes (2026-11-20, SkeddwoodLogo); under it the line,
+		     in free spins their counter (the logo stays, so the reels never jump) -->
 		<div class="marquee" class:free-on={!!freeState}>
 			{#each BULLET_HOLES as [x, y], i (i)}<span class="hole" style:left="{x}%" style:top="{y}%" aria-hidden="true"></span>{/each}
-			{#if freeState}
-				<p class="title free-title font-head" role="status">{s.free.title(freeState.mode === 'gold', freeState.n, freeState.total)}</p>
-				<p class="subtitle font-head">{s.free.sub(freeState.won)}</p>
-			{:else}
-				<p class="title font-head">Skeddwood</p>
-				<p class="subtitle font-head">{s.sub}</p>
-			{/if}
+			<div class="logo"><SkeddwoodLogo label={t.casino.games.skeddwood} /></div>
+			<div class="lines">
+				{#if freeState}
+					<p class="title free-title font-head" role="status">{s.free.title(freeState.mode === 'gold', freeState.n, freeState.total)}</p>
+					<p class="subtitle font-head">{s.free.sub(freeState.won)}</p>
+				{:else}
+					<p class="subtitle font-head">{s.sub}</p>
+				{/if}
+			</div>
 		</div>
 
 		<!-- the reels -->
@@ -755,10 +760,21 @@
 		background: radial-gradient(circle, #120602 40%, #5a2a0c 55%, transparent 72%);
 		box-shadow: 0 0 0 1px rgb(255 220 160 / 0.35);
 	}
+	.logo {
+		position: relative;
+		max-width: 440px;
+		margin: -6px auto 0;
+	}
+	/* under it: always room for the free-spins counter + its line, so the reels never move */
+	.lines {
+		position: relative;
+		display: grid;
+		align-content: center;
+		min-height: 42px;
+	}
 	.title {
 		position: relative;
 		font-family: Rockwell, 'Rockwell Extra Bold', Bahnschrift, 'Arial Black', serif;
-		font-size: clamp(24px, 8cqi, 46px);
 		font-weight: 900;
 		line-height: 1;
 		letter-spacing: 0.06em;
@@ -794,7 +810,7 @@
 		}
 	}
 	.free-title {
-		font-size: clamp(18px, 5.8cqi, 34px);
+		font-size: clamp(15px, 4.4cqi, 21px);
 	}
 	.skw.free .cabinet {
 		border-color: #ffd23a;

@@ -47,6 +47,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import StashSymbol from './StashSymbol.svelte';
+	import StashLogo from './StashLogo.svelte';
 
 	let { balance, hidden = $bindable(0), pending = $bindable(0) }: { balance: number; hidden?: number; pending?: number } = $props();
 	$effect(() => {
@@ -459,16 +460,19 @@
 
 <div class="st" class:busy style:--ms-fall="{ms(MS.fall)}ms" style:--ms-pop="{ms(MS.pop)}ms">
 	<div class="st-cab">
-		<!-- the marquee: neon title; in Sky High Spins their counter -->
+		<!-- the marquee: the logo (2026-11-20, StashLogo); under it the line, in Sky High Spins their counter (the
+		     logo stays, so the board never jumps) -->
 		<div class="st-marquee" class:free-on={!!freeState}>
 			<span class="st-haze" aria-hidden="true"></span>
-			{#if freeState}
-				<p class="st-title st-free-title font-head" role="status">{s.free.title(freeState.n, freeState.total)}</p>
-				<p class="st-sub font-head">{s.free.sub(freeState.won.toLocaleString('en-US'))}</p>
-			{:else}
-				<p class="st-title font-head">{t.casino.games.stash}</p>
-				<p class="st-sub font-head">{s.sub}</p>
-			{/if}
+			<div class="st-logo"><StashLogo label={t.casino.games.stash} /></div>
+			<div class="st-lines">
+				{#if freeState}
+					<p class="st-title st-free-title font-head" role="status">{s.free.title(freeState.n, freeState.total)}</p>
+					<p class="st-sub font-head">{s.free.sub(freeState.won.toLocaleString('en-US'))}</p>
+				{:else}
+					<p class="st-sub font-head">{s.sub}</p>
+				{/if}
+			</div>
 		</div>
 
 		<!-- the screen -->
@@ -676,10 +680,22 @@
 			transform: translateX(8%) scale(1.1);
 		}
 	}
+	.st-logo {
+		position: relative;
+		max-width: 440px;
+		margin: -4px auto 8px;
+	}
+	/* under it: always room for the Sky High Spins counter + its line, so the board never moves */
+	.st-lines {
+		position: relative;
+		display: grid;
+		align-content: center;
+		min-height: 44px;
+	}
 	.st-title {
 		position: relative;
 		text-shadow: none !important;
-		font-size: clamp(22px, 7cqi, 38px);
+		font-size: clamp(15px, 4.4cqi, 21px);
 		font-weight: 900;
 		line-height: 1.05;
 		letter-spacing: 0.05em;

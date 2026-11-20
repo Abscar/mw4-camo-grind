@@ -48,6 +48,9 @@
 	import MybotsLogo from './MybotsLogo.svelte';
 	import FortuneLogo from './FortuneLogo.svelte';
 	import BookLogo from './BookLogo.svelte';
+	import KushLogo from './KushLogo.svelte';
+	import StashLogo from './StashLogo.svelte';
+	import SkeddwoodLogo from './SkeddwoodLogo.svelte';
 	import CasinoRig from './CasinoRig.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
 	import CasinoDonate from './CasinoDonate.svelte';
@@ -171,7 +174,7 @@
 				<button type="button" class="casino-game" class:util={!span} data-game={g} aria-pressed={game === g} style:--span={span || undefined} onclick={() => pick(g)}>
 					<span class="tile-fx" aria-hidden="true"></span>
 					{#if g === hot}<span class="casino-hot font-head" title={hotWon ? f.hotLabel : f.hotParty}><span aria-hidden="true">🔥</span> {f.hot}</span>{/if}
-					{#if g === 'fortune2'}<MybotsLogo tile />{:else if g === 'slots'}<FortuneLogo tile live={game === g} />{:else if g === 'book'}<BookLogo tile live={game === g} />{:else}<CasinoTabArt kind={g} />{/if}
+					{#if g === 'fortune2'}<MybotsLogo tile />{:else if g === 'slots'}<FortuneLogo tile live={game === g} />{:else if g === 'book'}<BookLogo tile live={game === g} />{:else if g === 'kushburst'}<KushLogo tile live={game === g} />{:else if g === 'stash'}<StashLogo tile live={game === g} />{:else if g === 'skeddwood'}<SkeddwoodLogo tile live={game === g} />{:else}<CasinoTabArt kind={g} />{/if}
 					<span class="casino-game-name font-head">{c.games[g]}</span>
 					{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
 							><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span

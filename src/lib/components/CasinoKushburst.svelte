@@ -44,6 +44,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import KushSymbolView from './KushSymbol.svelte';
+	import KushLogo from './KushLogo.svelte';
 
 	let { balance, hidden = $bindable(0), pending = $bindable(0) }: { balance: number; hidden?: number; pending?: number } = $props();
 	// everything held back here is a win not shown yet (the leaderboard waits for it too)
@@ -293,7 +294,6 @@
 	}
 
 	const reelText = (r: number) => (wildReels.includes(r) ? s.reelLeaf(r + 1) : s.reelLabel(r + 1, cols[r].items.slice(-KUSH_ROWS).map((x) => sym[x]).join(', ')));
-	const TITLE = 'KUSHBURST'.split('');
 	const RAIN = Array.from({ length: 14 }, (_, i) => ({ x: (i * 37) % 100, d: (i % 5) * 0.18, dur: 1.4 + (i % 4) * 0.25 }));
 	/** the leaf column's rays and smoke */
 	const COL_RAYS = Array.from({ length: 16 }, (_, i) => {
@@ -315,17 +315,18 @@
 	<div class="kush" class:spinning>
 		<div class="cab">
 			<div class="lava" aria-hidden="true"><span></span><span></span><span></span></div>
-			<!-- the marquee: KUSHBURST in neon tubes (in respins it counts them) -->
+			<!-- the marquee: the neon logo (2026-11-20, KushLogo); under it the line, in respins their counter (the
+			     logo stays, so the reels never jump) -->
 			<div class="marquee" class:respin-on={respin !== null}>
-				{#if respin !== null}
-					<p class="title respin-title font-head" role="status">{s.respinTitle(respin)}</p>
-					<p class="subtitle font-head">{s.respinSub(wildReels.length)}</p>
-				{:else}
-					<p class="title font-head">
-						<span class="sr-only">Kushburst</span>{#each TITLE as ch, i (i)}<span class="tube" aria-hidden="true" style:--i={i}>{ch}</span>{/each}
-					</p>
-					<p class="subtitle font-head"><span class="arrow" aria-hidden="true">◀</span> {s.sub} <span class="arrow" aria-hidden="true">▶</span></p>
-				{/if}
+				<div class="logo"><KushLogo label={t.casino.games.kushburst} /></div>
+				<div class="lines">
+					{#if respin !== null}
+						<p class="title respin-title font-head" role="status">{s.respinTitle(respin)}</p>
+						<p class="subtitle font-head">{s.respinSub(wildReels.length)}</p>
+					{:else}
+						<p class="subtitle font-head"><span class="arrow" aria-hidden="true">◀</span> {s.sub} <span class="arrow" aria-hidden="true">▶</span></p>
+					{/if}
+				</div>
 			</div>
 
 			<!-- the reels -->
@@ -575,36 +576,22 @@
 		text-align: center;
 		overflow: hidden;
 	}
+	.logo {
+		position: relative;
+		max-width: 440px;
+		margin: 4px auto 0;
+	}
+	/* under it: always room for the respin counter + its line, so the reels never move */
+	.lines {
+		position: relative;
+		display: grid;
+		align-content: center;
+		min-height: 42px;
+	}
 	.title {
-		font-size: clamp(24px, 8.4cqi, 46px);
 		font-weight: 900;
 		line-height: 1.05;
 		letter-spacing: 0.08em;
-		color: #f2ffe0;
-		text-shadow:
-			0 0 2px #fff,
-			0 0 6px #8dff5a,
-			0 0 14px #3aff6a,
-			0 0 26px #16b84a;
-		-webkit-text-stroke: 1px #ff3fb4;
-	}
-	.title .tube {
-		display: inline-block;
-		animation: neon 4.8s steps(1) infinite;
-		animation-delay: calc(var(--i) * -0.53s);
-	}
-	/* a neon tube that flickers now and then */
-	@keyframes neon {
-		0%,
-		91%,
-		95%,
-		100% {
-			opacity: 1;
-		}
-		92%,
-		94% {
-			opacity: 0.45;
-		}
 	}
 	.subtitle {
 		margin-top: 4px;
@@ -625,7 +612,7 @@
 			0 0 16px rgb(255 63 180 / 0.55);
 	}
 	.respin-title {
-		font-size: clamp(20px, 6.4cqi, 36px);
+		font-size: clamp(15px, 4.4cqi, 21px);
 		color: #fff0fa;
 		text-shadow:
 			0 0 6px #ff3fb4,
@@ -913,7 +900,6 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.lava span,
-		.title .tube,
 		.cell.win,
 		.cell.fresh,
 		.leaf-col.grow,
