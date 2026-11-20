@@ -97,6 +97,11 @@ test('casino tally: per device, merged, capped', () => {
 	assert.equal(cleanCasino({ 'b a d': { net: 1, games: 1, at: T } }), undefined);
 	assert.equal(cleanCasino({ okdev1: { net: 1.5, games: 1, at: T } }), undefined);
 	assert.deepEqual(cleanCasino({ okdev1: { net: -40, games: 2, at: T } }), { okdev1: { net: -40, games: 2, at: T } });
+	// a huge win stays: past 100M the whole tally used to be thrown away (burgers and leaderboard row gone)
+	const rich = withGame({ okdev1: { net: 99_000_000, games: 400, at: T, lost: 5 } }, 'okdev1', 100_000_000, T + 1);
+	assert.deepEqual(cleanCasino(JSON.parse(JSON.stringify(rich))), rich);
+	assert.equal(casinoTotal(cleanCasino(rich)).net, 199_000_000);
+	assert.equal(cleanCasino({ okdev1: { net: 5e18, games: 1, at: T } }).okdev1.net, 1e15, 'held at the limit, not dropped');
 });
 
 test('the bank counts the daily bonus and the casino', () => {

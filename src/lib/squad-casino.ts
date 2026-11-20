@@ -134,7 +134,14 @@ export type CasinoLedger = Record<string, CasinoTally>;
 export const CASINO_DEVICES = 8;
 /** The most one game can take (like a bet in the bank). */
 export const CASINO_MAX_BET = 10_000;
-const NET_MAX = 100_000_000;
+/**
+ * The most a tally can hold. It was 100,000,000 and a tally past it was THROWN AWAY when read, so a
+ * player who won more than that lost every casino burger and their leaderboard row (2026-11-20; one
+ * max win at the top bet is already 100M). Now far out of reach, and a number past it is held at the
+ * limit, never dropped.
+ */
+export const NET_MAX = 1_000_000_000_000_000;
+const capNet = (n: number) => Math.max(-NET_MAX, Math.min(NET_MAX, n));
 const DEVICE_ID = /^[A-Za-z0-9_-]{4,16}$/;
 
 function pruneLedger(l: CasinoLedger): CasinoLedger {
@@ -150,9 +157,9 @@ export function cleanCasino(raw: unknown): CasinoLedger | undefined {
 	const out: CasinoLedger = {};
 	for (const [dev, t] of Object.entries(raw)) {
 		if (!DEVICE_ID.test(dev) || !isObject(t) || !Number.isInteger(t.net) || !Number.isInteger(t.games) || !isTime(t.at)) continue;
-		if ((t.games as number) < 0 || Math.abs(t.net as number) > NET_MAX) continue;
-		const tally: CasinoTally = { net: t.net as number, games: t.games as number, at: Math.round(t.at) };
-		if (Number.isInteger(t.lost) && (t.lost as number) >= 0 && (t.lost as number) <= NET_MAX) tally.lost = t.lost as number;
+		if ((t.games as number) < 0) continue;
+		const tally: CasinoTally = { net: capNet(t.net as number), games: t.games as number, at: Math.round(t.at) };
+		if (Number.isInteger(t.lost) && (t.lost as number) >= 0) tally.lost = Math.min(t.lost as number, NET_MAX);
 		out[dev] = tally;
 	}
 	return Object.keys(out).length ? pruneLedger(out) : undefined;
@@ -185,8 +192,8 @@ export function casinoTotal(l: CasinoLedger | undefined): { net: number; games: 
 export function withGame(l: CasinoLedger | undefined, device: string, net: number, at: number, games = 1): CasinoLedger {
 	const t = l?.[device] ?? { net: 0, games: 0, at: 0 };
 	const n = Math.round(net);
-	const lost = (t.lost ?? Math.max(0, -t.net)) + Math.max(0, -n);
-	return pruneLedger({ ...l, [device]: { net: t.net + n, games: t.games + games, at: Math.max(at, t.at + 1), lost } });
+	const lost = Math.min(NET_MAX, (t.lost ?? Math.max(0, -t.net)) + Math.max(0, -n));
+	return pruneLedger({ ...l, [device]: { net: capNet(t.net + n), games: t.games + games, at: Math.max(at, t.at + 1), lost } });
 }
 
 /** A random whole number 0 … n−1 from a [0, 1) source. */

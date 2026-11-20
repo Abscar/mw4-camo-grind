@@ -28,7 +28,7 @@ import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
 import { cleanBans, type Bans } from './squad-bans.ts';
 import { cleanTune, type CasinoTune } from './casino-rig.ts';
-import { cleanCasino, cleanOnline, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
+import { cleanCasino, cleanOnline, NET_MAX, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { cleanShop, type ShopState } from './shop.ts';
 import { cleanLoans, type LoanBook } from './loans.ts';
 import { cleanDonations, cleanKarma, type DonationBook, type Karma } from './donations.ts';
@@ -211,7 +211,8 @@ export function cleanGrants(raw: unknown): Record<string, number> | undefined {
 	if (!isObject(raw)) return undefined;
 	const out: Record<string, number> = {};
 	for (const [id, n] of Object.entries(raw)) {
-		if (isMemberId(id) && Number.isInteger(n) && n !== 0 && Math.abs(n as number) <= 100_000_000) out[id] = n as number;
+		// held at the limit, never dropped: a total past the old 100M limit used to vanish whole
+		if (isMemberId(id) && Number.isInteger(n) && n !== 0) out[id] = Math.max(-NET_MAX, Math.min(NET_MAX, n as number));
 	}
 	return Object.keys(out).length ? out : undefined;
 }
