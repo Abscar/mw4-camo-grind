@@ -31,6 +31,7 @@
 		type RigGame
 	} from '#lib/casino-rig.ts';
 	import { t } from '#lib/i18n/en.ts';
+	import { SKW_FORCES, type SkwForce } from '#lib/skeddwood.ts';
 	import { colorOf, handValue, isBlackjack, type Card } from '#lib/squad-casino.ts';
 	import { makeMemberId } from '#lib/squad-codec.ts';
 	import { squad } from '#lib/squad.svelte.ts';
@@ -73,7 +74,7 @@
 
 	/* ---------- picked results: who, how long, what; saved with a new id each time ---------- */
 	const start = squad.tune;
-	const KINDS: ForceKind[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'roulette', 'blackjack'];
+	const KINDS: ForceKind[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'roulette', 'blackjack'];
 	let who = $state(Object.fromEntries(KINDS.map((k) => [k, start[k]?.who ?? '*'])) as Record<ForceKind, string>);
 	let every = $state(Object.fromEntries(KINDS.map((k) => [k, !!start[k]?.every])) as Record<ForceKind, boolean>);
 	const nameOf = (id: string | undefined) => (id ? (squad.byId(id)?.member.name ?? '?') : '?');
@@ -121,6 +122,7 @@
 	let bookForce = $state<BookForce>(start.book?.what ?? 'free');
 	let kush = $state<KushForce>(start.kushburst?.what ?? 'kushburst');
 	let stashPick = $state<StashForce>(start.stash?.what ?? 'free');
+	let skw = $state<SkwForce>(start.skeddwood?.what ?? 'gold');
 	let number = $state<number>(start.roulette?.what ?? 0);
 	const colourName = t.casino.roulette.colors;
 
@@ -351,6 +353,19 @@
 			</div>
 			{@render whoMode('stash')}
 			{@render saveRow('stash', stashPick)}
+		</div>
+	</details>
+
+	<!-- Skeddwood: a feature -->
+	<details class="rig-box" data-rig="skeddwood">
+		<summary><span class="rig-h font-head">🤠 {r.skeddwood.heading}</span><span class="rig-sum">{tune.skeddwood ? (tune.skeddwood.used ? '✔' : '●') : ''}</span></summary>
+		<div class="rig-body">
+			<p class="text-xs text-muted">{r.skeddwood.intro}</p>
+			<div class="flex flex-wrap gap-1.5">
+				{#each SKW_FORCES as k (k)}<button type="button" class="chip" data-skw={k} aria-pressed={skw === k} onclick={() => (skw = k)}>{r.skeddwood.kinds[k]}</button>{/each}
+			</div>
+			{@render whoMode('skeddwood')}
+			{@render saveRow('skeddwood', skw)}
 		</div>
 	</details>
 

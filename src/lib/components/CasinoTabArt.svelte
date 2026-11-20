@@ -16,11 +16,13 @@
 	cover, glowing, with sparkles (the halo breathes on the selected tab).
 	Kushburst (2026-11-20) = a violet blacklight cabinet in pink and green neon, a glowing leaf grown over
 	the middle reel (its rays turn on the selected tile), little neon symbols on the reels beside it.
+	Skeddwood (2026-11-20) = Abscar's bronze skull in a cowboy hat with red eyes and the holk, a sunset behind
+	him and a sheriff star; the selected tab tips his hat.
 	Our own chunky cartoons in the Burger Bandit's style (SlotSymbol.svelte). Decorative: the tab says
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
+	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
 </script>
 
 <script lang="ts">
@@ -57,6 +59,9 @@
 		{#if kind === 'book'}
 			<linearGradient id="{u}-cover" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f7a3a" /><stop offset=".55" stop-color="#14502a" /><stop offset="1" stop-color="#0a2c16" /></linearGradient>
 			<radialGradient id="{u}-halo"><stop offset="0" stop-color="#ffe680" stop-opacity=".85" /><stop offset="1" stop-color="#ffb000" stop-opacity="0" /></radialGradient>
+		{:else if kind === 'skeddwood'}
+			<radialGradient id="{u}-sun" cx=".5" cy=".75" r=".7"><stop offset="0" stop-color="#ffd23a" /><stop offset=".5" stop-color="#ff6a2a" /><stop offset="1" stop-color="#b3141b" stop-opacity="0" /></radialGradient>
+			<linearGradient id="{u}-bronze" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#fff0c4" /><stop offset=".25" stop-color="#d9ac62" /><stop offset=".55" stop-color="#7a5326" /><stop offset=".8" stop-color="#e0b874" /><stop offset="1" stop-color="#5b3c18" /></linearGradient>
 		{/if}
 	</defs>
 
@@ -151,6 +156,23 @@
 		<path d="M5 30.5 L9 27.8 V33.2 Z M58 30.5 L54 27.8 V33.2 Z" fill="#8dff5a" stroke={O} stroke-width=".6" stroke-linejoin="round" />
 		<circle cx="22" cy="47.6" r="2.8" fill="#8dff5a" stroke={O} stroke-width="1" />
 		<rect x="28" y="46.2" width="18" height="2.8" rx="1.4" fill="#07020f" stroke="#4a1a7a" stroke-width=".6" />
+	{:else if kind === 'skeddwood'}
+		<!-- Skeddwood: a sunset, Abscar's bronze skull in a cowboy hat (red eyes, the holk), a sheriff star -->
+		<circle cx="32" cy="30" r="24" fill="url(#{u}-sun)" />
+		<path d="M4 46 C14 42 22 44 30 42 C40 40 50 44 60 42 L60 54 H4 Z" fill="#3a1e0c" />
+		<path d="M19 32 C18 22 24 17 32 17 C40 17 46 22 45 32 L44 36 C43.4 38.4 42 39.4 40.4 39.6 L40 46 C37.6 48 26.4 48 24 46 L23.6 39.6 C22 39.4 20.6 38.4 20 36 Z" fill="url(#{u}-bronze)" stroke={O} stroke-width="1.3" />
+		<path d="M21.6 29.4 L29.4 29 L29.6 33.6 L26.4 35.6 L22.2 34 Z" fill="#050302" /><path d="M42.4 29.4 L34.6 29 L34.4 33.6 L37.6 35.6 L41.8 34 Z" fill="#050302" />
+		<circle class="ta-eye" cx="25.8" cy="32" r="1.8" fill="#ff3a3a" /><circle class="ta-eye" cx="38.2" cy="32" r="1.8" fill="#ff3a3a" />
+		<path d="M31 36 L33 36 L32.6 38.6 L32 39.2 L31.4 38.6 Z" fill="#050302" />
+		<rect x="25" y="40.4" width="14" height="3.4" fill="#0b0703" />
+		{#each [26, 28.4, 30.8, 33.2, 35.6] as x (x)}<rect {x} y="40.6" width="1.8" height="2.6" rx=".4" fill="#efe2c4" />{/each}
+		{@html holk(u, 37.6, 42, 54, 46, 1.6, 4.4)}
+		<g class="ta-hat">
+			<path d="M21 24 C20 16 23 9 27 8 C29 7.4 30.6 9 32 9 C33.4 9 35 7.4 37 8 C41 9 44 16 43 24 Z" fill="#6b4325" stroke={O} stroke-width="1.3" />
+			<path d="M21.4 20.6 C27 22.4 37 22.4 42.6 20.6 L43 24 C37 25.8 27 25.8 21 24 Z" fill="#b3141b" stroke={O} stroke-width=".8" />
+			<path d="M5 25 C9 21 17 23 23 24 C28 25 36 25 41 24 C47 23 55 21 59 25 C55 29 47 27 41 28 C36 28.6 28 28.6 23 28 C17 27 9 29 5 25 Z" fill="#7a4a24" stroke={O} stroke-width="1.3" />
+		</g>
+		<path class="ta-star" d="M11 40 L12.6 43.4 L16.2 43.6 L13.4 46 L14.4 49.6 L11 47.6 L7.6 49.6 L8.6 46 L5.8 43.6 L9.4 43.4 Z" fill="url(#{u}-gold)" stroke={O} stroke-width=".8" stroke-linejoin="round" />
 	{:else if kind === 'roulette'}
 		<!-- the wheel from above: wooden bowl, red / black pockets with one green, gold turret, the ball -->
 		<ellipse cx="32" cy="50" rx="22" ry="3.4" fill="#000" opacity=".35" />
@@ -396,6 +418,29 @@
 		}
 		50% {
 			transform: translate(-1.5px, -2.5px);
+		}
+	}
+	:global([aria-pressed='true']) > .ta .ta-hat {
+		transform-box: fill-box;
+		transform-origin: 30% 100%;
+		animation: ta-tip 2.6s ease-in-out infinite;
+	}
+	:global([aria-pressed='true']) > .ta .ta-eye {
+		animation: ta-eye 1.6s ease-in-out infinite alternate;
+	}
+	@keyframes ta-tip {
+		0%,
+		70%,
+		100% {
+			transform: rotate(0deg) translateY(0);
+		}
+		80% {
+			transform: rotate(-10deg) translateY(-3px);
+		}
+	}
+	@keyframes ta-eye {
+		to {
+			fill: #ffb0b0;
 		}
 	}
 	@keyframes ta-slide {

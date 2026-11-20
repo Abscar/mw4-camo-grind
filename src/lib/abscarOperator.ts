@@ -419,6 +419,108 @@ const BODIES: Record<OperatorVariant, (u: string, gold?: boolean) => string> = {
 /** Where the smoke leaves the holk's burning end, per figure. */
 const SMOKE_AT: Record<OperatorVariant, [number, number]> = { ghillie: [57.5, 31.2], lighter: [57.8, 31.4], nvg: [57.5, 31.2], sniper: [57.5, 31.2] };
 
+/* ---------- Skeddwood (2026-11-20): the cowboy WILD and the golden skull ---------- */
+
+/** A robot leg: bronze thigh, steel knee, piston shin (drawn from hip x at y0 down to the ankle at y1). */
+function leg(u: string, x: number, y0: number, y1: number): string {
+	const k = y0 + (y1 - y0) * 0.48;
+	return `<rect x="${f(x - 5)}" y="${y0}" width="10" height="${f(k - y0 + 2)}" rx="3.6" fill="url(#${u}-bronze-dark)" stroke="${OUT}" stroke-width="0.8"/>
+	<rect x="${f(x - 3.2)}" y="${f(y0 + 3)}" width="4" height="${f(k - y0 - 6)}" rx="1.6" fill="url(#${u}-bronze-soft)" opacity="0.8"/>
+	<rect x="${f(x - 4)}" y="${f(k + 2)}" width="8" height="${f(y1 - k - 2)}" rx="3" fill="url(#${u}-bronze-dark)" stroke="${OUT}" stroke-width="0.8"/>
+	<rect x="${f(x - 0.9)}" y="${f(k + 5)}" width="1.8" height="${f(y1 - k - 10)}" rx="0.9" fill="url(#${u}-steel)" stroke="${OUT}" stroke-width="0.35"/>
+	<circle cx="${x}" cy="${f(k + 1)}" r="4.6" fill="url(#${u}-steel)" stroke="${OUT}" stroke-width="0.8"/><circle cx="${x}" cy="${f(k + 1)}" r="1.6" fill="#ff3a3a"/>`;
+}
+
+/**
+ * Skeddwood's COWBOY WILD: Abscar's figure (bronze cyborg skull, red eyes, the holk, armoured shoulders) as a
+ * whole terminator exoskeleton in a cowboy hat, 4 symbols tall: markup for an <svg viewBox="0 0 64 256">
+ * (each reel cell shows a quarter: hat, face + shoulders, coat + gun belt, legs + boots). Our own drawing.
+ */
+export function cowboyFigure(uid: string): string {
+	const u = `aop-${uid}`;
+	const L = `url(#${u}-leather)`;
+	const coat = (side: 1 | -1) => {
+		const m = side === 1 ? '' : ` transform="${MIRROR}"`;
+		return `<g${m}><path d="M9 104 C6 130 4 158 1 190 L14 196 C17 170 20 140 24 112 Z" fill="${L}" stroke="${OUT}" stroke-width="0.9"/>
+		<path d="M9 108 C7 132 5 158 3 186" stroke="#5a3a1e" stroke-width="0.8" fill="none"/>
+		<path d="M22 108 L25 160 L20 162 Z" fill="#2a170a" opacity="0.6"/></g>`;
+	};
+	const arm = (side: 1 | -1) => {
+		const m = side === 1 ? '' : ` transform="${MIRROR}"`;
+		return `<g${m}><path d="M6 98 C2 110 2 124 4 136 L13 136 C14 124 15 112 15 102 Z" fill="${L}" stroke="${OUT}" stroke-width="0.8"/>
+		<path d="M4.4 132 L13.2 132 L13 137 L4.6 137 Z" fill="#c9a46a" stroke="${OUT}" stroke-width="0.5"/>
+		${forearm(u, 8.6, 139, 9.8, 160)}
+		<rect x="4.6" y="160" width="10" height="9" rx="3" fill="url(#${u}-bronze)" stroke="${OUT}" stroke-width="0.7"/>
+		${[5.6, 8, 10.4, 12.8].map((x) => `<rect x="${x}" y="166" width="2" height="5" rx="1" fill="url(#${u}-bronze-dark)" stroke="${OUT}" stroke-width="0.4"/>`).join('')}</g>`;
+	};
+	const bullets = [16, 19.4, 22.8, 26.2, 37.8, 41.2, 44.6, 48]
+		.map((x) => `<rect x="${x}" y="163.2" width="2.2" height="5.4" rx="1" fill="#e8b84a" stroke="#6b4306" stroke-width="0.4"/><rect x="${x}" y="163.2" width="2.2" height="1.6" rx="0.8" fill="#b9802a"/>`)
+		.join('');
+	const boot = (side: 1 | -1) => {
+		const m = side === 1 ? '' : ` transform="${MIRROR}"`;
+		return `<g${m}><path d="M19 228 L30 228 L31 244 C31 248 28 250 24 250 L8 250 C6 250 5 248 7 246 C11 244 15 243 18 241 Z" fill="${L}" stroke="${OUT}" stroke-width="0.9"/>
+		<path d="M19 233 H30.6" stroke="#c9a46a" stroke-width="1.2"/><path d="M8 248 H30" stroke="#1a0e05" stroke-width="1.4"/>
+		<path d="M31 244 L35 245" stroke="url(#${u}-steel)" stroke-width="1.2"/>
+		<g transform="translate(36.4 245.2)">${[0, 45, 90, 135].map((a) => `<path d="M-2.6 0 H2.6" stroke="#d3d9e0" stroke-width="0.7" transform="rotate(${a})"/>`).join('')}<circle r="0.9" fill="#d3d9e0"/></g></g>`;
+	};
+	const extra = `<defs>
+	<linearGradient id="${u}-leather" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#6b4325"/><stop offset="0.5" stop-color="#3e2512"/><stop offset="1" stop-color="#1e1108"/></linearGradient>
+	<linearGradient id="${u}-hat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5a30"/><stop offset="0.6" stop-color="#5a3518"/><stop offset="1" stop-color="#2e1a0a"/></linearGradient>
+	<linearGradient id="${u}-scarf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4a3a"/><stop offset="1" stop-color="#8a0d14"/></linearGradient>
+	<linearGradient id="${u}-chaps" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a3518"/><stop offset="0.5" stop-color="#8a5a30"/><stop offset="1" stop-color="#4a2a12"/></linearGradient>
+	</defs>`;
+	// the head-and-shoulders figure (as in the header emblem), moved down under the hat
+	const top = `<g transform="translate(0 40)">${neck(u)}${shoulders(u)}${headAt(u)}</g>`;
+	const hat = `<path d="M17 50 C16 36 19 24 24 20 C27 18 30 21 32 21 C34 21 37 18 40 20 C45 24 48 36 47 50 Z" fill="url(#${u}-hat)" stroke="${OUT}" stroke-width="0.9"/>
+	<path d="M24 22 C27 30 29 40 30 49 M40 22 C37 30 35 40 34 49" stroke="#2e1a0a" stroke-opacity="0.55" stroke-width="0.8" fill="none"/>
+	<path d="M17.4 43 C26 46 38 46 46.6 43 L47 49.6 C38 52.4 26 52.4 17 49.6 Z" fill="#8a0d14" stroke="${OUT}" stroke-width="0.6"/>
+	${[22, 32, 42].map((x) => `<circle cx="${x}" cy="${x === 32 ? 48.6 : 47.6}" r="1.5" fill="#e8c76a" stroke="#6b4306" stroke-width="0.4"/>`).join('')}
+	<path d="M1 51 C4 45 12 47 18 48.6 C26 50.6 38 50.6 46 48.6 C52 47 60 45 63 51 C60 56 50 54 44 54.6 C38 55.4 26 55.4 20 54.6 C14 54 4 56 1 51 Z" fill="url(#${u}-hat)" stroke="${OUT}" stroke-width="0.9"/>
+	<path d="M4 50.6 C10 49 16 50.4 22 51.6 C28 52.6 36 52.6 42 51.6 C48 50.4 54 49 60 50.6" stroke="#a8703c" stroke-width="0.7" fill="none"/>
+	<ellipse cx="25" cy="27" rx="3.4" ry="1.2" fill="#fff6dc" opacity="0.25"/>`;
+	const scarf = `<path d="M20 84 C26 88 38 88 44 84 L41 92 C38 96 35 100 32 104 C29 100 26 96 23 92 Z" fill="url(#${u}-scarf)" stroke="${OUT}" stroke-width="0.8"/>
+	<path d="M24 88 C28 90 36 90 40 88" stroke="#ffd6d0" stroke-opacity="0.5" stroke-width="0.6" fill="none"/>
+	<circle cx="27" cy="91" r="0.8" fill="#fff"/><circle cx="35" cy="93" r="0.8" fill="#fff"/><circle cx="31" cy="97" r="0.8" fill="#fff"/>`;
+	const chest = `<path d="M24 104 L40 104 L41.5 158 L22.5 158 Z" fill="url(#${u}-bronze-dark)" stroke="${OUT}" stroke-width="0.8"/>
+	${[112, 122, 132, 142].map((y) => `<rect x="25.4" y="${y}" width="5.6" height="8" rx="1.4" fill="url(#${u}-bronze)" stroke="${OUT}" stroke-width="0.5"/><rect x="33" y="${y}" width="5.6" height="8" rx="1.4" fill="url(#${u}-bronze)" stroke="${OUT}" stroke-width="0.5"/>`).join('')}
+	<path d="M32 108 V156" stroke="#ff2a2a" stroke-width="1" opacity="0.85"/><circle class="op-eye-glow" cx="32" cy="128" r="6" fill="url(#${u}-red)"/>`;
+	const belt = `<path d="M13 160 C24 163 40 163 51 160 L51.6 170 C40 173 24 173 12.4 170 Z" fill="${L}" stroke="${OUT}" stroke-width="0.9"/>${bullets}
+	<rect x="28" y="161.4" width="8" height="8.4" rx="1.6" fill="url(#${u}-bronze)" stroke="#6b4306" stroke-width="0.7"/><path d="M30 165.6 H34" stroke="#6b4306" stroke-width="1"/>
+	<path d="M45 168 C49 168 53 169 54 172 L52 196 C51 199 46 199 45 196 Z" fill="${L}" stroke="${OUT}" stroke-width="0.9"/>
+	<path d="M47 166 C49 160 54 158 57 160 L58 166 C56 168 52 168 49 170 Z" fill="url(#${u}-steel)" stroke="${OUT}" stroke-width="0.7"/>
+	<path d="M53 160.6 L56.4 156.4 L58.6 157.6 L56.6 161" fill="url(#${u}-bronze)" stroke="${OUT}" stroke-width="0.5"/>`;
+	const chaps = (side: 1 | -1) => {
+		const m = side === 1 ? '' : ` transform="${MIRROR}"`;
+		return `<g${m}><path d="M17 172 L30 172 L30.6 206 L18 206 C17 196 16.6 184 17 172 Z" fill="url(#${u}-chaps)" stroke="${OUT}" stroke-width="0.8" opacity="0.95"/>
+		${[175, 181, 187, 193, 199].map((y) => `<path d="M17 ${y} l-3 2" stroke="#8a5a30" stroke-width="1.2" stroke-linecap="round"/>`).join('')}</g>`;
+	};
+	return `${defs(u, 'lighter')}${extra}
+	${coat(1)}${coat(-1)}
+	${leg(u, 24.6, 170, 232)}${leg(u, 39.4, 170, 232)}
+	${chaps(1)}${chaps(-1)}
+	${boot(1)}${boot(-1)}
+	${arm(1)}${arm(-1)}
+	${chest}${belt}${top}${scarf}${hat}
+	${holk(u, MOUTH[0], MOUTH[1] + 40, 57.4, 74, 2.2, 7)}
+	${smoke(u, 57.5, 71.2, 0.42)}`;
+}
+
+/** Skeddwood's GOLDEN SKULL: the same skull in polished gold (red eyes), for an <svg viewBox="0 0 64 64">. */
+export function goldSkull(uid: string): string {
+	const u = `aop-${uid}`;
+	return `<defs>
+	<linearGradient id="${u}-bronze" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#fffbe0"/><stop offset="0.22" stop-color="#ffd23a"/><stop offset="0.5" stop-color="#b8810f"/><stop offset="0.74" stop-color="#ffe27a"/><stop offset="1" stop-color="#7a5204"/></linearGradient>
+	<linearGradient id="${u}-bronze-dark" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0" stop-color="#ffe9a0"/><stop offset="0.45" stop-color="#a87406"/><stop offset="1" stop-color="#4a3004"/></linearGradient>
+	<radialGradient id="${u}-grime" cx="0.3" cy="0.7" r="0.8"><stop offset="0" stop-color="#3a2604" stop-opacity="0.3"/><stop offset="1" stop-color="#3a2604" stop-opacity="0"/></radialGradient>
+	<radialGradient id="${u}-red"><stop offset="0" stop-color="#ff2a2a" stop-opacity="0.95"/><stop offset="1" stop-color="#ff2a2a" stop-opacity="0"/></radialGradient>
+	<radialGradient id="${u}-halo"><stop offset="0" stop-color="#ffe27a" stop-opacity="0.75"/><stop offset="0.6" stop-color="#ffb000" stop-opacity="0.25"/><stop offset="1" stop-color="#ffb000" stop-opacity="0"/></radialGradient>
+	</defs>
+	<circle cx="32" cy="31" r="31" fill="url(#${u}-halo)"/>
+	<g transform="translate(1.6 2) scale(0.95)">${head(u)}</g>
+	<path d="M10 12 l1.4 3.4 l3.4 1.4 l-3.4 1.4 l-1.4 3.4 l-1.4 -3.4 l-3.4 -1.4 l3.4 -1.4 Z" fill="#fffbe6"/>
+	<path d="M53 44 l1 2.4 l2.4 1 l-2.4 1 l-1 2.4 l-1 -2.4 l-2.4 -1 l2.4 -1 Z" fill="#fffbe6"/>`;
+}
+
 /** BurgiShop on Abscar's figure (the 420 pack 2): another mouth item instead of his holk, plus eyes / hat. */
 export interface OperatorWear {
 	/** his own holk: white (default), gold (the Golden Holk) or none (something else is in his mouth) */

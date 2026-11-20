@@ -998,7 +998,7 @@ export const en = {
 		intro: 'Only you see this tab. Changes reach the others’ pages within half a minute. Nothing goes on the radio, and the games look exactly as usual.',
 		saved: 'Saved',
 		failed: 'Couldn’t reach the squad. Try again in a moment.',
-		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', stash: 'Abscar’s Stash', roulette: 'Roulette', blackjack: 'Blackjack' },
+		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', stash: 'Abscar’s Stash', skeddwood: 'Skeddwood', roulette: 'Roulette', blackjack: 'Blackjack' },
 		odds: {
 			heading: 'Odds per game',
 			intro: 'For everyone who plays that game. Plus = the players win more (the house takes less), minus = they lose more.'
@@ -1076,6 +1076,11 @@ export const en = {
 			heading: 'Abscar’s Stash: pick what happens',
 			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does). Bought bonuses stay random.',
 			kinds: { free: 'Sky High Spins', cloud: 'A smoke-cloud win', big: 'A big win (25× or more)', blank: 'Nothing at all' }
+		},
+		skeddwood: {
+			heading: 'Skeddwood: pick what happens',
+			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does).',
+			kinds: { gold: 'Gold Rush Spins', divergence: 'Divergence Spins', highnoon: 'High Noon', quickdraw: 'Quick Draw', big: 'A big win (25× or more)', blank: 'Nothing at all' }
 		},
 		roulette: {
 			heading: 'Roulette: pick the number',
@@ -1225,12 +1230,12 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune · Mybots 5 · Book Of Skedd · Kushburst · Abscar’s Stash · Roulette · Blackjack · BurgiBank · Donations',
+		sub: 'Abscar’s Fortune · Mybots 5 · Book Of Skedd · Kushburst · Abscar’s Stash · Skeddwood · Roulette · Blackjack · BurgiBank · Donations',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', stash: 'Abscar’s Stash', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', stash: 'Abscar’s Stash', skeddwood: 'Skeddwood', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
@@ -1287,6 +1292,7 @@ export const en = {
 			bookGamble: (n: number, steps: number) => `gambled ${steps} time${steps === 1 ? '' : 's'} on Book Of Skedd and collected ${n.toLocaleString('en-US')} 🍔 🃏`,
 			kushburst: (net: number, tier: string) => `${tier === 'kushburst' ? 'hit a KUSHBURST' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Kushburst: +${net.toLocaleString('en-US')} 🍔 🍃`,
 			stash: (net: number, tier: string) => `${tier === 'epic' ? 'got SKY HIGH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Abscar’s Stash: +${net.toLocaleString('en-US')} 🍔 💨`,
+			skeddwood: (net: number, tier: string) => `${tier === 'legend' ? 'collected a LEGENDARY BOUNTY' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Skeddwood: +${net.toLocaleString('en-US')} 🍔 🤠`,
 			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
 			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`),
 			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
@@ -1667,6 +1673,96 @@ export const en = {
 			anteNote: 'Double chance: holks land more often, so Sky High Spins come about twice as often (about every 35 spins instead of every 53). A spin costs 25 % more; the win is worked out on your bet. Buying a bonus is off while it’s on.',
 			buyNote: (free: number, sup: number) => `Buy bonus prices are times your bet: Sky High Spins ${free}×, Super Sky High ${sup}× (every cloud ×10 or more). They give back about as much as spinning (several times the price).`,
 			rtpNote: 'Party odds like the other two machines: a win on almost every second spin, Sky High Spins about once every 53 spins, and in the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.'
+		},
+		/** Skeddwood (2026-11-20, the user: "another slot like Deadwood 2, called Skeddwood, the cowboy is Abscar's terminator exoskeleton with a cowboy hat") */
+		skeddwood: {
+			sub: '384 ways · Cowboy WILDs',
+			spin: 'Spin',
+			credits: 'Burgers',
+			lastWin: 'Win',
+			spinning: 'Spinning…',
+			noWin: 'No win this time.',
+			turbo: 'Turbo',
+			symbols: {
+				ten: '10',
+				jack: 'J',
+				queen: 'Q',
+				king: 'K',
+				ace: 'A',
+				ingman: 'WANTED: Ingman',
+				lars: 'WANTED: Drängen Lars Åke',
+				jeeven: 'WANTED: Da Jeeven',
+				phil: 'WANTED: Phillestar',
+				sixgun: 'Divergence six-gun',
+				cowboy: 'Cowboy WILD',
+				hwild: 'WILD',
+				skedd: 'The Skedd (WILD)',
+				cylinder: 'Quick Draw cylinder',
+				star: 'Sheriff star',
+				skull: 'Golden skull',
+				grave: 'GG tombstone'
+			},
+			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`,
+			cowboyLabel: (m: number) => `Cowboy WILD ×${m}`,
+			splitLabel: (s: string) => `${s} split in two`,
+			shotLabel: (s: string, x: number) => `${s} ×${x}`,
+			wayWin: (sym: string, reels: number, ways: number, mult: number, win: number) =>
+				`${sym}: ${reels} reels, ${ways} way${ways === 1 ? '' : 's'}${mult > 1 ? ` ×${mult}` : ''} = ${win.toLocaleString('en-US')} 🍔`,
+			moreWins: (n: number) => `+${n} more`,
+			pops: {
+				nudge: (m: number) => `×${m}`,
+				highNoon: 'HIGH NOON!',
+				skedd: 'SEEING DOUBLE!',
+				quick: 'QUICK DRAW!',
+				gold: 'GOLD RUSH!',
+				divergence: 'DIVERGENCE!'
+			},
+			highNoonMsg: 'High Noon: every low symbol on reels 2–4 turns WILD',
+			skeddMsg: 'The Skedd: a big puff and the middle symbols are seen double',
+			quickMsg: (n: number) => `Quick Draw: ${n} shots, every hit doubles`,
+			nudgeMsg: (m: number) => `The cowboy nudges in: ×${m}`,
+			sticky: 'STICKY',
+			free: {
+				intro: { gold: 'GOLD RUSH SPINS', divergence: 'DIVERGENCE SPINS' },
+				introSub: {
+					gold: (n: number) => `${n} free spins. Every cowboy that lands stays put with his multiplier, the cowboys multiply each other, and a cowboy landing on his reel again adds to him. The Skedd landing upgrades to Divergence Spins. Three GG tombstones = 5 more spins.`,
+					divergence: (n: number) => `${n} free spins with the Skedd on reel 5 every spin: the middle symbols are seen double and every cowboy doubles. Cowboys stick and multiply each other. Three GG tombstones = 6 more spins.`
+				},
+				title: (gold: boolean, n: number, total: number) => `${gold ? 'Gold Rush' : 'Divergence'} spin ${n} / ${total}`,
+				sub: (won: number) => `Sticky cowboys · ${won.toLocaleString('en-US')} 🍔 so far`,
+				more: (n: number) => `+${n} FREE SPINS!`,
+				upgrade: (n: number) => `UPGRADE! DIVERGENCE SPINS +${n}`,
+				outro: 'FREE SPINS WON',
+				outroSub: (n: number) => `${n} free spins played`,
+				lucky: { gold: 'LUCKY DRAW: GOLD RUSH', divergence: 'LUCKY DRAW: DIVERGENCE!' }
+			},
+			continue: 'Continue',
+			buy: 'Buy bonus',
+			buyKinds: { gold: 'Gold Rush', lucky: 'Lucky Draw', divergence: 'Divergence' },
+			buyWhat: {
+				gold: (n: number) => `${n} Gold Rush Spins`,
+				lucky: 'the Lucky Draw (4 in 5 Gold Rush, 1 in 5 Divergence)',
+				divergence: (n: number) => `${n} Divergence Spins`
+			},
+			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', legend: 'LEGENDARY BOUNTY' },
+			maxWin: (x: number) => `MAX WIN: ${x.toLocaleString('en-US')}× your bet`,
+			paytable: 'Paytable & how it works',
+			how: 'Five reels showing 3, 4, 4, 4 and 2 symbols, 384 ways to win. Wins pay for the same symbol on reels next to each other from reel 1, anywhere on each reel: 3, 4 or 5 reels. Ways = how many of it (or WILDs) each reel shows, multiplied together, and every way pays. The letters sit on reels 1–4 only; the WANTED posters and the Divergence six-gun on every reel. WILDs stand in for every paying symbol; ways made of WILDs alone pay as six-guns.',
+			payRow: (a: number, b: number, c: number) => `3 reels → ${a}× · 4 → ${b}× · 5 → ${c}× your bet, per way`,
+			features: {
+				cowboy: 'Abscar in his terminator exoskeleton and a cowboy hat, 4 symbols tall, on reels 2–4. When part of him lands he nudges until he fills the reel, +1 to his multiplier for every step (×1 to ×4). He counts as one WILD. In normal spins the cowboys’ multipliers add up; in free spins they multiply each other.',
+				hwild: 'Every low symbol (and star) on reels 2–4 turns into this at High Noon.',
+				skedd: 'A giant glass spoon pipe filling reel 5: WILD there, and its big puff makes you see double: reel 1’s middle symbol and reels 2–4’s two middle symbols split in two, so they count twice. A cowboy in its smoke doubles his multiplier.',
+				cylinder: 'Reel 1 only, counts as WILD: Quick Draw fires 3 to 6 shots at reels 2–5. Every symbol hit doubles (×2, ×4 …) for every way through it; a cowboy hit doubles his multiplier.',
+				star: 'Reels 2 and 4: one on each = HIGH NOON, every low symbol on reels 2–4 turns WILD.',
+				skull: 'One on each of reels 2, 3 and 4 = 8 Gold Rush Spins; with the Skedd on reel 5 as well = 8 Divergence Spins.',
+				grave: 'Free spins only: three or more on reels 1–4 = 5 more Gold Rush Spins or 6 more Divergence Spins.'
+			},
+			freeNote: 'Gold Rush Spins: every cowboy that lands stays put until the spins end, cowboys multiply each other, and a cowboy landing on a sticky one’s reel adds his multiplier to it. The Skedd landing upgrades to Divergence Spins (+2 spins). Divergence Spins: the Skedd stands on reel 5 on every spin, so the middle symbols split and every cowboy doubles on every spin.',
+			buyNote: (g: number, l: number, d: number) => `Buy bonus prices are times your bet: Gold Rush ${g}×, Lucky Draw ${l}× (4 in 5 Gold Rush, 1 in 5 Divergence), Divergence ${d}×. They give back about the same share as spinning.`,
+			rtpNote: 'Gold Rush comes about once every 75 spins, Divergence about once in 2,500. Party odds like the other machines: in the long run it gives back about 4 times what goes in, and about half the spins win. Pretend burgers, never money.',
+			maxNote: (x: number) => `One play (a spin with its free spins, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`,
+			fun: 'Our own take on a ways slot with nudging wilds: the squad on the posters, Abscar as the cowboy.'
 		},
 		roulette: {
 			spin: 'Spin',

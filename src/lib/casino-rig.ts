@@ -14,12 +14,12 @@
  *   ±100 = three, in between a chance of the extra one (`lucky`). The game itself is unchanged.
  * - Forced results (`Forced`): the next play only (marked `used` by the page that took it, and kept in
  *   that device's own list so a slow write can't give it twice) or every play until switched off; for
- *   one member or whoever plays first ('*'). Slots: the whole 5 × 3 screen. Fortune II: a feature (the
- *   page draws spins until one has it). Book Of Skedd (2026-11-20): free spins (optionally with Abscar
- *   as the special symbol), a big win or nothing, drawn the same way; its gamble follows luck too.
- *   Kushburst (2026-11-20): a leaf or a KUSHBURST from the start, a big win or nothing (kushForced).
- *   Abscar's Stash (2026-11-20): Sky High Spins, a smoke-cloud win, a big win or nothing, drawn the same
- *   way. Roulette: the number. Blackjack: the dealer's cards in order.
+ *   one member or whoever plays first ('*'). Slots: the whole 5 × 3 screen. Fortune II and Skeddwood
+ *   (2026-11-20): a feature (the page draws spins until one has it). Book Of Skedd (2026-11-20): free
+ *   spins (optionally with Abscar as the special symbol), a big win or nothing, drawn the same way; its
+ *   gamble follows luck too. Kushburst (2026-11-20): a leaf or a KUSHBURST from the start, a big win or
+ *   nothing (kushForced). Abscar's Stash (2026-11-20): Sky High Spins, a smoke-cloud win, a big win or
+ *   nothing, drawn the same way. Roulette: the number. Blackjack: the dealer's cards in order.
  *
  * No browser APIs and no runes (scripts/casino-rig.test.js).
  */
@@ -30,9 +30,10 @@ import type { F2Play } from './fortune2.ts';
 import { kushPlay, kushPlayWith, LEAF_REELS, type KushPlay } from './kushburst.ts';
 import { randInt } from './squad-casino.ts';
 import type { StashPlay } from './stash.ts';
+import { SKW_FORCES, type SkwForce } from './skeddwood.ts';
 
-export type RigGame = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'roulette' | 'blackjack';
-export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'roulette', 'blackjack'];
+export type RigGame = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'roulette' | 'blackjack';
+export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'roulette', 'blackjack'];
 /** Luck and odds run from −LUCK_MAX to +LUCK_MAX. */
 export const LUCK_MAX = 100;
 /** Draws per ±50 of luck past the first: +50 = best of two, +100 = best of three. */
@@ -75,7 +76,9 @@ export interface Forced<T> {
 	by?: string;
 }
 
-export type ForceKind = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'roulette' | 'blackjack';
+export type ForceKind = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'roulette' | 'blackjack';
+/** Skeddwood spins the page draws at most looking for a forced feature (Divergence ≈ 1 in 2,500, ≈ 8 µs each). */
+export const SKW_TRIES = 40_000;
 
 export interface CasinoTune {
 	/** Per game, added to every member's luck there. */
@@ -91,6 +94,8 @@ export interface CasinoTune {
 	kushburst?: Forced<KushForce>;
 	/** Abscar's Stash: what the spin has (spins are drawn until one does). */
 	stash?: Forced<StashForce>;
+	/** Skeddwood: a feature. */
+	skeddwood?: Forced<SkwForce>;
 	/** Roulette: the number (0–36). */
 	roulette?: Forced<number>;
 	/** Blackjack: the dealer's cards in order (who is always '*': the dealer deals to everyone). */
@@ -135,6 +140,7 @@ const cleanF2 = (x: unknown): F2Force | null => ((F2_FORCES as unknown[]).includ
 const cleanBook = (x: unknown): BookForce | null => ((BOOK_FORCES as unknown[]).includes(x) ? (x as BookForce) : null);
 const cleanKush = (x: unknown): KushForce | null => ((KUSH_FORCES as unknown[]).includes(x) ? (x as KushForce) : null);
 const cleanStash = (x: unknown): StashForce | null => ((STASH_FORCES as unknown[]).includes(x) ? (x as StashForce) : null);
+const cleanSkw = (x: unknown): SkwForce | null => ((SKW_FORCES as unknown[]).includes(x) ? (x as SkwForce) : null);
 const cleanNumber = (x: unknown): number | null => (Number.isInteger(x) && (x as number) >= 0 && (x as number) <= 36 ? (x as number) : null);
 /** Dealer cards: 1 … DEALER_MAX ranks 1–13, or null. */
 export function cleanDealer(x: unknown): number[] | null {
@@ -172,6 +178,8 @@ export function cleanTune(raw: unknown): CasinoTune | undefined {
 	if (kush) tune.kushburst = kush;
 	const stash = cleanForced(raw.stash, cleanStash);
 	if (stash) tune.stash = stash;
+	const skw = cleanForced(raw.skeddwood, cleanSkw);
+	if (skw) tune.skeddwood = skw;
 	const roulette = cleanForced(raw.roulette, cleanNumber);
 	if (roulette) tune.roulette = roulette;
 	const bj = cleanForced(raw.blackjack, cleanDealer);
