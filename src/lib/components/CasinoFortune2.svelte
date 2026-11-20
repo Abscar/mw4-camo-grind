@@ -55,6 +55,7 @@
 	import { toast } from '#lib/toast.svelte.ts';
 	import Fortune2Piece, { CREW_COLOUR, short } from './Fortune2Piece.svelte';
 	import Fortune2Holk from './Fortune2Holk.svelte';
+	import MybotsLogo from './MybotsLogo.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import IngmanEmblem from './IngmanEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
@@ -593,16 +594,19 @@
 
 <div class="f2" class:busy style:--ms-step="{ms(MS.step)}ms" style:--ms-fall="{ms(MS.fall)}ms" style:--ms-fill="{ms(MS.fill)}ms">
 	<div class="f2-cab">
-		<!-- the marquee: neon title; in free spins their counter and the Hotbox multiplier -->
+		<!-- the marquee: the MYBOTS 5 logo with the gang (2026-11-20); under it "Munchie Squad", in free spins their
+		     counter and the Hotbox multiplier (the logo stays, so the board never jumps) -->
 		<div class="f2-marquee" class:free-on={!!freeState}>
 			<div class="f2-bulbs" aria-hidden="true">{#each Array.from({ length: 18 }) as _, i (i)}<span style:--i={i}></span>{/each}</div>
-			{#if freeState}
-				<p class="f2-title f2-free-title font-head" role="status">{s.free.title(freeState.n, freeState.total)}</p>
-				<p class="f2-sub font-head">{s.free.sub(mult, freeState.won)}</p>
-			{:else}
-				<p class="f2-title font-head">Mybots <span class="f2-two">5</span></p>
-				<p class="f2-sub font-head">{s.sub}</p>
-			{/if}
+			<div class="f2-logo"><MybotsLogo label={t.casino.games.fortune2} /></div>
+			<div class="f2-lines">
+				{#if freeState}
+					<p class="f2-free-title font-head" role="status">{s.free.title(freeState.n, freeState.total)}</p>
+					<p class="f2-sub font-head">{s.free.sub(mult, freeState.won)}</p>
+				{:else}
+					<p class="f2-sub font-head">{s.sub}</p>
+				{/if}
+			</div>
 		</div>
 
 		<div class="f2-main">
@@ -884,28 +888,29 @@
 			opacity: 0.25;
 		}
 	}
-	.f2-title {
-		text-shadow: none !important;
-		font-size: clamp(20px, 6.2cqi, 34px);
-		font-weight: 900;
-		line-height: 1.05;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		background: linear-gradient(180deg, #fffbe0, #ffd23a 55%, #ff9a00);
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-		filter: drop-shadow(0 2px 0 #2a0a3a) drop-shadow(0 0 10px rgb(125 255 106 / 0.45));
+	/* the logo, centred; its top (smoke, Ingman's dumbbell) may reach over the bulbs */
+	.f2-logo {
+		max-width: 440px;
+		margin: -6px auto 0;
 	}
-	.f2-two {
-		background: linear-gradient(180deg, #e8ffe0, #7dff6a 55%, #22b14c);
-		-webkit-background-clip: text;
-		background-clip: text;
+	/* under the logo: always room for the free-spins counter + its line, so the board never moves */
+	.f2-lines {
+		display: grid;
+		align-content: center;
+		min-height: 42px;
 	}
 	.f2-free-title {
+		text-shadow: none !important;
+		font-size: clamp(15px, 4.4cqi, 21px);
+		font-weight: 900;
+		line-height: 1.1;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
 		background: linear-gradient(180deg, #fff, #ff9ad0 55%, #ff3d9a);
 		-webkit-background-clip: text;
 		background-clip: text;
+		color: transparent;
+		filter: drop-shadow(0 2px 0 #2a0a3a) drop-shadow(0 0 8px rgb(255 92 168 / 0.5));
 	}
 	.f2-sub {
 		margin-top: 2px;
