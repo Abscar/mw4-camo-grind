@@ -213,6 +213,14 @@
 		color: #7dff6a;
 		text-shadow: 0 0 6px rgb(125 255 106 / 0.8);
 	}
+	.tk-item[data-game='stash'] .tk-star {
+		color: #d6a8ff;
+		text-shadow: 0 0 6px rgb(190 130 255 / 0.8);
+	}
+	.tk-item[data-game='skeddwood'] .tk-star {
+		color: #ffb347;
+		text-shadow: 0 0 6px rgb(255 160 60 / 0.8);
+	}
 	.tk-item[data-game='roulette'] .tk-star {
 		color: #3ee06a;
 	}

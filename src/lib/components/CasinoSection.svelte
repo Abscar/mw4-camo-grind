@@ -132,7 +132,7 @@
 </script>
 
 <section bind:this={casinoEl} class="class-card meta-list casino overflow-hidden rounded-card bg-panel shadow-card" style:--c="#ffc928" aria-labelledby="casino-h">
-	<CasinoFloorFx neon={squad.on && ['slots', 'fortune2', 'book', 'kushburst', 'roulette', 'blackjack'].includes(game)} />
+	<CasinoFloorFx neon={squad.on && ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'roulette', 'blackjack'].includes(game)} />
 	<CasinoSign on={squad.on} value={shown} snapKey={game} onbig={() => confetti?.fire()} />
 	<CasinoConfetti bind:this={confetti} />
 

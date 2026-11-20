@@ -31,6 +31,16 @@ test('every casino win line the games post is read as a win, with its amount and
 	}
 });
 
+test('every game’s own radio line is known by its emoji (a new game: add its emoji to GAME_MARK in casinoFloor.ts)', () => {
+	const sideLines = new Set(['bjSide', 'bookGamble']);
+	for (const [key, fn] of Object.entries(ev)) {
+		if (sideLines.has(key) || typeof fn !== 'function') continue;
+		const w = asWin(msg(fn(5000, 'big', 'red')));
+		assert.ok(w, `${key}: not read as a win`);
+		assert.equal(w.game, key, `${key}: its radio line's last emoji isn't in GAME_MARK`);
+	}
+});
+
 test('losses, chat lines and other events are not wins', () => {
 	assert.equal(asWin(msg(ev.roulette(-300, 4, 'black'))), null);
 	assert.equal(asWin(msg(ev.blackjack(-50, false))), null);
