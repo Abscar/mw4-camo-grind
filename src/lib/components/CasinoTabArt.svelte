@@ -13,11 +13,13 @@
 	its label, a burger coin dropping into the slot in its gold lid.
 	Book Of Skedd (2026-11-20) = the green leather book with gold corners and the gold cannabis leaf on its
 	cover, glowing, with sparkles (the halo breathes on the selected tab).
+	Kushburst (2026-11-20) = a violet blacklight cabinet in pink and green neon, a glowing leaf grown over
+	the middle reel (its rays turn on the selected tile), little neon symbols on the reels beside it.
 	Our own chunky cartoons in the Burger Bandit's style (SlotSymbol.svelte). Decorative: the tab says
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
+	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
 </script>
 
 <script lang="ts">
@@ -117,6 +119,37 @@
 			<path d="M54 8 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z" />
 			<path d="M7 38 l.8 2.2 l2.2 .8 l-2.2 .8 l-.8 2.2 l-.8 -2.2 l-2.2 -.8 l2.2 -.8 z" />
 		</g>
+	{:else if kind === 'kushburst'}
+		<!-- Kushburst: a violet cabinet with pink + green neon edges, a "KUSH" marquee, three reels: a tall
+		     glowing leaf over the middle one, small neon symbols on the outer ones; ◀ ▶ = pays both ways -->
+		<rect x="8" y="11" width="46" height="42" rx="5" fill="#1d0840" stroke={O} stroke-width="1.6" />
+		<rect x="9.6" y="12.6" width="42.8" height="38.8" rx="4" fill="none" stroke="#ff3fb4" stroke-width="1" />
+		<path d="M8 15 Q8 4 31 4 Q54 4 54 15 Z" fill="#0e0420" stroke="#8dff5a" stroke-width="1.5" stroke-linejoin="round" />
+		<text class="ta-neon" x="31" y="13" text-anchor="middle" font-family="Bahnschrift, 'Arial Black', sans-serif" font-weight="900" font-size="7.4" letter-spacing=".6" fill="#eaffd8" stroke="#3aff6a" stroke-width=".5" paint-order="stroke">KUSH</text>
+		<rect x="11.5" y="18" width="39" height="25" rx="2.5" fill="#07020f" stroke="#ff3fb4" stroke-width="1.2" />
+		{#each [13.2, 39] as x (x)}<rect {x} y="19.6" width="10" height="21.8" rx="1.4" fill="#24094a" />{/each}
+		<!-- the outer reels: a pink lighter, a cyan grinder; orange papers, a purple bong -->
+		<rect x="15.8" y="21.4" width="4.6" height="7" rx="1.2" fill="#ff3fb4" stroke={O} stroke-width=".7" />
+		<rect x="16.2" y="20" width="3.8" height="2" rx=".5" fill="#c9d3dc" stroke={O} stroke-width=".5" />
+		<ellipse cx="18.2" cy="34.6" rx="3.6" ry="1.5" fill="#5feaff" stroke={O} stroke-width=".7" />
+		<path d="M14.6 34.6 V37.6 Q18.2 40 21.8 37.6 V34.6" fill="#0f9cc8" stroke={O} stroke-width=".7" />
+		<rect x="41.2" y="22" width="5.8" height="6.6" rx=".8" fill="#ff8a1a" stroke={O} stroke-width=".7" />
+		<path d="M41.8 22 V20.4 H46.4 V22" fill="#fffaf0" stroke={O} stroke-width=".5" />
+		<path d="M42.8 31.6 H45.4 V35 Q48 36.4 47.6 38.6 Q47 40.6 44.1 40.6 Q41.2 40.6 40.6 38.6 Q40.2 36.4 42.8 35 Z" fill="#b65cff" stroke={O} stroke-width=".7" />
+		<!-- the middle reel: a leaf column with rays -->
+		<rect x="26" y="19.2" width="10.4" height="22.6" rx="1.6" fill="#0f5a40" stroke="#8dff5a" stroke-width="1" />
+		<clipPath id="{u}-kcol"><rect x="26" y="19.2" width="10.4" height="22.6" rx="1.6" /></clipPath>
+		<g clip-path="url(#{u}-kcol)">
+			<g class="ta-rays" opacity=".55">
+				{#each [0, 45, 90, 135] as a (a)}<rect x="30.7" y="21" width="1" height="19" fill={a % 90 ? '#ff7ad9' : '#b6ff7a'} transform="rotate({a} 31.2 30.5)" />{/each}
+			</g>
+		</g>
+		<g class="ta-leaf" transform="translate(31.2 30.2) scale(.66) translate(-12 -15.5)">
+			{#each LEAF_PATHS as d, i (i)}<path {d} fill="#8dff5a" stroke="#0b3d14" stroke-width=".7" stroke-linejoin="round" />{/each}
+		</g>
+		<path d="M5 30.5 L9 27.8 V33.2 Z M58 30.5 L54 27.8 V33.2 Z" fill="#8dff5a" stroke={O} stroke-width=".6" stroke-linejoin="round" />
+		<circle cx="22" cy="47.6" r="2.8" fill="#8dff5a" stroke={O} stroke-width="1" />
+		<rect x="28" y="46.2" width="18" height="2.8" rx="1.4" fill="#07020f" stroke="#4a1a7a" stroke-width=".6" />
 	{:else if kind === 'roulette'}
 		<!-- the wheel from above: wooden bowl, red / black pockets with one green, gold turret, the ball -->
 		<ellipse cx="32" cy="50" rx="22" ry="3.4" fill="#000" opacity=".35" />
@@ -307,6 +340,25 @@
 	@keyframes ta-halo {
 		from {
 			opacity: 0.35;
+		}
+	}
+	:global([aria-pressed='true']) > .ta .ta-rays {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: ta-turn 7s linear infinite;
+	}
+	:global([aria-pressed='true']) > .ta .ta-neon {
+		animation: ta-neon 2.6s steps(1) infinite;
+	}
+	@keyframes ta-neon {
+		0%,
+		86%,
+		92%,
+		100% {
+			opacity: 1;
+		}
+		88% {
+			opacity: 0.4;
 		}
 	}
 	@keyframes ta-slide {

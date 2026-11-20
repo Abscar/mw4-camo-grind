@@ -998,7 +998,7 @@ export const en = {
 		intro: 'Only you see this tab. Changes reach the others’ pages within half a minute. Nothing goes on the radio, and the games look exactly as usual.',
 		saved: 'Saved',
 		failed: 'Couldn’t reach the squad. Try again in a moment.',
-		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', book: 'Book Of Skedd', roulette: 'Roulette', blackjack: 'Blackjack' },
+		games: { slots: 'Abscar’s Fortune', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', roulette: 'Roulette', blackjack: 'Blackjack' },
 		odds: {
 			heading: 'Odds per game',
 			intro: 'For everyone who plays that game. Plus = the players win more (the house takes less), minus = they lose more.'
@@ -1066,6 +1066,11 @@ export const en = {
 			heading: 'Book Of Skedd: pick what happens',
 			intro: 'Their next spin is one that has it (the machine plays spins behind the scenes until one does). Their luck also steers the gamble’s card.',
 			kinds: { free: 'Free spins', abscar: 'Free spins with Abscar expanding', big: 'A big win (25× or more)', blank: 'Nothing at all' }
+		},
+		kushburst: {
+			heading: 'Kushburst: pick what happens',
+			intro: 'Their next spin has it (a leaf or a KUSHBURST from the start; for a big win or nothing the machine plays spins behind the scenes until one is).',
+			kinds: { leaf: 'A leaf (respin)', kushburst: 'KUSHBURST (all three leaves)', big: 'A big win (25× or more)', blank: 'Nothing at all' }
 		},
 		roulette: {
 			heading: 'Roulette: pick the number',
@@ -1215,12 +1220,12 @@ export const en = {
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {
 		heading: 'BurgiCasino',
-		sub: 'Abscar’s Fortune · Mybots 5 · Book Of Skedd · Roulette · Blackjack · BurgiBank · Donations',
+		sub: 'Abscar’s Fortune · Mybots 5 · Book Of Skedd · Kushburst · Roulette · Blackjack · BurgiBank · Donations',
 		note: 'Pretend burgers from the squad’s burger bank: no real money, nothing to buy, nothing to cash out.',
 		balance: 'Your burgers',
 		notIn: 'BurgiCasino plays with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		toSquad: 'Go to the Squad tab',
-		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', book: 'Book Of Skedd', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
+		games: { slots: 'Abscar’s Fortune', slotsSub: 'Burger Bandit', fortune2: 'Mybots 5', book: 'Book Of Skedd', kushburst: 'Kushburst', roulette: 'Roulette', blackjack: 'Blackjack', bank: 'BurgiBank', donate: 'Donations', admin: 'Admin' },
 		gamesLabel: 'Game',
 		/** The BurgiBank tab (2026-11-16): loans, the house and Abscar's admin menu under a big bank. */
 		bank: {
@@ -1257,6 +1262,7 @@ export const en = {
 			fortune2: (net: number, tier: string) => `${tier === 'epic' ? 'got an EPIC MUNCH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Mybots 5: +${net.toLocaleString('en-US')} 🍔 🍟`,
 			book: (net: number, tier: string) => `hit ${tier === 'epic' ? 'an EPIC WIN' : tier === 'mega' ? 'a MEGA WIN' : 'a BIG WIN'} on Book Of Skedd: +${net.toLocaleString('en-US')} 🍔 📖`,
 			bookGamble: (n: number, steps: number) => `gambled ${steps} time${steps === 1 ? '' : 's'} on Book Of Skedd and collected ${n.toLocaleString('en-US')} 🍔 🃏`,
+			kushburst: (net: number, tier: string) => `${tier === 'kushburst' ? 'hit a KUSHBURST' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Kushburst: +${net.toLocaleString('en-US')} 🍔 🍃`,
 			roulette: (net: number, n: number, color: string) => `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 on roulette (${n} ${color}) 🎡`,
 			blackjack: (net: number, bj: boolean) => (bj ? `hit BLACKJACK: +${net.toLocaleString('en-US')} 🍔 🃏` : `${net > 0 ? `won ${net.toLocaleString('en-US')}` : `lost ${(-net).toLocaleString('en-US')}`} 🍔 at blackjack 🃏`),
 			bjSide: (bet: string, kind: string, net: number) => `hit a ${kind.toUpperCase()} on ${bet} at blackjack: +${net.toLocaleString('en-US')} 🍔 🃏`
@@ -1360,6 +1366,55 @@ export const en = {
 			payNote: 'Line wins are times the line bet (your bet ÷ 10).',
 			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`
 		},
+		/** Kushburst, the expanding-leaf slot (2026-11-20, the user: "another slot like Starburst, a fun name for Abscar's version, weed leaves instead of stars") */
+		kushburst: {
+			sub: 'Pays both ways · 10 lines',
+			spin: 'Spin',
+			credits: 'Burgers',
+			lastWin: 'Win',
+			spinning: 'Spinning…',
+			respinning: (n: number) => `Respin ${n}: the leaves hold, the rest spin again…`,
+			respinPop: 'RESPIN!',
+			respinTitle: (n: number) => `Respin ${n}`,
+			respinSub: (leaves: number) => `${leaves} leaf reel${leaves === 1 ? '' : 's'} held`,
+			rainPop: (n: number) => (n === 1 ? 'LEAF RAIN!' : `LEAF RAIN ×${n}!`),
+			grows: (n: number) => (n === 1 ? 'A leaf grows over its reel: respin!' : `${n} leaves grow over their reels: respin!`),
+			burstPop: (x: number) => `KUSHBURST ×${x}`,
+			burstWin: (x: number) => `KUSHBURST! Every win ×${x}`,
+			lineWin: (line: number, dir: string, count: number, symbol: string, win: number) => `Line ${line} ${dir} ${count} × ${symbol} = ${win.toLocaleString('en-US')} 🍔`,
+			/** which way a line win reads: from the left reel, from the right reel, five in a row */
+			dirs: { left: '▶', right: '◀', both: '◀▶' },
+			manyLines: (n: number, win: number) => `${n} line wins = ${win.toLocaleString('en-US')} 🍔`,
+			noWin: 'No win this time.',
+			total: (respins: number) => (respins ? `Total with ${respins} respin${respins === 1 ? '' : 's'}` : 'Total'),
+			maxWin: (x: number) => `MAX WIN: ${x.toLocaleString('en-US')}× your bet`,
+			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', kushburst: 'KUSHBURST!' },
+			auto: (n: number) => `Auto · ${n}`,
+			autoStop: (n: number) => `Stop · ${n} left`,
+			autoCount: (n: number) => `${n} auto spins`,
+			autoLabel: 'Auto spin',
+			autoDone: 'Auto spins done.',
+			buy: 'Buy',
+			buyKinds: { leaf: 'Spin with a leaf', burst: 'KUSHBURST spin' },
+			buyWhat: { leaf: 'a spin that starts with a leaf', burst: 'a spin that starts as a KUSHBURST' },
+			buyPrice: (n: number) => `${n.toLocaleString('en-US')} 🍔`,
+			buyAsk: (what: string, price: number) => `Buy ${what} for ${price.toLocaleString('en-US')} 🍔?`,
+			buyYes: 'Buy',
+			buyNo: 'Cancel',
+			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`,
+			reelLeaf: (r: number) => `Reel ${r}: a leaf over the whole reel (WILD)`,
+			symbols: { lighter: 'Lighter', grinder: 'Grinder', papers: 'Rolling papers', brownie: 'Space brownie', bong: 'Bong', holk: 'Holk', x420: '420', leaf: 'Leaf (WILD)' },
+			paytable: 'Paytable & how it works',
+			how: 'A neon slot in the classic expanding-wild style: 5 reels, 3 rows and 10 paylines that pay both ways, from the left reel and from the right. Each reel is a weighted strip (lighters are common, 420s rare) and every stop is equally likely (no near-miss tricks). The leaf is the WILD: it lands only on reels 2, 3 and 4, grows over the whole reel and stays there while the other reels spin again for free (a respin). A new leaf in a respin grows too and gives one more respin, up to three. Leaves on all three middle reels at once = KUSHBURST: every win on that screen ×3. Everything is decided the moment you pay. This machine runs on party odds: in the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.',
+			leafRow: 'Lands on reels 2, 3 and 4 only. Grows over its reel, stands in for every symbol and holds while the other reels respin. Up to 3 respins.',
+			payRow: (a: number, b: number, c: number) => `3 → ${a} · 4 → ${b} · 5 → ${c}`,
+			payNote: 'Wins are times the line bet (your bet ÷ 10), on each of the 10 lines from the left reel and from the right reel; five in a row pays once.',
+			burstNote: (x: number) => `KUSHBURST: leaves on all three middle reels at once, and every win on that screen pays ×${x} (the respin after it too).`,
+			rainNote: (pct: number) => `Leaf rain: about ${pct} % of spins get one to three leaves blown onto the middle reels.`,
+			buyNote: (leaf: number, burst: number) => `Buy prices are times your bet: a spin with a leaf ${leaf}×, a KUSHBURST spin ${burst}×. They give back about as much as spinning (several times the price).`,
+			maxNote: (x: number) => `One play (a spin with its respins) pays at most ${x.toLocaleString('en-US')}× your bet.`
+		},
+		/** Abscar's Fortune II, the Munchie Squad (2026-11-19, the user: "a new Abscar's Fortune like Pirots 5, our own symbols, crazy bonuses and free spins") */
 		/** Mybots 5 (called Abscar's Fortune II until 2026-11-20), the Munchie Squad (2026-11-19, the user: "a new Abscar's Fortune like Pirots 5, our own symbols, crazy bonuses and free spins") */
 		fortune2: {
 			sub: 'Munchie Squad',

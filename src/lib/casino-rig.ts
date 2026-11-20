@@ -17,6 +17,7 @@
  *   one member or whoever plays first ('*'). Slots: the whole 5 × 3 screen. Fortune II: a feature (the
  *   page draws spins until one has it). Book Of Skedd (2026-11-20): free spins (optionally with Abscar
  *   as the special symbol), a big win or nothing, drawn the same way; its gamble follows luck too.
+ *   Kushburst (2026-11-20): a leaf or a KUSHBURST from the start, a big win or nothing (kushForced).
  *   Roulette: the number. Blackjack: the dealer's cards in order.
  *
  * No browser APIs and no runes (scripts/casino-rig.test.js).
@@ -25,9 +26,11 @@
 import { BOOK_FORCES, type BookForce } from './book.ts';
 import { REELS, ROWS, SYMBOLS, type SlotSymbol } from './casino-slots.ts';
 import type { F2Play } from './fortune2.ts';
+import { kushPlay, kushPlayWith, LEAF_REELS, type KushPlay } from './kushburst.ts';
+import { randInt } from './squad-casino.ts';
 
-export type RigGame = 'slots' | 'fortune2' | 'book' | 'roulette' | 'blackjack';
-export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'book', 'roulette', 'blackjack'];
+export type RigGame = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'roulette' | 'blackjack';
+export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'book', 'kushburst', 'roulette', 'blackjack'];
 /** Luck and odds run from −LUCK_MAX to +LUCK_MAX. */
 export const LUCK_MAX = 100;
 /** Draws per ±50 of luck past the first: +50 = best of two, +100 = best of three. */
@@ -40,6 +43,14 @@ export const F2_FORCES: F2Force[] = ['hotbox', 'super', 'munchies', 'big', 'blan
 export const F2_BIG = 25;
 /** Spins Fortune II draws at most looking for a forced feature (Super Hotbox ≈ 1 in 1,000, ≈ 56 µs each). */
 export const F2_TRIES = 30_000;
+
+/** What a Kushburst spin can be forced to have (2026-11-20). */
+export type KushForce = 'leaf' | 'kushburst' | 'big' | 'blank';
+export const KUSH_FORCES: KushForce[] = ['leaf', 'kushburst', 'big', 'blank'];
+/** Kushburst "big win": at least this many times the bet (≈ 1 spin in 45). */
+export const KUSH_BIG = 25;
+/** Spins Kushburst draws at most looking for a big win / a blank one (each takes a few µs). */
+export const KUSH_TRIES = 5000;
 
 /** The dealer's forced cards: at most this many, ranks 1 (ace) … 13 (king), up card first. */
 export const DEALER_MAX = 8;
@@ -57,7 +68,7 @@ export interface Forced<T> {
 	by?: string;
 }
 
-export type ForceKind = 'slots' | 'fortune2' | 'book' | 'roulette' | 'blackjack';
+export type ForceKind = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'roulette' | 'blackjack';
 
 export interface CasinoTune {
 	/** Per game, added to every member's luck there. */
@@ -69,6 +80,8 @@ export interface CasinoTune {
 	fortune2?: Forced<F2Force>;
 	/** Book Of Skedd (2026-11-20): free spins / free spins with Abscar spreading / a big win / nothing. */
 	book?: Forced<BookForce>;
+	/** Kushburst: a leaf (+ respin), a KUSHBURST, a big win or nothing. */
+	kushburst?: Forced<KushForce>;
 	/** Roulette: the number (0–36). */
 	roulette?: Forced<number>;
 	/** Blackjack: the dealer's cards in order (who is always '*': the dealer deals to everyone). */
@@ -111,6 +124,7 @@ export function cleanScreen(x: unknown): SlotSymbol[][] | null {
 }
 const cleanF2 = (x: unknown): F2Force | null => ((F2_FORCES as unknown[]).includes(x) ? (x as F2Force) : null);
 const cleanBook = (x: unknown): BookForce | null => ((BOOK_FORCES as unknown[]).includes(x) ? (x as BookForce) : null);
+const cleanKush = (x: unknown): KushForce | null => ((KUSH_FORCES as unknown[]).includes(x) ? (x as KushForce) : null);
 const cleanNumber = (x: unknown): number | null => (Number.isInteger(x) && (x as number) >= 0 && (x as number) <= 36 ? (x as number) : null);
 /** Dealer cards: 1 … DEALER_MAX ranks 1–13, or null. */
 export function cleanDealer(x: unknown): number[] | null {
@@ -144,6 +158,8 @@ export function cleanTune(raw: unknown): CasinoTune | undefined {
 	if (f2) tune.fortune2 = f2;
 	const book = cleanForced(raw.book, cleanBook);
 	if (book) tune.book = book;
+	const kush = cleanForced(raw.kushburst, cleanKush);
+	if (kush) tune.kushburst = kush;
 	const roulette = cleanForced(raw.roulette, cleanNumber);
 	if (roulette) tune.roulette = roulette;
 	const bj = cleanForced(raw.blackjack, cleanDealer);
@@ -231,6 +247,34 @@ export function drawUntil<T>(draw: () => T, ok: (x: T) => boolean, max: number):
 	let x = draw();
 	for (let i = 1; i < max && !ok(x); i++) x = draw();
 	return x;
+}
+
+/** True when a Kushburst play has what was asked for. */
+export function kushMatches(p: KushPlay, want: KushForce): boolean {
+	switch (want) {
+		case 'leaf':
+			return p.steps.length > 1;
+		case 'kushburst':
+			return p.steps.some((s) => s.mult > 1);
+		case 'big':
+			return p.win >= p.bet * KUSH_BIG;
+		case 'blank':
+			return p.win === 0;
+	}
+}
+
+/**
+ * A Kushburst spin with a picked result: a leaf on a random middle reel / all three (a KUSHBURST) from the
+ * start, or spins drawn behind the scenes until one is a big win / pays nothing. Paid like a normal spin.
+ */
+export function kushForced(want: KushForce, bet: number, rand: () => number): KushPlay {
+	if (want === 'leaf') return kushPlayWith(bet, rand, [LEAF_REELS[randInt(LEAF_REELS.length, rand)]]);
+	if (want === 'kushburst') return kushPlayWith(bet, rand, LEAF_REELS);
+	return drawUntil(
+		() => kushPlay(bet, rand),
+		(p) => kushMatches(p, want),
+		KUSH_TRIES
+	);
 }
 
 // ---------------------------------------------------------------------------------------------

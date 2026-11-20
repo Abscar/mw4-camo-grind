@@ -8,6 +8,9 @@ import {
 	extraDraws,
 	f2Matches,
 	forcedFor,
+	kushForced,
+	kushMatches,
+	KUSH_BIG,
 	lucky,
 	luckFor,
 	luckWords,
@@ -221,4 +224,22 @@ test('a round without settings deals exactly as before', () => {
 	assert.equal(tableShoe(doc.round), roundShoe(77));
 	assert.deepEqual(viewRound(doc.round, T0 + 2000).dealer, dealerStart(roundShoe(77)));
 	assert.deepEqual(viewRound(doc.round, T0 + 2000).seats[0].play.cards, playHand(roundShoe(77), 0, '', false).cards);
+});
+
+test('Kushburst: a picked result is read back, and each kind gives what it says', () => {
+	const t = cleanTune({ kushburst: { id: 'rig0001', who: A, what: 'kushburst', every: 1 }, odds: { kushburst: 30 } });
+	assert.deepEqual(t.kushburst, { id: 'rig0001', who: A, what: 'kushburst', every: 1 });
+	assert.deepEqual(t.odds, { kushburst: 30 });
+	assert.equal(cleanTune({ kushburst: { id: 'rig0001', who: A, what: 'jackpot' } }), undefined, 'not a Kushburst kind');
+	assert.equal(luckFor(t, 'kushburst', A), 30);
+	const rand = seeded(42);
+	for (let i = 0; i < 20; i++) {
+		const burst = kushForced('kushburst', 100, rand);
+		assert.ok(burst.steps[0].mult > 1 && kushMatches(burst, 'kushburst'));
+		assert.equal(burst.cost, 100, 'paid like a normal spin');
+		assert.ok(kushMatches(kushForced('leaf', 100, rand), 'leaf'));
+		const big = kushForced('big', 100, rand);
+		assert.ok(big.win >= 100 * KUSH_BIG);
+		assert.equal(kushForced('blank', 100, rand).win, 0);
+	}
 });

@@ -3,8 +3,8 @@
 	där jag kan ändra odds, vilka kort blackjack dealern ska dra, vilka symboler som ska komma upp på slotsen,
 	ändra individuell 'luck' på alla operators"). The Admin tile, only for the member who is Abscar
 	(HOUSE_OP): the burger admin menu (CasinoAdmin, moved here from BurgiBank), odds per game, luck per
-	player, and a picked result per game: Abscar's Fortune's whole screen, a Fortune II feature, the roulette
-	number, the blackjack dealer's cards. Saved in the squad document (casino-rig.ts, squad.setTune); each
+	player, and a picked result per game: Abscar's Fortune's whole screen, a Fortune II feature, a Kushburst
+	result (2026-11-20), the roulette number, the blackjack dealer's cards. Saved in the squad document (casino-rig.ts, squad.setTune); each
 	player's own page applies it to its plays. Nothing goes on the radio.
 -->
 <script lang="ts">
@@ -16,12 +16,14 @@
 		DEALER_MAX,
 		DEALER_PRESETS,
 		F2_FORCES,
+		KUSH_FORCES,
 		LUCK_MAX,
 		RIG_GAMES,
 		SCREEN_PRESETS,
 		type CasinoTune,
 		type DealerPreset,
 		type F2Force,
+		type KushForce,
 		type ForceKind,
 		type Forced,
 		type RigGame
@@ -69,7 +71,7 @@
 
 	/* ---------- picked results: who, how long, what; saved with a new id each time ---------- */
 	const start = squad.tune;
-	const KINDS: ForceKind[] = ['slots', 'fortune2', 'book', 'roulette', 'blackjack'];
+	const KINDS: ForceKind[] = ['slots', 'fortune2', 'book', 'kushburst', 'roulette', 'blackjack'];
 	let who = $state(Object.fromEntries(KINDS.map((k) => [k, start[k]?.who ?? '*'])) as Record<ForceKind, string>);
 	let every = $state(Object.fromEntries(KINDS.map((k) => [k, !!start[k]?.every])) as Record<ForceKind, boolean>);
 	const nameOf = (id: string | undefined) => (id ? (squad.byId(id)?.member.name ?? '?') : '?');
@@ -115,6 +117,7 @@
 	/* ---------- Fortune II, roulette ---------- */
 	let f2 = $state<F2Force>(start.fortune2?.what ?? 'hotbox');
 	let bookForce = $state<BookForce>(start.book?.what ?? 'free');
+	let kush = $state<KushForce>(start.kushburst?.what ?? 'kushburst');
 	let number = $state<number>(start.roulette?.what ?? 0);
 	const colourName = t.casino.roulette.colors;
 
@@ -319,6 +322,19 @@
 			</div>
 			{@render whoMode('book')}
 			{@render saveRow('book', bookForce)}
+		</div>
+	</details>
+
+	<!-- Kushburst: a leaf, a KUSHBURST, a big win or nothing -->
+	<details class="rig-box" data-rig="kushburst">
+		<summary><span class="rig-h font-head">🍃 {r.kushburst.heading}</span><span class="rig-sum">{tune.kushburst ? (tune.kushburst.used ? '✔' : '●') : ''}</span></summary>
+		<div class="rig-body">
+			<p class="text-xs text-muted">{r.kushburst.intro}</p>
+			<div class="flex flex-wrap gap-1.5">
+				{#each KUSH_FORCES as k (k)}<button type="button" class="chip" data-kush={k} aria-pressed={kush === k} onclick={() => (kush = k)}>{r.kushburst.kinds[k]}</button>{/each}
+			</div>
+			{@render whoMode('kushburst')}
+			{@render saveRow('kushburst', kush)}
 		</div>
 	</details>
 

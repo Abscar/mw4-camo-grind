@@ -10,9 +10,10 @@
 	tab of its own: loans, the house and (Abscar only) the admin menu, under a big bank. BurgiShop moved
 	out to a page tab of its own the same evening (ShopPage.svelte; the user: "BurgiShop can have a tab of
 	its own instead of being among the casino games"); a saved 'shop' pick opens the slot machine.
-	Abscar's Fortune II (CasinoFortune2, 2026-11-19) is the second tile, Book Of Skedd (CasinoBook, 2026-11-20)
-	the third. Donations (BurgiGives, CasinoDonate, 2026-11-20) sits next to BurgiBank: seven tiles for everyone,
-	Abscar also sees Admin (a slim strip under the others until there's room for all eight in one row).
+	Abscar's Fortune II (CasinoFortune2, 2026-11-19; Mybots 5 since 2026-11-20) is the second tile, Book Of
+	Skedd (CasinoBook, 2026-11-20) the third, Kushburst (CasinoKushburst, 2026-11-20) the fourth. Donations
+	(BurgiGives, CasinoDonate, 2026-11-20) sits next to BurgiBank: eight tiles for everyone, Abscar also sees
+	Admin (a slim strip under the others until there's room for all of them in one row).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
@@ -24,6 +25,7 @@
 	import CasinoSlots from './CasinoSlots.svelte';
 	import CasinoFortune2 from './CasinoFortune2.svelte';
 	import CasinoBook from './CasinoBook.svelte';
+	import CasinoKushburst from './CasinoKushburst.svelte';
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import MybotsLogo from './MybotsLogo.svelte';
 	import CasinoRig from './CasinoRig.svelte';
@@ -39,7 +41,7 @@
 	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
-	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
+	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let savedGame = $state<string | null>(null);
@@ -149,6 +151,8 @@
 					<CasinoFortune2 {balance} bind:hidden bind:pending />
 				{:else if game === 'book'}
 					<CasinoBook {balance} bind:hidden bind:pending />
+				{:else if game === 'kushburst'}
+					<CasinoKushburst {balance} bind:hidden bind:pending />
 				{:else if game === 'roulette'}
 					<CasinoRoulette {balance} bind:hidden bind:pending />
 				{:else if game === 'blackjack'}
@@ -331,6 +335,12 @@
 	.casino-game[data-game='book'] {
 		--tile: #145a2e;
 		--tile-2: #04170a;
+	}
+	/* Kushburst: blacklight violet with a green neon edge */
+	.casino-game[data-game='kushburst'] {
+		--tile: #2a0a5a;
+		--tile-2: #0b021c;
+		border-color: rgb(141 255 90 / 0.5);
 	}
 	.casino-game[data-game='roulette'] {
 		--tile: #11683a;
