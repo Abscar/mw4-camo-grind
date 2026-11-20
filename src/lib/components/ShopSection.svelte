@@ -27,6 +27,16 @@
 	/** the newest kinds get a small NEW tag on their button (the ideas pack, 2026-11-20) */
 	const NEW_SLOTS: string[] = ['back', 'emote', 'card', 'radio', 'table', 'win', 'maxfx', 'buddy', 'statue'];
 	let slot = $state<ShopSlot | 'statue' | 'pranks'>('aura');
+	type Kind = ShopSlot | 'statue' | 'pranks';
+	/** The kinds in four groups (the makeover, 2026-11-20); a kind added later without a group lands with the first. */
+	const GROUPED: { key: keyof typeof s.groups; slots: Kind[] }[] = [
+		{ key: 'op', slots: ['aura', 'effect', 'badge', 'mouth', 'eyes', 'hat', 'smoke', 'pet', 'back', 'emote'] },
+		{ key: 'name', slots: ['name', 'title'] },
+		{ key: 'squad', slots: ['card', 'radio', 'table', 'win', 'maxfx', 'buddy'] },
+		{ key: 'special', slots: ['statue', 'pranks'] }
+	];
+	const placed = new Set(GROUPED.flatMap((g) => g.slots));
+	const groups = GROUPED.map((g, i) => (i === 0 ? { ...g, slots: [...g.slots, ...SLOTS.filter((x) => !placed.has(x))] } : g));
 	/** The prank waiting for a target (the "who gets it?" dialog). */
 	let aiming = $state<(typeof PRANKS)[number] | null>(null);
 	let pickOpen = $state(false);
@@ -121,13 +131,18 @@
 {/snippet}
 
 <div class="shop">
-	<p class="max-w-3xl text-[13px] text-fg">{s.intro}</p>
+	<p class="shop-intro max-w-3xl text-[13px] text-fg">{s.intro}</p>
 	{#if !me?.op}<p class="mt-1 text-xs text-muted">{s.noOp}</p>{/if}
 
-	<!-- your operator, wearing what you have on (+ what you're trying on) -->
-	<div class="shop-stage mt-3 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-card px-4 py-4">
-		<div class="shop-face">{@render face(look, 96, 30, trying?.slot === 'emote')}</div>
-		<div class="min-w-0">
+	<!-- the fitting room: your operator, wearing what you have on (+ what you're trying on) -->
+	<div class="shop-stage relative mt-3 flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-card px-4 py-4">
+		<span class="st-rays" aria-hidden="true"></span>
+		<span class="st-blob" data-n="1" aria-hidden="true"></span>
+		<span class="st-blob" data-n="2" aria-hidden="true"></span>
+		<span class="st-blob" data-n="3" aria-hidden="true"></span>
+		<div class="shop-face relative"><span class="st-floor" aria-hidden="true"></span>{@render face(look, 96, 30, trying?.slot === 'emote')}</div>
+		<div class="relative min-w-0">
+			<p class="st-label font-head">✦ {s.fittingRoom} ✦</p>
 			<p class="font-hud text-[11px] tracking-[0.22em] text-muted uppercase">{trying ? `${s.tryOn}: ${trying.name}` : s.preview}</p>
 			<p class="og-name font-head text-2xl leading-tight font-bold tracking-[0.2em] uppercase" data-style={look.name?.id}>{sample}</p>
 			{#if look.title}<span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span>{/if}
@@ -135,12 +150,19 @@
 		</div>
 	</div>
 
-	<!-- the kinds -->
-	<div class="mt-3 flex flex-wrap gap-1.5" role="group" aria-label={s.slotsLabel}>
-		{#each [...SLOTS, 'statue' as const, 'pranks' as const] as sl (sl)}
-			<button type="button" class="chip" aria-pressed={slot === sl} onclick={() => ((slot = sl), (trying = null))}
-				>{s.slots[sl]}{#if NEW_SLOTS.includes(sl)}<span class="shop-new font-head">{s.newTag}</span>{/if}</button
-			>
+	<!-- the kinds, in four groups (icons come from CSS so the buttons' words stay just the kind) -->
+	<div class="shop-kinds mt-4 grid gap-3" role="group" aria-label={s.slotsLabel}>
+		{#each groups as g (g.key)}
+			<div class="sk-group" data-group={g.key}>
+				<p class="sk-head font-head">{s.groups[g.key]}</p>
+				<div class="flex flex-wrap gap-1.5">
+					{#each g.slots as sl (sl)}
+						<button type="button" class="chip sk-chip" data-slot={sl} aria-pressed={slot === sl} onclick={() => ((slot = sl), (trying = null))}
+							>{s.slots[sl]}{#if NEW_SLOTS.includes(sl)}<span class="shop-new font-head">{s.newTag}</span>{/if}</button
+						>
+					{/each}
+				</div>
+			</div>
 		{/each}
 	</div>
 
@@ -290,11 +312,106 @@
 </Dialog>
 
 <style>
+	/* ---------- the makeover (2026-11-20): neon dispensary ---------- */
+	/* the budtender's word: a little speech box */
+	.shop-intro {
+		padding: 8px 12px 8px 36px;
+		border-radius: 12px;
+		background: rgb(77 255 143 / 0.07);
+		box-shadow: inset 0 0 0 1px rgb(77 255 143 / 0.3);
+		position: relative;
+	}
+	.shop-intro::before {
+		content: '🌿' / '';
+		position: absolute;
+		left: 11px;
+		top: 7px;
+		font-size: 16px;
+	}
+	/* the fitting room: a stage with turning light rays, lava-lamp blobs and a glowing floor */
 	.shop-stage {
 		background:
-			radial-gradient(80% 120% at 20% 50%, rgb(255 201 40 / 0.14), transparent 60%),
-			linear-gradient(180deg, rgb(28 8 52 / 0.55), rgb(10 4 24 / 0.45));
-		box-shadow: inset 0 0 0 1.5px rgb(255 201 40 / 0.5);
+			radial-gradient(60% 140% at 16% 60%, rgb(255 60 172 / 0.28), transparent 65%),
+			linear-gradient(180deg, rgb(30 8 58 / 0.92), rgb(8 3 18 / 0.92));
+		box-shadow:
+			inset 0 0 0 2px transparent,
+			0 0 0 2px rgb(255 79 216 / 0.55),
+			0 0 18px rgb(255 79 216 / 0.3),
+			inset 0 0 40px rgb(0 0 0 / 0.5);
+	}
+	.st-rays {
+		position: absolute;
+		left: 86px;
+		top: 50%;
+		width: 520px;
+		height: 520px;
+		margin: -260px 0 0 -260px;
+		background: repeating-conic-gradient(from 0deg, rgb(255 230 120 / 0.13) 0 7deg, transparent 7deg 20deg);
+		mask: radial-gradient(circle, #000 18%, transparent 62%);
+		pointer-events: none;
+		will-change: transform;
+		animation: st-spin 40s linear infinite;
+	}
+	.st-blob {
+		position: absolute;
+		width: 160px;
+		height: 160px;
+		border-radius: 50%;
+		filter: blur(30px);
+		opacity: 0.5;
+		pointer-events: none;
+		will-change: transform;
+		animation: st-lava 16s ease-in-out infinite alternate;
+	}
+	.st-blob[data-n='1'] {
+		right: 8%;
+		top: -40px;
+		background: #ff3cac;
+	}
+	.st-blob[data-n='2'] {
+		right: 32%;
+		bottom: -70px;
+		background: #4dff8f;
+		opacity: 0.32;
+		animation-duration: 21s;
+		animation-delay: -7s;
+	}
+	.st-blob[data-n='3'] {
+		right: -40px;
+		bottom: -30px;
+		background: #8b5cff;
+		animation-duration: 18s;
+		animation-delay: -12s;
+	}
+	@keyframes st-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	@keyframes st-lava {
+		from {
+			transform: translate(0, 0) scale(1);
+		}
+		to {
+			transform: translate(-90px, 40px) scale(1.35);
+		}
+	}
+	.st-floor {
+		position: absolute;
+		left: 10px;
+		right: 10px;
+		bottom: 2px;
+		height: 26px;
+		border-radius: 50%;
+		background: radial-gradient(closest-side, rgb(255 140 230 / 0.55), rgb(139 92 255 / 0.25) 60%, transparent);
+	}
+	.st-label {
+		color: #ffb3ec;
+		font-size: 11px;
+		font-weight: 900;
+		letter-spacing: 0.3em;
+		text-transform: uppercase;
+		text-shadow: 0 0 8px rgb(255 79 216 / 0.8);
 	}
 	.shop-face {
 		display: grid;
@@ -302,68 +419,272 @@
 		width: 140px;
 		height: 140px;
 	}
+	/* the kinds: four labelled groups of neon buttons */
+	.sk-head {
+		margin-bottom: 6px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: #b9ffcf;
+		font-size: 10.5px;
+		font-weight: 900;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		text-shadow: 0 0 6px rgb(77 255 143 / 0.6);
+	}
+	.sk-head::after {
+		content: '';
+		flex: 1;
+		height: 1px;
+		background: linear-gradient(90deg, rgb(77 255 143 / 0.5), transparent);
+	}
+	.sk-group[data-group='squad'] .sk-head {
+		color: #ffb3ec;
+		text-shadow: 0 0 6px rgb(255 79 216 / 0.6);
+	}
+	.sk-group[data-group='squad'] .sk-head::after {
+		background: linear-gradient(90deg, rgb(255 79 216 / 0.5), transparent);
+	}
+	.sk-group[data-group='special'] .sk-head {
+		color: #ffe27a;
+		text-shadow: 0 0 6px rgb(255 201 40 / 0.6);
+	}
+	.sk-group[data-group='special'] .sk-head::after {
+		background: linear-gradient(90deg, rgb(255 201 40 / 0.5), transparent);
+	}
+	.sk-chip {
+		border: 1.5px solid rgb(196 150 255 / 0.4);
+		background: rgb(255 255 255 / 0.05);
+		color: #eadcff;
+		transition:
+			transform 0.15s ease,
+			box-shadow 0.15s ease,
+			border-color 0.15s ease;
+	}
+	.sk-chip:hover {
+		border-color: #ff4fd8;
+		box-shadow: 0 0 10px rgb(255 79 216 / 0.45);
+		transform: translateY(-1px);
+	}
+	.sk-chip[aria-pressed='true'] {
+		border-color: transparent;
+		background: linear-gradient(135deg, #4dff8f, #2be0ff);
+		color: #04140a;
+		box-shadow:
+			0 0 12px rgb(77 255 143 / 0.7),
+			0 0 24px rgb(43 224 255 / 0.35);
+		transform: scale(1.05);
+	}
+	/* an icon in front of each kind (CSS only: the button's words stay the kind's name) */
+	.sk-chip::before {
+		font-size: 14px;
+		line-height: 1;
+	}
+	.sk-chip[data-slot='aura']::before {
+		content: '🌀' / '';
+	}
+	.sk-chip[data-slot='effect']::before {
+		content: '✨' / '';
+	}
+	.sk-chip[data-slot='badge']::before {
+		content: '📌' / '';
+	}
+	.sk-chip[data-slot='mouth']::before {
+		content: '🚬' / '';
+	}
+	.sk-chip[data-slot='eyes']::before {
+		content: '🕶️' / '';
+	}
+	.sk-chip[data-slot='hat']::before {
+		content: '🎩' / '';
+	}
+	.sk-chip[data-slot='smoke']::before {
+		content: '💨' / '';
+	}
+	.sk-chip[data-slot='pet']::before {
+		content: '🐾' / '';
+	}
+	.sk-chip[data-slot='back']::before {
+		content: '🎯' / '';
+	}
+	.sk-chip[data-slot='emote']::before {
+		content: '💃' / '';
+	}
+	.sk-chip[data-slot='name']::before {
+		content: '🔤' / '';
+	}
+	.sk-chip[data-slot='title']::before {
+		content: '🏷️' / '';
+	}
+	.sk-chip[data-slot='card']::before {
+		content: '🃏' / '';
+	}
+	.sk-chip[data-slot='radio']::before {
+		content: '📻' / '';
+	}
+	.sk-chip[data-slot='table']::before {
+		content: '♠️' / '';
+	}
+	.sk-chip[data-slot='win']::before {
+		content: '🕺' / '';
+	}
+	.sk-chip[data-slot='maxfx']::before {
+		content: '🎆' / '';
+	}
+	.sk-chip[data-slot='buddy']::before {
+		content: '🌱' / '';
+	}
+	/* the item cards: dark glass, a glow in the rarity's colour, a lift on hover, a holo sheen on legendaries */
 	.shop-item {
 		--r: #9aa3ad;
+		position: relative;
 		display: flex;
 		flex-direction: column;
+		overflow: hidden;
+		background: linear-gradient(180deg, rgb(44 16 80 / 0.88), rgb(14 6 28 / 0.92)) !important;
+		box-shadow: 0 0 12px color-mix(in srgb, var(--r) 30%, transparent);
+		transition:
+			transform 0.18s ease,
+			box-shadow 0.18s ease;
+	}
+	.shop-item:hover {
+		transform: translateY(-3px) rotate(-0.6deg);
+		box-shadow: 0 0 20px color-mix(in srgb, var(--r) 55%, transparent);
 	}
 	.shop-item[data-rarity='rare'] {
 		--r: #4f9bff;
 	}
 	.shop-item[data-rarity='epic'] {
-		--r: #b265ff;
+		--r: #c27bff;
 	}
 	.shop-item[data-rarity='legendary'] {
 		--r: #ffc928;
 	}
 	.shop-item {
-		border-color: color-mix(in srgb, var(--r) 55%, transparent);
+		border-color: color-mix(in srgb, var(--r) 70%, transparent);
+		border-width: 1.5px;
 	}
 	.shop-item.on {
-		box-shadow: 0 0 0 2px var(--t-accent);
+		box-shadow:
+			0 0 0 2px var(--t-accent),
+			0 0 18px rgb(77 255 143 / 0.5);
+	}
+	/* a holographic sheen sweeping over the legendaries now and then */
+	.shop-item[data-rarity='legendary']::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(115deg, transparent 32%, rgb(255 255 255 / 0.16) 44%, rgb(255 210 120 / 0.22) 50%, rgb(140 220 255 / 0.16) 56%, transparent 68%);
+		transform: translateX(-130%);
+		pointer-events: none;
+		will-change: transform;
+		animation: sh-holo 5s ease-in-out infinite;
+	}
+	@keyframes sh-holo {
+		0%,
+		55% {
+			transform: translateX(-130%);
+		}
+		100% {
+			transform: translateX(130%);
+		}
 	}
 	.shop-try {
 		display: grid;
 		place-items: center;
 		min-height: 84px;
 		border-radius: 10px;
-		background: radial-gradient(circle, color-mix(in srgb, var(--r) 22%, transparent), rgb(0 0 0 / 0.25) 70%);
+		background:
+			radial-gradient(circle, color-mix(in srgb, var(--r) 30%, transparent), transparent 70%),
+			repeating-conic-gradient(from 0deg at 50% 50%, rgb(255 255 255 / 0.035) 0 10deg, transparent 10deg 20deg),
+			rgb(0 0 0 / 0.35);
 		overflow: hidden;
 	}
 	.shop-try[aria-pressed='true'] {
-		box-shadow: inset 0 0 0 2px var(--r);
+		box-shadow:
+			inset 0 0 0 2px var(--r),
+			inset 0 0 18px color-mix(in srgb, var(--r) 45%, transparent);
 	}
 	.shop-rarity {
-		padding: 0 6px;
-		border: 1px solid var(--r);
+		padding: 0 7px;
 		border-radius: 999px;
-		color: var(--t-fg);
+		background: color-mix(in srgb, var(--r) 85%, black);
+		color: #fff;
 		font-size: 9.5px;
-		font-weight: 700;
+		font-weight: 800;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
+		text-shadow: 0 1px 1px rgb(0 0 0 / 0.5);
+	}
+	.shop-item[data-rarity='legendary'] .shop-rarity {
+		background: linear-gradient(90deg, #ffd23a, #ff8a1a);
+		color: #2a1400;
+		text-shadow: none;
+	}
+	/* the price: a yellow price tag (the Buy buttons) */
+	.shop-item :global(.btn-primary),
+	.shop-statue :global(.btn-primary) {
+		border-color: #ffb800;
+		background: linear-gradient(180deg, #fff09a, #ffc928);
+		color: #2a1400;
+		font-weight: 900;
+		box-shadow: 0 2px 0 #a8740c;
+		transform: rotate(-1.5deg);
+	}
+	.shop-item :global(.btn-primary:hover:not(:disabled)),
+	.shop-statue :global(.btn-primary:hover:not(:disabled)) {
+		transform: rotate(0deg) scale(1.04);
+		box-shadow:
+			0 2px 0 #a8740c,
+			0 0 14px rgb(255 201 40 / 0.6);
+	}
+	.shop-item :global(.btn-primary:disabled),
+	.shop-statue :global(.btn-primary:disabled) {
+		filter: grayscale(0.6) brightness(0.7);
 	}
 	.shop-on {
 		align-self: center;
 		color: var(--t-buff, #3ee06a);
 		font-size: 12px;
 		font-weight: 800;
+		text-shadow: 0 0 8px rgb(77 255 143 / 0.7);
 	}
 	.shop-owned {
 		align-self: center;
 	}
-	/* NEW on the 420 pack 2's kinds */
+	/* NEW on the newest kinds */
 	.shop-new {
 		margin-left: 6px;
 		padding: 0 5px;
 		border-radius: 999px;
-		background: #2fb84a;
-		color: #04140a;
+		background: #ff4fd8;
+		color: #fff;
 		font-size: 9px;
 		font-weight: 900;
 		letter-spacing: 0.08em;
 		line-height: 1.6;
 		vertical-align: 1px;
+		box-shadow: 0 0 6px rgb(255 79 216 / 0.7);
+	}
+	.sk-chip[aria-pressed='true'] .shop-new {
+		background: #04140a;
+		color: #4dff8f;
+		box-shadow: none;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.st-rays,
+		.st-blob,
+		.shop-item[data-rarity='legendary']::after {
+			animation: none;
+		}
+		.shop-item[data-rarity='legendary']::after {
+			display: none;
+		}
+		.shop-item:hover,
+		.sk-chip:hover,
+		.sk-chip[aria-pressed='true'] {
+			transform: none;
+		}
 	}
 	.shop-prank {
 		--r: #4fe05a;
@@ -503,7 +824,7 @@
 		display: grid;
 		justify-items: center;
 		width: 110px;
-		height: 118px;
+		height: 100px;
 	}
 	.shop-statue-gold {
 		margin-top: 2px;

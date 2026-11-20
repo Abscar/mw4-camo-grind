@@ -1191,6 +1191,21 @@ export const en = {
 		heading: 'BurgiShop',
 		/** the shop's own page tab: the line under the heading, and what it says outside a squad */
 		sub: 'Cosmetics and pranks for your operator',
+		/** the makeover (2026-11-20): the line under the neon sign, the ticker, the kind groups */
+		vibe: 'Munchie dispensary · open 24/7 · 420 friendly',
+		ticker: [
+			'🔥 New: Nuke aura',
+			'🗿 Golden Statue: one stands at a time',
+			'💪 Emotes the whole squad sees',
+			'🤡 Clown noses in stock',
+			'🛡️ Gas masks: no pranks for a day',
+			'💸 High Roller: 10,000,000 🍔',
+			'🍔 Every burger spent goes to the house',
+			'🌿 Puff puff pass',
+			'🎰 Win big, dress bigger'
+		],
+		groups: { op: 'On your operator', name: 'Name & title', squad: 'Around the squad', special: 'Specials' },
+		fittingRoom: 'Fitting room',
 		notIn: 'BurgiShop sells with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		intro:'Buy cosmetics with your burgers and wear them on your operator at the top of the page: the whole squad sees them. What you buy is yours to keep; tap an item you own to wear it or take it off.',
 		noOp: 'You haven’t picked an operator from the header (Squad tab → Edit), so your look only shows here and on your squad card.',
