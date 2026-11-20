@@ -174,7 +174,8 @@
 		run = 0,
 		stage = 2,
 		grew = false,
-		blazing = false
+		blazing = false,
+		outfit = null
 	}: {
 		class?: string;
 		mood?: BuddyMood;
@@ -188,6 +189,8 @@
 		grew?: boolean;
 		/** 4:20 (four20.ts): a lit holk in the corner of his grin, smoking. */
 		blazing?: boolean;
+		/** BurgiShop's buddy clothes (shop.ts slot `buddy`, 2026-11-20): buddy-cap, buddy-shades or buddy-chain. */
+		outfit?: string | null;
 	} = $props();
 	const uid = $props.id();
 	/** A poke wakes him up for the reaction. */
@@ -403,6 +406,38 @@
 	{/if}
 
 	{#each FRONT as l, i (i)}{@render leaf(l)}{/each}
+
+	{#if outfit === 'buddy-cap'}
+		<!-- a red snapback, worn a bit crooked, flat brim to the right -->
+		<g class="buddy-outfit" transform="rotate(-8 46 26)">
+			<path d="M33.6 29 C33 17.5 59 17.5 58.4 29 Z" fill="#d8202a" stroke="#4a0608" stroke-width="0.7" />
+			<path d="M46 18.6 V29 M39.4 20.6 Q38.6 24.8 39 29 M52.6 20.6 Q53.4 24.8 53 29" fill="none" stroke="#8a0e14" stroke-width="0.5" />
+			<path d="M50 28.2 Q63 27 70.5 30.4 Q63 32.6 50 31 Z" fill="#1b1b1f" stroke="#000" stroke-width="0.5" />
+			<rect x="33.6" y="27.6" width="24.8" height="2" rx="0.8" fill="#1b1b1f" />
+			<circle cx="46" cy="18.4" r="1" fill="#1b1b1f" />
+			<circle cx="44.2" cy="24" r="2.2" fill="#ffd23a" stroke="#4a0608" stroke-width="0.4" />
+		</g>
+	{:else if outfit === 'buddy-shades' && awake}
+		<!-- black shades with a glint over the glowing eyes -->
+		<g class="buddy-outfit">
+			<path d="M35.6 33.2 H45 L44.4 37.6 Q44 39.6 41.6 39.6 H38.6 Q36 39.6 35.8 37.4 Z" fill="#0b0b0e" stroke="#2a2a30" stroke-width="0.5" />
+			<path d="M47 33.2 H56.4 L56.2 37.4 Q56 39.6 53.4 39.6 H50.4 Q48 39.6 47.6 37.6 Z" fill="#0b0b0e" stroke="#2a2a30" stroke-width="0.5" />
+			<path d="M45 34 Q46 33 47 34" fill="none" stroke="#2a2a30" stroke-width="0.9" />
+			<path d="M35.6 33.6 L33.8 32.8 M56.4 33.6 L58.2 32.8" stroke="#2a2a30" stroke-width="0.9" stroke-linecap="round" />
+			<path class="buddy-glint" d="M37.2 34.6 L39.6 34.6 L37.6 37.6 Z M48.6 34.6 L51 34.6 L49 37.6 Z" fill="#fff" opacity="0.55" />
+		</g>
+	{:else if outfit === 'buddy-chain'}
+		<!-- a fat gold chain round his neck with a burger medallion -->
+		<g class="buddy-outfit">
+			<path d="M35 60 Q46 72 57 60" fill="none" stroke="#a8740c" stroke-width="2.6" stroke-linecap="round" />
+			<path d="M35 60 Q46 72 57 60" fill="none" stroke="#ffd23a" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="1.6 1.1" />
+			<circle cx="46" cy="68.6" r="4.4" fill="#ffc928" stroke="#7a5208" stroke-width="0.7" />
+			<path d="M43.2 68 C43.2 65.8 48.8 65.8 48.8 68 Z" fill="#c9822a" />
+			<rect x="43" y="68.4" width="6" height="1" fill="#6b3a1c" />
+			<path d="M43.2 69.8 H48.8 C48.8 71.2 43.2 71.2 43.2 69.8 Z" fill="#c9822a" />
+			<circle class="buddy-glint" cx="44.4" cy="66.6" r="0.8" fill="#fff" />
+		</g>
+	{/if}
 
 	<!-- hand: knobbly fingers with glowing tips (dimmed while he sleeps) -->
 	<g class="buddy-arm">

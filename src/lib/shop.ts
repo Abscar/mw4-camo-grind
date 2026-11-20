@@ -17,13 +17,22 @@
  * costs 4,777). The one exception is the user's own pick: the High Roller title costs 10 million (made
  * legendary). Within a slot rarer always costs more (shop.test.js). Items bought before keep the price paid.
  *
+ * The ideas pack (2026-11-20, the user picked all 15 ideas: "bygg alla"): a gun on the back in camo, the
+ * Nuke aura, a Glitch effect, emotes (tap your operator, the squad sees it for a few seconds), a camo
+ * background for your squad card, a style for your squad-radio lines, gold chips at the blackjack table,
+ * your operator posing on the slots' big-win screens, your own effect when a tick maxes a weapon, clothes
+ * for the weed buddy, five titles, three pranks (Clown Nose, Slacker Sticker, Gas Mask = no pranks on you
+ * for a day) and the Golden Statue (one stands at a time: whoever put one up last).
+ *
  * No browser APIs and no runes, so Node tests it directly (scripts/shop.test.js). Doesn't import
  * squad-codec.ts (which imports this file).
  */
 
 // eyes / hat / smoke / pet: the 420 pack 2 (2026-11-16); eyes + hat are drawn by the emblems (faceGear.ts),
-// smoke tints whatever smokes on them, the pet sits on the shoulder (OpGear + ShopPet)
-export const SLOTS = ['aura', 'effect', 'badge', 'mouth', 'eyes', 'hat', 'smoke', 'pet', 'name', 'title'] as const;
+// smoke tints whatever smokes on them, the pet sits on the shoulder (OpGear + ShopPet).
+// back / emote (on the operator, OpGear), card / radio (Squad tab), table (blackjack), win (the slots'
+// big-win screens), maxfx (your weapon rows), buddy (the weed buddy): the ideas pack (2026-11-20)
+export const SLOTS = ['aura', 'effect', 'badge', 'mouth', 'eyes', 'hat', 'smoke', 'pet', 'back', 'emote', 'name', 'title', 'card', 'radio', 'table', 'win', 'maxfx', 'buddy'] as const;
 export type ShopSlot = (typeof SLOTS)[number];
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -121,17 +130,62 @@ export const SHOP_ITEMS: ShopItem[] = [
 	item('smoke-gold', 'smoke', 'Golden Smoke', 52000, 'legendary'),
 	item('pet-burger', 'pet', 'Burger Buddy', 9100, 'rare'),
 	item('pet-smokey', 'pet', 'Smokey', 22500, 'epic'),
-	item('pet-bud', 'pet', 'Lil’ Bud', 84000, 'legendary')
+	item('pet-bud', 'pet', 'Lil’ Bud', 84000, 'legendary'),
+	// the ideas pack (2026-11-20, "bygg alla"): prices at the ×10–×20 levels
+	// a rifle on the back, painted in a ladder camo (OpGear, WeaponIcon's camo paint)
+	item('back-gold', 'back', 'Gold Rifle', 8000, 'rare'),
+	item('back-plat', 'back', 'Platinum Rifle', 18000, 'epic'),
+	item('back-hb', 'back', 'Harmonic Rifle', 28000, 'epic'),
+	item('back-div', 'back', 'Divergence Rifle', 75000, 'legendary'),
+	// radioactive glow with a mushroom cloud growing behind the emblem now and then
+	item('aura-nuke', 'aura', 'Nuke', 90000, 'legendary'),
+	// the emblem glitches red / cyan like the Abscar HUD box
+	item('fx-glitch', 'effect', 'Glitch', 20000, 'epic'),
+	// tap your operator (header or squad card): the whole squad sees it for a few seconds
+	item('emote-ring', 'emote', 'Smoke Ring', 15000, 'epic'),
+	item('emote-flex', 'emote', 'Flex', 15000, 'epic'),
+	item('emote-burger', 'emote', 'Burger Bite', 15000, 'epic'),
+	// your card in the Squad tab wears a moving ladder camo
+	item('card-gold', 'card', 'Gold Card', 8000, 'rare'),
+	item('card-plat', 'card', 'Platinum Card', 16000, 'epic'),
+	item('card-hb', 'card', 'Harmonic Card', 30000, 'epic'),
+	item('card-div', 'card', 'Divergence Card', 75000, 'legendary'),
+	// your lines in the squad radio
+	item('radio-gold', 'radio', 'Gold Frame', 6000, 'rare'),
+	item('radio-fire', 'radio', 'Burning Words', 50000, 'legendary'),
+	// your chips and cards at the shared blackjack table (everyone at the table sees them)
+	item('table-gold', 'table', 'Gold Chips', 15000, 'epic'),
+	// your operator dances on the BIG / MEGA WIN screens of both slots (your own page)
+	item('win-pose', 'win', 'Win Pose', 20000, 'epic'),
+	// plays over a weapon row when your tick maxes it (your own page, every theme)
+	item('maxfx-fireworks', 'maxfx', 'Fireworks', 18000, 'epic'),
+	item('maxfx-nuke', 'maxfx', 'Mini Nuke', 18000, 'epic'),
+	item('maxfx-rainbow', 'maxfx', 'Rainbow Burst', 18000, 'epic'),
+	// the weed buddy at the top of your page (Abscar theme) wears it
+	item('buddy-cap', 'buddy', 'Buddy Snapback', 5000, 'rare'),
+	item('buddy-shades', 'buddy', 'Buddy Shades', 6500, 'rare'),
+	item('buddy-chain', 'buddy', 'Buddy Gold Chain', 9000, 'rare'),
+	item('title-slots', 'title', 'Slots Goblin', 1500, 'common', 'Slots Goblin'),
+	item('title-chemist', 'title', 'Ketchup Chemist', 2000, 'common', 'Ketchup Chemist'),
+	item('title-pranklord', 'title', 'Prank Lord', 5000, 'rare', 'Prank Lord'),
+	item('title-daddy', 'title', 'Divergence Daddy', 12000, 'epic', 'Divergence Daddy'),
+	item('title-house', 'title', 'House Always Wins', 15000, 'epic', 'House Always Wins')
 ];
 
 /**
  * Pranks (the 420 pack): bought once per use and thrown at another squad member. A Smoke Bomb covers
  * their operator in smoke for an hour; TOO HIGH TO PLAY stamps them for a day (like the BANNED stamp).
+ * The ideas pack (2026-11-20) added a Clown Nose (an hour), the Slacker Sticker (a day, the header's red
+ * sticker on someone else) and the Gas Mask: `self`, put on yourself, and for a day no prank shows on you
+ * (not even one thrown before) and nobody can throw one at you.
  */
 export const PRANKS = [
 	// ×15 on 2026-11-20 (were 250 / 400; pranks have no rarity, so the middle of the shop's ×10–×20)
-	{ id: 'smoke-bomb', name: 'Smoke Bomb', price: 3750, hours: 1 },
-	{ id: 'too-high', name: 'TOO HIGH TO PLAY', price: 6000, hours: 24 }
+	{ id: 'smoke-bomb', name: 'Smoke Bomb', price: 3750, hours: 1, self: false },
+	{ id: 'too-high', name: 'TOO HIGH TO PLAY', price: 6000, hours: 24, self: false },
+	{ id: 'clown', name: 'Clown Nose', price: 4500, hours: 1, self: false },
+	{ id: 'slacker', name: 'Slacker Sticker', price: 7500, hours: 24, self: false },
+	{ id: 'mask', name: 'Gas Mask', price: 12000, hours: 24, self: true }
 ] as const;
 export type PrankKind = (typeof PRANKS)[number]['id'];
 export const PRANK_BY_ID: ReadonlyMap<string, (typeof PRANKS)[number]> = new Map(PRANKS.map((p) => [p.id, p]));
@@ -157,7 +211,18 @@ export interface ShopState {
 	pranks?: Record<string, Prank>;
 	/** Burgers paid for pranks that dropped off the list. */
 	pOld?: number;
+	/** The last emote played (the worn one, when), for the squad to see (emoteAge). */
+	em?: { k: string; at: number };
+	/** Golden Statues put up: the latest time, how many, burgers paid for them all. */
+	statue?: { at: number; n: number; p: number };
 }
+
+/** The Golden Statue (2026-11-20): one stands in the Squad tab, whoever put theirs up last. */
+export const STATUE_PRICE = 250_000;
+/** An emote shows on a page that sees it within this long of being played (pages read every 30 s)… */
+export const EMOTE_FRESH = 60_000;
+/** …and plays for this long there. */
+export const EMOTE_PLAY = 8_000;
 
 const ID = /^[a-z0-9-]{2,24}$/;
 // a sanity cap on stored prices (was 1,000,000; raised for the 10-million High Roller title, 2026-11-20)
@@ -195,7 +260,12 @@ export function cleanShop(raw: unknown): ShopState | undefined {
 		if (ID.test(id) && Number.isInteger(paid) && (paid as number) >= 0 && (paid as number) <= PRICE_MAX) own[id] = paid as number;
 	}
 	const pruned = prunePranks(cleanPranks(raw.pranks), Number.isInteger(raw.pOld) && (raw.pOld as number) > 0 ? Math.min(raw.pOld as number, PRICE_MAX * 100) : 0);
-	if (!Object.keys(own).length && !Object.keys(pruned.pranks).length && !pruned.pOld) return undefined;
+	const st = isObject(raw.statue) ? raw.statue : null;
+	const statue =
+		st && typeof st.at === 'number' && Number.isFinite(st.at) && st.at > 0 && Number.isInteger(st.n) && (st.n as number) >= 1 && Number.isInteger(st.p) && (st.p as number) >= 0
+			? { at: Math.round(st.at), n: Math.min(st.n as number, 100_000), p: Math.min(st.p as number, PRICE_MAX * 100) }
+			: undefined;
+	if (!Object.keys(own).length && !Object.keys(pruned.pranks).length && !pruned.pOld && !statue) return undefined;
 	const eq: Partial<Record<ShopSlot, string>> = {};
 	if (isObject(raw.eq)) {
 		for (const slot of SLOTS) {
@@ -207,12 +277,50 @@ export function cleanShop(raw: unknown): ShopState | undefined {
 	const out: ShopState = { own, eq, at };
 	if (Object.keys(pruned.pranks).length) out.pranks = pruned.pranks;
 	if (pruned.pOld) out.pOld = pruned.pOld;
+	const em = isObject(raw.em) ? raw.em : null;
+	if (em && typeof em.k === 'string' && own[em.k] !== undefined && ITEM_BY_ID.get(em.k)?.slot === 'emote' && typeof em.at === 'number' && Number.isFinite(em.at) && em.at > 0) {
+		out.em = { k: em.k, at: Math.round(em.at) };
+	}
+	if (statue) out.statue = statue;
 	return out;
 }
 
-/** Burgers spent in the shop (items + pranks). */
+/** Burgers spent in the shop (items + pranks + statues). */
 export const shopSpent = (s: ShopState | undefined) =>
-	Object.values(s?.own ?? {}).reduce((n, p) => n + p, 0) + Object.values(s?.pranks ?? {}).reduce((n, p) => n + p.p, 0) + (s?.pOld ?? 0);
+	Object.values(s?.own ?? {}).reduce((n, p) => n + p, 0) +
+	Object.values(s?.pranks ?? {}).reduce((n, p) => n + p.p, 0) +
+	(s?.pOld ?? 0) +
+	(s?.statue?.p ?? 0);
+
+/** Put up a Golden Statue (it stands until someone else puts one up; you can put yours up again). */
+export function buyStatue(s: ShopState | undefined, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: 'broke' } {
+	if (balance < STATUE_PRICE) return { result: 'broke' };
+	const base: ShopState = s ?? { own: {}, eq: {}, at: 0 };
+	return { result: 'ok', state: { ...base, statue: { at, n: (base.statue?.n ?? 0) + 1, p: (base.statue?.p ?? 0) + STATUE_PRICE } } };
+}
+
+/** Whose Golden Statue stands: the member who put one up last (null: nobody has). */
+export function statueOf(members: Record<string, { shop?: ShopState }>): { id: string; at: number } | null {
+	let best: { id: string; at: number } | null = null;
+	for (const [id, m] of Object.entries(members)) {
+		const at = m.shop?.statue?.at;
+		if (at && (!best || at > best.at || (at === best.at && id < best.id))) best = { id, at };
+	}
+	return best;
+}
+
+/** Play the worn emote (null: no emote worn). */
+export function playEmote(s: ShopState | undefined, at: number): ShopState | null {
+	const k = s?.eq.emote;
+	if (!s || !k || s.own[k] === undefined) return null;
+	return { ...s, em: { k, at } };
+}
+
+/** The emote a member just played, while it's fresh enough to show (EMOTE_FRESH). */
+export function freshEmote(s: ShopState | undefined, now: number): { k: string; at: number } | null {
+	const em = s?.em;
+	return em && now - em.at < EMOTE_FRESH && em.at - now < 10_000 ? em : null;
+}
 
 /** Throw a prank at another member (paid once per throw). */
 export function throwPrank(
@@ -238,19 +346,22 @@ export interface ActivePrank {
 	until: number;
 }
 
-/** The pranks on a member right now (the latest of each kind), from everyone's shop lists. */
+/**
+ * The pranks on a member right now (the latest of each kind), from everyone's shop lists. While their own
+ * Gas Mask is on, that's all there is: nothing else shows (not even a prank thrown before it).
+ */
 export function pranksOn(target: string, members: Record<string, { shop?: ShopState }>, now: number): Partial<Record<PrankKind, ActivePrank>> {
 	const out: Partial<Record<PrankKind, ActivePrank>> = {};
 	for (const [by, m] of Object.entries(members)) {
 		for (const p of Object.values(m.shop?.pranks ?? {})) {
 			if (p.to !== target) continue;
 			const def = PRANK_BY_ID.get(p.k);
-			if (!def) continue;
+			if (!def || (def.self && by !== target)) continue;
 			const until = p.at + def.hours * 3_600_000;
 			if (p.at <= now + 60_000 && until > now && (!out[p.k] || until > out[p.k]!.until)) out[p.k] = { by, until };
 		}
 	}
-	return out;
+	return out.mask ? { mask: out.mask } : out;
 }
 
 export type BuyResult = 'ok' | 'owned' | 'broke' | 'unknown';
@@ -284,6 +395,11 @@ export function mergeShop(a: ShopState | undefined, b: ShopState | undefined): S
 	const pruned = prunePranks({ ...a.pranks, ...b.pranks }, Math.max(a.pOld ?? 0, b.pOld ?? 0));
 	if (Object.keys(pruned.pranks).length) out.pranks = pruned.pranks;
 	if (pruned.pOld) out.pOld = pruned.pOld;
+	// the later emote; the statue record with more put up (then the later one)
+	const em = !a.em ? b.em : !b.em ? a.em : b.em.at > a.em.at ? b.em : a.em;
+	if (em) out.em = { ...em };
+	const st = !a.statue ? b.statue : !b.statue ? a.statue : b.statue.n > a.statue.n || (b.statue.n === a.statue.n && b.statue.at > a.statue.at) ? b.statue : a.statue;
+	if (st) out.statue = { ...st };
 	return out;
 }
 

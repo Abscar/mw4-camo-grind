@@ -238,6 +238,15 @@ export function mouthItem(u: string, id: string | null | undefined, m: Mouth): M
 
 /** Where a smoke colour without anything in the mouth puffs out (beside the mouth corner). */
 export const exhaleAt = (face: Face): P => face.puff ?? [f(face.mouth.x + face.mouth.dir * 6), f(face.mouth.y + 1)];
+
+/** Where a friend's Clown Nose goes on an emblem (between the eyes, a little lower), in its 64-unit coordinates (OpGear). */
+export const noseOf = (key: FaceKey): readonly [number, number] => {
+	const face = FACES[key];
+	const e = face.eyes;
+	// no eyes to go by: just above the mouth
+	if (!e) return [f(face.head.x), f(face.mouth.y - 6)];
+	return [f((e.l[0] + e.r[0]) / 2), f(e.l[1] + e.rad * 1.6)];
+};
 /** How big that puff is (small: it would cover the face). */
 export const EXHALE_K = 0.32;
 

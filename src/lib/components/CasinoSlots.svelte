@@ -61,6 +61,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import SlotSymbolView from './SlotSymbol.svelte';
+	import WinPose from './WinPose.svelte';
 
 	let { balance, hidden = $bindable(0), pending = $bindable(0) }: { balance: number; hidden?: number; pending?: number } = $props();
 	// here everything held back is a win not shown yet (the leaderboard waits for it too)
@@ -599,6 +600,8 @@
 					<div class="rain" aria-hidden="true">
 						{#each RAIN as drop, i (i)}<span style:left="{drop.x}%" style:animation-delay="{drop.d}s" style:animation-duration="{drop.dur}s"><SlotSymbolView symbol={i % 3 ? 'burger' : 'fries'} size={30} /></span>{/each}
 					</div>
+					<!-- your operator dancing (BurgiShop Win Pose, only when you wear it) -->
+					<WinPose size={64} />
 					<p class="big font-head">{s.tiers[tier === 'none' ? 'win' : tier]}</p>
 					<p class="amount font-head num">+{lastWin.toLocaleString('en-US')} 🍔</p>
 				</div>

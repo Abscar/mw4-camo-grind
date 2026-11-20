@@ -75,7 +75,21 @@ import { cleanClasses, mergeClasses, withClass, withoutClass, type ClassList, ty
 import { withBan, BAN_OWNER, KD_LIMIT } from './squad-bans.ts';
 import { cleanCasino, cleanOnline, count420, countDay, mergeCasino, mergeOnline, seedOnline, withGame, HOUSE_OP, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { toast } from './toast.svelte.ts';
-import { buy as shopBuy, cleanShop, equip as shopEquip, mergeShop, throwPrank as shopThrow, ITEM_BY_ID, type BuyResult, type ShopSlot, type ShopState } from './shop.ts';
+import {
+	buy as shopBuy,
+	buyStatue as shopStatue,
+	cleanShop,
+	equip as shopEquip,
+	mergeShop,
+	playEmote as shopEmote,
+	pranksOn,
+	throwPrank as shopThrow,
+	ITEM_BY_ID,
+	PRANK_BY_ID,
+	type BuyResult,
+	type ShopSlot,
+	type ShopState
+} from './shop.ts';
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
 import { cleanDonations, giveTo, goalPassed, mergeDonations, squadGiving, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
 import { is420 } from './four20.ts';
@@ -878,18 +892,51 @@ class Squad {
 
 	// ----- pranks (shop.ts PRANKS) -----
 
-	/** Throw a prank at another member (paid with burgers, goes on the radio). */
-	prank(kind: string, to: string, name: string): BuyResult | 'off' {
+	/**
+	 * Throw a prank at another member (paid with burgers, goes on the radio), or put a self one (the Gas
+	 * Mask) on yourself (`to` = your own id). Someone in a Gas Mask can't be pranked ('masked').
+	 */
+	prank(kind: string, to: string, name: string): BuyResult | 'off' | 'masked' {
 		const me = this.me;
 		const bank = this.myBank;
-		if (!me || !bank || to === me.id) return 'off';
+		const def = PRANK_BY_ID.get(kind);
+		if (!me || !bank || !def || (to === me.id) !== def.self) return 'off';
+		if (!def.self) {
+			const members = Object.fromEntries(this.entries.map((e) => [e.id, e.member]));
+			if (pranksOn(to, members, this.serverNow()).mask) return 'masked';
+		}
 		const r = shopThrow(this.shop, kind, to, bank.balance, Math.round(this.serverNow()), makeMemberId().slice(0, 10));
 		if (r.result !== 'ok') return r.result;
 		this.shop = r.state;
 		writeJson(SHOP_KEY, r.state);
 		this.#schedulePublish();
-		void this.#event(kind === 'smoke-bomb' ? t.pranks.smokeEvent(name) : t.pranks.highEvent(name));
+		void this.#event(t.pranks.event[def.id](name));
 		return 'ok';
+	}
+
+	/** Put up a Golden Statue (shop.ts): it stands in the Squad tab until someone else puts one up. */
+	buyStatue(): 'ok' | 'broke' | 'off' {
+		const bank = this.myBank;
+		if (!this.me || !bank) return 'off';
+		const r = shopStatue(this.shop, bank.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.shop = r.state;
+		writeJson(SHOP_KEY, r.state);
+		this.#schedulePublish();
+		void this.#event(t.shop.statue.event);
+		return 'ok';
+	}
+
+	/** Play your worn emote: the squad sees it for a few seconds (shop.ts EMOTE_FRESH / EMOTE_PLAY). */
+	playEmote(): boolean {
+		if (!this.me) return false;
+		const next = shopEmote(this.shop, Math.round(this.serverNow()));
+		if (!next) return false;
+		this.shop = next;
+		writeJson(SHOP_KEY, next);
+		// published like any change (1.5 s); the others read every 30 s and still see it for a minute
+		this.#schedulePublish();
+		return true;
 	}
 
 	/**

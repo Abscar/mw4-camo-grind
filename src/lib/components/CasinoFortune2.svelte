@@ -60,6 +60,7 @@
 	import IngmanEmblem from './IngmanEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
+	import WinPose from './WinPose.svelte';
 
 	let { balance, hidden = $bindable(0), pending = $bindable(0) }: { balance: number; hidden?: number; pending?: number } = $props();
 	$effect(() => {
@@ -702,6 +703,8 @@
 
 				{#if celebrate}
 					<div class="f2-celebrate" data-tier={tier} role="status">
+						<!-- your operator dancing (BurgiShop Win Pose, only when you wear it) -->
+						<WinPose size={72} />
 						<p class="f2-big font-head">{s.tiers[tier === 'none' ? 'win' : tier]}</p>
 						<p class="f2-amount font-head num">+{lastWin.toLocaleString('en-US')} 🍔</p>
 					</div>

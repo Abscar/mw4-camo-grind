@@ -18,6 +18,7 @@
 	import { news, useNews } from '#lib/news.svelte.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import WeedCreature, { REACTIONS, type BuddyMood, type BuddyReaction } from './WeedCreature.svelte';
+	import { squad } from '#lib/squad.svelte.ts';
 
 	const SHOWN = 3;
 	/** He sulks when nothing was ticked for this long. */
@@ -127,7 +128,7 @@
 
 <div class="news-buddy flex items-start gap-1.5">
 	<button type="button" class="buddy-btn flex-none" aria-label={t.buddy.poke} title={t.buddy.poke} onclick={poke}>
-		<WeedCreature class="buddy block size-24 overflow-visible sm:size-28" {mood} {reaction} {run} stage={grow.stage} {grew} blazing={four20.active} />
+		<WeedCreature class="buddy block size-24 overflow-visible sm:size-28" {mood} {reaction} {run} stage={grow.stage} {grew} blazing={four20.active} outfit={squad.shop?.eq.buddy ?? null} />
 	</button>
 
 	<div class="news-bubble relative max-w-[400px] min-w-0 rounded-xl px-3.5 pt-2 pb-2">

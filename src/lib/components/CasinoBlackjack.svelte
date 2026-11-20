@@ -21,6 +21,7 @@
 	import { handValue, rankLabel, streakBoost, BJ_BOOSTS, CASINO_MAX_BET, SIDE_BETS, SUIT_SYMBOL, type Card, type SideBet } from '#lib/squad-casino.ts';
 	import type { SquadOp } from '#lib/squad-codec.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { worn } from '#lib/shop.ts';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	let { balance, hidden = $bindable(0) }: { balance: number; hidden?: number } = $props();
@@ -87,6 +88,8 @@
 	const watching = $derived(myState === 'seat' && bjTable.sitState !== 'ok');
 	const mine = $derived(watching ? null : (spots.find((s) => s.id === meId) ?? null));
 	const others = $derived(spots.filter((s) => watching || s.id !== meId));
+	/** Gold Chips from BurgiShop (shop.ts slot `table`, 2026-11-20): that player's chip and cards turn gold for everyone. */
+	const goldOf = (id: string) => worn(squad.byId(id)?.member.shop).table?.id === 'table-gold';
 	const myPlay = $derived(mine?.sp ?? null);
 	const myTurn = $derived(!!round && canAct(round, meId, squad.device, now) && !bjTable.busy);
 	const secs = (deadline: number | null) => Math.max(0, Math.ceil(((deadline ?? now) - now) / 1000));
@@ -205,7 +208,7 @@
 				{#each others as s (s.id)}
 					{@const st = status(s)}
 					{@const v = total(s.sp?.play)}
-					<li class="bj-seat" data-tone={st.tone} class:away={s.away}>
+					<li class="bj-seat" data-tone={st.tone} class:away={s.away} class:gold={goldOf(s.id)}>
 						<div class="bj-seat-head">
 							<SquadAvatar name={s.name} op={s.op} size={28} />
 							<b class="min-w-0 flex-1 truncate font-head">{s.name}</b>
@@ -228,7 +231,7 @@
 		{/if}
 
 		<!-- you (not while you only watch) -->
-		<div class="bj-hand bj-me" hidden={watching}>
+		<div class="bj-hand bj-me" hidden={watching} class:gold={goldOf(meId)}>
 			<p class="bj-who font-head">
 				{b.you}{#if myPlay?.play}{@const v = handValue(myPlay.play.cards)}<span class="bj-total num">{b.total(v.total, v.soft)}</span>{/if}{#if myPlay?.play?.doubled}<span class="bj-dbl">×2</span>{/if}
 				{#if myPlay}<span class="bj-chip num" title={b.betChip(myPlay.hand.bet)}>{myPlay.hand.bet * (myPlay.play?.doubled ? 2 : 1)}</span>{/if}
@@ -347,6 +350,23 @@
 		font-size: 11px;
 		font-weight: 900;
 		letter-spacing: 0;
+	}
+	/* Gold Chips (BurgiShop): a solid gold chip, gold-edged cards with a warm face, a gold back */
+	.gold .bj-chip {
+		border: 2px solid #fff6c0;
+		background: radial-gradient(circle at 35% 30%, #fff6b0, #ffc928 45%, #a8740c);
+		color: #2a1a02;
+		box-shadow: 0 0 8px rgb(255 201 40 / 0.7);
+	}
+	.gold .bj-card {
+		background: linear-gradient(160deg, #fffdf0, #fff1c0);
+		box-shadow:
+			0 0 0 2px #e0a820,
+			0 0 10px rgb(255 201 40 / 0.55),
+			0 3px 6px rgb(0 0 0 / 0.45);
+	}
+	.gold .bj-back {
+		background: repeating-linear-gradient(45deg, #ffd860 0 6px, #c8941a 6px 12px);
 	}
 	.bj-cards {
 		display: flex;

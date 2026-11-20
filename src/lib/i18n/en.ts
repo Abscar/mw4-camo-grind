@@ -1010,18 +1010,39 @@ export const en = {
 	/** Pranks (shop.ts PRANKS; the 420 pack). */
 	pranks: {
 		heading: 'Pranks',
-		intro: 'Bought once per throw. Pick who gets it.',
-		names: { 'smoke-bomb': 'Smoke Bomb', 'too-high': 'TOO HIGH TO PLAY' },
-		what: { 'smoke-bomb': 'Their operator disappears in thick smoke for an hour.', 'too-high': 'A big green TOO HIGH TO PLAY stamp on their operator for a day.' },
+		intro: 'Bought once per use. Pick who gets it.',
+		names: { 'smoke-bomb': 'Smoke Bomb', 'too-high': 'TOO HIGH TO PLAY', clown: 'Clown Nose', slacker: 'Slacker Sticker', mask: 'Gas Mask' },
+		what: {
+			'smoke-bomb': 'Their operator disappears in thick smoke for an hour.',
+			'too-high': 'A big green TOO HIGH TO PLAY stamp on their operator for a day.',
+			clown: 'A big red clown nose on their operator for an hour. Honk.',
+			slacker: 'The red Slacker sticker on their operator for a day.',
+			mask: 'Put it on yourself: for a day no prank sticks to you, and nobody can throw one at you.'
+		},
 		pick: 'Who gets it?',
 		throw: (price: number) => `Throw · ${price.toLocaleString('en-US')} 🍔`,
+		/** the Gas Mask's button (you put it on yourself) */
+		putOn: (price: number) => `Put it on · ${price.toLocaleString('en-US')} 🍔`,
+		maskOn: 'You have it on',
+		maskPut: 'Gas mask on: no pranks for a day 🛡️',
+		/** a squad member in a gas mask (prank dialog, squad card, header) */
+		masked: 'Gas mask on',
+		maskedLong: (name: string) => `${name} has a gas mask on: no pranks stick for now.`,
 		thrown: (name: string) => `Got ${name} 😈`,
 		nobody: 'Nobody else in the squad yet.',
 		stamp: 'Too high to play',
 		smokedBy: (name: string) => `Smoke-bombed by ${name}`,
 		highBy: (name: string) => `Stamped TOO HIGH TO PLAY by ${name}`,
-		smokeEvent: (name: string) => `threw a SMOKE BOMB at ${name} 💨`,
-		highEvent: (name: string) => `stamped ${name} TOO HIGH TO PLAY 🍃`
+		clownBy: (name: string) => `Clown-nosed by ${name}`,
+		slackerBy: (name: string) => `Slacker sticker from ${name}`,
+		/** the radio line for each prank */
+		event: {
+			'smoke-bomb': (name: string) => `threw a SMOKE BOMB at ${name} 💨`,
+			'too-high': (name: string) => `stamped ${name} TOO HIGH TO PLAY 🍃`,
+			clown: (name: string) => `put a clown nose on ${name} 🤡`,
+			slacker: (name: string) => `slapped a SLACKER sticker on ${name} 🐌`,
+			mask: (_name: string) => `put on a gas mask: no pranks for a day 🛡️`
+		}
 	},
 	/** BurgiShop (2026-11-16): cosmetics bought with burgers and worn on your header operator (shop.ts). */
 	shop: {
@@ -1033,7 +1054,28 @@ export const en = {
 		noOp: 'You haven’t picked an operator from the header (Squad tab → Edit), so your look only shows here and on your squad card.',
 		preview: 'Your operator',
 		tryOn: 'Trying on',
-		slots: { aura: 'Auras', effect: 'Effects', badge: 'Pins', mouth: 'Mouth', eyes: 'Eyes', hat: 'Hats', smoke: 'Smoke', pet: 'Sidekicks', name: 'Name styles', title: 'Titles', pranks: '😈 Pranks' },
+		slots: {
+			aura: 'Auras',
+			effect: 'Effects',
+			badge: 'Pins',
+			mouth: 'Mouth',
+			eyes: 'Eyes',
+			hat: 'Hats',
+			smoke: 'Smoke',
+			pet: 'Sidekicks',
+			back: 'Back',
+			emote: 'Emotes',
+			name: 'Name styles',
+			title: 'Titles',
+			card: 'Squad card',
+			radio: 'Radio',
+			table: 'Blackjack',
+			win: 'Win pose',
+			maxfx: 'Max effect',
+			buddy: 'Buddy',
+			statue: '🗿 Statue',
+			pranks: '😈 Pranks'
+		},
 		slotsLabel: 'Kind',
 		/** on the 420 pack 2's kinds (eyes, hats, smoke, sidekicks) */
 		newTag: 'NEW',
@@ -1043,8 +1085,38 @@ export const en = {
 			eyes: 'Sits on your operator’s eyes, over masks, goggles and glasses.',
 			hat: 'Sits on your operator’s head (Ingman takes his wizard hat off for it).',
 			smoke: 'Colours the smoke from whatever’s in your mouth. Nothing in it? You blow a puff out yourself.',
-			pet: 'A little sidekick that sits on your operator’s shoulder.'
+			pet: 'A little sidekick that sits on your operator’s shoulder.',
+			back: 'A rifle on your operator’s back, painted in camo.',
+			emote: 'Tap your operator at the top of the page (or your squad card) to play it: the squad sees it for a few seconds.',
+			card: 'Your card in the Squad tab wears it, for the whole squad to see.',
+			radio: 'Your lines in the squad radio.',
+			table: 'Your chips and cards at the blackjack table: everyone at the table sees them.',
+			win: 'Your operator dances on the BIG / MEGA WIN screens of both slots.',
+			maxfx: 'Plays over a weapon when your tick maxes it (on your page, every theme).',
+			buddy: 'Dresses the weed buddy at the top of your page (Abscar theme).'
 		} as Partial<Record<string, string>>,
+		/** item card samples for the kinds that aren't drawn on the operator */
+		radioSample: 'GG, next round on me 🍔',
+		maxSample: 'M4',
+		winSample: 'BIG WIN',
+		/** the Golden Statue (2026-11-20): one stands in the Squad tab, whoever put one up last */
+		statue: {
+			name: 'Golden Statue',
+			what: 'A big gold statue of your operator at the top of the Squad tab. Only one stands at a time: the next one put up knocks yours down, and you can put yours back up.',
+			buy: (price: number) => `Put it up · ${price.toLocaleString('en-US')} 🍔`,
+			standing: 'Your statue stands',
+			theirs: (name: string) => `${name}’s statue stands right now.`,
+			none: 'No statue stands yet.',
+			bought: 'Your Golden Statue is up 🗿',
+			event: 'put up a GOLDEN STATUE in the Squad tab 🗿',
+			label: (name: string) => `Golden statue of ${name}`,
+			since: (ago: string) => `Put up ${ago}`
+		},
+		/** emotes (2026-11-20): tap your operator to play the one you wear */
+		emote: {
+			tap: (name: string) => `Play your emote: ${name}`,
+			played: (name: string) => `${name}! The squad sees it for a few seconds.`
+		},
 		rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
 		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} 🍔`,
 		wear: 'Wear',

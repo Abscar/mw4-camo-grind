@@ -10,6 +10,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { agoParts } from '#lib/squad-codec.ts';
 	import { TEXT_MAX } from '#lib/squad-radio.ts';
+	import { worn } from '#lib/shop.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 
 	let { visible }: { visible: boolean } = $props();
@@ -19,6 +20,8 @@
 	let logEl = $state<HTMLElement>();
 	const msgs = $derived(squad.radio?.msgs ?? []);
 	const nameOf = (id: string, fallback: string) => squad.doc?.members[id]?.name ?? fallback;
+	/** The radio style each member wears from BurgiShop (shop.ts slot `radio`; 2026-11-20). */
+	const styles = $derived(Object.fromEntries(squad.entries.map((e) => [e.id, worn(e.member.shop).radio?.id])));
 
 	// reading it while the tab is shown counts as read; keep the newest line in view
 	$effect(() => {
@@ -54,7 +57,7 @@
 		{#each msgs as m (m.id)}
 			{@const mine = m.from === squad.me?.id}
 			{@const fire = m.fire ?? []}
-			<div class="radio-line" data-kind={m.kind} class:mine>
+			<div class="radio-line" data-kind={m.kind} data-style={styles[m.from]} class:mine>
 				<span class="radio-time">{t.squad.ago(agoParts(m.at, squad.now))}</span>
 				<p class="radio-text">
 					<b class="radio-name">{nameOf(m.from, m.name)}</b>{m.kind === 'event' ? ' ' : ': '}{m.text}
@@ -155,6 +158,7 @@
 		color: #ffe08a;
 		font-style: italic;
 	}
+	/* BurgiShop radio styles (data-style): in grind.css, so the shop's preview uses them too */
 	.radio-fire {
 		display: inline-flex;
 		align-items: center;

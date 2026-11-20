@@ -17,9 +17,10 @@
 	import { toast } from '#lib/toast.svelte.ts';
 	import Dialog from './Dialog.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
-	import OpGear from './OpGear.svelte';
-	import { faceOf } from '#lib/faceGear.ts';
-	import { pranksOn, worn } from '#lib/shop.ts';
+	import OpGear, { type GearExtra } from './OpGear.svelte';
+	import { faceOf, noseOf } from '#lib/faceGear.ts';
+	import { freshEmote, pranksOn, worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import SquadStatue from './SquadStatue.svelte';
 	import SquadClasses from './SquadClasses.svelte';
 	import SquadCombat from './SquadCombat.svelte';
 	import SquadRanked from './SquadRanked.svelte';
@@ -70,6 +71,19 @@
 	const entries = $derived(squad.entries);
 	/** Member id → member (for pranks: who threw what at whom). */
 	const memberMap = $derived(Object.fromEntries(entries.map((e) => [e.id, e.member])));
+	/** The ideas pack's extras on a card's face (2026-11-20, OpGear): rifle, emote (tap your own), clown nose, gas mask. */
+	function cardExtra(e: (typeof entries)[number], look: Partial<Record<ShopSlot, ShopItem>>, pk: ReturnType<typeof pranksOn>): GearExtra {
+		const emote = look.emote;
+		return {
+			back: look.back?.id,
+			emote: freshEmote(e.member.shop, squad.serverNow()),
+			nose: pk.clown ? noseOf(e.member.op ?? 'initials') : null,
+			masked: !!pk.mask,
+			ontap: e.mine && emote ? () => squad.playEmote() && toast.show(t.shop.emote.played(emote.name)) : null,
+			tapLabel: emote ? t.shop.emote.tap(emote.name) : undefined
+		};
+	}
+	const byName = (id: string) => memberMap[id]?.name ?? '?';
 	const members = $derived(Object.fromEntries(entries.map((e) => [e.id, e.member])));
 	const mvps = $derived(weeklyMvps(members, squad.now));
 	const today = $derived(dayKey(squad.now));
@@ -293,6 +307,9 @@
 				{slot ? s.usual(s.weekdays[slot.day], slot.from) : s.usualNone}
 			</p>
 
+			<!-- the Golden Statue (BurgiShop, 2026-11-20): whoever put one up last -->
+			<SquadStatue {entries} />
+
 			<SquadRace {entries} />
 
 			<!-- K/D, W/L … typed in by each member (2026-11-14) -->
@@ -312,20 +329,25 @@
 					{@const streak = streakDays(e.member, squad.now)}
 					{@const look = worn(e.member.shop)}
 					{@const pk = pranksOn(e.id, memberMap, squad.now)}
-					<li class="sq-card meta-card relative flex min-w-0 flex-col gap-2.5 rounded-card border border-line bg-panel-2 p-3" class:sq-mine={e.mine}>
+					<li class="sq-card camo-card meta-card relative flex min-w-0 flex-col gap-2.5 rounded-card border border-line bg-panel-2 p-3" class:sq-mine={e.mine} data-card={look.card?.id}>
 						<div class="flex min-w-0 items-center gap-2">
 							<!-- their operator from the header (or initials), the user's ask 2026-11-14, wearing their BurgiShop
 							     look (shop.ts): aura, effect, pin on the face, style + title on the name -->
-							<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pet={look.pet?.id} pin={16} smoked={!!pk['smoke-bomb']}><SquadAvatar name={e.member.name} op={e.member.op} size={44} face={faceOf(look)} /></OpGear>
+							<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pet={look.pet?.id} pin={16} smoked={!!pk['smoke-bomb']} extra={cardExtra(e, look, pk)}
+								><SquadAvatar name={e.member.name} op={e.member.op} size={44} face={faceOf(look)} /></OpGear
+							>
 							<span class="sq-rank num font-head" aria-label={s.rank(i + 1)}>{s.rank(i + 1)}</span>
 							<b class="sq-name og-name min-w-0 truncate font-head text-[17px] font-bold tracking-wide" data-style={look.name?.id} title={e.member.name}>{e.member.name}</b>
 							{#if e.mine}<span class="sq-you font-head">{s.you}</span>{/if}
 							<span class="ml-auto flex-none">{@render presence(e.online, e.member.seen, e.mine)}</span>
 						</div>
-						{#if look.title || pk['too-high']}
+						{#if look.title || pk['too-high'] || pk.clown || pk.slacker || pk.mask}
 							<p class="-mt-1 flex flex-wrap items-center gap-1.5">
 								{#if look.title}<span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span>{/if}
-								{#if pk['too-high']}<span class="sq-high font-head" title={t.pranks.highBy(memberMap[pk['too-high'].by]?.name ?? '?')}>🍃 {t.pranks.stamp}</span>{/if}
+								{#if pk['too-high']}<span class="sq-high font-head" title={t.pranks.highBy(byName(pk['too-high'].by))}>🍃 {t.pranks.stamp}</span>{/if}
+								{#if pk.clown}<span class="sq-high sq-clown font-head" title={t.pranks.clownBy(byName(pk.clown.by))}>🤡 {t.pranks.names.clown}</span>{/if}
+								{#if pk.slacker}<span class="sq-high sq-slack font-head" title={t.pranks.slackerBy(byName(pk.slacker.by))}>🐌 {t.operator.slacker}</span>{/if}
+								{#if pk.mask}<span class="sq-high sq-masked font-head" title={t.pranks.maskedLong(e.member.name)}>🛡️ {t.pranks.masked}</span>{/if}
 							</p>
 						{/if}
 						{#if e.member.op && OP_NAMES[e.member.op] !== e.member.name}
@@ -640,6 +662,25 @@
 		text-transform: uppercase;
 		transform: rotate(-3deg);
 	}
+	/* the ideas pack's pranks (2026-11-20): Clown Nose, Slacker Sticker, and their own Gas Mask */
+	.sq-clown {
+		border-color: #ff5a5a;
+		background: rgb(40 4 4 / 0.75);
+		color: #ffb0b0;
+	}
+	.sq-slack {
+		border: 2px solid #fff;
+		background: #d8202a;
+		color: #fff;
+		transform: rotate(3deg);
+	}
+	.sq-masked {
+		border-color: #9ff0b0;
+		background: rgb(10 34 20 / 0.8);
+		color: #c8ffd4;
+		transform: none;
+	}
+	/* a card wearing a ladder camo: .camo-card in grind.css (the shop's preview uses it too) */
 	.sq-you {
 		flex: none;
 		padding: 1px 7px;

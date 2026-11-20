@@ -2,7 +2,27 @@
 // burger bank (spending goes to the house). `npm test`.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buy, cleanShop, equip, mergeShop, shopSpent, throwPrank, worn, ITEM_BY_ID, PRANKS, SHOP_ITEMS, SLOTS } from '../src/lib/shop.ts';
+import {
+	buy,
+	buyStatue,
+	cleanShop,
+	equip,
+	freshEmote,
+	mergeShop,
+	playEmote,
+	pranksOn,
+	shopSpent,
+	statueOf,
+	throwPrank,
+	worn,
+	EMOTE_FRESH,
+	ITEM_BY_ID,
+	PRANKS,
+	SHOP_ITEMS,
+	SLOTS,
+	STATUE_PRICE
+} from '../src/lib/shop.ts';
+import { noseOf, FACES } from '../src/lib/faceGear.ts';
 import { fromSquadWire, memberEntry, toSquadWire } from '../src/lib/squad-codec.ts';
 import { burgerBank, BURGERS } from '../src/lib/squad-fun.ts';
 
@@ -10,8 +30,9 @@ const T = Date.UTC(2026, 10, 16, 20);
 
 test('the catalogue: unique ids, every slot stocked, sane prices, titles have words', () => {
 	assert.equal(new Set(SHOP_ITEMS.map((i) => i.id)).size, SHOP_ITEMS.length);
-	// every kind is stocked (the sidekicks with three)
-	for (const slot of SLOTS) assert.ok(SHOP_ITEMS.filter((i) => i.slot === slot).length >= (slot === 'pet' ? 3 : 4), slot);
+	// every kind is stocked: the first ones with four or more (the sidekicks three), the ideas pack's at least one
+	const MIN = { pet: 3, back: 4, emote: 3, card: 4, radio: 2, table: 1, win: 1, maxfx: 3, buddy: 3 };
+	for (const slot of SLOTS) assert.ok(SHOP_ITEMS.filter((i) => i.slot === slot).length >= (MIN[slot] ?? 4), slot);
 	assert.equal(new Set(SHOP_ITEMS.map((i) => i.name)).size, SHOP_ITEMS.length, 'no two items share a name');
 	for (const i of SHOP_ITEMS) {
 		assert.ok(Number.isInteger(i.price) && i.price > 0, i.id);
@@ -36,7 +57,7 @@ test('prices (2026-11-20, ×10–×20 by rarity): each rarity in its band, prank
 	}
 	assert.deepEqual(
 		PRANKS.map((p) => [p.id, p.price]),
-		[['smoke-bomb', 3750], ['too-high', 6000]]
+		[['smoke-bomb', 3750], ['too-high', 6000], ['clown', 4500], ['slacker', 7500], ['mask', 12000]]
 	);
 	// High Roller: 10 million (the user, 2026-11-20), legendary so the titles still go up by rarity
 	const roller = ITEM_BY_ID.get('title-roller');
@@ -165,4 +186,98 @@ test('the shop travels in the squad document; the bank takes what you spent, the
 	assert.equal(bank.aaaaaaaa1111.spent, 100);
 	assert.equal(bank.aaaaaaaa1111.house, 8000, "Ingman's shopping goes to the house; Abscar's own doesn't come back");
 	assert.equal(bank.aaaaaaaa1111.balance, BURGERS.start - 100 + 8000);
+});
+
+// ---------- the ideas pack (2026-11-20, "bygg alla") ----------
+const A = 'aaaaaaaa1111';
+const B = 'bbbbbbbb2222';
+
+test('ideas pack: one of each new kind worn together, through cleaning and the squad document', () => {
+	let s;
+	const ids = ['back-div', 'emote-flex', 'card-hb', 'radio-fire', 'table-gold', 'win-pose', 'maxfx-nuke', 'buddy-chain', 'aura-nuke', 'fx-glitch', 'title-house'];
+	for (const id of ids) s = buy(s, id, 999_999, T).state;
+	assert.deepEqual(s.eq, {
+		back: 'back-div',
+		emote: 'emote-flex',
+		card: 'card-hb',
+		radio: 'radio-fire',
+		table: 'table-gold',
+		win: 'win-pose',
+		maxfx: 'maxfx-nuke',
+		buddy: 'buddy-chain',
+		aura: 'aura-nuke',
+		effect: 'fx-glitch',
+		title: 'title-house'
+	});
+	assert.equal(shopSpent(s), ids.reduce((n, id) => n + ITEM_BY_ID.get(id).price, 0));
+	assert.deepEqual(cleanShop(JSON.parse(JSON.stringify(s))), s);
+	const entry = memberEntry({ name: 'Ingman', op: 'ingman' }, { weapons: {}, mastery: {}, lastTickAt: null }, T, false, { shop: s });
+	assert.deepEqual(fromSquadWire(JSON.parse(JSON.stringify(toSquadWire({ members: { [B]: entry } })))).members[B].shop.eq, s.eq);
+	assert.equal(worn(s).buddy.name, 'Buddy Gold Chain');
+	assert.equal(equip(s, 'card', 'radio-fire', T + 1), null, 'a radio style is not a card');
+});
+
+test('emotes: only the worn one plays, it travels, and it is fresh for a minute', () => {
+	assert.equal(playEmote(undefined, T), null);
+	const s = buy(undefined, 'emote-ring', 99_999, T).state;
+	const played = playEmote(s, T + 5000);
+	assert.deepEqual(played.em, { k: 'emote-ring', at: T + 5000 });
+	assert.deepEqual(cleanShop(JSON.parse(JSON.stringify(played))).em, played.em);
+	assert.deepEqual(freshEmote(played, T + 5000 + EMOTE_FRESH - 1), played.em);
+	assert.equal(freshEmote(played, T + 5000 + EMOTE_FRESH), null, 'stale after a minute');
+	assert.equal(playEmote(equip(s, 'emote', null, T + 1), T + 2), null, 'nothing worn, nothing plays');
+	// an emote the member doesn't own is dropped when cleaned
+	assert.equal(cleanShop({ ...played, own: { 'aura-gold': 5200 }, eq: {} }).em, undefined);
+	// two devices: the later emote
+	const other = { ...played, em: { k: 'emote-ring', at: T + 9000 } };
+	assert.equal(mergeShop(played, other).em.at, T + 9000);
+	assert.equal(mergeShop(other, played).em.at, T + 9000);
+});
+
+test('the Golden Statue: 250,000, the latest one stands, its burgers count as spent', () => {
+	assert.equal(STATUE_PRICE, 250_000);
+	assert.equal(buyStatue(undefined, 249_999, T).result, 'broke');
+	const a = buyStatue(undefined, 250_000, T).state;
+	assert.deepEqual(a.statue, { at: T, n: 1, p: 250_000 });
+	assert.equal(shopSpent(a), 250_000);
+	assert.deepEqual(cleanShop(JSON.parse(JSON.stringify(a))), a, 'a shop with only a statue survives cleaning');
+	const b = buyStatue(undefined, 999_999, T + 60_000).state;
+	assert.deepEqual(statueOf({ [A]: { shop: a }, [B]: { shop: b } }), { id: B, at: T + 60_000 }, 'the later one knocks the first down');
+	const a2 = buyStatue(a, 999_999, T + 120_000).state;
+	assert.deepEqual(a2.statue, { at: T + 120_000, n: 2, p: 500_000 });
+	assert.deepEqual(statueOf({ [A]: { shop: a2 }, [B]: { shop: b } }), { id: A, at: T + 120_000 }, 'and back up again');
+	assert.equal(statueOf({ [A]: {}, [B]: { shop: { own: {}, eq: {}, at: 0 } } }), null);
+	// two devices: the record with more statues
+	assert.deepEqual(mergeShop(a, a2).statue, a2.statue);
+	// the house gets what a statue costs
+	const members = { [A]: { name: 'Abscar', op: 'abscar', weapons: {}, mastery: {} }, [B]: { name: 'Ingman', op: 'ingman', weapons: {}, mastery: {}, shop: b } };
+	assert.equal(burgerBank({ members: {} }, members)[A].house, 250_000);
+});
+
+test('the new pranks: clown nose an hour, slacker a day, a gas mask hides everything for a day', () => {
+	const p1 = throwPrank(undefined, 'clown', B, 99_999, T, 'pr01').state;
+	const p2 = throwPrank(p1, 'slacker', B, 99_999, T, 'pr02').state;
+	const members = { [A]: { shop: p2 }, [B]: {} };
+	assert.deepEqual(Object.keys(pranksOn(B, members, T + 30 * 60_000)).sort(), ['clown', 'slacker']);
+	assert.deepEqual(Object.keys(pranksOn(B, members, T + 2 * 3_600_000)), ['slacker'], 'the nose is gone after an hour');
+	// B puts a gas mask on: only the mask shows, until it runs out
+	const mask = throwPrank(undefined, 'mask', B, 99_999, T + 3_600_000, 'pr03').state;
+	const masked = { [A]: { shop: p2 }, [B]: { shop: mask } };
+	assert.deepEqual(Object.keys(pranksOn(B, masked, T + 3_700_000)), ['mask']);
+	assert.equal(pranksOn(B, masked, T + 3_700_000).mask.by, B);
+	assert.deepEqual(Object.keys(pranksOn(B, masked, T + 26 * 3_600_000)), [], 'mask and slacker both done after a day');
+	// a "mask" someone else put on B doesn't count (it's a self prank)
+	const fake = throwPrank(undefined, 'mask', B, 99_999, T, 'pr04').state;
+	assert.equal(pranksOn(B, { [A]: { shop: fake }, [B]: {} }, T + 60_000).mask, undefined);
+	assert.equal(shopSpent(p2), 4500 + 7500);
+	assert.equal(shopSpent(mask), 12000);
+});
+
+test('the clown nose sits between the eyes on every face', () => {
+	for (const key of Object.keys(FACES)) {
+		const [x, y] = noseOf(key);
+		const e = FACES[key].eyes;
+		assert.ok(x > e.l[0] && x < e.r[0], `${key} x`);
+		assert.ok(y > e.l[1] && y < 64, `${key} y`);
+	}
 });

@@ -12,7 +12,9 @@
 	import { feed } from '#lib/feed.svelte.ts';
 	import { weaponSheet } from '#lib/weaponSheet.svelte.ts';
 	import { shortDate } from '#lib/ui.ts';
+	import { squad } from '#lib/squad.svelte.ts';
 	import CamoToggle from './CamoToggle.svelte';
+	import MaxFx from './MaxFx.svelte';
 	import WeaponCode from './WeaponCode.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
@@ -44,6 +46,8 @@
 
 	/** Abscar: a shine + smoke puff runs over the row when this tick maxed the weapon. */
 	const shine = $derived(feed.lastMaxed?.weaponId === weapon.id ? feed.lastMaxed.id : 0);
+	/** BurgiShop's max effect you wear (shop.ts slot `maxfx`, 2026-11-20): plays with it, in every theme. */
+	const maxFx = $derived(squad.shop?.eq.maxfx ?? null);
 
 	/** A ticked box's label says what unticking it also clears. */
 	function extra(i: number): string {
@@ -176,6 +180,8 @@
 	{#key shine}
 		{#if shine}
 			<span class="max-shine" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+			<!-- your own max effect from BurgiShop (every theme), when you wear one -->
+			{#if maxFx}<MaxFx kind={maxFx} />{/if}
 		{/if}
 	{/key}
 </li>

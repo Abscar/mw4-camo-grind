@@ -36,9 +36,10 @@
 	import { dayKey, playedOn } from '#lib/squad-fun.ts';
 	import { combatView, fmtRatio } from '#lib/squad-combat.ts';
 	import { banOf } from '#lib/squad-bans.ts';
-	import { pranksOn, worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
-	import OpGear from './OpGear.svelte';
-	import { faceOf } from '#lib/faceGear.ts';
+	import { freshEmote, pranksOn, worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import OpGear, { type GearExtra } from './OpGear.svelte';
+	import { faceOf, noseOf } from '#lib/faceGear.ts';
+	import { toast } from '#lib/toast.svelte.ts';
 
 	/** This week's MVP(s) in your squad: a small crown on their operator (2026-11-14). */
 	const mvps = $derived(squad.on ? weeklyMvps(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])), squad.now) : []);
@@ -74,6 +75,28 @@
 	/** What each operator's squad member wears from BurgiShop (shop.ts, OpGear; visitors see nothing). */
 	const gear = $derived(
 		Object.fromEntries(SQUAD_OPS.map((op) => [op, worn(live(op)?.member.shop)])) as Record<SquadOp, Partial<Record<ShopSlot, ShopItem>>>
+	);
+	/**
+	 * The ideas pack's extras per operator (2026-11-20, OpGear): the rifle on the back, a fresh emote (and,
+	 * on your own operator with an emote worn, a tap that plays it), a friend's Clown Nose, their Gas Mask.
+	 */
+	const extras = $derived(
+		Object.fromEntries(
+			SQUAD_OPS.map((op) => {
+				const e = live(op);
+				if (!e) return [op, {}];
+				const emote = gear[op].emote;
+				const x: GearExtra = {
+					back: gear[op].back?.id,
+					emote: freshEmote(e.member.shop, squad.serverNow()),
+					nose: pr[op].clown ? noseOf(op) : null,
+					masked: !!pr[op].mask,
+					ontap: e.mine && emote ? () => squad.playEmote() && toast.show(t.shop.emote.played(emote.name)) : null,
+					tapLabel: emote ? t.shop.emote.tap(emote.name) : undefined
+				};
+				return [op, x];
+			})
+		) as Record<SquadOp, GearExtra>
 	);
 	const statuses = $derived(
 		Object.fromEntries(
@@ -270,42 +293,42 @@
 		<HideButton id="squad" />
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id} pet={gear.abscar.pet?.id} smoked={!!pr.abscar['smoke-bomb']}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" face={faceOf(gear.abscar)} /></OpGear>
+				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id} pet={gear.abscar.pet?.id} smoked={!!pr.abscar['smoke-bomb']} extra={extras.abscar}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" face={faceOf(gear.abscar)} /></OpGear>
 				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
 			{@render stamp('abscar', t.operator.callsign)}
 			{@render high('abscar')}
-			{@render mastery(t.operator.callsign, statuses.abscar, slacker === 'abscar', t.operator.abscarStickers, 'moss', 'abscar')}
+			{@render mastery(t.operator.callsign, statuses.abscar, slacker === 'abscar' || !!pr.abscar.slacker, t.operator.abscarStickers, 'moss', 'abscar')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id} pet={gear.phillestar.pet?.id} smoked={!!pr.phillestar['smoke-bomb']}><PhillestarEmblem face={faceOf(gear.phillestar)} /></OpGear>
+				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id} pet={gear.phillestar.pet?.id} smoked={!!pr.phillestar['smoke-bomb']} extra={extras.phillestar}><PhillestarEmblem face={faceOf(gear.phillestar)} /></OpGear>
 				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
 			{@render stamp('phillestar', t.operator.mate)}
 			{@render high('phillestar')}
-			{@render mastery(t.operator.mate, statuses.phillestar, slacker === 'phillestar', t.operator.mateMotto, 'purple', 'phillestar')}
+			{@render mastery(t.operator.mate, statuses.phillestar, slacker === 'phillestar' || !!pr.phillestar.slacker, t.operator.mateMotto, 'purple', 'phillestar')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id} pet={gear.lars.pet?.id} smoked={!!pr.lars['smoke-bomb']}><LarsAkeEmblem face={faceOf(gear.lars)} /></OpGear>
+				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id} pet={gear.lars.pet?.id} smoked={!!pr.lars['smoke-bomb']} extra={extras.lars}><LarsAkeEmblem face={faceOf(gear.lars)} /></OpGear>
 				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
 			{@render stamp('lars', t.operator.lars)}
 			{@render high('lars')}
-			{@render mastery(t.operator.lars, statuses.lars, slacker === 'lars', t.operator.larsMotto, 'lime', 'lars')}
+			{@render mastery(t.operator.lars, statuses.lars, slacker === 'lars' || !!pr.lars.slacker, t.operator.larsMotto, 'lime', 'lars')}
 		</div>
 
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id} pet={gear.jeeven.pet?.id} smoked={!!pr.jeeven['smoke-bomb']}><DaJeevenEmblem face={faceOf(gear.jeeven)} /></OpGear>
+				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id} pet={gear.jeeven.pet?.id} smoked={!!pr.jeeven['smoke-bomb']} extra={extras.jeeven}><DaJeevenEmblem face={faceOf(gear.jeeven)} /></OpGear>
 				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
 			{@render stamp('jeeven', t.operator.jeeven)}
 			{@render high('jeeven')}
-			{@render mastery(t.operator.jeeven, statuses.jeeven, slacker === 'jeeven', '', 'purple', 'jeeven')}
+			{@render mastery(t.operator.jeeven, statuses.jeeven, slacker === 'jeeven' || !!pr.jeeven.slacker, '', 'purple', 'jeeven')}
 			<!-- his Black Ops 6 + 7 record (the user, 2026-11-13) and the gold "Certified grinder" sticker -->
 			<div class="sq-record-wrap">
 				<p class="sq-record-title font-hud">{t.operator.recordTitle}</p>
@@ -324,12 +347,12 @@
 		<!-- Ingman, the wizard (2026-11-14, the user's friend), with his sign "Jim and Pro player" -->
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
-				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id} pet={gear.ingman.pet?.id} smoked={!!pr.ingman['smoke-bomb']}><IngmanEmblem face={faceOf(gear.ingman)} /></OpGear>
+				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id} pet={gear.ingman.pet?.id} smoked={!!pr.ingman['smoke-bomb']} extra={extras.ingman}><IngmanEmblem face={faceOf(gear.ingman)} /></OpGear>
 				{@render callsign(t.operator.ingman, 'ingman')}
 			</div>
 			{@render stamp('ingman', t.operator.ingman)}
 			{@render high('ingman')}
-			{@render mastery(t.operator.ingman, statuses.ingman, slacker === 'ingman', t.operator.ingmanMotto, 'wizard', 'ingman')}
+			{@render mastery(t.operator.ingman, statuses.ingman, slacker === 'ingman' || !!pr.ingman.slacker, t.operator.ingmanMotto, 'wizard', 'ingman')}
 		</div>
 	</div>
 </div>
