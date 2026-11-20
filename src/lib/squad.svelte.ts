@@ -92,6 +92,7 @@ import {
 } from './shop.ts';
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
 import { cleanDonations, giveTo, goalPassed, karmaBalance, loveFor, mergeDonations, squadGiving, withLove, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
+import { buyKarmaItem, cleanKarmaShop, heartsOf, mergeKarmaShop, ownKarmaItems, KARMA_BY_ID, type Hearts, type KarmaBuyResult, type KarmaShopState } from './karma-shop.ts';
 import { is420 } from './four20.ts';
 import { cleanTune, forcedFor, luckFor, withUsed, type CasinoTune, type ForceKind, type RigGame } from './casino-rig.ts';
 
@@ -115,6 +116,8 @@ const LOANS_KEY = 'mw4-camo-grind:loans';
 const DONATIONS_KEY = 'mw4-camo-grind:donations';
 /** The newest karma-bank gift this device has seen (a toast for love that reached you), per squad code. */
 const KARMA_SEEN_KEY = 'mw4-camo-grind:karma-seen';
+/** KarmaShop: hearts paid per item (karma-shop.ts), kept on this device too. */
+const KARMA_SHOP_KEY = 'mw4-camo-grind:karma-shop';
 /** Next-only casino settings this device already took (casino-rig.ts), newest last. */
 const RIG_USED_KEY = 'mw4-camo-grind:casino-taken';
 const RIG_USED_MAX = 30;
@@ -367,6 +370,8 @@ class Squad {
 	loans = $state<LoanBook | undefined>(undefined);
 	/** BurgiGives: what you gave the joke causes, merged with your other device's. */
 	donations = $state<DonationBook | undefined>(undefined);
+	/** KarmaShop: hearts paid per item, merged with your other device's. */
+	karmaShop = $state<KarmaShopState | undefined>(undefined);
 	/** Today's daily bonus when this page counted it (for the casino tab's welcome line). */
 	bonusToday = $state<{ amount: number; n: number } | null>(null);
 	#device = '';
@@ -425,7 +430,8 @@ class Squad {
 			casino: this.casino,
 			shop: this.shop,
 			loans: this.loans,
-			donations: this.donations
+			donations: this.donations,
+			karmaShop: this.karmaShop
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -471,6 +477,7 @@ class Squad {
 		this.shop = cleanShop(readJson(SHOP_KEY));
 		this.loans = cleanLoans(readJson(LOANS_KEY));
 		this.donations = cleanDonations(readJson(DONATIONS_KEY));
+		this.karmaShop = cleanKarmaShop(readJson(KARMA_SHOP_KEY));
 		const taken = readJson(RIG_USED_KEY);
 		this.#rigUsed = Array.isArray(taken) ? taken.filter((x): x is string => typeof x === 'string').slice(-RIG_USED_MAX) : [];
 		const device = readJson(DEVICE_KEY);
@@ -876,6 +883,28 @@ class Squad {
 		setTimeout(() => toast.show(t.donate.karma.got(from, total, last === undefined ? null : (t.donate.karma.lines[last] ?? null)), undefined, 8000), 1500);
 	}
 
+	// ----- KarmaShop (karma-shop.ts) -----
+
+	/** Your hearts: earned from what you gave in BurgiGives, spent in KarmaShop. */
+	get myHearts(): Hearts {
+		return heartsOf({ donations: this.donations, karmaShop: this.karmaShop });
+	}
+
+	/** Buy a KarmaShop item with hearts (worn at once); epic and legendary ones go on the radio. */
+	buyKarmaItem(id: string): KarmaBuyResult | 'off' {
+		if (!this.me) return 'off';
+		const r = buyKarmaItem(this.karmaShop, this.shop, id, this.myHearts.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.karmaShop = r.karmaShop;
+		this.shop = r.shop;
+		writeJson(KARMA_SHOP_KEY, r.karmaShop);
+		writeJson(SHOP_KEY, r.shop);
+		this.#schedulePublish();
+		const it = KARMA_BY_ID.get(id);
+		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.karmaShop.event(it.name, t.shop.rarity[it.rarity]));
+		return 'ok';
+	}
+
 	// ----- Abscar's admin menu -----
 
 	/** Give (+) or take (−) burgers for a member, out of nothing / into nothing. Only Abscar may. */
@@ -1227,6 +1256,19 @@ class Squad {
 				writeJson(DONATIONS_KEY, merged ?? null);
 			}
 		}
+		if (mine?.karmaShop) {
+			const merged = mergeKarmaShop(this.karmaShop, mine.karmaShop);
+			if (JSON.stringify(merged) !== JSON.stringify(this.karmaShop)) {
+				this.karmaShop = merged;
+				writeJson(KARMA_SHOP_KEY, merged ?? null);
+			}
+		}
+		// a KarmaShop item bought but missing from the shop (a copy that lost it) is owned again
+		const owned = ownKarmaItems(this.shop, this.karmaShop);
+		if (owned !== this.shop) {
+			this.shop = owned;
+			writeJson(SHOP_KEY, owned ?? null);
+		}
 		if (!away) this.#countToday();
 		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {
 			readyAt: this.readyAt,
@@ -1239,7 +1281,8 @@ class Squad {
 			casino: this.casino,
 			shop: this.shop,
 			loans: this.loans,
-			donations: this.donations
+			donations: this.donations,
+			karmaShop: this.karmaShop
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;

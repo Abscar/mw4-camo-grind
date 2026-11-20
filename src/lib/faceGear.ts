@@ -13,6 +13,8 @@
  * Our own cartoons, no brands.
  */
 import { LEAF_PATHS, LEAF_STEM } from './leaf.ts';
+// KarmaShop's eyes and hats ("k-" ids, 2026-11-20) are drawn there, at the same anchors
+import { karmaEyes, karmaHat } from './karmaShopArt.ts';
 
 type P = [number, number];
 const f = (n: number, d = 2) => +n.toFixed(d);
@@ -255,6 +257,7 @@ export const EXHALE_K = 0.32;
 /** Glasses, eyes or lasers from the 420 pack over the face's eyes; '' for nothing or no eyes. */
 export function eyesItem(u: string, id: string | null | undefined, e: Face['eyes']): string {
 	if (!e || !id) return '';
+	if (id.startsWith('k-')) return karmaEyes(u, id, e);
 	const v = `${u}-fge`;
 	const R = e.rad;
 	const [[lx, ly], [rx, ry]] = [e.l, e.r];
@@ -302,6 +305,7 @@ export function eyesItem(u: string, id: string | null | undefined, e: Face['eyes
 /** A hat from the 420 pack on the face's head; '' for nothing. */
 export function hatItem(u: string, id: string | null | undefined, h: Face['head']): string {
 	if (!id) return '';
+	if (id.startsWith('k-')) return karmaHat(u, id, h);
 	const v = `${u}-fgh`;
 	const { x, y, w } = h;
 	const hw = w / 2;

@@ -2136,6 +2136,45 @@ export const en = {
 			'The weapon grind (Military, Special, Gold, Platinum, Harmonic Break, Divergence, Mastery) is on the Camo grind tab; this is every other camo we found a source for. Paid store bundles are left out; the Season 1 Battle Pass, the campaign, DMZ secrets, Twitch drops and the partner promotions were checked and give no camos. Lists move along by themselves as dates pass; ≈ marks an estimated date. Tap a camo for the details, tap the box to mark it as got (saved and synced like your other ticks). The camo pictures are our own drawings in each camo’s style, made after the real one; a camo nobody has shown yet gets a symbol for where it comes from instead.',
 		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
+	/** KarmaShop (2026-11-20; karma-shop.ts): the second shop in the BurgiShop tab, paid with hearts from BurgiGives. */
+	karmaShop: {
+		heading: 'KarmaShop',
+		sub: 'Good-karma cosmetics, paid with hearts',
+		/** the two shops' switch at the top of the BurgiShop tab */
+		switchLabel: 'Which shop',
+		burgiTile: 'Pay with 🍔 burgers',
+		karmaTile: 'Pay with ❤️ hearts',
+		balance: 'Your hearts',
+		hearts: (n: number) => `${n.toLocaleString('en-US')} ❤️`,
+		intro: 'Kindness pays here. You earn hearts by giving burgers away in BurgiGives, and spend them on good-karma looks for your operator: the whole squad sees them. What you buy is yours to keep and is worn like your BurgiShop things (one per kind).',
+		how: 'How you earn hearts',
+		rules: [
+			'1 ❤️ for every 1,000 🍔 you give in BurgiCasino → Donations (BurgiGives).',
+			'+10 ❤️ once for each cause you give at least 1,000 🍔 (up to +50 for all five).',
+			'Everything you’ve given before counts too. Hearts never run out on their own, and only you can spend yours.'
+		],
+		given: (burgers: number, causes: number) => `You’ve given ${burgers.toLocaleString('en-US')} 🍔 to ${causes} of 5 causes`,
+		earnedSpent: (earned: number, spent: number) => `${earned.toLocaleString('en-US')} ❤️ earned · ${spent.toLocaleString('en-US')} ❤️ spent`,
+		next: (burgers: number) => `${burgers.toLocaleString('en-US')} 🍔 more given = 1 more ❤️`,
+		toDonate: 'Give burgers in BurgiGives',
+		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} ❤️`,
+		bought: (name: string) => `${name} is yours and on your operator 💖`,
+		broke: (price: number, have: number) => `${price.toLocaleString('en-US')} ❤️ needed, you have ${have.toLocaleString('en-US')}. Give burgers in BurgiGives to earn more.`,
+		slotHint: {
+			aura: 'Glows behind your operator.',
+			effect: 'Floats around your operator.',
+			eyes: 'Sits on your operator’s eyes, over masks, goggles and glasses.',
+			hat: 'Sits on your operator’s head (Ingman takes his wizard hat off for it).',
+			smoke: 'Colours the smoke from whatever’s in your mouth. Nothing in it? You blow a puff out yourself.',
+			pet: 'A little sidekick that sits on your operator’s shoulder.'
+		} as Partial<Record<string, string>>,
+		kindest: 'Kindest in the squad',
+		kindestNone: 'Nobody has given anything yet. Be the first!',
+		kindRow: (hearts: number, burgers: number) => `${hearts.toLocaleString('en-US')} ❤️ · ${burgers.toLocaleString('en-US')} 🍔 given`,
+		items: (n: number) => (n === 1 ? '1 karma item' : `${n} karma items`),
+		you: 'You',
+		event: (name: string, rarity: string) => `got ${name} (${rarity}) in KarmaShop 💖`
+	},
 	/** The Cosmetics tab (CosmeticsSection; data/cosmetics.ts). */
 	cosmetics: {
 		heading: 'Cosmetics',

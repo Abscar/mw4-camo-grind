@@ -27,6 +27,7 @@
  * No browser APIs and no runes, so Node tests it directly (scripts/shop.test.js). Doesn't import
  * squad-codec.ts (which imports this file).
  */
+import { KARMA_ITEMS } from './karma-shop.ts';
 
 // eyes / hat / smoke / pet: the 420 pack 2 (2026-11-16); eyes + hat are drawn by the emblems (faceGear.ts),
 // smoke tints whatever smokes on them, the pet sits on the shoulder (OpGear + ShopPet).
@@ -44,6 +45,8 @@ export interface ShopItem {
 	rarity: Rarity;
 	/** For titles: the words on the plate. */
 	text?: string;
+	/** KarmaShop (karma-shop.ts): paid with hearts, never burgers. */
+	karma?: true;
 }
 
 const item = (id: string, slot: ShopSlot, name: string, price: number, rarity: Rarity, text?: string): ShopItem => ({ id, slot, name, price, rarity, ...(text ? { text } : {}) });
@@ -198,7 +201,8 @@ export interface Prank {
 }
 /** Pranks kept in the list (the newest); older ones only count as burgers spent (`pOld`). */
 export const PRANK_KEEP = 30;
-export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map(SHOP_ITEMS.map((i) => [i.id, i]));
+// KarmaShop's items too (karma-shop.ts): worn and drawn like these, but bought with hearts (buyKarmaItem), not here
+export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS].map((i) => [i.id, i]));
 
 export interface ShopState {
 	/** Item id → burgers paid. */
@@ -369,7 +373,7 @@ export type BuyResult = 'ok' | 'owned' | 'broke' | 'unknown';
 /** Buy an item (it's worn at once): the new state, or why not. */
 export function buy(s: ShopState | undefined, id: string, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
 	const it = ITEM_BY_ID.get(id);
-	if (!it) return { result: 'unknown' };
+	if (!it || it.karma) return { result: 'unknown' };
 	if (s?.own[id] !== undefined) return { result: 'owned' };
 	if (balance < it.price) return { result: 'broke' };
 	// `...s` keeps the pranks thrown (and `pOld`): without it a buy dropped them until the next merge

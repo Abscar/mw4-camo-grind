@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
 	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
+	import { karmaPet } from '#lib/karmaShopArt.ts';
 
 	let { id, size = 30 }: { id: string; size?: number } = $props();
 	const uid = $props.id();
@@ -91,6 +92,9 @@
 			<circle class="pet-puff" cx="29.6" cy="15" r="1.3" fill="#e8ede9" opacity=".8" />
 			<circle cx="23.8" cy="22.2" r="1.1" fill="#4fc23a" stroke="#14501a" stroke-width=".5" />
 		</g>
+	{:else if id.startsWith('k-')}
+		<!-- KarmaShop's sidekicks (karmaShopArt.ts) -->
+		{@html karmaPet(uid, id)}
 	{/if}
 </svg>
 

@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
 	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
+	import { karmaPin } from '#lib/karmaShopArt.ts';
 
 	let { id, size = 24 }: { id: string; size?: number } = $props();
 	const uid = $props.id();
@@ -16,7 +17,7 @@
 		<linearGradient id="{uid}-gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fdff" /><stop offset="0.45" stop-color="#5ce1ff" /><stop offset="1" stop-color="#1a6ad8" /></linearGradient>
 	</defs>
 	<!-- the pin's rim -->
-	<circle cx="16" cy="16" r="14.5" fill={id === 'pin-holk' || id === 'pin-crown' ? '#2a0a06' : id === 'pin-leaf' || id === 'pin-420' ? '#0b2a10' : '#12161c'} stroke="url(#{uid}-gold)" stroke-width="2.5" />
+	<circle cx="16" cy="16" r="14.5" fill={id === 'pin-holk' || id === 'pin-crown' ? '#2a0a06' : id === 'pin-leaf' || id === 'pin-420' ? '#0b2a10' : id.startsWith('k-') ? '#3a0a26' : '#12161c'} stroke="url(#{uid}-gold)" stroke-width="2.5" />
 	{#if id === 'pin-burger'}
 		<path d="M7 15c0-4.4 4-7 9-7s9 2.6 9 7z" fill="#e0a040" stroke={O} stroke-width="1.2" />
 		<path d="M6.5 16.5h19l-1.5 2h-16z" fill="#4fb23a" />
@@ -67,6 +68,9 @@
 		<ellipse cx="24.3" cy="11.9" rx="1.6" ry="2.1" transform="rotate(-37 24.3 11.9)" fill="#ff8a1a" />
 		<circle cx="25" cy="11" r="3.4" fill="#ff8a1a" opacity="0.35" />
 		<path d="M25 8 q-1.5 -2 0.5 -3.5 q1.5 -1.2 0 -2.8" fill="none" stroke="#e8e8e0" stroke-width="1.1" stroke-linecap="round" opacity="0.85" />
+	{:else if id.startsWith('k-')}
+		<!-- KarmaShop's pins (karmaShopArt.ts) -->
+		{@html karmaPin(uid, id)}
 	{/if}
 	<!-- enamel shine -->
 	<path d="M6 11 A11 11 0 0 1 14 5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity="0.45" />
