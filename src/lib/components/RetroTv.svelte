@@ -43,6 +43,7 @@
 	import { breakingNews, type Headline } from '#lib/news-codec.ts';
 	import { news, timeAgo } from '#lib/news.svelte.ts';
 	import TvGames from '#lib/components/TvGames.svelte';
+	import HideButton from '#lib/components/HideButton.svelte';
 	import {
 		CAPTIONS_OFF,
 		LISTENING,
@@ -554,6 +555,8 @@
 	</svg>
 
 	<div class="tv-cabinet">
+		<!-- the TV's own "Hide" on the cabinet's top-right edge (2026-11-20) -->
+		<HideButton id="tv" style="--hb-right: 12px" />
 		<div class="tv-front">
 			<div class="tv-glass">
 				{#if power && !newsItem && !cast && (tuning || !signal || !src)}

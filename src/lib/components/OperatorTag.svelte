@@ -23,6 +23,7 @@
 	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/en.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
+	import HideButton from './HideButton.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import IngmanEmblem from './IngmanEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
@@ -265,6 +266,8 @@
 <div class="squad-wrap abscar-only mb-4 pt-1">
 	<div class="squad-frame relative max-w-full rounded-lg px-3 pt-4 pb-3">
 		<span class="squad-legend font-hud">{t.operator.squad}</span>
+		<!-- the frame's own "Hide" on its top-right edge, across from the SQUAD pill (2026-11-20) -->
+		<HideButton id="squad" />
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5">
 				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id} pet={gear.abscar.pet?.id} smoked={!!pr.abscar['smoke-bomb']}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" face={faceOf(gear.abscar)} /></OpGear>

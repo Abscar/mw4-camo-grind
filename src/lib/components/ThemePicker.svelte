@@ -8,6 +8,7 @@
 	paused. Hidden with prefers-reduced-motion (nothing moves then anyway).
 -->
 <script lang="ts">
+	import { hidden } from '#lib/hidden.svelte.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { motion } from '#lib/motion.svelte.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -125,7 +126,7 @@
 
 	<div
 		id={menuId}
-		class="absolute top-12 right-0 z-40 grid min-w-44 gap-1 rounded-card border border-line bg-panel p-1.5 text-fg shadow-[0_14px_34px_rgb(0_0_0/0.4)]"
+		class="absolute top-12 right-0 z-40 grid min-w-52 gap-1 rounded-card border border-line bg-panel p-1.5 text-fg shadow-[0_14px_34px_rgb(0_0_0/0.4)]"
 		role="group"
 		aria-label={t.theme.label}
 		hidden={!open}
@@ -152,6 +153,26 @@
 				{theme.name}
 			</button>
 		{/each}
+		<!-- the "What to show" list (HiddenBar, 2026-11-20): reachable here before anything is hidden -->
+		<hr class="mx-1 my-0.5 border-line" />
+		<button
+			type="button"
+			class="font-head flex min-h-11 items-center gap-2.5 rounded-[calc(var(--t-radius)+2px)] px-3 text-left text-[13px] font-semibold transition-colors hover:bg-panel-2"
+			onclick={() => {
+				open = false;
+				toggle?.focus();
+				hidden.listOpen = true;
+			}}
+		>
+			<svg viewBox="0 0 24 24" class="size-4 flex-none" aria-hidden="true" focusable="false"
+				><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+					><path d="M2.8 12S6.3 5.8 12 5.8 21.2 12 21.2 12 17.7 18.2 12 18.2 2.8 12 2.8 12Z" /><circle cx="12" cy="12" r="2.7" /><path
+						d="M4.5 19.5 19.5 4.5"
+					/></g
+				></svg
+			>
+			{t.hide.menuEntry}
+		</button>
 	</div>
 </div>
 

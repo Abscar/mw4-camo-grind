@@ -12,6 +12,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { loadoutView } from '#lib/loadoutView.svelte.ts';
 	import { shortDate } from '#lib/ui.ts';
+	import HideButton from './HideButton.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	let { classId }: { classId: string } = $props();
@@ -26,6 +27,8 @@
 </script>
 
 {#if cls && lists.length > 0}
+	<div class="relative">
+	<HideButton id="classMeta" />
 	<section class="class-card meta-list overflow-hidden rounded-card bg-panel shadow-card" style:--c="var(--t-accent)" aria-labelledby="class-meta-heading">
 		<header class="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pt-3.5 pb-2.5 sm:px-5">
 			<h2 id="class-meta-heading" class="font-head text-base font-bold tracking-wide uppercase">{t.classMeta.heading(cls.name)}</h2>
@@ -75,4 +78,5 @@
 			{/each}
 		</div>
 	</section>
+	</div>
 {/if}

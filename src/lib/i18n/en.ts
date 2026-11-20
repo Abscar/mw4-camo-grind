@@ -155,6 +155,70 @@ export const en = {
 		playingToast: 'Animations playing again.'
 	},
 
+	/** The "Hide" buttons on every part of the page + the list to bring them back (HideButton, HiddenBar; 2026-11-20). */
+	hide: {
+		button: 'Hide',
+		buttonLabel: (what: string) => `Hide: ${what}`,
+		tabButton: 'Hide this tab',
+		/** the camo list's button, in the search row (next to "Hide maxed weapons", so it says what it hides) */
+		listButton: 'Hide list',
+		hiddenToast: (what: string) => `${what} hidden. Bring it back from “Hidden” at the top of the page.`,
+		bar: (n: number) => `${n} ${n === 1 ? 'part' : 'parts'} hidden`,
+		choose: 'Choose',
+		chooseLabel: 'Choose what to show on the page',
+		showAll: 'Show all',
+		shownAllToast: 'Everything is shown again.',
+		/** in the theme menu (top right), always there */
+		menuEntry: 'Show / hide parts…',
+		title: 'What to show',
+		intro: 'Switch off what you don’t need. This is only for this device, and your ticks are never touched.',
+		compactNote: 'Compact mode is on: it hides the decorations anyway (news, pictures, the TV …).',
+		onlyCamosMeta: 'Only camos & metas',
+		onlyCamosMetaToast: 'Only camos and metas are shown now.',
+		showEverything: 'Show everything',
+		done: 'Done',
+		close: 'Close',
+		groups: { header: 'Top of the page', grind: 'Camo grind tab', pictures: 'Pictures', tabs: 'Tabs' },
+		allPictures: 'All pictures',
+		names: {
+			squad: 'Squad frame (operators)',
+			hud: 'Red HUD box',
+			tv: 'Old TV',
+			buddy: 'News buddy',
+			news: 'News radar',
+			season: 'Season countdown',
+			kpi: 'Progress tiles',
+			camos: 'Camo list (all weapons)',
+			classMeta: 'Class meta (when you pick a class)',
+			mastery: 'Divergence & Mastery (whole box)',
+			masteryMp: 'Multiplayer Mastery',
+			masteryWz: 'Warzone Mastery',
+			masteryDmz: 'DMZ Mastery',
+			meta: 'Meta top 5',
+			sync: 'Backup & sync',
+			help: 'Help text at the bottom',
+			picNuke: 'Nuke operator picture',
+			picLars: 'Drängen Lars Åke picture',
+			picCyborg: 'Cyborg skull picture',
+			picCrown: 'Crowned skull picture',
+			picWizard: 'Wizard picture',
+			picDoomsday: 'Doomsday squad picture',
+			picScooter: 'Scooter rider picture',
+			tabRanked: 'Ranked tab',
+			tabCosmetics: 'Cosmetics tab',
+			tabExtras: 'Extra camos tab',
+			tabSquad: 'Squad tab',
+			tabCasino: 'BurgiCasino tab',
+			tabShop: 'BurgiShop tab'
+		},
+		/** small notes in the list for parts that keep working while hidden */
+		notes: {
+			sync: 'Sync keeps running while it’s hidden.',
+			tabSquad: 'You stay in the squad while it’s hidden.',
+			mastery: 'Hides Divergence and all three Mastery tracks.'
+		} as Partial<Record<string, string>>
+	},
+
 	/** The Abscar theme's header extras. */
 	operator: {
 		label: 'Operator',

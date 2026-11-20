@@ -16,7 +16,12 @@
 	} from '#lib/kpiCamos.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { percent } from '#lib/ui.ts';
+	import { hidden } from '#lib/hidden.svelte.ts';
+	import type { HideId } from '#lib/hideSections.ts';
+	import HideButton from './HideButton.svelte';
 	import MasteryRow from './MasteryRow.svelte';
+
+	const HIDE_ID: Record<(typeof MASTERY_TRACKS)[number]['mode'], HideId> = { mp: 'masteryMp', wz: 'masteryWz', dmz: 'masteryDmz' };
 	import NukeOperator from './NukeOperator.svelte';
 	import StatusPill from './StatusPill.svelte';
 
@@ -74,14 +79,16 @@
 		one framed box per mode, in this order: Multiplayer, Warzone, DMZ (the user's ask 2026-11-10:
 		"divide them so they're split into their categories"); Divergence above opens all three
 	-->
-	<div class="mastery-groups flex flex-col gap-3.5 border-t border-line p-2.5 sm:gap-4 sm:p-4">
+	<!-- each mode can be hidden on its own (2026-11-20, the "Hide" buttons); all three hidden = no box here -->
+	<div class="mastery-groups flex flex-col gap-3.5 border-t border-line p-2.5 sm:gap-4 sm:p-4" hidden={MASTERY_TRACKS.every((x) => hidden.is(HIDE_ID[x.mode]))}>
 		{#each MASTERY_TRACKS as track (track.mode)}
-			<section class="mastery-group" data-mode={track.mode} aria-labelledby="mastery-mode-{track.mode}">
-				<div class="mastery-mode flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 pt-3 pb-2.5 sm:px-5">
+			<section class="mastery-group" data-mode={track.mode} aria-labelledby="mastery-mode-{track.mode}" hidden={hidden.is(HIDE_ID[track.mode])}>
+				<div class="mastery-mode flex flex-wrap items-center gap-x-3 gap-y-0.5 pt-2 pr-1.5 pb-2 pl-4 sm:pl-5">
 					<h3 id="mastery-mode-{track.mode}" class="font-head text-[13px] font-bold tracking-widest uppercase">
 						{t.mastery.modes[track.mode].name}
 					</h3>
-					<p class="text-xs text-muted">{t.mastery.modes[track.mode].note}</p>
+					<p class="text-xs text-muted max-sm:order-last max-sm:basis-full max-sm:pb-0.5">{t.mastery.modes[track.mode].note}</p>
+					<HideButton id={HIDE_ID[track.mode]} inline class="ml-auto" />
 				</div>
 				{#each track.camos as camo, i (camo.id)}
 					<MasteryRow

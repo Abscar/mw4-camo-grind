@@ -10,6 +10,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { codeView } from '#lib/codeView.svelte.ts';
+	import HideButton from './HideButton.svelte';
 	// the user's own blunt picture (Abscar theme: every class button is drawn as this blunt)
 	import bluntPic from '#lib/assets/blunt.webp';
 	// the user's own white holk picture lying in an ashtray, end of the search row (Abscar only)
@@ -74,6 +75,9 @@
 			></span>
 			{t.codes.show}
 		</label>
+
+		<!-- hides the whole camo list (search, filters and every weapon; 2026-11-20, the "Hide" buttons) -->
+		<HideButton id="camos" inline label={t.hide.listButton} class="ml-auto" />
 	</div>
 
 	<div

@@ -14,6 +14,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import type { Headline } from '#lib/news-codec.ts';
 	import { CHARLIE_INTEL_X, news, timeAgo, useNews } from '#lib/news.svelte.ts';
+	import HideButton from './HideButton.svelte';
 
 	/** Headlines in the opened box (the first one included). */
 	const OPENED = 6;
@@ -113,6 +114,9 @@
 					</span>
 				</button>
 			{/if}
+
+			<!-- hides the whole radar (2026-11-20, the "Hide" buttons) -->
+			<HideButton id="news" inline short class="radar-hide" />
 		</div>
 
 		<!-- slides open (grid rows 0fr → 1fr); `inert` keeps the closed list out of Tab and screen readers -->
@@ -133,6 +137,17 @@
 	/* A green radar screen in the spirit of CoD4's minimap: dark phosphor-green glass with a faint
 	   grid and scanlines, glowing green text and a little radar scope with a turning sweep.
 	   Fixed colours on purpose: the box looks the same in every theme. */
+	/* its Hide pill in the radar's own green, in every theme */
+	.radar :global(.radar-hide .hide-pill) {
+		border-color: var(--radar-line);
+		background: rgb(6 26 12 / 0.85);
+		color: #c4ffcf;
+	}
+	.radar :global(.radar-hide:hover .hide-pill),
+	.radar :global(.radar-hide:focus-visible .hide-pill) {
+		border-color: #6dff98;
+		color: #fff;
+	}
 	.radar {
 		--radar-line: rgb(70 255 120 / 0.55);
 		color: #c4ffcf;

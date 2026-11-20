@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { asset } from '$app/paths';
 	import { OFFLINE_FILE, clearLinkFromAddress, linkCodeInAddress } from '#lib/browser.ts';
 	import { DIVERGENCE_REQUIRED, LADDER, MAX_LEVEL } from '#lib/data/camos.ts';
@@ -56,25 +56,68 @@
 	import Four20Banner from '#lib/components/Four20Banner.svelte';
 	import SquadUpFire from '#lib/components/SquadUpFire.svelte';
 	import { squad } from '#lib/squad.svelte.ts';
+	import { hidden } from '#lib/hidden.svelte.ts';
+	import { headerAreas, type HideId } from '#lib/hideSections.ts';
+	import HideButton from '#lib/components/HideButton.svelte';
+	import HiddenBar from '#lib/components/HiddenBar.svelte';
 
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
 	    moved up here from its own switch inside Camo grind, second place, 2026-11-20). All stay mounted; the
 	    others are only hidden. Like the rest, the page always opens on Camo grind. */
 	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'extras', 'squad', 'casino', 'shop'] as const;
-	let view = $state<(typeof PAGE_TABS)[number]>('grind');
+	type PageTab = (typeof PAGE_TABS)[number];
+	let view = $state<PageTab>('grind');
+
+	/** Every tab but Camo grind can be hidden (2026-11-20, the "Hide" buttons): its tab button goes, the panel
+	    stays mounted (so the squad, sync etc. keep running). */
+	const TAB_HIDE: Record<Exclude<PageTab, 'grind'>, HideId> = {
+		ranked: 'tabRanked',
+		cosmetics: 'tabCosmetics',
+		extras: 'tabExtras',
+		squad: 'tabSquad',
+		casino: 'tabCasino',
+		shop: 'tabShop'
+	};
+	const tabShown = (tab: PageTab) => tab === 'grind' || !hidden.is(TAB_HIDE[tab]);
+	const shownTabs = $derived(PAGE_TABS.filter(tabShown));
+
+	// the tab you're on was hidden (its own "Hide this tab" button, or the list): back to Camo grind
+	$effect(() => {
+		if (!tabShown(view)) view = 'grind';
+	});
+
+	/** to the Squad tab, bringing it back if it was hidden (a squad link, or "go to Squad" in the casino/shop) */
+	function goSquad() {
+		if (hidden.is('tabSquad')) hidden.set('tabSquad', false);
+		view = 'squad';
+	}
 
 	// a squad link was opened: show the Squad tab, where it asks for your name
 	$effect(() => {
-		if (squad.showTab > 0) view = 'squad';
+		if (squad.showTab > 0) untrack(goSquad);
 	});
 
 	function tabKey(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
 		e.preventDefault();
-		const step = e.key === 'ArrowRight' ? 1 : PAGE_TABS.length - 1;
-		view = PAGE_TABS[(PAGE_TABS.indexOf(view) + step) % PAGE_TABS.length];
+		const step = e.key === 'ArrowRight' ? 1 : shownTabs.length - 1;
+		view = shownTabs[(shownTabs.indexOf(view) + step) % shownTabs.length];
 		document.getElementById(`tab-${view}`)?.focus();
 	}
+
+	/** Abscar's header grid without the parts that are hidden (no empty rows keeping their gaps) */
+	const areas = $derived(headerAreas(hidden.ids));
+
+	/** The user's own pictures under Meta top 5 (Abscar only), each with its own "Hide" */
+	const BANNERS = [
+		{ id: 'picNuke', C: NukeBanner },
+		{ id: 'picLars', C: LarsAkeBanner },
+		{ id: 'picCyborg', C: CyborgBanner },
+		{ id: 'picCrown', C: CrownBanner },
+		{ id: 'picWizard', C: WizardBanner },
+		{ id: 'picDoomsday', C: DoomsdayBanner },
+		{ id: 'picScooter', C: ScooterBanner }
+	] as const satisfies readonly { id: HideId; C: unknown }[];
 
 	let query = $state('');
 	const needle = $derived(query.trim().toLowerCase());
@@ -152,6 +195,8 @@
 	}
 
 	onMount(() => {
+		// before progress.load(): what's hidden lands in the same update that fades the page in
+		hidden.load();
 		const result = progress.load();
 		// the old "Camo list | Ranked prep" switch remembered Ranked here (until 2026-11-20); Ranked is a page
 		// tab now and the page opens on Camo grind, so the leftover choice is just cleared
@@ -220,10 +265,17 @@
 		     Squad frame, HUD + title, the news buddy, and the old TV beside them (the user's layout). -->
 		<header
 			class="abscar-header relative mx-auto flex max-w-[1240px] flex-wrap items-stretch justify-between gap-4 px-4 pt-3 pb-5 sm:px-5 sm:pt-4"
+			style:--hdr-phone={areas.phone}
+			style:--hdr-mid={areas.mid}
+			style:--hdr-wide={areas.wide}
+			style:--hdr-mid-cols={areas.midCols}
+			style:--hdr-wide-cols={areas.wideCols}
 		>
-			<div class="hdr-squad abscar-only compact-hide relative z-[1] min-w-0"><OperatorTag /></div>
+			<div class="hdr-squad abscar-only compact-hide relative z-[1] min-w-0" hidden={hidden.is('squad')}>
+				<OperatorTag />
+			</div>
 			<div class="hdr-title relative z-[1] min-w-0">
-				<div class="compact-hide mb-5"><HudReadout /></div>
+				<div class="hdr-hud compact-hide relative mb-5" hidden={hidden.is('hud')}><HudReadout /><HideButton id="hud" abscar /></div>
 				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
 					<span class="brand-glow text-brand">{t.title.game}</span><span
 						class="mx-[0.3em] font-normal text-band-muted"
@@ -233,8 +285,8 @@
 			</div>
 			<!-- the old TV with CoD montages; z above the fixed scanline layer (z 30), so nothing is
 			     drawn over the video -->
-			<div class="hdr-tv abscar-only compact-hide relative z-[31]"><RetroTv /></div>
-			<div class="hdr-buddy abscar-only compact-hide relative z-[1]"><NewsBuddy /></div>
+			<div class="hdr-tv abscar-only compact-hide relative z-[31]" hidden={hidden.is('tv')}><RetroTv /></div>
+			<div class="hdr-buddy abscar-only compact-hide relative z-[1]" hidden={hidden.is('buddy')}><NewsBuddy /><HideButton id="buddy" /></div>
 		</header>
 		<div class="abscar-only compact-hide"><div class="damascus-floor"></div></div>
 	</div>
@@ -249,9 +301,13 @@
 		<SquadUpBanner />
 		<Four20Banner />
 
+		<!-- "n parts hidden · Choose · Show all" while anything is hidden, and the "What to show" list -->
+		<HiddenBar />
+
 		<!-- page tabs: the tracker, Ranked prep, the Cosmetics list, Extra camos, the Squad, BurgiCasino, BurgiShop -->
-		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label}>
-			{#each PAGE_TABS as tab (tab)}
+		<!-- every other tab hidden: no row for Camo grind alone (it stays in the page for the panel's label) -->
+		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label} hidden={shownTabs.length === 1}>
+			{#each shownTabs as tab (tab)}
 				<button
 					type="button"
 					id="tab-{tab}"
@@ -266,40 +322,55 @@
 			{/each}
 		</div>
 
+		<!-- every tab but Camo grind has a "Hide this tab" button at its top right (2026-11-20) -->
+		{#snippet tabHide(tab: Exclude<PageTab, 'grind'>)}
+			<div class="mt-3 flex justify-end"><HideButton id={TAB_HIDE[tab]} inline label={t.hide.tabButton} /></div>
+		{/snippet}
+
 		<div id="panel-ranked" role="tabpanel" aria-labelledby="tab-ranked" hidden={view !== 'ranked'}>
-			<div class="mt-5"><RankedSection /></div>
+			{@render tabHide('ranked')}
+			<div class="mt-2"><RankedSection /></div>
 		</div>
 
 		<div id="panel-cosmetics" role="tabpanel" aria-labelledby="tab-cosmetics" hidden={view !== 'cosmetics'}>
-			<div class="mt-5"><CosmeticsSection /></div>
+			{@render tabHide('cosmetics')}
+			<div class="mt-2"><CosmeticsSection /></div>
 		</div>
 
 		<div id="panel-extras" role="tabpanel" aria-labelledby="tab-extras" hidden={view !== 'extras'}>
-			<div class="mt-5"><ExtraCamosSection /></div>
+			{@render tabHide('extras')}
+			<div class="mt-2"><ExtraCamosSection /></div>
 		</div>
 
 		<div id="panel-squad" role="tabpanel" aria-labelledby="tab-squad" hidden={view !== 'squad'}>
-			<div class="mt-5"><SquadSection visible={view === 'squad'} /></div>
+			{@render tabHide('squad')}
+			<div class="mt-2"><SquadSection visible={view === 'squad'} /></div>
 		</div>
 
 		<div id="panel-casino" role="tabpanel" aria-labelledby="tab-casino" hidden={view !== 'casino'}>
-			<div class="mt-5"><CasinoSection onSquad={() => (view = 'squad')} /></div>
+			{@render tabHide('casino')}
+			<div class="mt-2"><CasinoSection onSquad={goSquad} /></div>
 		</div>
 
 		<div id="panel-shop" role="tabpanel" aria-labelledby="tab-shop" hidden={view !== 'shop'}>
-			<div class="mt-5"><ShopPage onSquad={() => (view = 'squad')} /></div>
+			{@render tabHide('shop')}
+			<div class="mt-2"><ShopPage onSquad={goSquad} /></div>
 		</div>
 
+		<!-- Every box here has its own "Hide" (an edge tab on its top-right corner, HideButton; 2026-11-20). A hidden
+		     box is only `hidden`, never removed: SyncPanel and the rest start in onMount and keep running. -->
 		<div id="panel-grind" role="tabpanel" aria-labelledby="tab-grind" hidden={view !== 'grind'}>
-		<!-- the green radar with the latest COD news -->
-		<div class="compact-hide mt-5"><NewsBanner /></div>
+		<!-- the green radar with the latest COD news (its Hide sits in the radar's own row) -->
+		<div class="compact-hide mt-5" hidden={hidden.is('news')}><NewsBanner /></div>
 
 		<!-- the season countdown: day of the season, its end, what's coming (2026-11-11) -->
-		<div class="compact-hide mt-3"><SeasonStrip /></div>
+		<div class="compact-hide relative mt-4" hidden={hidden.is('season')}><SeasonStrip /><HideButton id="season" /></div>
 
 		<!-- overall progress and the next milestone -->
-		<div class="mt-4"><KpiBar /></div>
+		<div class="relative mt-4" hidden={hidden.is('kpi')}><KpiBar /><HideButton id="kpi" /></div>
 
+		<!-- the camo list: search + filters, the class meta, the weapons (its Hide is in the search row) -->
+		<div hidden={hidden.is('camos')}>
 		<!-- 4. search and filters (Ranked prep had a switch here until 2026-11-20; it's a page tab now) -->
 		<div id="weapons" class="mt-6 scroll-mt-4">
 			<Toolbar bind:query shown={shownCount} total={WEAPONS.length} onclear={clearFilters} />
@@ -307,7 +378,7 @@
 
 		<!-- the picked class's meta top 5, above its weapons -->
 		{#if progress.prefs.classFilter}
-			<div class="compact-hide mt-4"><ClassMeta classId={progress.prefs.classFilter} /></div>
+			<div class="compact-hide mt-4" hidden={hidden.is('classMeta')}><ClassMeta classId={progress.prefs.classFilter} /></div>
 		{/if}
 
 		<!-- 5. the weapon list -->
@@ -331,33 +402,37 @@
 				<button type="button" class="btn mt-3 border-accent" onclick={clearFilters}>{t.toolbar.clear}</button>
 			</div>
 		{/if}
+		</div>
 
-		<!-- 6. Divergence and Mastery -->
-		<div class="mt-7"><MasterySection /></div>
+		<!-- 6. Divergence and Mastery (each mode's box has its own Hide inside MasterySection) -->
+		<div class="mastery-wrap relative mt-7" hidden={hidden.is('mastery')}><MasterySection /><HideButton id="mastery" /></div>
 
 		<!-- 7. news and everything else -->
-		<div class="compact-hide mt-7"><MetaSection /></div>
+		<div class="compact-hide relative mt-7" hidden={hidden.is('meta')}><MetaSection /><HideButton id="meta" /></div>
 
-		<div class="abscar-only compact-hide mt-7">
-			<!-- the five banners share one height (the user's ask: "same size so they look in proportion");
-			     Drängen Lars Åke's in the middle (2026-11-13), the crowned skull (2026-11-13), and the squad in
-			     front of the mushroom cloud last (2026-11-14) -->
-			<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><NukeBanner /></div>
-			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><LarsAkeBanner /></div>
-			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CyborgBanner /></div>
-			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><CrownBanner /></div>
-			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><WizardBanner /></div>
-			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><DoomsdayBanner /></div>
-			<div class="mt-4 h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><ScooterBanner /></div>
+		<!-- the banners share one height (the user's ask: "same size so they look in proportion"); each one
+		     can be hidden on its own, all of them hidden = no gap left here -->
+		<div class="abscar-only compact-hide mt-7" hidden={BANNERS.every((b) => hidden.is(b.id))}>
+			<div class="flex flex-col gap-4">
+				{#each BANNERS as b (b.id)}
+					<div class="relative" hidden={hidden.is(b.id)}>
+						<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><b.C /></div>
+						<HideButton id={b.id} />
+					</div>
+				{/each}
+			</div>
 		</div>
 
-		<div class="mt-7"><SyncPanel /></div>
+		<div class="relative mt-7" hidden={hidden.is('sync')}><SyncPanel /><HideButton id="sync" /></div>
 		</div>
 
-		<footer class="compact-hide mt-7 grid gap-1.5 text-xs text-muted">
-			<p>{t.help.howTo}</p>
-			<p>{t.help.divergence(DIVERGENCE_REQUIRED)}</p>
-			<p>{t.help.sources}</p>
+		<footer class="compact-hide mt-7 flex items-start gap-3 text-xs text-muted" hidden={hidden.is('help')}>
+			<div class="grid min-w-0 flex-1 gap-1.5">
+				<p>{t.help.howTo}</p>
+				<p>{t.help.divergence(DIVERGENCE_REQUIRED)}</p>
+				<p>{t.help.sources}</p>
+			</div>
+			<HideButton id="help" inline class="mt-px" />
 		</footer>
 	</main>
 </div>
@@ -386,6 +461,11 @@
 </Dialog>
 
 <style>
+	/* Abscar: the Mastery box's Hide moves left of the round nuke badge in its top-right corner */
+	:global([data-theme='blackout']) .mastery-wrap {
+		--hb-right: 72px;
+	}
+
 	/* the two page tabs under the header */
 	.page-tabs {
 		border-bottom: 2px solid var(--t-line);
@@ -462,10 +542,11 @@
 	 * only in this theme: the others keep the plain flex row with just the title (their hidden extras
 	 * would leave empty grid gaps).
 	 */
+	/* the areas come from headerAreas() (--hdr-*), which leaves hidden parts out (2026-11-20) */
 	:global([data-theme='blackout']) .abscar-header {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas: 'squad' 'title' 'tv' 'buddy';
+		grid-template-areas: var(--hdr-phone, 'squad' 'title' 'tv' 'buddy');
 		gap: 20px 24px;
 		align-items: start;
 	}
@@ -488,8 +569,8 @@
 	/* two columns once the title (≈ 425 px) and the TV (304 px) fit side by side */
 	@media (min-width: 820px) {
 		:global([data-theme='blackout']) .abscar-header {
-			grid-template-columns: minmax(0, 1fr) auto;
-			grid-template-areas: 'squad squad' 'title tv' 'buddy tv';
+			grid-template-columns: var(--hdr-mid-cols, minmax(0, 1fr) auto);
+			grid-template-areas: var(--hdr-mid, 'squad squad' 'title tv' 'buddy tv');
 		}
 		:global([data-theme='blackout']) .hdr-tv {
 			justify-self: end;
@@ -499,7 +580,8 @@
 	   its antennas into the header's top padding, clear of the theme picker */
 	@media (min-width: 1140px) {
 		:global([data-theme='blackout']) .abscar-header {
-			grid-template-areas: 'squad tv' 'title tv' 'buddy tv';
+			grid-template-columns: var(--hdr-wide-cols, minmax(0, 1fr) auto);
+			grid-template-areas: var(--hdr-wide, 'squad tv' 'title tv' 'buddy tv');
 		}
 		:global([data-theme='blackout']) .hdr-tv {
 			margin-top: -8px;
