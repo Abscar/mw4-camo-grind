@@ -407,6 +407,11 @@
 			grid-template-columns: repeat(var(--n), minmax(0, 1fr));
 		}
 	}
+	/* eight games in one row from 900 px leave tiles a little narrower than the 80 px picture: it shrinks to fit */
+	.casino-tabs :global(svg.ta) {
+		max-width: 100%;
+		height: auto;
+	}
 	.casino-game[data-game='skeddwood'] {
 		--tile: #7a3a12;
 		--tile-2: #2a1206;
