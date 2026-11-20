@@ -1,7 +1,7 @@
 <!--
 	BurgiBank (loans.ts; 2026-11-16, the user's ask: "let players take a loan from the house (not Abscar)
 	with a week to pay back with interest; the interest goes to Abscar"). A box in BurgiCasino: borrow
-	100–1,000 burgers (one loan at a time), see what you owe and when, pay it back early. If you don't,
+	1,000–100,000 burgers (100–1,000 until 2026-11-20; one loan at a time), see what you owe and when, pay it back early. If you don't,
 	the bank takes it back by itself on the due date. Pretend burgers, never money.
 -->
 <script lang="ts">

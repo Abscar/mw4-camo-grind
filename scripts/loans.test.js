@@ -18,15 +18,18 @@ test('loans: borrow, one at a time, pay back with 10 % interest', () => {
 	assert.equal(interestOf(100), 10);
 	assert.equal(interestOf(250), 25);
 	assert.equal(takeLoan(undefined, 'loan1', 123, T), null, 'only the sizes on offer');
-	const book = takeLoan(undefined, 'loan1', 500, T);
-	assert.deepEqual(book.loans.loan1, { p: 500, at: T, due: T + LOAN_DAYS * DAY });
-	assert.equal(takeLoan(book, 'loan2', 100, T + 1), null, 'one open loan at a time');
-	assert.deepEqual(loanEffect(book, T + 1), { balance: 500, interest: 0, owed: 550 });
-	assert.equal(repayLoan(book, 549, T + DAY), null, 'not enough to pay back');
-	const paid = repayLoan(book, 550, T + DAY);
+	assert.equal(takeLoan(undefined, 'loan1', 500, T), null, 'the old small sizes are no longer lent (since 2026-11-20)');
+	assert.equal(takeLoan(undefined, 'loan1', 200_000, T), null, 'at most 100,000');
+	const book = takeLoan(undefined, 'loan1', 5000, T);
+	assert.deepEqual(book.loans.loan1, { p: 5000, at: T, due: T + LOAN_DAYS * DAY });
+	assert.equal(takeLoan(book, 'loan2', 1000, T + 1), null, 'one open loan at a time');
+	assert.deepEqual(loanEffect(book, T + 1), { balance: 5000, interest: 0, owed: 5500 });
+	assert.equal(repayLoan(book, 5499, T + DAY), null, 'not enough to pay back');
+	const paid = repayLoan(book, 5500, T + DAY);
 	assert.equal(loanState(paid.loans.loan1, T + DAY), 'paid');
-	assert.deepEqual(loanEffect(paid, T + DAY), { balance: -50, interest: 50, owed: 0 });
-	assert.ok(takeLoan(paid, 'loan2', 1000, T + DAY + 1), 'a new loan once paid');
+	assert.deepEqual(loanEffect(paid, T + DAY), { balance: -500, interest: 500, owed: 0 });
+	assert.ok(takeLoan(paid, 'loan2', 100_000, T + DAY + 1), 'a new loan once paid, up to 100,000');
+	assert.equal(owedOn({ p: 100_000, at: T, due: T }), 110_000);
 });
 
 test('loans: the bank takes it back by itself on the due date', () => {
@@ -39,23 +42,23 @@ test('loans: the bank takes it back by itself on the due date', () => {
 
 test('loans: cleaning, two devices, old loans keep their interest', () => {
 	assert.equal(cleanLoans('x'), undefined);
-	assert.deepEqual(cleanLoans({ loans: { ok12: { p: 250, at: T, due: T + 7 * DAY }, bad1: { p: 99, at: T, due: T + DAY }, 'x y': { p: 100, at: T, due: T + DAY } } }), {
-		loans: { ok12: { p: 250, at: T, due: T + 7 * DAY } }
-	});
-	const pc = takeLoan(undefined, 'loan1', 250, T);
-	const phone = repayLoan(pc, 9999, T + DAY);
+	assert.deepEqual(cleanLoans({ loans: { ok12: { p: 250, at: T, due: T + 7 * DAY }, big1: { p: 100_000, at: T, due: T + 7 * DAY }, bad1: { p: 99, at: T, due: T + DAY }, bad2: { p: 200_000, at: T, due: T + DAY }, 'x y': { p: 100, at: T, due: T + DAY } } }), {
+		loans: { ok12: { p: 250, at: T, due: T + 7 * DAY }, big1: { p: 100_000, at: T, due: T + 7 * DAY } }
+	}, 'a loan from before 2026-11-20 (250) still reads back');
+	const pc = takeLoan(undefined, 'loan1', 25_000, T);
+	const phone = repayLoan(pc, 99_999, T + DAY);
 	const merged = mergeLoans(pc, phone, T + DAY);
 	assert.equal(merged.loans.loan1.paid, T + DAY, 'the payment on the phone counts');
 	// 25 settled loans: the oldest drop off the list but their interest stays
 	let book;
 	for (let i = 0; i < 25; i++) {
-		book = takeLoan(book, `ln${String(i).padStart(3, '0')}`, 100, T + i * 10 * DAY);
+		book = takeLoan(book, `ln${String(i).padStart(3, '0')}`, 1000, T + i * 10 * DAY);
 		book = repayLoan(book, 9999, T + i * 10 * DAY + 1);
 	}
 	assert.equal(Object.keys(book.loans).length <= 21, true);
-	assert.equal(loanEffect(book, T + 400 * DAY).interest, 25 * 10);
-	assert.equal(loanEffect(book, T + 400 * DAY).balance, -250);
-	assert.deepEqual(LOAN_SIZES, [100, 250, 500, 1000]);
+	assert.equal(loanEffect(book, T + 400 * DAY).interest, 25 * 100);
+	assert.equal(loanEffect(book, T + 400 * DAY).balance, -2500);
+	assert.deepEqual(LOAN_SIZES, [1000, 5000, 10000, 25000, 50000, 100000]);
 	assert.equal(owedOn({ p: 1000, at: T, due: T }), 1100);
 });
 
