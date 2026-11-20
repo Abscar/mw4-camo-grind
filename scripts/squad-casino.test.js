@@ -40,15 +40,16 @@ const seeded = (seed) => () => {
 	return (seed >>> 0) / 4294967296;
 };
 
-test('daily bonus: 25 a day, +25 every 5 days online', () => {
-	assert.deepEqual([1, 5, 6, 10, 11, 16].map(dailyRate), [25, 25, 50, 50, 75, 100]);
+test('daily bonus: 2,500 a day, +2,500 every 5 days online (×100 since 2026-11-20)', () => {
+	assert.deepEqual([1, 5, 6, 10, 11, 16].map(dailyRate), [2500, 2500, 5000, 5000, 7500, 10000]);
 	assert.equal(dailyRate(0), 0);
 	assert.equal(dailyTotal(0), 0);
-	assert.equal(dailyTotal(1), 25);
-	assert.equal(dailyTotal(5), 125);
-	assert.equal(dailyTotal(6), 175);
-	assert.equal(dailyTotal(10), 375);
-	assert.equal(dailyTotal(12), 525);
+	assert.equal(dailyTotal(1), 2500);
+	assert.equal(dailyTotal(5), 12500);
+	assert.equal(dailyTotal(6), 17500);
+	assert.equal(dailyTotal(10), 37500);
+	assert.equal(dailyTotal(12), 52500);
+	assert.equal(dailyTotal(31), 280000, 'days 1–31: 2,500·5 + 5,000·5 + … + 15,000·5 + 17,500');
 	// the closed form matches adding day by day
 	let sum = 0;
 	for (let n = 1; n <= 60; n++) {
@@ -64,10 +65,15 @@ test('daily bonus: 25 a day, +25 every 5 days online', () => {
 test('a day counts once, two devices merge, the start comes from played days', () => {
 	let { next, added } = countDay(undefined, '2026-11-16');
 	assert.deepEqual(next, { n: 1, last: '2026-11-16' });
-	assert.equal(added, 25);
+	assert.equal(added, 2500);
 	assert.equal(countDay(next, '2026-11-16').added, 0, 'same day again');
 	({ next, added } = countDay({ n: 5, last: '2026-11-10' }, '2026-11-16'));
-	assert.deepEqual([next.n, added], [6, 50], 'days need not be in a row');
+	assert.deepEqual([next.n, added], [6, 5000], 'days need not be in a row');
+	assert.deepEqual(
+		countDay({ n: 5, last: '2026-11-15', b420: 25, d420: '2026-11-15' }, '2026-11-16').next,
+		{ n: 6, last: '2026-11-16', b420: 25, d420: '2026-11-15' },
+		'a new day keeps the 4:20 extras'
+	);
 	assert.deepEqual(mergeOnline({ n: 3, last: '2026-11-15' }, { n: 4, last: '2026-11-14' }), { n: 4, last: '2026-11-14' });
 	assert.deepEqual(mergeOnline({ n: 4, last: '2026-11-15' }, { n: 4, last: '2026-11-16' }), { n: 4, last: '2026-11-16' });
 	assert.equal(mergeOnline(undefined, undefined), undefined);
@@ -99,8 +105,8 @@ test('the bank counts the daily bonus and the casino', () => {
 		bbbbbbbb2222: { name: 'Ingman', weapons: {}, mastery: {}, casino: { phone1: { net: -500, games: 9, at: T } } }
 	};
 	const bank = burgerBank({ members: {} }, members);
-	assert.equal(bank.aaaaaaaa1111.daily, 175);
-	assert.equal(bank.aaaaaaaa1111.balance, BURGERS.start + 175 + 40);
+	assert.equal(bank.aaaaaaaa1111.daily, 17500, 'the days counted before the ×100 pay the new rate too');
+	assert.equal(bank.aaaaaaaa1111.balance, BURGERS.start + 17500 + 40);
 	assert.equal(bank.bbbbbbbb2222.balance, 0, 'never below zero on show');
 });
 

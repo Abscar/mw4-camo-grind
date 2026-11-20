@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { is420, minutesLeft420 } from '../src/lib/four20.ts';
 import { cleanLoans, interestOf, loanEffect, loanState, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, LOAN_DAYS, LOAN_SIZES } from '../src/lib/loans.ts';
 import { cleanShop, pranksOn, shopSpent, throwPrank, PRANK_KEEP } from '../src/lib/shop.ts';
-import { cleanOnline, count420, dailyRate, mergeOnline } from '../src/lib/squad-casino.ts';
+import { B420_UNIT, bonus420, cleanOnline, count420, dailyRate, mergeOnline } from '../src/lib/squad-casino.ts';
 import { cleanGrants, fromSquadWire, memberEntry, toSquadWire } from '../src/lib/squad-codec.ts';
 import { burgerBank, BURGERS } from '../src/lib/squad-fun.ts';
 
@@ -76,12 +76,17 @@ test('4:20: the day’s bonus once more, once a day, only when counted today', (
 	assert.equal(count420(o, '2026-11-16', false).added, 0, 'not 4:20');
 	const r = count420(o, '2026-11-16', true);
 	assert.equal(r.added, dailyRate(12));
-	assert.deepEqual(r.next, { n: 12, last: '2026-11-16', b420: dailyRate(12), d420: '2026-11-16' });
+	assert.equal(r.added, 7500, '×100 since 2026-11-20');
+	// stored on the old scale (one unit = B420_UNIT burgers), so extras from before the ×100 are worth ×100 too
+	assert.deepEqual(r.next, { n: 12, last: '2026-11-16', b420: 75, d420: '2026-11-16' });
+	assert.equal(bonus420(r.next), 7500);
+	assert.equal(bonus420({ n: 3, last: '2026-11-16', b420: 25, d420: '2026-11-16' }), 25 * B420_UNIT, 'an extra had before the ×100');
+	assert.equal(bonus420(undefined), 0);
 	assert.equal(count420(r.next, '2026-11-16', true).added, 0, 'once a day');
 	assert.equal(count420({ n: 12, last: '2026-11-15' }, '2026-11-16', true).added, 0, 'today not counted yet');
 	assert.deepEqual(cleanOnline({ n: 3, last: '2026-11-16', b420: 25, d420: '2026-11-16' }), { n: 3, last: '2026-11-16', b420: 25, d420: '2026-11-16' });
 	const merged = mergeOnline({ n: 13, last: '2026-11-17' }, r.next);
-	assert.deepEqual(merged, { n: 13, last: '2026-11-17', b420: dailyRate(12), d420: '2026-11-16' }, 'the 4:20 extra survives a merge');
+	assert.deepEqual(merged, { n: 13, last: '2026-11-17', b420: 75, d420: '2026-11-16' }, 'the 4:20 extra survives a merge');
 });
 
 test('pranks: paid per throw, on the target for their time, kept short', () => {
@@ -122,10 +127,10 @@ test('the bank: loans, interest to the house, admin grants, the 4:20 extra', () 
 	};
 	const doc = { members: {}, grants: { [B]: 300, [A]: -5 } };
 	const bank = burgerBank(doc, members, now);
-	assert.equal(bank[B].daily, 25 + 25, 'daily bonus + the 4:20 extra');
+	assert.equal(bank[B].daily, 2500 + 2500, 'daily bonus + the 4:20 extra (stored 25 = 2,500 burgers)');
 	assert.equal(bank[B].loan, -50, 'the collected loan cost its interest');
 	assert.equal(bank[B].grant, 300);
-	assert.equal(bank[B].balance, BURGERS.start + 50 - 50 + 300);
+	assert.equal(bank[B].balance, BURGERS.start + 5000 - 50 + 300);
 	assert.equal(bank[A].house, 50, "Ingman's loan interest went to the house");
 	assert.equal(bank[A].balance, BURGERS.start + 50 - 5);
 	// while the loan is open it's money in the pocket

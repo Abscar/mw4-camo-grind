@@ -2,7 +2,7 @@
 	BurgiCasino, the fifth page tab (2026-11-16, the user's ask: "a roulette and a blackjack mode, a
 	whole new tab called 'BurgiCasino'", then "a one-armed bandit in burger theme", "'Abscar's fortune'
 	on it, the arm a big smoking holk"). Plays with the squad's burger bank (squad-fun.ts): your balance,
-	the daily bonus (squad-casino.ts: 25 a day, +25 every 5 days online), a switch between Abscar's
+	the daily bonus (squad-casino.ts: 2,500 a day, +2,500 every 5 days online), a switch between Abscar's
 	Fortune (CasinoSlots), roulette and blackjack, and a leaderboard of what everyone won or lost.
 	Pretend burgers, never money. Outside a squad it points to the Squad tab.
 	The game tabs are big picture tiles (2026-11-16, the user's ask: "tidy up the tabs, e.g. BurgiBank can
@@ -16,7 +16,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
-	import { casinoTotal, daysToNextRate, dailyRate, dailyTotal } from '#lib/squad-casino.ts';
+	import { bonus420, casinoTotal, daysToNextRate, dailyRate, dailyTotal } from '#lib/squad-casino.ts';
 	import { burgerBank, houseOf } from '#lib/squad-fun.ts';
 	import CasinoBlackjack from './CasinoBlackjack.svelte';
 	import CasinoRoulette from './CasinoRoulette.svelte';
@@ -116,7 +116,7 @@
 				<p class="text-[13px] text-fg">
 					{days ? c.bonus.line(days, dailyRate(days), daysToNextRate(days), dailyRate(days + daysToNextRate(days))) : c.bonus.none}
 				</p>
-				{#if days}<p class="text-[11px] text-muted">{c.bonus.total(dailyTotal(days))}</p>{/if}
+				{#if days}<p class="text-[11px] text-muted">{c.bonus.total(dailyTotal(days) + bonus420(squad.online))}</p>{/if}
 			</div>
 
 			<!-- which game: big picture tiles -->

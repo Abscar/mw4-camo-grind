@@ -33,7 +33,7 @@ import {
 } from './squad-codec.ts';
 import { startOfDay, startOfWeek } from './stats.ts';
 import { isReleased } from './steps.ts';
-import { casinoTotal, dailyTotal, HOUSE_OP } from './squad-casino.ts';
+import { bonus420, casinoTotal, dailyTotal, HOUSE_OP } from './squad-casino.ts';
 import { shopSpent } from './shop.ts';
 import { loanEffect } from './loans.ts';
 import { donationTotal } from './donations.ts';
@@ -316,7 +316,7 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 		const loan = loanEffect(m.loans, now);
 		out[id] = {
 			earned: burgersEarned(m),
-			daily: dailyTotal(m.online?.n ?? 0) + (m.online?.b420 ?? 0),
+			daily: dailyTotal(m.online?.n ?? 0) + bonus420(m.online),
 			casino: casinoTotal(m.casino).net,
 			house: 0,
 			spent: shopSpent(m.shop),

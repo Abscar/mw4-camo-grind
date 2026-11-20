@@ -1017,9 +1017,9 @@ export const en = {
 		bonus: {
 			heading: 'Daily bonus',
 			line: (n: number, rate: number, toNext: number, nextRate: number) =>
-				`Day ${n} online: ${rate} 🍔 a day. ${toNext === 1 ? 'Tomorrow' : `In ${toNext} days`} it goes up to ${nextRate} 🍔.`,
-			none: 'Open the page on a day with the squad and you get 25 🍔. Every 5 days online it goes up by 25.',
-			toast: (n: number, day: number) => `Daily bonus: +${n} 🍔 (day ${day} online)`,
+				`Day ${n} online: ${rate.toLocaleString('en-US')} 🍔 a day. ${toNext === 1 ? 'Tomorrow' : `In ${toNext} days`} it goes up to ${nextRate.toLocaleString('en-US')} 🍔.`,
+			none: 'Open the page on a day with the squad and you get 2,500 🍔. Every 5 days online it goes up by 2,500.',
+			toast: (n: number, day: number) => `Daily bonus: +${n.toLocaleString('en-US')} 🍔 (day ${day} online)`,
 			seeded: (days: number) => `Welcome bonus: ${days} day${days === 1 ? '' : 's'} online already counted 🍔`,
 			total: (n: number) => `${n.toLocaleString('en-US')} 🍔 from daily bonuses so far`
 		},
@@ -1685,7 +1685,7 @@ export const en = {
 			howLabel: 'How burgers work',
 			betsHeading: 'Bets',
 			how: (s: { start: number; gold: number; platinum: number; harmonicBreak: number; mastery: number; divergence: number }) =>
-				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (25, going up by 25 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account. Burgers you give away in BurgiGives (the Donations tab) are gone for good.`,
+				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (2,500, going up by 2,500 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account. Burgers you give away in BurgiGives (the Donations tab) are gone for good.`,
 			houseTag: (n: number) => `house +${n.toLocaleString('en-US')}`,
 			richest: 'Richest',
 			burgers: (n: number) => `${n.toLocaleString('en-US')} burger${n === 1 ? '' : 's'}`,

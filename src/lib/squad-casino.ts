@@ -5,8 +5,10 @@
  *
  * Pretend burgers, never money (the burger bank in squad-fun.ts). Both add to a member's balance:
  * - the daily bonus: every day you're online with the squad counts (they don't have to be in a row);
- *   days 1–5 give 25 burgers each, days 6–10 50, days 11–15 75 and so on. Stored as how many days
- *   and the last one (member field `online`), so the total is worked out, not stored;
+ *   days 1–5 give 2,500 burgers each, days 6–10 5,000, days 11–15 7,500 and so on (×100 since
+ *   2026-11-20, the user: "höj daily burger bonus med x100"; it was 25, 50, 75 …). Stored as how many
+ *   days and the last one (member field `online`), so the total is worked out, not stored: the days
+ *   counted before the raise pay the new rate too;
  * - the casino: what you won or lost, kept per device (member field `casino`, device id → tally) so
  *   two of your devices playing at once never overwrite each other.
  * The games (European roulette, blackjack) are pure functions here with the randomness passed in,
@@ -17,12 +19,18 @@
 // ---------------------------------------------------------------------------------------------
 // The daily bonus
 
-export const DAILY = { base: 25, step: 25, every: 5 } as const;
+export const DAILY = { base: 2_500, step: 2_500, every: 5 } as const;
+/**
+ * The 4:20 extras (`b420`) are stored on the bonus's scale from before the ×100 (25, 50, 75 …), so
+ * the ones already had are worth ×100 too and a page that hasn't reloaded yet still adds the same
+ * units: one stored unit = B420_UNIT burgers (bonus420).
+ */
+export const B420_UNIT = 100;
 /** How many days you've been online with the squad, and the last one ("YYYY-MM-DD", your own clock). */
 export interface OnlineDays {
 	n: number;
 	last: string;
-	/** Extra burgers from 4:20 hours (the day's bonus once more, four20.ts). */
+	/** Extras from 4:20 hours (the day's bonus once more, four20.ts), in B420_UNITs: use bonus420(). */
 	b420?: number;
 	/** The last day that got the 4:20 extra. */
 	d420?: string;
@@ -47,10 +55,13 @@ export function cleanOnline(raw: unknown): OnlineDays | undefined {
 export function count420(o: OnlineDays | undefined, today: string, active: boolean): { next: OnlineDays | undefined; added: number } {
 	if (!active || !o || o.last !== today || (o.d420 ?? '') >= today) return { next: o, added: 0 };
 	const added = dailyRate(o.n);
-	return { next: { ...o, b420: (o.b420 ?? 0) + added, d420: today }, added };
+	return { next: { ...o, b420: (o.b420 ?? 0) + added / B420_UNIT, d420: today }, added };
 }
 
-/** Burgers for your n-th day online: 25 for days 1–5, 50 for 6–10, 75 for 11–15 … */
+/** All the 4:20 extra burgers so far. */
+export const bonus420 = (o: OnlineDays | undefined) => (o?.b420 ?? 0) * B420_UNIT;
+
+/** Burgers for your n-th day online: 2,500 for days 1–5, 5,000 for 6–10, 7,500 for 11–15 … */
 export function dailyRate(n: number): number {
 	return n < 1 ? 0 : DAILY.base + DAILY.step * (Math.ceil(n / DAILY.every) - 1);
 }
@@ -60,11 +71,11 @@ export function dailyTotal(n: number): number {
 	if (n < 1) return 0;
 	const full = Math.floor(n / DAILY.every);
 	const rest = n % DAILY.every;
-	// full blocks of 5 days at 25, 50, 75 …, then the days of the next block
+	// full blocks of 5 days at 2,500, 5,000, 7,500 …, then the days of the next block
 	return DAILY.every * (DAILY.base * full + (DAILY.step * full * (full - 1)) / 2) + rest * dailyRate(n);
 }
 
-/** Days from day n until the rate goes up (1–5): from day 31 (175) it's 5 days to day 36 (200). */
+/** Days from day n until the rate goes up (1–5): from day 31 (17,500) it's 5 days to day 36 (20,000). */
 export const daysToNextRate = (n: number) => DAILY.every - ((Math.max(n, 1) - 1) % DAILY.every);
 
 /** Two copies of your days (two devices): the one with more days; the later last day on a tie. */
@@ -83,7 +94,8 @@ export function mergeOnline(a: OnlineDays | undefined, b: OnlineDays | undefined
 export function countDay(o: OnlineDays | undefined, today: string): { next: OnlineDays; added: number } {
 	if (o && o.last >= today) return { next: o, added: 0 };
 	const n = (o?.n ?? 0) + 1;
-	return { next: { n: Math.min(n, DAYS_MAX), last: today }, added: dailyRate(n) };
+	// keeps the 4:20 extras (b420 / d420): until 2026-11-20 a new day dropped them
+	return { next: { ...o, n: Math.min(n, DAYS_MAX), last: today }, added: dailyRate(n) };
 }
 
 /** A start for members from before the bonus: the days the tracker was open (`played`, last 14 days). */
