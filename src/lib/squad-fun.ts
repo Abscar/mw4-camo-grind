@@ -305,6 +305,8 @@ export interface BankRow {
 	/** Burgers on open bets. */
 	held: number;
 	balance: number;
+	/** The sum before "never below zero": negative = in debt (burgers spent or given away whose winnings are gone). */
+	raw: number;
 }
 
 /**
@@ -330,7 +332,8 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 			won: 0,
 			lost: 0,
 			held: 0,
-			balance: 0
+			balance: 0,
+			raw: 0
 		};
 	}
 	for (const bet of doc.bets ?? []) {
@@ -348,7 +351,8 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 		}
 	}
 	for (const row of Object.values(out)) {
-		row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.karma + row.won - row.lost - row.held - row.spent - row.donated);
+		row.raw = row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.karma + row.won - row.lost - row.held - row.spent - row.donated;
+		row.balance = Math.max(0, row.raw);
 	}
 	return out;
 }

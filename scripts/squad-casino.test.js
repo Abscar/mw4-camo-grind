@@ -113,6 +113,9 @@ test('the bank counts the daily bonus and the casino', () => {
 	assert.equal(bank.aaaaaaaa1111.daily, 17500, 'the days counted before the ×100 pay the new rate too');
 	assert.equal(bank.aaaaaaaa1111.balance, BURGERS.start + 17500 + 40);
 	assert.equal(bank.bbbbbbbb2222.balance, 0, 'never below zero on show');
+	assert.equal(bank.bbbbbbbb2222.raw, BURGERS.start - 500, 'the debt behind the 0 (the admin menu clears it)');
+	const cleared = burgerBank({ members: {}, grants: { bbbbbbbb2222: -bank.bbbbbbbb2222.raw + 70 } }, members);
+	assert.equal(cleared.bbbbbbbb2222.balance, 70, 'debt cleared: gifts count again');
 });
 
 test('the house: everything the others lose goes to Abscar (but not Abscar’s own losses)', () => {
