@@ -26,6 +26,7 @@ import { OFFLINE_FILE } from './browser.ts';
 import { MASTERY_TRACKS } from './data/camos.ts';
 import { WEAPON_BY_ID } from './data/weapons.ts';
 import { feed } from './feed.svelte.ts';
+import { saverOn } from './motion.svelte.ts';
 import { t } from './i18n/en.ts';
 import { progress } from './progress.svelte.ts';
 import { SITE_URL, SYNC_URL } from './site.ts';
@@ -506,10 +507,16 @@ class Squad {
 		window.addEventListener('online', onOnline);
 		window.addEventListener('hashchange', onHash);
 		window.addEventListener('pagehide', onHide);
+		// Battery saver (motion.svelte.ts): the squad and its radio are read every third time (90 s / 60 s);
+		// the hello every 2 min stays, so you don't show as offline
+		let pulls = 0;
+		let radios = 0;
 		const pull = setInterval(() => {
+			if (saverOn() && ++pulls % 3) return;
 			if (this.on && document.visibilityState === 'visible') void this.#pull();
 		}, PULL_EVERY);
 		const radio = setInterval(() => {
+			if (saverOn() && ++radios % 3) return;
 			if (this.on && document.visibilityState === 'visible') void this.#radio.pull();
 		}, RADIO_EVERY);
 		const beat = setInterval(() => this.#heartbeat(), HEARTBEAT);

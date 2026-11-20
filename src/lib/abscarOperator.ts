@@ -136,9 +136,14 @@ const PUFFS = [[0, 5.2, 9, -10, 7], [0.4, 4.6, -8, 6, 6.2], [0.8, 5.6, 10, -20, 
 const WISPS = ['M62 41 C58 33 66 27 61 19 C57 12 64 6 60 -2', 'M63 41 C67 33 59 26 64 18 C68 11 61 5 65 -3', 'M62 41 C60 35 65 30 62 24 C59 18 63 13 61 7', 'M63 42 C64 36 60 31 63 25 C66 19 62 14 64 8', 'M62 42 C57 36 61 29 57 22 C54 16 58 10 55 3', 'M63 41 C66 35 62 29 66 22 C69 16 64 10 67 4'];
 export function smoke(u: string, x: number, y: number, k: number): string {
 	if (k <= 0) return '';
-	// op-smoke / op-smoke-puffs: BurgiShop's smoke colours tint these (`data-smoke` on the svg, grind.css)
+	// op-smoke / op-smoke-puffs: BurgiShop's smoke colours tint these (`data-smoke` on the svg sets `color`, grind.css).
+	// The puffs are soft discs (a radial fade in the puff's colour, a bit bigger than the old disc) instead of a
+	// blur filter over the group (2026-11-20): the blur had to be redrawn on every frame the smoke moved and was
+	// a third of the header's drawing work; side by side they look the same.
+	const g = `${u}-pg${Math.round(x * 10)}_${Math.round(y * 10)}`;
 	return `<g class="op-smoke" transform="translate(${f(x)} ${f(y)}) scale(${f(k)})">
-	<g class="op-smoke-puffs" filter="url(#${u}-puff-blur)" fill="#e2e7e2">${PUFFS.map(([st, dur, sway, dx, r]) => `<circle class="op-puff" cx="0" cy="0" r="${r}" style="animation-delay:-${st}s;animation-duration:${dur}s;--sway:${sway}px;--dx:${dx}px"/>`).join('')}</g>
+	<defs><radialGradient id="${g}"><stop offset="0.4" stop-color="currentColor"/><stop offset="0.64" stop-color="currentColor" stop-opacity="0.5"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs>
+	<g class="op-smoke-puffs" color="#e2e7e2" fill="url(#${g})">${PUFFS.map(([st, dur, sway, dx, r]) => `<circle class="op-puff" cx="0" cy="0" r="${f(r + 4)}" style="animation-delay:-${st}s;animation-duration:${dur}s;--sway:${sway}px;--dx:${dx}px"/>`).join('')}</g>
 	<g filter="url(#${u}-blur)"><g transform="translate(-62.5 -41.5)">${WISPS.map((d) => `<path class="op-wisp" d="${d}"/>`).join('')}</g></g>
 	</g>`;
 }

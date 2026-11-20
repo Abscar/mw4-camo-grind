@@ -3,14 +3,15 @@
 	menu with the four looks. Closes on pick, outside click or Escape.
 	The menu stays in the page while closed (just `hidden`), so its buttons always exist.
 	In one row with it (2026-11-10): the Compact mode button and the sound-effects on/off button
-	(sound.svelte.ts; sound never starts by itself). Since 2026-11-11 also the pause button
-	(motion.svelte.ts): pauses every animation on the page to save CPU; ⏸ while things move, ▶ while
-	paused. Hidden with prefers-reduced-motion (nothing moves then anyway).
+	(sound.svelte.ts; sound never starts by itself). Since 2026-11-20 the Battery saver button
+	(motion.svelte.ts) in the old pause button's place: a battery, with a leaf while on. The menu also
+	switches the net_graph (NetGraph.svelte, PC only).
 -->
 <script lang="ts">
 	import { hidden } from '#lib/hidden.svelte.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { motion } from '#lib/motion.svelte.ts';
+	import { netGraph } from '#lib/netGraph.svelte.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { sound } from '#lib/sound.svelte.ts';
 	import { THEMES } from '#lib/themes.ts';
@@ -19,6 +20,10 @@
 	// the on/off settings are read after load, so the prerendered page and the first render match
 	$effect(() => sound.load());
 	$effect(() => motion.load());
+	// Battery saver turned itself on (low battery, Data Saver, reduced motion): say so once
+	$effect(() => {
+		if (motion.auto) toast.show(t.saver.auto[motion.auto], undefined, 9000);
+	});
 
 	const menuId = $props.id();
 	let open = $state(false);
@@ -103,23 +108,27 @@
 		</svg>
 	</button>
 
+	<!-- Battery saver (motion.svelte.ts; the old pause button's place): a battery, green with a leaf while on -->
 	<button
 		type="button"
-		class="grid size-11 place-items-center rounded-full text-band-muted opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 aria-pressed:text-band-fg aria-pressed:opacity-100 motion-reduce:hidden"
+		class="saver-btn grid size-11 place-items-center rounded-full text-band-muted opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 aria-pressed:opacity-100"
 		aria-pressed={motion.still}
-		aria-label={t.motion.label}
-		title={motion.still ? t.motion.on : t.motion.off}
+		aria-label={t.saver.label}
+		title={motion.still ? t.saver.on : t.saver.off}
 		onclick={() => {
 			motion.set(!motion.still);
-			toast.show(motion.still ? t.motion.pausedToast : t.motion.playingToast);
+			toast.show(motion.still ? t.saver.onToast : t.saver.offToast);
 		}}
 	>
 		<svg class="sound-icon size-5" viewBox="0 0 24 24" aria-hidden="true">
+			<rect x="2.5" y="7" width="17" height="10" rx="2.2" fill="none" stroke="currentColor" stroke-width="2" />
+			<rect x="20.2" y="10" width="2" height="4" rx="0.8" fill="currentColor" />
 			{#if motion.still}
-				<path d="M8 5.2v13.6a.9.9 0 0 0 1.37.77l10.6-6.8a.9.9 0 0 0 0-1.54L9.37 4.43A.9.9 0 0 0 8 5.2z" fill="currentColor" />
+				<path d="M6 14.6c0-3.6 2.6-5.6 8.6-5.6-.2 4.8-2.6 6.4-5.2 6.4-1.1 0-2-.3-2.6-.8M7.2 14.2c1.6-1.6 3.4-2.6 5.4-3.2" fill="currentColor" stroke="currentColor" stroke-width="0.6" stroke-linecap="round" />
 			{:else}
-				<rect x="5.5" y="4.5" width="4.6" height="15" rx="1.2" fill="currentColor" />
-				<rect x="13.9" y="4.5" width="4.6" height="15" rx="1.2" fill="currentColor" />
+				<rect x="5" y="9.5" width="3" height="5" rx="0.6" fill="currentColor" />
+				<rect x="9.5" y="9.5" width="3" height="5" rx="0.6" fill="currentColor" />
+				<rect x="14" y="9.5" width="3" height="5" rx="0.6" fill="currentColor" />
 			{/if}
 		</svg>
 	</button>
@@ -173,6 +182,19 @@
 			>
 			{t.hide.menuEntry}
 		</button>
+		<!-- the net_graph (NetGraph.svelte): only on a PC (a mouse and a wide screen), like the readout itself -->
+		<button
+			type="button"
+			class="ng-entry font-head min-h-11 items-center gap-2.5 rounded-[calc(var(--t-radius)+2px)] px-3 text-left text-[13px] font-semibold transition-colors hover:bg-panel-2"
+			aria-pressed={netGraph.on}
+			onclick={() => netGraph.set(!netGraph.on)}
+		>
+			<svg viewBox="0 0 24 24" class="size-4 flex-none" aria-hidden="true" focusable="false"
+				><path d="M3 20V4M3 20h18M6 15l4-5 3 3 5-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg
+			>
+			<span class="flex-1">{t.netGraph.menu}</span>
+			<span class="text-[11px] opacity-75">{netGraph.on ? 'ON' : 'OFF'}</span>
+		</button>
 	</div>
 </div>
 
@@ -180,5 +202,18 @@
 	/* Abscar: a dark halo so the speaker and pause icons stay readable on the busy Damascus header */
 	:global([data-theme='blackout']) .sound-icon {
 		filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.9)) drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+	}
+	/* Battery saver on: the battery turns green (the leaf + the word in the tooltip say it too) */
+	.saver-btn[aria-pressed='true'] {
+		color: var(--t-ok);
+	}
+	/* the net_graph row only where the readout can show: a mouse and at least 1024 px */
+	.ng-entry {
+		display: none;
+	}
+	@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+		.ng-entry {
+			display: flex;
+		}
 	}
 </style>

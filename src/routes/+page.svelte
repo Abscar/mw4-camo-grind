@@ -40,6 +40,7 @@
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
+	import NetGraph from '#lib/components/NetGraph.svelte';
 	import Toolbar from '#lib/components/Toolbar.svelte';
 	import SeasonStrip from '#lib/components/SeasonStrip.svelte';
 	import WeaponSheet from '#lib/components/WeaponSheet.svelte';
@@ -438,6 +439,9 @@
 </div>
 
 <Toast />
+
+<!-- the net_graph: a small load readout at the top left, PC only (2026-11-20) -->
+<NetGraph />
 
 <LoadoutDialog />
 

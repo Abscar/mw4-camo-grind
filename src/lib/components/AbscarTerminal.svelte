@@ -19,6 +19,7 @@
 	import { shortDate } from '#lib/ui.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { agoParts } from '#lib/squad-codec.ts';
+	import { netGraph } from '#lib/netGraph.svelte.ts';
 
 	type Kind = 'in' | 'out' | 'sys' | 'err' | 'big';
 	let open = $state(false);
@@ -35,7 +36,7 @@
 	let historyAt = 0;
 	const timers = new Set<ReturnType<typeof setTimeout>>();
 
-	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'ping', 'phillestar', 'lars', 'jeeven', 'ingman', 'nuke', 'hack', 'holk', 'clear', 'exit'];
+	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'ping', 'phillestar', 'lars', 'jeeven', 'ingman', 'nuke', 'hack', 'holk', 'net_graph', 'clear', 'exit'];
 	const QUICK = ['status', 'next', 'buddy', 'nuke', 'holk', 'help'];
 
 	const abscar = () => document.documentElement.getAttribute('data-theme') === 'blackout';
@@ -278,6 +279,14 @@
 			case 'date':
 			case 'time':
 				return print('out', t.terminal.date(new Date().toLocaleString('en-GB')));
+			case 'net_graph':
+			case 'netgraph':
+				// like the game's console: net_graph 1 / 0 (NetGraph.svelte, PC only)
+				if (arg === '0' || arg === '1') {
+					netGraph.set(arg === '1');
+					return print('out', t.terminal.netGraph(arg === '1'));
+				}
+				return print('out', t.terminal.netGraphUsage(netGraph.on));
 			case 'clear':
 			case 'cls':
 				lines = [];

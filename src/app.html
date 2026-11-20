@@ -28,9 +28,18 @@
 					if (typeof t === 'string') html.setAttribute('data-theme', t);
 				} catch (e) {}
 				if (compact) html.setAttribute('data-compact', '');
+				// Battery saver (src/lib/motion.svelte.ts; the old pause button's "1" counts as on)
+				var saver = false;
+				try {
+					saver = localStorage.getItem('mw4-camo-grind:saver') === 'on' || localStorage.getItem('mw4-camo-grind:still') === '1';
+				} catch (e) {}
+				if (saver) {
+					html.setAttribute('data-still', '');
+					html.setAttribute('data-saver', '');
+				}
 				// The welcome screen shows every time the page opens (the user's ask 2026-11-11; it was once
-				// a day), never in compact mode; any tap or key skips it.
-				var boot = compact ? 'off' : 'on';
+				// a day), never in compact mode or Battery saver; any tap or key skips it.
+				var boot = compact || saver ? 'off' : 'on';
 				html.setAttribute('data-boot', boot);
 				if (boot === 'on') {
 					var skip = function () {
@@ -51,55 +60,117 @@
 				// pause the decoration while the tab is hidden
 				document.addEventListener('visibilitychange', function () {
 					if (document.hidden) html.setAttribute('data-page-hidden', '');
-					else html.removeAttribute('data-page-hidden');
-					if (!document.hidden) soon();
+					else {
+						html.removeAttribute('data-page-hidden');
+						soon(); // animations that started while hidden join the frame cap now
+					}
 				});
-				// "Pause animations" (the header's pause button, saved per device; src/lib/motion.svelte.ts
-				// switches data-still): every endless animation is frozen where it is, also ones that start
-				// later, so the page stops costing CPU. One-off feedback (a tick, the kill feed) still plays.
-				// Here rather than in the page's code so nothing moves before that code has loaded.
-				var frozen = new Set();
-				var queued = false;
+				/*
+				 * The decoration's frame cap (2026-11-20, the user's ask: less CPU / battery). Every endless
+				 * animation (smoke, glints, glowing eyes, bulbs …) is taken over here: paused, and moved on by
+				 * hand FPS (24) times a second, so the browser draws the decoration at most 24 frames a second
+				 * instead of the screen's 60–180 Hz (it was ~180 a second on a 179 Hz PC screen). It also
+				 * stands still while it is off screen (an IntersectionObserver per animated element), while
+				 * the tab is hidden, and in Battery saver (data-still; src/lib/motion.svelte.ts): a still
+				 * picture, nothing hidden. One-off animations (a tick's pop, the kill feed) are left alone.
+				 * Here rather than in the page's code, so it already holds before that code has loaded (and in
+				 * the offline file). window.__mw4fx is read by the net_graph (NetGraph.svelte).
+				 */
+				var FPS = 24; // like film: smooth enough for slow smoke and glints
+				// endless animations this script moves (all paused) -> their time. The time is kept here, never
+				// read back: reading a CSS animation's playState / currentTime makes the browser redo the
+				// page's style and layout, which per animation per frame cost more than the animations did.
+				var held = new Map();
+				var seen = new WeakSet(); // looked at once (one-off or someone else's)
+				var shown = new WeakMap(); // animated element -> on screen (IntersectionObserver)
+				var io =
+					typeof IntersectionObserver === 'function'
+						? new IntersectionObserver(
+								function (entries) {
+									for (var i = 0; i < entries.length; i++) shown.set(entries[i].target, entries[i].isIntersecting);
+								},
+								{ rootMargin: '120px' }
+							)
+						: null;
+				var fx = (window.__mw4fx = { fps: FPS, held: 0, moving: 0, steps: 0 });
 				function endless(a) {
 					var e = a.effect;
 					return !!(e && e.getTiming && e.getTiming().iterations === Infinity);
 				}
-				function freeze() {
-					queued = false;
-					if (!html.hasAttribute('data-still') || !document.getAnimations) return;
+				function sweep() {
+					swept = false;
+					if (!document.getAnimations) return;
 					var all = document.getAnimations();
-					var live = new Set();
+					// read everything first, then pause: a pause between two reads would make the browser
+					// redo the page's style once per animation
+					var take = [];
 					for (var i = 0; i < all.length; i++) {
 						var a = all[i];
-						if (frozen.has(a)) live.add(a);
-						else if (a.playState === 'running' && endless(a)) {
-							a.pause();
-							live.add(a);
+						if (seen.has(a)) continue;
+						var t = a.effect && a.effect.target;
+						// one-off animations, and a page's own endless one that asks to stay smooth, are left alone
+						if (!t || !endless(a) || (t.closest && t.closest('[data-fx-smooth]'))) {
+							seen.add(a);
+							continue;
+						}
+						// paused right now (a hidden tab's CSS pause): look again at the next sweep
+						if (a.playState !== 'running') continue;
+						seen.add(a);
+						take.push([a, a.currentTime || 0, t]);
+					}
+					for (var j = 0; j < take.length; j++) {
+						var b = take[j][0], el = take[j][2];
+						b.pause();
+						held.set(b, take[j][1]);
+						// a CSS animation ends when its element's style drops it: not ours any more
+						b.addEventListener('cancel', drop);
+						b.addEventListener('finish', drop);
+						if (io && !shown.has(el)) {
+							shown.set(el, true);
+							io.observe(el);
 						}
 					}
-					frozen = live;
 				}
-				function thaw() {
-					frozen.forEach(function (a) {
-						if (a.playState === 'paused') a.play();
-					});
-					frozen = new Set();
+				function drop(e) {
+					held.delete(e.target);
 				}
+				var swept = false;
 				function soon() {
-					if (queued || !html.hasAttribute('data-still')) return;
-					queued = true;
-					requestAnimationFrame(freeze);
+					if (swept) return;
+					swept = true;
+					setTimeout(sweep, 0);
 				}
-				try {
-					if (localStorage.getItem('mw4-camo-grind:still') === '1') html.setAttribute('data-still', '');
-				} catch (e) {}
-				// once the page's HTML is in (before anything is drawn), then for every animation that starts
-				document.addEventListener('DOMContentLoaded', freeze);
+				var last = performance.now();
+				function step() {
+					var now = performance.now();
+					var dt = Math.min(now - last, 250);
+					last = now;
+					var moving = 0;
+					if (!document.hidden && !html.hasAttribute('data-still')) {
+						held.forEach(function (time, a) {
+							var t = a.effect && a.effect.target;
+							if (!t || !t.isConnected) {
+								held.delete(a);
+								return;
+							}
+							if (shown.get(t) === false) return;
+							time += dt;
+							held.set(a, time);
+							a.currentTime = time;
+							moving++;
+						});
+						if (moving) fx.steps++;
+					}
+					fx.held = held.size;
+					fx.moving = moving;
+					setTimeout(step, 1000 / fx.fps);
+				}
+				// once the page's HTML is in (before anything is drawn), for every animation that starts, and
+				// now and then for animations made by script (they send no animationstart)
+				document.addEventListener('DOMContentLoaded', sweep);
 				document.addEventListener('animationstart', soon, true);
-				new MutationObserver(function () {
-					if (html.hasAttribute('data-still')) freeze();
-					else thaw();
-				}).observe(html, { attributes: true, attributeFilter: ['data-still'] });
+				setInterval(soon, 2000);
+				setTimeout(step, 1000 / FPS);
 			})();
 		</script>
 		<script>

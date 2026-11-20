@@ -146,13 +146,31 @@ export const en = {
 	},
 	/** Sound effects for your own ticks (button next to the theme picker; off by default). */
 	sound: { label: 'Sound effects', on: 'Sound effects: on', off: 'Sound effects: off' },
-	/** The header's pause button (motion.svelte.ts): stops every animation on the page to save CPU. */
-	motion: {
-		label: 'Pause animations',
-		off: 'Pause animations (saves CPU)',
-		on: 'Animations paused. Tap to play them again',
-		pausedToast: 'Animations paused. Tap ▶ at the top to play them again.',
-		playingToast: 'Animations playing again.'
+	/** Battery saver (motion.svelte.ts; the header's old pause button, 2026-11-20). */
+	saver: {
+		label: 'Battery saver',
+		off: 'Battery saver: the page stands still, the TV goes off and it checks for news less often',
+		on: 'Battery saver is on. Tap to turn it off',
+		onToast: 'Battery saver on: the page stands still and uses far less battery. Tap the battery at the top to turn it off.',
+		offToast: 'Battery saver off: everything moves again.',
+		auto: {
+			battery: 'Your battery is low, so Battery saver turned itself on. Tap the battery at the top to turn it off.',
+			data: 'Data Saver is on, so Battery saver turned itself on. Tap the battery at the top to turn it off.',
+			motion: 'Your device asks for less motion, so Battery saver turned itself on. Tap the battery at the top to turn it off.'
+		}
+	},
+	/** The net_graph (NetGraph.svelte, 2026-11-20): a small load readout at the top left on a PC. */
+	netGraph: {
+		menu: 'net_graph (CPU readout)',
+		label: 'net_graph: how hard this page works the computer',
+		fps: 'fps',
+		cpu: 'cpu',
+		sys: 'pc',
+		anim: 'anim',
+		mem: 'mem',
+		pressure: { nominal: 'low', fair: 'fair', serious: 'high', critical: 'max' } as Record<string, string>,
+		saver: 'saver',
+		help: 'net_graph, like the game’s: fps = how often the page’s decoration is drawn (capped at 24), cpu = how busy this page keeps its main thread, pc = how hard the whole computer works (only some browsers tell), anim = animations moving now / in total, mem = memory the page’s code uses. A browser can’t read the real CPU %, so these are estimates.'
 	},
 
 	/** The "Hide" buttons on every part of the page + the list to bring them back (HideButton, HiddenBar; 2026-11-20). */
@@ -341,8 +359,11 @@ export const en = {
 			'whoami · squad    who’s online',
 			'ping <name>       knock on a squad member’s door',
 			'nuke · hack · holk · 420',
+			'net_graph 0|1     the load readout (PC)',
 			'clear · exit'
 		],
+		netGraph: (on: boolean) => (on ? 'net_graph 1: the readout is on (top left, on a PC).' : 'net_graph 0: the readout is off.'),
+		netGraphUsage: (on: boolean) => `net_graph is ${on ? '1 (on)' : '0 (off)'}. Type “net_graph 1” or “net_graph 0”.`,
 		statusRow: (label: string, value: string) => `${label.padEnd(16, ' ')}${value}`,
 		divergenceLeft: (n: number) => (n > 0 ? `(${n} to go)` : '(UNLOCKED)'),
 		buddyValue: (stage: string, n: number, total: number) => `${stage} (${n}/${total})`,

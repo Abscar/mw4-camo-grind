@@ -622,6 +622,29 @@
 	animation-play-state: paused !important;
 }
 
+/*
+ * Less work per frame (2026-11-20, measured in headless Edge): without these, one small moving thing in the
+ * header (the title's chrome sheen) made the browser repaint the whole tracker below it on every frame
+ * (paint ≈ 64 % of the main thread → 9 %). Each tab's content is its own stacking context, so a repaint
+ * stays inside the part that moved. Nothing looks different.
+ */
+[role='tabpanel'],
+main > footer {
+	isolation: isolate;
+}
+
+/*
+ * Battery saver (motion.svelte.ts sets data-saver): app.html already holds every endless animation still;
+ * here the full-screen layers and the header's glint go too, since even standing still they cost the
+ * graphics chip on every scroll.
+ */
+[data-saver] .abscar-haze,
+[data-saver] .abscar-scan,
+[data-saver] .damascus-sheen,
+[data-saver] .boot {
+	display: none !important;
+}
+
 @keyframes tick-pop {
 	0% {
 		transform: scale(0.8);
@@ -750,6 +773,8 @@
 	text-shadow: none;
 	filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.9)) drop-shadow(0 0 8px rgb(0 0 0 / 0.6));
 	animation: camo-flow 9s ease-in-out infinite alternate;
+	/* its own layer: the moving sheen repaints only the title, not the Damascus metal under it */
+	will-change: transform;
 }
 
 /* operator emblem: pulsing red eye, glowing ember, thick smoke (puffs + wisps) */

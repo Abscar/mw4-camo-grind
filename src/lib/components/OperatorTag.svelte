@@ -288,6 +288,7 @@
 
 <div class="squad-wrap abscar-only mb-4 pt-1">
 	<div class="squad-frame relative max-w-full rounded-lg px-3 pt-4 pb-3">
+		<span class="sq-ring" aria-hidden="true"><i></i></span>
 		<span class="squad-legend font-hud">{t.operator.squad}</span>
 		<!-- the frame's own "Hide" on its top-right edge, across from the SQUAD pill (2026-11-20) -->
 		<HideButton id="squad" />
@@ -395,22 +396,46 @@
 	/* one frame round the squad: an iridescent border that slowly shifts colour */
 	.squad-frame {
 		border: 1.5px solid transparent;
-		background:
-			linear-gradient(135deg, rgb(28 8 52 / 0.62), rgb(10 4 24 / 0.5)) padding-box,
-			linear-gradient(110deg, #7a3ff0, #ff6ad5, #4fe6ff, #b265ff, #7a3ff0) border-box;
-		background-size:
-			100% 100%,
-			300% 100%;
+		background: linear-gradient(135deg, rgb(28 8 52 / 0.62), rgb(10 4 24 / 0.5)) padding-box;
 		box-shadow:
 			0 0 20px rgb(190 90 255 / 0.3),
 			inset 0 0 16px rgb(255 95 216 / 0.1);
+	}
+	/* The moving colours (2026-11-20, same look and speed as before): a strip 9× the frame's width slides
+	   left on its own layer, masked to the 1.5 px border. It was a background-position animation on the frame
+	   itself, which repainted the whole frame with all five emblems on every frame (≈ 40 ms of work each). */
+	.sq-ring {
+		position: absolute;
+		inset: -1.5px;
+		padding: 1.5px;
+		border-radius: inherit;
+		overflow: hidden;
+		pointer-events: none;
+		-webkit-mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		-webkit-mask-composite: xor;
+		mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		mask-composite: exclude;
+	}
+	.sq-ring > i {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 900%;
+		background: linear-gradient(110deg, #7a3ff0, #ff6ad5, #4fe6ff, #b265ff, #7a3ff0) 0 0 / 33.3333% 100% repeat-x;
 		animation: squad-sheen 9s linear infinite;
+		will-change: transform;
 	}
 	@keyframes squad-sheen {
+		from {
+			transform: translateX(0);
+		}
 		to {
-			background-position:
-				0 0,
-				300% 0;
+			transform: translateX(-66.6667%);
 		}
 	}
 	/* their camos from the squad: G / P / HB counts in the camo colours */

@@ -1122,23 +1122,24 @@ html[data-squadup] .hdr-buddy .buddy {
 
 /* BurgiShop's 420 pack 2 (2026-11-16, faceGear.ts): the things drawn on the operators' faces. Reduced motion
    (app.css stops every animation) leaves each at a sensible rest: rings showing, propeller flat, lids open. */
-/* smoke colours: `data-smoke` on an emblem's <svg> tints its smoke (abscarOperator.ts `smoke`) and rings */
+/* smoke colours: `data-smoke` on an emblem's <svg> tints its smoke (abscarOperator.ts `smoke`) and rings
+   (the puffs fade out in `color` since 2026-11-20, so it's color, not fill) */
 [data-smoke='smoke-green'] .op-smoke-puffs {
-	fill: #74f25a;
+	color: #74f25a;
 }
 [data-smoke='smoke-green'] .op-wisp,
 [data-smoke='smoke-green'] .fg-ring {
 	stroke: #a8ff8a;
 }
 [data-smoke='smoke-purple'] .op-smoke-puffs {
-	fill: #b77cff;
+	color: #b77cff;
 }
 [data-smoke='smoke-purple'] .op-wisp,
 [data-smoke='smoke-purple'] .fg-ring {
 	stroke: #d8b8ff;
 }
 [data-smoke='smoke-gold'] .op-smoke-puffs {
-	fill: #ffd23a;
+	color: #ffd23a;
 }
 [data-smoke='smoke-gold'] .op-wisp,
 [data-smoke='smoke-gold'] .fg-ring {
@@ -1149,7 +1150,7 @@ html[data-squadup] .hdr-buddy .buddy {
 }
 /* rainbow: a hot pink that runs round the colour wheel */
 [data-smoke='smoke-rainbow'] .op-smoke-puffs {
-	fill: #ff5aa0;
+	color: #ff5aa0;
 }
 [data-smoke='smoke-rainbow'] .op-wisp,
 [data-smoke='smoke-rainbow'] .fg-ring {

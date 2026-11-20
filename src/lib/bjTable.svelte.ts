@@ -44,6 +44,7 @@ import {
 } from './bj-table.ts';
 import { untrack } from 'svelte';
 import { t } from './i18n/en.ts';
+import { saverOn } from './motion.svelte.ts';
 import type { SideBet } from './squad-casino.ts';
 import { makeMemberId } from './squad-codec.ts';
 import { Channel, squad, type Outcome } from './squad.svelte.ts';
@@ -220,16 +221,18 @@ class BjTable {
 	}
 
 	#step(): void {
-		this.now = this.#time();
 		if (!this.#follow()) return;
 		const real = Date.now();
 		const atTable = shown(this.#table);
+		// the clock only ticks for someone looking (it ran 4× a second whenever you were in a squad, 2026-11-20)
+		if (atTable || shown(this.#lobby)) this.now = this.#time();
 		if (!atTable) {
 			if (this.#seated) {
 				this.#offSince ??= real;
 				if (real - this.#offSince > AWAY_LEAVE) void this.#getUp();
 			}
-			if (shown(this.#lobby) && real - this.#pulled > POLL_LOBBY) this.#pull();
+			// Battery saver: the lobby's "n at the table" count three times less often
+			if (shown(this.#lobby) && real - this.#pulled > POLL_LOBBY * (saverOn() ? 3 : 1)) this.#pull();
 			return;
 		}
 		this.#offSince = null;

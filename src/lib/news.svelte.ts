@@ -13,6 +13,7 @@ import { onMount } from 'svelte';
 import baked from '#lib/data/news.json';
 import { t } from '#lib/i18n/en.ts';
 import { OFFLINE_FILE } from './browser.ts';
+import { saverOn } from './motion.svelte.ts';
 import { readNews, type Headline, type NewsSource } from './news-codec.ts';
 import { SITE_URL } from './site.ts';
 
@@ -66,7 +67,8 @@ function start(): () => void {
 	let lastCheck = 0;
 	const update = () => {
 		news.now = new Date();
-		if (document.visibilityState === 'visible' && Date.now() - lastCheck >= RECHECK_MS) {
+		// Battery saver: new headlines every 30 min instead of 10
+		if (document.visibilityState === 'visible' && Date.now() - lastCheck >= RECHECK_MS * (saverOn() ? 3 : 1)) {
 			lastCheck = Date.now();
 			void refresh();
 		}
