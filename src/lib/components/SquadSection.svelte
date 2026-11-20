@@ -42,7 +42,8 @@
 		phillestar: t.operator.mate,
 		lars: t.operator.lars,
 		jeeven: t.operator.jeeven,
-		ingman: t.operator.ingman
+		ingman: t.operator.ingman,
+		aw: t.operator.aw
 	};
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 

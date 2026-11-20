@@ -255,6 +255,9 @@ export const en = {
 		/** the fifth squad member (2026-11-14, the user's friend), the wizard; his sign in the user's words */
 		ingman: 'Ingman',
 		ingmanMotto: 'Jim and Pro player',
+		/** the sixth squad member (2026-11-20, the user's ask "lägg till AW som operator"), drawn the way the user
+		    described him (AwEmblem); no sign yet */
+		aw: 'AW',
 		certified: 'Certified grinder',
 		recordTitle: 'BO6 + BO7',
 		record: ['Prestige Master', 'Max level', 'All calling cards'],
@@ -348,7 +351,7 @@ export const en = {
 		close: 'Close the terminal',
 		input: 'Command',
 		quick: 'Quick commands',
-		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke, Da Jeeven, Ingman.', 'Type “help” for commands. “exit” or Esc closes.'],
+		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke, Da Jeeven, Ingman, AW.', 'Type “help” for commands. “exit” or Esc closes.'],
 		help: [
 			'help              this list',
 			'status            your camo grind in numbers',
@@ -387,7 +390,8 @@ export const en = {
 			'PHILLESTAR ........ ONLINE (snack: hamburger, favourite reward: the nuke)',
 			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)',
 			'DA JEEVEN ......... ONLINE (certified grinder: Prestige Master in BO6 + BO7, holk: lit)',
-			'INGMAN ............ ONLINE (class: wizard, pipe: lit, Jim and Pro player)'
+			'INGMAN ............ ONLINE (class: wizard, pipe: lit, Jim and Pro player)',
+			'AW ................ ONLINE (new recruit, eyes: wide open, sleep: optional)'
 		],
 		/** `squad` while you're in a squad (2026-11-14): the real list, online first */
 		squadLive: (name: string, online: boolean, seen: string, hb: number, total: number) =>

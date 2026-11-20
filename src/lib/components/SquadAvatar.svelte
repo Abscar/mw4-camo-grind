@@ -10,6 +10,7 @@
 	import { EXHALE_K, exhaleAt, eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
 	import type { SquadOp } from '#lib/squad-codec.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
+	import AwEmblem from './AwEmblem.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import IngmanEmblem from './IngmanEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
@@ -41,7 +42,7 @@
 			.map((w) => [...w][0]?.toUpperCase() ?? '')
 			.join('') || '?'
 	);
-	const OP_COLOURS: Record<SquadOp, string> = { abscar: '#6f8f2e', phillestar: '#c43fd6', lars: '#7ee236', jeeven: '#e0a420', ingman: '#8a3fd0' };
+	const OP_COLOURS: Record<SquadOp, string> = { abscar: '#6f8f2e', phillestar: '#c43fd6', lars: '#7ee236', jeeven: '#e0a420', ingman: '#8a3fd0', aw: '#1aa79a' };
 	const hue = $derived([...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7));
 	const colour = $derived(op ? OP_COLOURS[op] : `hsl(${hue} 55% 45%)`);
 
@@ -70,6 +71,8 @@
 		<DaJeevenEmblem {face} />
 	{:else if emblem && op === 'ingman'}
 		<IngmanEmblem {face} />
+	{:else if emblem && op === 'aw'}
+		<AwEmblem {face} />
 	{:else}
 		<span class="sq-initials font-head">{initials}</span>
 		{#if overInitials}

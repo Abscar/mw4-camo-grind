@@ -16,6 +16,8 @@
 	(emblems 64 px, names a bit smaller) when the column is wide enough (≥ 1280 px pages and 820–1139 px, where
 	the frame gets the full width), two by two in between (1140–1279 px, beside the TV), one under the other on
 	phones. The TV keeps its place beside the frame from 1140 px (+page.svelte).
+	Ingman (IngmanEmblem, the wizard; 2026-11-14) and AW (AwEmblem, pale with huge eyes, the user's
+	description; 2026-11-20) joined later: the layout rules are at the top of the styles.
 	History: an Iridescent rank badge (RankBadge) sat in the frame from 2026-11-10 ("both ranked"); the user
 	asked to remove it entirely when Lars Åke joined (2026-11-13). The component is deleted (git history).
 -->
@@ -23,6 +25,7 @@
 	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/en.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
+	import AwEmblem from './AwEmblem.svelte';
 	import HideButton from './HideButton.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import IngmanEmblem from './IngmanEmblem.svelte';
@@ -61,7 +64,9 @@
 		/** none of the MW4 Mastery camos yet (the user, 2026-11-13) */
 		jeeven: ['todo', 'todo', 'todo'],
 		/** not told yet (2026-11-14): not started until the user says otherwise */
-		ingman: ['todo', 'todo', 'todo']
+		ingman: ['todo', 'todo', 'todo'],
+		/** not told yet (2026-11-20): not started until the user says otherwise */
+		aw: ['todo', 'todo', 'todo']
 	} satisfies Record<SquadOp, Status[]>;
 
 	/** The squad member who is this operator (only when you're in a squad yourself). */
@@ -104,7 +109,7 @@
 	 * `data-fx-rest` on their tag, which app.html's frame cap reads. Someone playing an emote moves too. The five
 	 * emblems were about half of what the page still drew on a PC and three quarters on a phone.
 	 */
-	const TURN_ORDER: SquadOp[] = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman'];
+	const TURN_ORDER: SquadOp[] = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw'];
 	const TURN_MS = 6000;
 	let turn = $state(0);
 	$effect(() => {
@@ -129,7 +134,9 @@
 	 * Abscar", when Da Jeeven joined with no Mastery camos either).
 	 */
 	// Ingman (2026-11-14) is a "Pro player" by his own sign, so he's left out too: Abscar keeps the sticker.
-	const SLACKER_EXEMPT: SquadOp[] = ['jeeven', 'ingman'];
+	// AW (2026-11-20) too, until the user says how far he is: with nothing typed in he'd share last place with
+	// Abscar and nobody would wear the sticker.
+	const SLACKER_EXEMPT: SquadOp[] = ['jeeven', 'ingman', 'aw'];
 	const points = (list: Status[]) => list.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
 	const slacker = $derived.by(() => {
 		const scores = (Object.keys(statuses) as SquadOp[])
@@ -369,6 +376,17 @@
 			{@render high('ingman')}
 			{@render mastery(t.operator.ingman, statuses.ingman, slacker === 'ingman' || !!pr.ingman.slacker, t.operator.ingmanMotto, 'wizard', 'ingman')}
 		</div>
+
+		<!-- AW (2026-11-20, the user's friend), drawn the way the user described him (AwEmblem); no sign yet -->
+		<div class="op-member">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('aw') ? undefined : ''}>
+				<OpGear aura={gear.aw.aura?.id} effect={gear.aw.effect?.id} badge={gear.aw.badge?.id} pet={gear.aw.pet?.id} smoked={!!pr.aw['smoke-bomb']} extra={extras.aw}><AwEmblem face={faceOf(gear.aw)} /></OpGear>
+				{@render callsign(t.operator.aw, 'aw')}
+			</div>
+			{@render stamp('aw', t.operator.aw)}
+			{@render high('aw')}
+			{@render mastery(t.operator.aw, statuses.aw, slacker === 'aw' || !!pr.aw.slacker, '', 'purple', 'aw')}
+		</div>
 	</div>
 </div>
 
@@ -390,7 +408,8 @@
 			column-gap: 24px;
 		}
 	}
-	/* five members (Ingman joined 2026-11-14): three in a row, then two, so the frame still fits beside the TV */
+	/* five members (Ingman joined 2026-11-14): three in a row, then two, so the frame still fits beside the TV;
+	   six since AW (2026-11-20): two rows of three, so the frame keeps its height */
 	@container squad (min-width: 700px) {
 		.squad-frame {
 			grid-template-columns: repeat(3, auto);

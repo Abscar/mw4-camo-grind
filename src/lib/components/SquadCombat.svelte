@@ -115,7 +115,8 @@
 		phillestar: t.operator.mate,
 		lars: t.operator.lars,
 		jeeven: t.operator.jeeven,
-		ingman: t.operator.ingman
+		ingman: t.operator.ingman,
+		aw: t.operator.aw
 	};
 	/**
 	 * For Abscar's box: the code's joke bans, plus everyone whose latest K/D is over the limit or who

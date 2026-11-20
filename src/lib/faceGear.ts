@@ -63,7 +63,7 @@ function mouthFrom(px: number, py: number, qx: number, qy: number): Mouth {
 	return { x: px, y: py, dir: dx < 0 ? -1 : 1, deg: f((Math.atan2(dy, Math.abs(dx)) * 180) / Math.PI, 1), k: f(Math.hypot(dx, dy) / 19, 3) };
 }
 
-export type FaceKey = 'abscar' | 'phillestar' | 'lars' | 'jeeven' | 'ingman' | 'initials';
+export type FaceKey = 'abscar' | 'phillestar' | 'lars' | 'jeeven' | 'ingman' | 'aw' | 'initials';
 
 /** Every face's anchors in its emblem's 64×64 box (read off the drawings; holk ends = the Golden Holk's). */
 export const FACES: Record<FaceKey, Face> = {
@@ -77,6 +77,9 @@ export const FACES: Record<FaceKey, Face> = {
 	jeeven: { eyes: { l: [25.5, 25.6], r: [38.5, 25.6], rad: 4.4 }, mouth: mouthFrom(34, 38.8, 56.5, 45.4), head: { x: 32, y: 6, w: 34 }, smokes: true },
 	// round glasses 27.6/36.4, 25.2 r 3.3; the face's top 16 (a hat replaces his wizard hat)
 	ingman: { eyes: { l: [27.6, 25.2], r: [36.4, 25.2], rad: 3.6 }, mouth: mouthFrom(35.2, 33.9, 50.4, 38.4), head: { x: 32, y: 15.2, w: 24 }, smokes: true },
+	// AW (AwEmblem): the big round eyes 26.6/37.4, 25.4 r 4.1, the grin's right corner 37.6, 36, face top 11.2
+	// (a hat replaces his pompadour)
+	aw: { eyes: { l: [26.6, 25.4], r: [37.4, 25.4], rad: 4.4 }, mouth: mouthFrom(37.6, 36, 54.6, 40.4), head: { x: 32, y: 10.4, w: 28 }, smokes: false, puff: [46.4, 38.6] },
 	// a member without an operator: the initials badge (SquadAvatar); glasses sit just above the letters
 	initials: { eyes: { l: [22.5, 17.6], r: [41.5, 17.6], rad: 5 }, mouth: mouthFrom(40, 45, 62, 52), head: { x: 32, y: 2, w: 44 }, smokes: false, puff: [58, 48] }
 };

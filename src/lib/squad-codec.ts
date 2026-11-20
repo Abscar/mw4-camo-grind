@@ -48,7 +48,7 @@ export const NAME_MAX = 24;
 export const ONLINE_MS = 5 * 60_000;
 
 /** The operators in the header's squad frame a member can say they are (OperatorTag). */
-export const SQUAD_OPS = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman'] as const;
+export const SQUAD_OPS = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw'] as const;
 export type SquadOp = (typeof SQUAD_OPS)[number];
 
 export interface SquadMember {
