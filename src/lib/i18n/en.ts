@@ -1257,6 +1257,24 @@ export const en = {
 			none: 'Nobody has played yet.',
 			row: (net: string, games: number) => `${net} 🍔 · ${games} game${games === 1 ? '' : 's'}`
 		},
+		/** The casino floor around the games (2026-11-20, the user: "lots of dopamine and fun things on the screen"). */
+		floor: {
+			ticker: 'Squad wins on the casino floor',
+			biggest: 'Biggest win',
+			biggestSub: 'this week',
+			noBiggest: 'Jackpot up for grabs',
+			promo: ['Party odds on both slots: everybody wins', 'Your daily bonus lands every day you’re online', 'Abscar is the house: the house always eats', 'Hit something big and the whole squad sees it here'],
+			ago: (min: number) => (min < 1 ? 'just now' : min < 60 ? `${min} min ago` : min < 1440 ? `${Math.floor(min / 60)} h ago` : `${Math.floor(min / 1440)} d ago`),
+			hot: 'HOT',
+			hotLabel: 'Most wins in the squad today',
+			hotParty: 'Party odds: the big wins land here',
+			gain: (n: number) => `+${n.toLocaleString('en-US')}`,
+			games: (n: number) => `${n.toLocaleString('en-US')} game${n === 1 ? '' : 's'}`,
+			place: (n: number) => (n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`),
+			emptySeat: 'Free spot',
+			meter: (done: number, every: number) => `Day ${done} of ${every}`,
+			meterNext: (rate: number) => `then ${rate.toLocaleString('en-US')} 🍔 a day`
+		},
 		event: {
 			slots: (net: number, tier: string) => `${tier === 'jackpot' ? 'hit the BURGER JACKPOT' : tier === 'mega' ? 'hit a MEGA WIN' : tier === 'big' ? 'hit a BIG WIN' : 'won'} on Abscar’s Fortune: +${net.toLocaleString('en-US')} 🍔 🎰`,
 			fortune2: (net: number, tier: string) => `${tier === 'epic' ? 'got an EPIC MUNCH' : tier === 'mega' ? 'hit a MEGA WIN' : 'hit a BIG WIN'} on Mybots 5: +${net.toLocaleString('en-US')} 🍔 🍟`,

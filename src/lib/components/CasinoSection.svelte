@@ -14,12 +14,27 @@
 	Skedd (CasinoBook, 2026-11-20) the third, Kushburst (CasinoKushburst, 2026-11-20) the fourth. Donations
 	(BurgiGives, CasinoDonate, 2026-11-20) sits next to BurgiBank: eight tiles for everyone, Abscar also sees
 	Admin (a slim strip under the others until there's room for all of them in one row).
+	The casino floor (2026-11-20, the user: "snygga till hela 'Burgicasino' fliken, mycket dopamin och kul
+	grejer på skärmen"): the box is a dark casino in every theme (carpet, drifting lights and props,
+	CasinoFloorFx), a marquee sign with chasing bulbs and the counting balance pill (CasinoSign,
+	CasinoBalance: coins spill out when it grows, confetti for a big jump, CasinoConfetti), a jackpot
+	ticker of the squad's wins (CasinoTicker), a gift box + day meter on the daily bonus, tiles that shine,
+	lift and wear a HOT badge (the game with most wins today, casinoFloor.ts), and a podium for the
+	leaderboard (CasinoPodium).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
-	import { bonus420, casinoTotal, daysToNextRate, dailyRate, dailyTotal } from '#lib/squad-casino.ts';
+	import { bonus420, casinoTotal, daysToNextRate, dailyRate, dailyTotal, DAILY } from '#lib/squad-casino.ts';
 	import { burgerBank, houseOf } from '#lib/squad-fun.ts';
+	import { bonusMeter, floorNews, hotGame } from '#lib/casinoFloor.ts';
+	import CasinoSign from './CasinoSign.svelte';
+	import CasinoTicker from './CasinoTicker.svelte';
+	import CasinoPodium from './CasinoPodium.svelte';
+	import CasinoGift from './CasinoGift.svelte';
+	import CasinoFloorFx from './CasinoFloorFx.svelte';
+	import CasinoConfetti from './CasinoConfetti.svelte';
+	import FloorArt from './FloorArt.svelte';
 	import CasinoBlackjack from './CasinoBlackjack.svelte';
 	import CasinoRoulette from './CasinoRoulette.svelte';
 	import CasinoSlots from './CasinoSlots.svelte';
@@ -31,7 +46,6 @@
 	import CasinoRig from './CasinoRig.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
 	import CasinoDonate from './CasinoDonate.svelte';
-	import SquadAvatar from './SquadAvatar.svelte';
 	import { bjTable } from '#lib/bjTable.svelte.ts';
 
 	let { onSquad }: { onSquad?: () => void } = $props();
@@ -93,20 +107,20 @@
 			.filter((x) => x.games > 0)
 			.sort((a, b) => b.net - a.net || a.e.member.name.localeCompare(b.e.member.name))
 	);
-	const signed = (n: number) => (n > 0 ? `+${n.toLocaleString('en-US')}` : n < 0 ? `−${(-n).toLocaleString('en-US')}` : '±0');
+
+	/** The casino floor: the HOT tile (most wins on the radio today; Mybots 5 until someone wins), the
+	 *  daily-bonus meter, and confetti when your burgers jump (CasinoBalance → CasinoConfetti). */
+	const f = c.floor;
+	const hotWon = $derived(squad.on ? hotGame(floorNews(squad.radio?.msgs, squad.now).recent, squad.now) : null);
+	const hot = $derived(hotWon ?? 'fortune2');
+	const meter = $derived(bonusMeter(days, DAILY.every, daysToNextRate(days)));
+	let confetti = $state<CasinoConfetti>();
 </script>
 
 <section bind:this={casinoEl} class="class-card meta-list casino overflow-hidden rounded-card bg-panel shadow-card" style:--c="#ffc928" aria-labelledby="casino-h">
-	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-4 pb-3 sm:px-5">
-		<!-- at least 13rem, so on a phone the burgers pill goes to its own line instead of squeezing the names -->
-		<div class="flex min-w-[13rem] flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
-			<h2 id="casino-h" class="casino-title font-head text-xl font-black tracking-wide uppercase">{c.heading}</h2>
-			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{c.sub}</span>
-		</div>
-		{#if squad.on}
-			<p class="casino-bal font-head" aria-live="polite"><span>{c.balance}</span><b class="num">{c.burgers(shown)}</b></p>
-		{/if}
-	</header>
+	<CasinoFloorFx neon={squad.on && ['slots', 'fortune2', 'book', 'kushburst', 'roulette', 'blackjack'].includes(game)} />
+	<CasinoSign on={squad.on} value={shown} snapKey={game} onbig={() => confetti?.fire()} />
+	<CasinoConfetti bind:this={confetti} />
 
 	{#if !squad.on}
 		<div class="grid gap-3 border-t border-line px-4 py-4 sm:px-5">
@@ -115,13 +129,25 @@
 		</div>
 	{:else}
 		<div class="grid grid-cols-[minmax(0,1fr)] gap-4 border-t border-line px-4 py-4 sm:px-5">
+			<!-- the squad's big wins on an LED board -->
+			<CasinoTicker />
+
 			<!-- the daily bonus -->
 			<div class="casino-bonus grid gap-0.5 rounded-lg px-3 py-2">
+				<CasinoGift size={58} />
 				<p class="font-head text-[11px] font-bold tracking-[0.14em] uppercase">{c.bonus.heading}</p>
 				<p class="text-[13px] text-fg">
 					{days ? c.bonus.line(days, dailyRate(days), daysToNextRate(days), dailyRate(days + daysToNextRate(days))) : c.bonus.none}
 				</p>
 				{#if days}<p class="text-[11px] text-muted">{c.bonus.total(dailyTotal(days) + bonus420(squad.online))}</p>{/if}
+
+				{#if days}
+					<!-- where today is in the current block of days: one burger coin per day -->
+					<div class="bonus-meter" aria-hidden="true">
+						{#each Array.from({ length: DAILY.every }, (_, i) => i) as i (i)}<span class="bm-coin" class:on={i < meter} class:today={i === meter - 1}><FloorArt kind="coin" size={22} /></span>{/each}
+						<span class="bm-text font-head">{f.meter(meter, DAILY.every)} · {f.meterNext(dailyRate(days + daysToNextRate(days)))}</span>
+					</div>
+				{/if}
 			</div>
 
 			<!-- which game: big picture tiles -->
@@ -135,6 +161,8 @@
 			>
 				{#each GAMES as g (g)}
 					<button type="button" class="casino-game" data-game={g} aria-pressed={game === g} onclick={() => pick(g)}>
+						<span class="tile-fx" aria-hidden="true"></span>
+						{#if g === hot}<span class="casino-hot font-head" title={hotWon ? f.hotLabel : f.hotParty}><span aria-hidden="true">🔥</span> {f.hot}</span>{/if}
 						{#if g === 'fortune2'}<MybotsLogo tile />{:else}<CasinoTabArt kind={g} />{/if}
 						<span class="casino-game-name font-head">{c.games[g]}</span>
 						{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
@@ -165,6 +193,7 @@
 					<!-- BurgiBank: a big bank, your burgers, loans and the house -->
 					<div class="grid gap-3">
 						<div class="bank-stage flex flex-wrap items-center gap-x-5 gap-y-2 rounded-card px-4 py-3">
+							<span class="bank-tw" aria-hidden="true"><FloorArt kind="sparkle" size={16} tint="#fff6b0" /><FloorArt kind="sparkle" size={11} tint="#ffd23a" /><FloorArt kind="sparkle" size={13} tint="#ffffff" /></span>
 							<CasinoTabArt kind="bank" size={132} />
 							<div class="min-w-0">
 								<p class="bank-title font-head">{c.games.bank}</p>
@@ -184,64 +213,108 @@
 				{/if}
 			{/key}
 
-			<!-- who's up, who's down -->
-			<section aria-labelledby="casino-board-h">
-				<h3 id="casino-board-h" class="font-head text-[13px] font-bold tracking-[0.12em] uppercase">{c.board.heading}</h3>
-				{#if !board.length}
-					<p class="mt-1 text-sm text-muted">{c.board.none}</p>
-				{:else}
-					<ol class="mt-2 grid gap-1.5">
-						{#each board as row, i (row.e.id)}
-							<li class="casino-row flex min-w-0 items-center gap-2.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5" class:mine={row.e.mine}>
-								<span class="num w-6 flex-none font-head text-[13px] font-bold text-accent">#{i + 1}</span>
-								<SquadAvatar name={row.e.member.name} op={row.e.member.op} size={30} />
-								<b class="min-w-0 flex-1 truncate font-head text-[14px]">{row.e.member.name}</b>
-								<span class="casino-net num font-head" data-dir={row.net > 0 ? 'up' : row.net < 0 ? 'down' : 'flat'}>{c.board.row(signed(row.net), row.games)}</span>
-							</li>
-						{/each}
-					</ol>
-				{/if}
-			</section>
+			<!-- who's up, who's down: a podium -->
+			<CasinoPodium rows={board} />
 			<p class="text-xs text-muted">{c.note}</p>
 		</div>
 	{/if}
 </section>
 
 <style>
-	/* the gradient paints the letters with their background; the Abscar theme's heading shadow would be drawn
-	   on top of it and turn them dark, so it's switched off here (the drop-shadow filters give the edge) */
-	.casino-title {
-		text-shadow: none !important;
-		background: linear-gradient(180deg, #fffbe0, #ffd23a 55%, #ffae00);
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-		filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.7)) drop-shadow(0 0 8px rgb(255 190 40 / 0.45));
+	/* the casino floor: a dark carpet in every theme (the theme's colours re-tuned inside, so text, buttons
+	   and fields in the games, loans, donations and the control room stay readable on it), a stacking
+	   context of its own so the floor's lights and props (CasinoFloorFx, z-index −1) sit behind everything */
+	.casino {
+		position: relative;
+		isolation: isolate;
 	}
-	.casino-bal {
-		display: flex;
-		align-items: baseline;
-		gap: 8px;
-		padding: 4px 12px;
-		border-radius: 999px;
-		background: rgb(0 0 0 / 0.3);
-		box-shadow: inset 0 0 0 1.5px #ffc928;
-	}
-	.casino-bal span {
-		font-size: 10px;
-		font-weight: 700;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--t-muted);
-	}
-	.casino-bal b {
-		font-size: 18px;
-		font-weight: 900;
+	:global([data-theme]) .casino {
+		--t-fg: #fff3dc;
+		--t-muted: #dcc59c;
+		--t-dim: #9a7f58;
+		--t-panel: #1e0a1c;
+		--t-panel-2: rgb(0 0 0 / 0.32);
+		--t-line: rgb(255 201 40 / 0.24);
+		--t-accent: #ffc928;
+		--t-on-accent: #1d0d00;
+		--t-tick: rgb(0 0 0 / 0.45);
+		--t-tick-line: rgb(255 220 150 / 0.32);
+		--t-track: rgb(255 255 255 / 0.1);
+		--t-danger: #ff6b6b;
+		--t-buff: #5dff86;
+		--t-nerf: #ff6b6b;
+		--t-gold-ink: #ffd23a;
+		--t-plat-ink: #d6e0ee;
+		--t-hb-ink: #c9a2ff;
+		--t-div-ink: #5ff0dc;
+		--t-new-ink: #ff9a6a;
 		color: var(--t-fg);
+		background:
+			radial-gradient(circle, rgb(255 201 40 / 0.1) 0 1.6px, transparent 2.3px) 0 0 / 34px 34px,
+			radial-gradient(circle, rgb(255 92 168 / 0.08) 0 4.5px, transparent 5.2px) 17px 17px / 34px 34px,
+			conic-gradient(from 45deg, rgb(255 255 255 / 0.03) 0 25%, transparent 0 50%, rgb(255 255 255 / 0.03) 0 75%, transparent 0) 0 0 / 34px 34px,
+			radial-gradient(120% 60% at 50% 0%, #3a0c34, transparent 70%),
+			linear-gradient(180deg, #240a24 0%, #180617 45%, #10040e 100%);
 	}
+	/* the daily bonus: a velvet ticket with the gift box on the left and a coin per day under the text */
 	.casino-bonus {
-		border: 1px dashed #ffc928;
-		background: rgb(255 201 40 / 0.1);
+		grid-template-columns: auto minmax(0, 1fr);
+		column-gap: 14px;
+		align-items: center;
+		padding: 10px 14px;
+		border: 1.5px solid rgb(255 201 40 / 0.75);
+		background:
+			radial-gradient(70% 150% at 0% 50%, rgb(255 80 140 / 0.3), transparent 65%),
+			linear-gradient(90deg, #3e0b30, #1e0719);
+		box-shadow:
+			inset 0 0 0 4px rgb(0 0 0 / 0.22),
+			0 0 16px rgb(255 110 170 / 0.2);
+		color: #fff3dc;
+	}
+	.casino-bonus > :global(.gift) {
+		grid-column: 1;
+		grid-row: 1 / span 4;
+	}
+	.casino-bonus > p,
+	.casino-bonus > .bonus-meter {
+		grid-column: 2;
+	}
+	.casino-bonus > p:first-of-type {
+		color: #ffd23a;
+		text-shadow: 0 0 8px rgb(255 190 40 / 0.5);
+	}
+	.bonus-meter {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 5px;
+		margin-top: 4px;
+	}
+	.bm-coin {
+		filter: grayscale(1) brightness(0.45);
+		opacity: 0.75;
+	}
+	.bm-coin.on {
+		filter: drop-shadow(0 0 4px rgb(255 200 60 / 0.6));
+		opacity: 1;
+	}
+	.bm-coin.today {
+		animation: bm-today 1.8s ease-in-out infinite alternate;
+	}
+	@keyframes bm-today {
+		from {
+			transform: scale(1);
+		}
+		to {
+			transform: scale(1.18) translateY(-2px);
+		}
+	}
+	.bm-text {
+		margin-left: 4px;
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		color: #ffd76a;
 	}
 	.casino-house {
 		border: 1px solid rgb(255 201 40 / 0.6);
@@ -437,18 +510,217 @@
 		font-weight: 900;
 		line-height: 1;
 	}
-	.casino-row.mine {
-		border-color: var(--t-accent);
+	/* ---------- the casino floor's tiles (2026-11-20): a light sweeps across them in turn, the picked one
+	   glows on and off, they lift and tilt under the mouse, press in on a tap, and one wears a HOT badge */
+	.casino-game {
+		isolation: isolate;
 	}
-	.casino-net {
-		flex: none;
-		font-size: 13px;
-		font-weight: 800;
+	.tile-fx {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		overflow: hidden;
+		border-radius: inherit;
+		pointer-events: none;
 	}
-	.casino-net[data-dir='up'] {
-		color: var(--t-buff, #3ee06a);
+	.tile-fx::before {
+		content: '';
+		position: absolute;
+		top: -20%;
+		bottom: -20%;
+		left: 0;
+		width: 45%;
+		background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.3), transparent);
+		transform: translateX(-130%) skewX(-18deg);
+		animation: tile-shine 10s ease-in-out infinite;
 	}
-	.casino-net[data-dir='down'] {
-		color: var(--t-nerf, #ff5a5a);
+	.casino-game:nth-child(2) .tile-fx::before {
+		animation-delay: -8.6s;
+	}
+	.casino-game:nth-child(3) .tile-fx::before {
+		animation-delay: -7.2s;
+	}
+	.casino-game:nth-child(4) .tile-fx::before {
+		animation-delay: -5.8s;
+	}
+	.casino-game:nth-child(5) .tile-fx::before {
+		animation-delay: -4.4s;
+	}
+	.casino-game:nth-child(6) .tile-fx::before {
+		animation-delay: -3s;
+	}
+	.casino-game:nth-child(7) .tile-fx::before {
+		animation-delay: -1.6s;
+	}
+	.casino-game:nth-child(8) .tile-fx::before {
+		animation-delay: -0.8s;
+	}
+	@keyframes tile-shine {
+		0%,
+		84% {
+			transform: translateX(-130%) skewX(-18deg);
+		}
+		100% {
+			transform: translateX(330%) skewX(-18deg);
+		}
+	}
+	/* the picked tile: a gold glow that slowly swells and fades round it */
+	.casino-game[aria-pressed='true']::before {
+		content: '';
+		position: absolute;
+		inset: -2px;
+		z-index: -1;
+		border-radius: 16px;
+		box-shadow:
+			0 0 24px 5px rgb(255 200 60 / 0.6),
+			0 0 46px 8px rgb(255 80 170 / 0.28);
+		opacity: 0.35;
+		animation: tile-glow 2.4s ease-in-out infinite alternate;
+		pointer-events: none;
+	}
+	@keyframes tile-glow {
+		from {
+			opacity: 0.35;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	.casino-game[aria-pressed='true'] .casino-game-name {
+		text-shadow:
+			0 0 8px rgb(255 200 60 / 0.7),
+			0 1px 1px rgb(0 0 0 / 0.8);
+	}
+	@media (hover: hover) {
+		.casino-game:hover {
+			border-color: #ffd23a;
+			transform: translateY(-4px) rotate(-1.5deg) scale(1.04);
+			box-shadow:
+				inset 0 1px 0 rgb(255 255 255 / 0.25),
+				0 0 18px rgb(255 200 60 / 0.4),
+				0 10px 18px rgb(0 0 0 / 0.45);
+		}
+		.casino-game:nth-child(even):hover {
+			transform: translateY(-4px) rotate(1.5deg) scale(1.04);
+		}
+		.casino-game:hover :global(svg.ta) {
+			transform: scale(1.08);
+		}
+	}
+	.casino-game :global(svg.ta) {
+		transition: transform 0.2s ease;
+	}
+	.casino-game:active {
+		transform: translateY(0) scale(0.96);
+	}
+	.casino-hot {
+		position: absolute;
+		top: -8px;
+		left: -5px;
+		z-index: 2;
+		padding: 2px 8px 2px 6px;
+		border-radius: 999px;
+		background: linear-gradient(180deg, #ff8a2e, #e0142c);
+		color: #fff;
+		font-size: 10px;
+		font-weight: 900;
+		line-height: 1.5;
+		letter-spacing: 0.1em;
+		white-space: nowrap;
+		box-shadow:
+			0 0 0 1.5px #ffd23a,
+			0 0 10px rgb(255 90 40 / 0.7),
+			0 2px 4px rgb(0 0 0 / 0.5);
+		animation: hot-wobble 1.8s ease-in-out infinite alternate;
+	}
+	@keyframes hot-wobble {
+		from {
+			transform: rotate(-12deg) scale(1);
+		}
+		to {
+			transform: rotate(-6deg) scale(1.08);
+		}
+	}
+	.casino-live {
+		z-index: 2;
+	}
+	/* BurgiBank's stage: a light sweeps over the bank now and then, twinkles round its roof */
+	.bank-stage {
+		position: relative;
+		overflow: hidden;
+	}
+	.bank-stage::after {
+		content: '';
+		position: absolute;
+		top: -30%;
+		bottom: -30%;
+		left: 0;
+		width: 30%;
+		background: linear-gradient(100deg, transparent, rgb(255 236 170 / 0.22), transparent);
+		transform: translateX(-140%) skewX(-18deg);
+		animation: bank-shine 8s ease-in-out infinite;
+		pointer-events: none;
+	}
+	@keyframes bank-shine {
+		0%,
+		70% {
+			transform: translateX(-140%) skewX(-18deg);
+		}
+		100% {
+			transform: translateX(440%) skewX(-18deg);
+		}
+	}
+	.bank-tw {
+		position: absolute;
+		left: 16px;
+		top: 8px;
+		width: 140px;
+		height: 120px;
+		pointer-events: none;
+	}
+	.bank-tw :global(svg) {
+		position: absolute;
+		animation: bank-tw 2.6s ease-in-out infinite;
+	}
+	.bank-tw :global(svg:nth-child(1)) {
+		left: 6px;
+		top: 4px;
+	}
+	.bank-tw :global(svg:nth-child(2)) {
+		right: 4px;
+		top: 18px;
+		animation-delay: -0.9s;
+	}
+	.bank-tw :global(svg:nth-child(3)) {
+		right: 18px;
+		bottom: 6px;
+		animation-delay: -1.7s;
+	}
+	@keyframes bank-tw {
+		0%,
+		100% {
+			opacity: 0.1;
+			transform: scale(0.5) rotate(0deg);
+		}
+		50% {
+			opacity: 1;
+			transform: scale(1) rotate(45deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tile-fx::before,
+		.casino-game[aria-pressed='true']::before,
+		.casino-hot,
+		.bm-coin.today,
+		.bank-stage::after,
+		.bank-tw :global(svg) {
+			animation: none;
+		}
+		.casino-game:hover,
+		.casino-game:nth-child(even):hover,
+		.casino-game:active,
+		.casino-game:hover :global(svg.ta) {
+			transform: none;
+		}
 	}
 </style>
