@@ -68,7 +68,7 @@ import {
 	type RadioDoc
 } from './squad-radio.ts';
 import { isSyncCode } from './sync-codec.ts';
-import { addPlayed, burgerBank, dayKey, mergePlayed, settleDuel, spin, withBet, withoutBet, withPaid, SPIN_LEAD_MS, SQUAD_UP, type BankRow } from './squad-fun.ts';
+import { addPlayed, burgerBank, dayKey, houseOf, mergePlayed, settleDuel, spin, withBet, withoutBet, withPaid, SPIN_LEAD_MS, SQUAD_UP, type BankRow } from './squad-fun.ts';
 import { cleanCombat, combatView, mergeCombat, withSnap, type CombatLog, type CombatMode, type CombatSnap } from './squad-combat.ts';
 import { cleanRanked, fmtSrDelta, mergeRanked, rankedView, withRanked, type RankedLog } from './squad-ranked.ts';
 import { cleanClasses, mergeClasses, withClass, withoutClass, type ClassList, type SquadClass } from './squad-classes.ts';
@@ -91,7 +91,7 @@ import {
 	type ShopState
 } from './shop.ts';
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
-import { cleanDonations, giveTo, goalPassed, mergeDonations, squadGiving, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
+import { cleanDonations, giveTo, goalPassed, karmaBalance, loveFor, mergeDonations, squadGiving, withLove, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
 import { is420 } from './four20.ts';
 import { cleanTune, forcedFor, luckFor, withUsed, type CasinoTune, type ForceKind, type RigGame } from './casino-rig.ts';
 
@@ -113,6 +113,8 @@ const SHOP_KEY = 'mw4-camo-grind:shop';
 const LOANS_KEY = 'mw4-camo-grind:loans';
 /** BurgiGives: what you gave the joke causes (donations.ts), kept on this device too. */
 const DONATIONS_KEY = 'mw4-camo-grind:donations';
+/** The newest karma-bank gift this device has seen (a toast for love that reached you), per squad code. */
+const KARMA_SEEN_KEY = 'mw4-camo-grind:karma-seen';
 /** Next-only casino settings this device already took (casino-rig.ts), newest last. */
 const RIG_USED_KEY = 'mw4-camo-grind:casino-taken';
 const RIG_USED_MAX = 30;
@@ -822,6 +824,58 @@ class Squad {
 		return { result: 'ok', goal };
 	}
 
+	// ----- BurgiGives' karma bank (donations.ts): only Abscar sees it and gives from it -----
+
+	/**
+	 * Send hearts from the karma bank back to members as burgers, `n` each, with an optional love line.
+	 * Only Abscar may, never to themself, never more than the bank holds (checked on the newest document).
+	 */
+	async sendLove(to: string[], n: number, m?: number): Promise<'ok' | 'broke' | 'bad' | 'off'> {
+		const me = this.me;
+		if (!me || me.op !== HOUSE_OP) return 'off';
+		const doc0 = this.#squad.doc;
+		const targets = [...new Set(to)].filter((id) => id !== me.id && !!doc0?.members[id]);
+		if (!targets.length || !Number.isInteger(n) || n < 1) return 'bad';
+		const ids = targets.map(() => makeMemberId().slice(0, 10));
+		const at = Math.round(this.serverNow());
+		let refused = false;
+		const outcome = await this.#squad.write((doc) => {
+			const members = this.#members(doc);
+			const live = targets.filter((id) => !!members[id]);
+			const next = live.length === targets.length ? withLove(doc.karma, live, n, karmaBalance(squadGiving(members).total, doc.karma), ids, at, m) : null;
+			if (!next) {
+				refused = true;
+				return doc;
+			}
+			return { ...doc, karma: next };
+		});
+		this.#done(outcome);
+		if (outcome !== 'ok') return 'off';
+		if (refused) return 'broke';
+		const line = m === undefined ? null : (t.donate.karma.lines[m] ?? null);
+		const name = targets.length === 1 ? (this.#squad.doc?.members[targets[0]]?.name ?? '?') : null;
+		void this.#event(name ? t.donate.karma.event(name, n, line) : t.donate.karma.eventAll(n, line));
+		return 'ok';
+	}
+
+	/** Love from the karma bank that reached you since this device last looked: a toast. */
+	#loveNews(doc: SquadDoc, id: string): void {
+		const saved = readJson(KARMA_SEEN_KEY) as { code?: string; at?: number } | null;
+		const latest = Math.max(0, ...Object.values(doc.karma?.log ?? {}).map((g) => g.at));
+		if (!saved || saved.code !== this.code || typeof saved.at !== 'number') {
+			writeJson(KARMA_SEEN_KEY, { code: this.code, at: latest });
+			return;
+		}
+		if (latest <= saved.at) return;
+		writeJson(KARMA_SEEN_KEY, { code: this.code, at: latest });
+		const got = loveFor(doc.karma, id, saved.at);
+		if (!got.length) return;
+		const total = got.reduce((a, g) => a + g.n, 0);
+		const last = got[got.length - 1].m;
+		const from = doc.members[houseOf(doc.members) ?? '']?.name ?? 'Abscar';
+		setTimeout(() => toast.show(t.donate.karma.got(from, total, last === undefined ? null : (t.donate.karma.lines[last] ?? null)), undefined, 8000), 1500);
+	}
+
 	// ----- Abscar's admin menu -----
 
 	/** Give (+) or take (−) burgers for a member, out of nothing / into nothing. Only Abscar may. */
@@ -1077,6 +1131,7 @@ class Squad {
 		writeJson(SEEN_KEY, { code: this.code, seen: next });
 		for (const g of gains.slice(-FEED_MAX)) feed.squadGain(g.name, g.weaponId, g.level, !g.prestige && g.level >= 3, g.prestige);
 		if (nukes.length) feed.squadNuke(nukes[nukes.length - 1]);
+		this.#loveNews(doc, me.id);
 	}
 
 	#schedulePublish(): void {

@@ -296,8 +296,10 @@ export interface BankRow {
 	owed: number;
 	/** Abscar's admin menu: given (+) or taken (−). */
 	grant: number;
-	/** BurgiGives: burgers given to the joke causes (donations.ts). They go to nobody, not to the house. */
+	/** BurgiGives: burgers given to the joke causes (donations.ts). They become hearts in the karma bank. */
 	donated: number;
+	/** BurgiGives' karma bank: burgers Abscar sent this member with love (donations.ts). */
+	karma: number;
 	won: number;
 	lost: number;
 	/** Burgers on open bets. */
@@ -307,7 +309,7 @@ export interface BankRow {
 
 /**
  * Everyone's burgers: earned + daily bonus + casino + bets won − bets lost − burgers on open bets −
- * donations, and for the house (Abscar) everything the others lost in the casino and on bets. Never
+ * donations + love from the karma bank, and for the house (Abscar) everything the others lost in the casino and on bets. Never
  * below zero on show.
  */
 export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, now = Date.now()): Record<string, BankRow> {
@@ -324,6 +326,7 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 			owed: loan.owed,
 			grant: doc.grants?.[id] ?? 0,
 			donated: donationTotal(m.donations),
+			karma: doc.karma?.given[id] ?? 0,
 			won: 0,
 			lost: 0,
 			held: 0,
@@ -345,7 +348,7 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 		}
 	}
 	for (const row of Object.values(out)) {
-		row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.won - row.lost - row.held - row.spent - row.donated);
+		row.balance = Math.max(0, row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.karma + row.won - row.lost - row.held - row.spent - row.donated);
 	}
 	return out;
 }

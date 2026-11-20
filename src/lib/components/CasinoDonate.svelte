@@ -5,14 +5,18 @@
 	of who donated to which"). The holy-burger logo, five joke causes (DonateArt.svelte) with what they've
 	raised, a goal bar and their top donor, a Donate box per cause, a thank-you sticker after a gift, then
 	"Who gave to what" (every member, the causes they gave to and how much) and the latest gifts.
-	Donated burgers are gone for good (not to the house). Pretend burgers, never money.
+	Six more causes came on 2026-11-21 (eleven in all), and donated burgers now become hearts in Abscar's karma
+	bank (DonateKarma.svelte, shown only to the house), which Abscar sends back to the gang as burgers. The
+	squad card lists the five biggest causes. Pretend burgers, never money.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import { donationTotal, goalOf, parseAmount, squadGiving, DON_AMOUNTS, DON_MAX, ORGS, ORG_BY_ID, type OrgId } from '#lib/donations.ts';
+	import { houseOf } from '#lib/squad-fun.ts';
 	import DonateArt from './DonateArt.svelte';
+	import DonateKarma from './DonateKarma.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	let { balance }: { balance: number } = $props();
@@ -24,7 +28,11 @@
 	const members = $derived(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])));
 	const giving = $derived(squadGiving(members));
 	const mine = $derived(donationTotal(squad.donations));
-	/** The summary card: the biggest cause's total (bars are relative to it), the favourite, all goals reached. */
+	/** Only the house (Abscar) sees the karma bank. */
+	const isHouse = $derived(!!squad.me && houseOf(members) === squad.me.id);
+	/** The summary card: the five biggest causes (bars relative to the biggest), the favourite, all goals reached. */
+	const SUM_TOP = 5;
+	const topOrgs = $derived([...ORGS].sort((a, b) => giving.byOrg[b.id].total - giving.byOrg[a.id].total).slice(0, SUM_TOP));
 	const maxOrg = $derived(Math.max(0, ...ORGS.map((o) => giving.byOrg[o.id].total)));
 	const favourite = $derived(maxOrg ? (ORGS.find((o) => giving.byOrg[o.id].total === maxOrg)?.id ?? null) : null);
 	const goalsAll = $derived(ORGS.reduce((n, o) => n + goalOf(giving.byOrg[o.id].total).reached, 0));
@@ -83,7 +91,7 @@
 		<DonateArt kind="logo" size={104} animate />
 		<div class="min-w-0 flex-1 basis-[14rem]">
 			<p class="dn-title font-head">{d.heading}</p>
-			<p class="text-[13px] text-fg">{d.line}</p>
+			<p class="text-[13px] text-fg">{d.line(ORGS.length)}</p>
 			<p class="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 font-head text-[15px] font-bold">
 				<span>{d.yourBurgers(balance)}</span>
 				{#if mine}<span class="dn-gave">{d.youGave(mine)} 💛</span>{/if}
@@ -91,6 +99,7 @@
 			<p class="mt-0.5 text-[11px] text-muted">{d.gone}</p>
 		</div>
 	</div>
+	{#if isHouse}<DonateKarma donated={giving.total} />{/if}
 	<!-- the causes, after a card with the whole squad's giving (so 3 + 3 / 2 + 2 + 2 side by side) -->
 	<section aria-labelledby="dn-causes-h">
 		<h3 id="dn-causes-h" class="sr-only">{d.causes}</h3>
@@ -99,8 +108,8 @@
 				<p class="dn-eyebrow font-head">{d.sumHeading}</p>
 				<p class="dn-sum-n num font-head" aria-hidden="true">{fmt(giving.total)} 🍔</p>
 				<p class="dn-squad font-head" aria-live="polite">{#if giving.total}<span class="sr-only">{`${fmt(giving.total)} 🍔 `}</span>{/if}{d.sumLine(giving.total, giving.donors.length)}</p>
-				<ul class="grid gap-1.5" aria-label={d.causes}>
-					{#each ORGS as o (o.id)}
+				<ul class="grid gap-1.5" aria-label={d.sumTop}>
+					{#each topOrgs as o (o.id)}
 						{@const n = giving.byOrg[o.id].total}
 						<li class="dn-sum-row" style:--acc={o.accent}>
 							<DonateArt kind={o.id} size={22} />
@@ -110,6 +119,7 @@
 						</li>
 					{/each}
 				</ul>
+				<p class="dn-meta">{d.sumMore(ORGS.length - topOrgs.length)}</p>
 				{#if favourite}<p class="dn-meta">{d.favourite(d.orgs[favourite].name)}{goalsAll ? ` · ${d.goalsReached(goalsAll)}` : ''}</p>{/if}
 			</li>
 			{#each ORGS as o (o.id)}

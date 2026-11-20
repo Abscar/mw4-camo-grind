@@ -16,7 +16,14 @@ import {
 	DON_LOG,
 	DON_MAX,
 	ORG_IDS,
-	ORGS
+	ORGS,
+	cleanKarma,
+	karmaBalance,
+	karmaGiven,
+	loveFor,
+	withLove,
+	KARMA_LOG,
+	LOVE_LINES
 } from '../src/lib/donations.ts';
 import { fromSquadWire, memberEntry, toSquadWire } from '../src/lib/squad-codec.ts';
 import { burgerBank, BURGERS } from '../src/lib/squad-fun.ts';
@@ -31,8 +38,9 @@ const give = (book, dev, id, org, n, balance = 1e12, at = T) => {
 	return r.book;
 };
 
-test('donations: five causes, each with its words and colours', () => {
-	assert.equal(ORG_IDS.length, 5);
+test('donations: eleven causes (the first five kept their ids and order), each with its words and colours', () => {
+	assert.equal(ORG_IDS.length, 11);
+	assert.deepEqual(ORG_IDS.slice(0, 5), ['holk', 'barn', 'campaign', 'hardcore', 'wrists'], 'never reorder or reuse an id');
 	assert.deepEqual(
 		ORGS.map((o) => o.id),
 		[...ORG_IDS]
@@ -41,14 +49,18 @@ test('donations: five causes, each with its words and colours', () => {
 		const s = t.donate.orgs[o];
 		assert.ok(s.name && s.short && s.mission && s.paysFor && s.thanks, o);
 	}
-	assert.equal(new Set(ORG_IDS.map((o) => t.donate.orgs[o].name)).size, 5, 'no two causes share a name');
+	assert.equal(new Set(ORG_IDS.map((o) => t.donate.orgs[o].name)).size, ORG_IDS.length, 'no two causes share a name');
+	assert.equal(new Set(ORGS.map((o) => o.accent)).size, ORGS.length, 'no two causes share a colour');
+	assert.equal(t.donate.karma.lines.length, LOVE_LINES, 'one text per love line');
 });
 
 test('donations: give, balance check, bad gifts refused', () => {
 	let book = give(undefined, 'devA', 'g1', 'holk', 500);
 	book = give(book, 'devA', 'g2', 'holk', 250, 1e12, T + 1);
 	book = give(book, 'devA', 'g3', 'wrists', 100, 1e12, T + 2);
-	assert.deepEqual(donationsByOrg(book), { holk: 750, barn: 0, campaign: 0, hardcore: 0, wrists: 100 });
+	const by = donationsByOrg(book);
+	assert.deepEqual(Object.keys(by), [...ORG_IDS]);
+	assert.deepEqual({ holk: by.holk, barn: by.barn, wrists: by.wrists, rehab: by.rehab }, { holk: 750, barn: 0, wrists: 100, rehab: 0 });
 	assert.equal(donationTotal(book), 850);
 	assert.equal(Object.keys(book.log).length, 3);
 	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 101, 100, T), { result: 'broke' });
@@ -155,7 +167,56 @@ test('donations: typed amounts', () => {
 	assert.equal(parseAmount(''), null);
 });
 
-test('donations: in the squad document and the burger bank (gone for good, not to the house)', () => {
+test('karma bank: hearts = burgers donated minus love sent; love goes out n each, never past the bank', () => {
+	assert.equal(karmaBalance(1000, undefined), 1000);
+	const k1 = withLove(undefined, [B], 300, 1000, ['k1'], T, 2);
+	assert.deepEqual(k1, { given: { [B]: 300 }, log: { k1: { to: B, n: 300, at: T, m: 2 } } });
+	assert.equal(karmaGiven(k1), 300);
+	assert.equal(karmaBalance(1000, k1), 700);
+	assert.equal(withLove(k1, [A, B], 400, 700, ['k2', 'k3'], T + 1), null, '2 × 400 is more than the 700 in the bank');
+	const k2 = withLove(k1, [A, B], 350, 700, ['k2', 'k3'], T + 1);
+	assert.deepEqual(k2.given, { [B]: 650, [A]: 350 });
+	assert.equal(karmaBalance(1000, k2), 0);
+	assert.equal(karmaBalance(500, k2), 0, 'never below zero (a donor left the squad)');
+	assert.equal(withLove(k1, [B, B], 10, 700, ['k2', 'k3'], T), null, 'nobody twice in one go');
+	assert.equal(withLove(k1, ['bad id'], 10, 700, ['k2'], T), null);
+	assert.equal(withLove(k1, [B], 0, 700, ['k2'], T), null);
+	assert.equal(withLove(k1, [B], 10, 700, ['k2', 'k3'], T), null, 'one log id per member');
+	assert.equal(withLove(k1, [B], 10, 700, ['k2'], T, 99).log.k2.m, undefined, 'an unknown love line is dropped');
+});
+
+test('karma bank: the log keeps the newest, cleaning, love for me since a time', () => {
+	let k;
+	for (let i = 0; i < KARMA_LOG + 5; i++) k = withLove(k, [i % 2 ? A : B], 10, 1e9, [`kk${i}`], T + i);
+	assert.equal(Object.keys(k.log).length, KARMA_LOG);
+	assert.equal(karmaGiven(k), (KARMA_LOG + 5) * 10, 'totals keep everything');
+	assert.deepEqual(cleanKarma(JSON.parse(JSON.stringify(k))), k);
+	assert.equal(cleanKarma({ given: {} }), undefined);
+	assert.deepEqual(cleanKarma({ given: { [A]: 5, 'no!': 9, [B]: -3 }, log: { x1: { to: A, n: 5, at: T, m: 1 }, x2: { to: 'nope', n: 1, at: T } } }), { given: { [A]: 5 }, log: { x1: { to: A, n: 5, at: T, m: 1 } } });
+	const mine = loveFor(k, B, T + KARMA_LOG);
+	assert.ok(mine.length > 0 && mine.every((g) => g.to === B && g.at > T + KARMA_LOG));
+	assert.deepEqual(
+		mine.map((g) => g.at),
+		[...mine.map((g) => g.at)].sort((a, b) => a - b),
+		'oldest first'
+	);
+});
+
+test('karma bank: in the squad document and the burger bank', () => {
+	const progress = { weapons: {}, mastery: {}, lastTickAt: null };
+	const abscar = memberEntry({ name: 'Abscar', op: 'abscar' }, progress, T);
+	const ingman = memberEntry({ name: 'Ingman', op: 'ingman' }, progress, T, false, { donations: give(undefined, 'devB', 'gb1', 'beer', 6) });
+	const karma = withLove(undefined, [B], 5, 6, ['k1'], T, 0);
+	const doc = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire({ members: { [A]: abscar, [B]: ingman }, karma }))));
+	assert.deepEqual(doc.karma, karma, 'survives the trip through the document');
+	const bank = burgerBank(doc, doc.members, T);
+	assert.equal(bank[B].karma, 5);
+	assert.equal(bank[B].balance, BURGERS.start - 6 + 5, 'gave 6, got 5 back with love');
+	assert.equal(bank[A].karma, 0);
+	assert.equal(bank[A].house, 0, 'the house gets none of the donations');
+});
+
+test('donations: in the squad document and the burger bank (not to the house)', () => {
 	const donations = give(undefined, 'devB', 'gb1', 'hardcore', 4);
 	const progress = { weapons: {}, mastery: {}, lastTickAt: null };
 	const abscar = memberEntry({ name: 'Abscar', op: 'abscar' }, progress, T);

@@ -31,7 +31,7 @@ import { cleanTune, type CasinoTune } from './casino-rig.ts';
 import { cleanCasino, cleanOnline, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { cleanShop, type ShopState } from './shop.ts';
 import { cleanLoans, type LoanBook } from './loans.ts';
-import { cleanDonations, type DonationBook } from './donations.ts';
+import { cleanDonations, cleanKarma, type DonationBook, type Karma } from './donations.ts';
 import { cleanClasses, type ClassList } from './squad-classes.ts';
 import { cleanCombat, type CombatLog } from './squad-combat.ts';
 import { cleanRanked, type RankedLog } from './squad-ranked.ts';
@@ -169,6 +169,11 @@ export interface SquadDoc {
 	grants?: Record<string, number>;
 	/** Abscar's casino control room (casino-rig.ts; 2026-11-19): odds, luck and forced results. */
 	tune?: CasinoTune;
+	/**
+	 * BurgiGives' karma bank (donations.ts; 2026-11-21): every donated burger becomes a heart only Abscar
+	 * sees; Abscar gives them back to members as burgers (member id → total), with a log of the latest gifts.
+	 */
+	karma?: Karma;
 	/** Document fields a newer page wrote that this one doesn't know: kept as they are. */
 	more?: Record<string, unknown>;
 }
@@ -196,7 +201,7 @@ export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
 const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans', 'donations']);
-const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune', 'karma']);
 
 /** Admin grants: member id → whole burgers (±), within a sane range. */
 export function cleanGrants(raw: unknown): Record<string, number> | undefined {
@@ -431,6 +436,8 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 	if (grants) doc.grants = grants;
 	const tune = cleanTune(raw.tune);
 	if (tune) doc.tune = tune;
+	const karma = cleanKarma(raw.karma);
+	if (karma) doc.karma = karma;
 	const more = unknownKeys(raw, DOC_KEYS);
 	if (more) doc.more = more;
 	return doc;
@@ -449,6 +456,7 @@ export function toSquadWire(doc: SquadDoc): SquadWire {
 	if (doc.bans) wire.bans = doc.bans;
 	if (doc.grants) wire.grants = doc.grants;
 	if (doc.tune) wire.tune = doc.tune;
+	if (doc.karma) wire.karma = doc.karma;
 	return wire;
 }
 

@@ -821,14 +821,17 @@ export const en = {
 	/** BurgiGives, BurgiCasino's Donations tab (donations.ts, CasinoDonate.svelte; 2026-11-20). Joke causes, pretend burgers. */
 	donate: {
 		heading: 'BurgiGives',
-		line: 'Give your burgers to a good cause (sort of). Five totally real organisations, run by totally real people.',
-		gone: 'Donated burgers are gone for good: they don’t go to the house or to anyone else.',
+		line: (n: number) => `Give your burgers to a good cause (sort of). ${n} totally real organisations, run by totally real people.`,
+		gone: 'Donated burgers go to the karma bank. Good karma has a way of coming back around… 💗',
 		yourBurgers: (n: number) => `Your burgers: ${n.toLocaleString('en-US')} 🍔`,
 		youGave: (n: number) => `You’ve given ${n.toLocaleString('en-US')} 🍔`,
 		sumHeading: 'The squad so far',
 		sumLine: (n: number, donors: number) =>
 			n ? `given by ${donors} donor${donors === 1 ? '' : 's'}` : 'Nobody has given anything yet. Be the first.',
 		favourite: (org: string) => `Favourite cause: ${org}`,
+		/** the squad card lists the five biggest causes; the rest are summed up in one line */
+		sumTop: 'Top causes',
+		sumMore: (n: number) => `+ ${n} more cause${n === 1 ? '' : 's'} below`,
 		causes: 'The causes',
 		mission: 'Mission',
 		paysFor: 'Your burgers pay for',
@@ -863,6 +866,36 @@ export const en = {
 		ago: (min: number) => (min < 1 ? 'just now' : min < 60 ? `${min} min ago` : min < 1440 ? `${Math.floor(min / 60)} h ago` : `${Math.floor(min / 1440)} d ago`),
 		you: 'You',
 		note: 'Made-up causes and pretend burgers: no real charity, no real money.',
+		/** The karma bank (2026-11-21): only the house (Abscar) sees it. */
+		karma: {
+			heading: 'Karma bank',
+			secret: 'Only you see this',
+			intro: 'Every burger anyone donates turns into a heart here. Send hearts back to the gang: they arrive as burgers, with a little love.',
+			hearts: (n: number) => `${n.toLocaleString('en-US')} 💗`,
+			heartsLabel: 'Hearts in the bank',
+			given: (n: number) => `${n.toLocaleString('en-US')} 💗 sent back so far`,
+			amount: 'Hearts each',
+			line: 'With a love line',
+			noLine: 'No line',
+			lines: ['GG, legend 💗', 'For the grind 💪', 'Burgers on me 🍔', 'You deserve it ❤️', 'Squad love 🫶', 'Keep smiling 😘'],
+			to: 'Who gets the love',
+			everyone: 'Everyone',
+			send: (n: number) => `Send ${n.toLocaleString('en-US')} 💗`,
+			sendEmpty: 'Send 💗',
+			sendAll: (n: number, people: number) => `Send ${n.toLocaleString('en-US')} 💗 to all ${people}`,
+			sent: (name: string, n: number) => `${n.toLocaleString('en-US')} 💗 sent to ${name} as burgers`,
+			sentAll: (n: number, people: number) => `${n.toLocaleString('en-US')} 💗 each sent to ${people} people`,
+			broke: (have: number) => `The bank only has ${have.toLocaleString('en-US')} 💗.`,
+			off: 'Couldn’t reach the squad. Try again in a moment.',
+			nobody: 'Nobody else is in the squad yet.',
+			gotTag: (n: number) => `got ${n.toLocaleString('en-US')} 💗`,
+			logHeading: 'Love sent',
+			logNone: 'No love sent yet.',
+			logRow: (name: string, n: number) => `${name} got ${n.toLocaleString('en-US')} 💗`,
+			event: (name: string, n: number, line: string | null) => `sent ${name} ${n.toLocaleString('en-US')} 🍔 from the karma bank${line ? `: “${line}”` : ''} 💗`,
+			eventAll: (n: number, line: string | null) => `sent everyone ${n.toLocaleString('en-US')} 🍔 from the karma bank${line ? `: “${line}”` : ''} 💗`,
+			got: (from: string, n: number, line: string | null) => `💗 ${from} sent you ${n.toLocaleString('en-US')} 🍔 with love${line ? `: “${line}”` : '!'}`
+		},
 		orgs: {
 			holk: {
 				name: 'Holk Relief Fund',
@@ -898,6 +931,48 @@ export const en = {
 				mission: 'Ice packs for players who are still 30 longshots away from Harmonic Break.',
 				paysFor: 'Wrist braces, ice packs, and someone who listens while you complain about longshots.',
 				thanks: 'Your wrists say thanks.'
+			},
+			gains: {
+				name: 'Ingman’s Gains Fund',
+				short: 'Ingman’s Gains',
+				mission: 'Heavier plates for the strongest wizard in the squad. Every rep counts.',
+				paysFor: 'Protein shakes, chalk, and a mirror big enough for Ingman’s biceps.',
+				thanks: 'Ingman benches your burgers. GAINS!'
+			},
+			jardin: {
+				name: 'Da Jeeven’s Spanish Garden',
+				short: 'Spanish Garden',
+				mission: 'Keeping Da Jeeven’s garden in Spain green, sunny and very well watered.',
+				paysFor: 'Sun lotion, a garden hose, and some top-shelf “grass” for the garden. Strictly the lawn kind.',
+				thanks: '¡Gracias, amigo! Da Jeeven waves from the sun.'
+			},
+			beer: {
+				name: 'Strategic Beer Reserve',
+				short: 'Beer Reserve',
+				mission: 'Making sure Drängen’s fridge never, ever runs dry.',
+				paysFor: 'Crates of cold beer, a bottle opener on a string, and a second fridge for the barn.',
+				thanks: 'Skål! Lars Åke cracks one open for you.'
+			},
+			nitro: {
+				name: 'Phillestar’s Nitro Fund',
+				short: 'Nitro Fund',
+				mission: 'Fast cars and bad ideas: paying for Phillestar’s next very dumb stunt.',
+				paysFor: 'Nitro, a helmet he won’t wear, and a tow truck for when the ramp goes wrong.',
+				thanks: 'VROOOM! Phillestar floors it.'
+			},
+			rehab: {
+				name: 'Ogge’s Rehab',
+				short: 'Ogge’s Rehab',
+				mission: 'Helping Ogge get clean. Day 1. Again.',
+				paysFor: 'A comfy couch, herbal tea, and a very, very patient counsellor.',
+				thanks: 'Ogge says thanks. Day 2 starts now.'
+			},
+			ragequit: {
+				name: 'Rage Quit Relief',
+				short: 'Rage Quit',
+				mission: 'New controllers for everyone who threw theirs across the room after a lost match.',
+				paysFor: 'Controllers, a headset with a working mic, and a stress ball shaped like a burger.',
+				thanks: 'Controller replaced. Breathe in, breathe out.'
 			}
 		}
 	},
@@ -1896,7 +1971,7 @@ export const en = {
 			howLabel: 'How burgers work',
 			betsHeading: 'Bets',
 			how: (s: { start: number; gold: number; platinum: number; harmonicBreak: number; mastery: number; divergence: number }) =>
-				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (2,500, going up by 2,500 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account. Burgers you give away in BurgiGives (the Donations tab) are gone for good.`,
+				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (2,500, going up by 2,500 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account. Burgers you give away in BurgiGives (the Donations tab) go to the karma bank, and now and then love from it comes back as burgers.`,
 			houseTag: (n: number) => `house +${n.toLocaleString('en-US')}`,
 			richest: 'Richest',
 			burgers: (n: number) => `${n.toLocaleString('en-US')} burger${n === 1 ? '' : 's'}`,
