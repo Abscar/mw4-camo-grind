@@ -98,6 +98,20 @@
 			})
 		) as Record<SquadOp, GearExtra>
 	);
+	/**
+	 * Calm operators (2026-11-21, the user's pick "Lugna operatörerna" after the battery work): one squad member
+	 * moves at a time, TURN_MS each, in frame order; the others stand still where they are (smoke mid-air), via
+	 * `data-fx-rest` on their tag, which app.html's frame cap reads. Someone playing an emote moves too. The five
+	 * emblems were about half of what the page still drew on a PC and three quarters on a phone.
+	 */
+	const TURN_ORDER: SquadOp[] = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman'];
+	const TURN_MS = 6000;
+	let turn = $state(0);
+	$effect(() => {
+		const id = setInterval(() => (turn = (turn + 1) % TURN_ORDER.length), TURN_MS);
+		return () => clearInterval(id);
+	});
+	const awake = (op: SquadOp) => TURN_ORDER[turn] === op || !!extras[op]?.emote;
 	const statuses = $derived(
 		Object.fromEntries(
 			(Object.keys(SQUAD_MASTERY) as SquadOp[]).map((op) => [
@@ -293,7 +307,7 @@
 		<!-- the frame's own "Hide" on its top-right edge, across from the SQUAD pill (2026-11-20) -->
 		<HideButton id="squad" />
 		<div class="op-member">
-			<div class="op-tag flex items-center gap-3.5">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('abscar') ? undefined : ''}>
 				<OpGear aura={gear.abscar.aura?.id} effect={gear.abscar.effect?.id} badge={gear.abscar.badge?.id} pet={gear.abscar.pet?.id} smoked={!!pr.abscar['smoke-bomb']} extra={extras.abscar}><AbscarOperator variant="ghillie" class="size-16 flex-none sm:size-20" face={faceOf(gear.abscar)} /></OpGear>
 				{@render callsign(t.operator.callsign, 'abscar')}
 			</div>
@@ -303,7 +317,7 @@
 		</div>
 
 		<div class="op-member">
-			<div class="op-tag flex items-center gap-3.5">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('phillestar') ? undefined : ''}>
 				<OpGear aura={gear.phillestar.aura?.id} effect={gear.phillestar.effect?.id} badge={gear.phillestar.badge?.id} pet={gear.phillestar.pet?.id} smoked={!!pr.phillestar['smoke-bomb']} extra={extras.phillestar}><PhillestarEmblem face={faceOf(gear.phillestar)} /></OpGear>
 				{@render callsign(t.operator.mate, 'phillestar')}
 			</div>
@@ -313,7 +327,7 @@
 		</div>
 
 		<div class="op-member">
-			<div class="op-tag flex items-center gap-3.5">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('lars') ? undefined : ''}>
 				<OpGear aura={gear.lars.aura?.id} effect={gear.lars.effect?.id} badge={gear.lars.badge?.id} pet={gear.lars.pet?.id} smoked={!!pr.lars['smoke-bomb']} extra={extras.lars}><LarsAkeEmblem face={faceOf(gear.lars)} /></OpGear>
 				{@render callsign(t.operator.lars, 'lars', true)}
 			</div>
@@ -323,7 +337,7 @@
 		</div>
 
 		<div class="op-member">
-			<div class="op-tag flex items-center gap-3.5">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('jeeven') ? undefined : ''}>
 				<OpGear aura={gear.jeeven.aura?.id} effect={gear.jeeven.effect?.id} badge={gear.jeeven.badge?.id} pet={gear.jeeven.pet?.id} smoked={!!pr.jeeven['smoke-bomb']} extra={extras.jeeven}><DaJeevenEmblem face={faceOf(gear.jeeven)} /></OpGear>
 				{@render callsign(t.operator.jeeven, 'jeeven')}
 			</div>
@@ -347,7 +361,7 @@
 
 		<!-- Ingman, the wizard (2026-11-14, the user's friend), with his sign "Jim and Pro player" -->
 		<div class="op-member">
-			<div class="op-tag flex items-center gap-3.5">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('ingman') ? undefined : ''}>
 				<OpGear aura={gear.ingman.aura?.id} effect={gear.ingman.effect?.id} badge={gear.ingman.badge?.id} pet={gear.ingman.pet?.id} smoked={!!pr.ingman['smoke-bomb']} extra={extras.ingman}><IngmanEmblem face={faceOf(gear.ingman)} /></OpGear>
 				{@render callsign(t.operator.ingman, 'ingman')}
 			</div>

@@ -134,6 +134,22 @@
 				function drop(e) {
 					held.delete(e.target);
 				}
+				// Resting parts (2026-11-21, the user's "Lugna operatörerna"): an animation inside an element with
+				// data-fx-rest stands still, like one off screen (OperatorTag lets one squad member move at a time).
+				// Looked up once per element and kept until some data-fx-rest changes.
+				var restGen = 0;
+				var restAt = new WeakMap(); // element -> [restGen, resting]
+				function resting(t) {
+					var c = restAt.get(t);
+					if (c && c[0] === restGen) return c[1];
+					var r = !!(t.closest && t.closest('[data-fx-rest]'));
+					restAt.set(t, [restGen, r]);
+					return r;
+				}
+				if (typeof MutationObserver === 'function')
+					new MutationObserver(function () {
+						restGen++;
+					}).observe(html, { subtree: true, attributes: true, attributeFilter: ['data-fx-rest'] });
 				var swept = false;
 				function soon() {
 					if (swept) return;
@@ -153,7 +169,7 @@
 								held.delete(a);
 								return;
 							}
-							if (shown.get(t) === false) return;
+							if (shown.get(t) === false || resting(t)) return;
 							time += dt;
 							held.set(a, time);
 							a.currentTime = time;
