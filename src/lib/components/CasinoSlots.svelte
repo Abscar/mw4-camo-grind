@@ -60,6 +60,7 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import FortuneLogo from './FortuneLogo.svelte';
 	import SlotSymbolView from './SlotSymbol.svelte';
 	import WinPose from './WinPose.svelte';
 
@@ -506,19 +507,21 @@
 
 <div class="bandit" class:spinning>
 	<div class="cabinet">
-		<!-- the marquee: chasing bulbs round "ABSCAR'S FORTUNE" -->
+		<!-- the marquee: chasing bulbs round the logo (2026-11-20, FortuneLogo); under it the line, in free spins
+		     their counter (the logo stays, so the reels never jump) -->
 		<div class="marquee" class:free-on={!!freeState}>
 			<div class="bulbs" aria-hidden="true">
 				{#each Array.from({ length: 22 }) as _, i (i)}<span style:--i={i}></span>{/each}
 			</div>
-			{#if freeState}
-				<!-- in free spins the marquee is their counter -->
-				<p class="title free-title font-head" role="status">{s.freeTitle(freeState.n, freeState.total)}</p>
-				<p class="subtitle font-head">{s.freeSub(freeState.won)}</p>
-			{:else}
-				<p class="title font-head">Abscar’s Fortune</p>
-				<p class="subtitle font-head">{t.casino.games.slotsSub} · {s.lines}</p>
-			{/if}
+			<div class="logo"><FortuneLogo label={t.casino.games.slots} /></div>
+			<div class="lines">
+				{#if freeState}
+					<p class="title free-title font-head" role="status">{s.freeTitle(freeState.n, freeState.total)}</p>
+					<p class="subtitle font-head">{s.freeSub(freeState.won)}</p>
+				{:else}
+					<p class="subtitle font-head">{t.casino.games.slotsSub} · {s.lines}</p>
+				{/if}
+			</div>
 		</div>
 
 		<!-- the reels -->
@@ -878,6 +881,19 @@
 			box-shadow: none;
 		}
 	}
+	/* the logo, centred; its top (Abscar's smoke) may reach over the bulbs */
+	.logo {
+		position: relative;
+		max-width: 440px;
+		margin: -4px auto 0;
+	}
+	/* under it: always room for the free-spins counter + its line, so the reels never move */
+	.lines {
+		position: relative;
+		display: grid;
+		align-content: center;
+		min-height: 42px;
+	}
 	.title {
 		position: relative;
 		font-size: clamp(22px, 7.4cqi, 42px);
@@ -1105,7 +1121,7 @@
 			0 0 16px rgb(255 92 168 / 0.6);
 	}
 	.free-title {
-		font-size: clamp(20px, 6.4cqi, 36px);
+		font-size: clamp(15px, 4.4cqi, 21px);
 		background: linear-gradient(180deg, #ffffff 0%, #ffb3d9 45%, #ff5ca8 55%, #ffd23a 100%);
 		-webkit-background-clip: text;
 		background-clip: text;

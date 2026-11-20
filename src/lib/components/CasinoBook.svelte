@@ -59,6 +59,7 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import BookLogo from './BookLogo.svelte';
 	import BookSymbolView from './BookSymbol.svelte';
 
 	let { balance, hidden = $bindable(0), pending = $bindable(0) }: { balance: number; hidden?: number; pending?: number } = $props();
@@ -436,19 +437,20 @@
 
 <div class="book-machine" class:spinning>
 	<div class="cabinet">
-		<!-- the marquee: the book between two candles, the title in gold -->
+		<!-- the marquee: the logo (2026-11-20, BookLogo: the book in its glow, the title in carved gold); under it the
+		     line, in free spins their counter (the logo stays, so the reels never jump) -->
 		<div class="marquee" class:free-on={!!freeState}>
-			<span class="m-book left" aria-hidden="true"><BookSymbolView symbol="book" size={40} /></span>
-			<span class="m-book right" aria-hidden="true"><BookSymbolView symbol="book" size={40} /></span>
-			{#if freeState}
-				<p class="title free-title font-head" role="status">{s.freeTitle(freeState.n, freeState.total)}</p>
-				<p class="subtitle font-head">
-					<span class="sub-sym" aria-hidden="true"><BookSymbolView symbol={freeState.special} size={18} /></span>{s.freeSub(s.symbols[freeState.special], freeState.won)}
-				</p>
-			{:else}
-				<p class="title font-head">Book Of Skedd</p>
-				<p class="subtitle font-head">{s.sub}</p>
-			{/if}
+			<div class="logo"><BookLogo label={t.casino.games.book} /></div>
+			<div class="lines">
+				{#if freeState}
+					<p class="title free-title font-head" role="status">{s.freeTitle(freeState.n, freeState.total)}</p>
+					<p class="subtitle font-head">
+						<span class="sub-sym" aria-hidden="true"><BookSymbolView symbol={freeState.special} size={18} /></span>{s.freeSub(s.symbols[freeState.special], freeState.won)}
+					</p>
+				{:else}
+					<p class="subtitle font-head">{s.sub}</p>
+				{/if}
+			</div>
 		</div>
 
 		<!-- the reels on parchment -->
@@ -676,7 +678,7 @@
 	.marquee {
 		position: relative;
 		margin-bottom: 10px;
-		padding: 12px 52px 8px;
+		padding: 12px 8px 8px;
 		border-radius: 14px;
 		background:
 			radial-gradient(80% 120% at 50% 0%, rgb(255 210 80 / 0.22), transparent 70%),
@@ -685,18 +687,18 @@
 		text-align: center;
 		overflow: hidden;
 	}
-	.m-book {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%) rotate(-8deg);
-		filter: drop-shadow(0 0 8px rgb(255 210 60 / 0.6));
+	/* the logo, centred; the skull and the book's top may reach the marquee's edge */
+	.logo {
+		position: relative;
+		max-width: 440px;
+		margin: -4px auto 0;
 	}
-	.m-book.left {
-		left: 8px;
-	}
-	.m-book.right {
-		right: 8px;
-		transform: translateY(-50%) rotate(8deg);
+	/* under it: always room for the free-spins counter + its line (with the special symbol), so the reels never move */
+	.lines {
+		position: relative;
+		display: grid;
+		align-content: center;
+		min-height: 48px;
 	}
 	.title {
 		position: relative;
@@ -737,25 +739,11 @@
 			0 0 16px rgb(255 210 60 / 0.6);
 	}
 	.free-title {
-		font-size: clamp(20px, 6.2cqi, 36px);
+		font-size: clamp(15px, 4.4cqi, 21px);
 	}
-	/* phones: smaller books in the corners so the title stays on one line */
+	/* phones: the counter and its line stay on one line each */
 	@container (max-width: 440px) {
-		.marquee {
-			padding-inline: 34px;
-		}
-		.m-book :global(.book-sym) {
-			width: 26px;
-			height: 26px;
-		}
-		.m-book.left {
-			left: 5px;
-		}
-		.m-book.right {
-			right: 5px;
-		}
 		.title {
-			font-size: clamp(18px, 6.6cqi, 42px);
 			white-space: nowrap;
 		}
 		.subtitle {

@@ -46,6 +46,8 @@
 	import CasinoSkeddwood from './CasinoSkeddwood.svelte';
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import MybotsLogo from './MybotsLogo.svelte';
+	import FortuneLogo from './FortuneLogo.svelte';
+	import BookLogo from './BookLogo.svelte';
 	import CasinoRig from './CasinoRig.svelte';
 	import CasinoLoans from './CasinoLoans.svelte';
 	import CasinoDonate from './CasinoDonate.svelte';
@@ -169,7 +171,7 @@
 				<button type="button" class="casino-game" class:util={!span} data-game={g} aria-pressed={game === g} style:--span={span || undefined} onclick={() => pick(g)}>
 					<span class="tile-fx" aria-hidden="true"></span>
 					{#if g === hot}<span class="casino-hot font-head" title={hotWon ? f.hotLabel : f.hotParty}><span aria-hidden="true">🔥</span> {f.hot}</span>{/if}
-					{#if g === 'fortune2'}<MybotsLogo tile />{:else}<CasinoTabArt kind={g} />{/if}
+					{#if g === 'fortune2'}<MybotsLogo tile />{:else if g === 'slots'}<FortuneLogo tile live={game === g} />{:else if g === 'book'}<BookLogo tile live={game === g} />{:else}<CasinoTabArt kind={g} />{/if}
 					<span class="casino-game-name font-head">{c.games[g]}</span>
 					{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
 							><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span
@@ -651,11 +653,15 @@
 		.casino-game:nth-child(even):hover {
 			transform: translateY(-4px) rotate(1.5deg) scale(1.04);
 		}
-		.casino-game:hover :global(svg.ta) {
+		.casino-game:hover :global(svg.ta),
+		.casino-game:hover :global(.lg-wrap.tile),
+		.casino-game:hover :global(.mb-wrap.tile) {
 			transform: scale(1.08);
 		}
 	}
-	.casino-game :global(svg.ta) {
+	.casino-game :global(svg.ta),
+	.casino-game :global(.lg-wrap.tile),
+	.casino-game :global(.mb-wrap.tile) {
 		transition: transform 0.2s ease;
 	}
 	.casino-game:active {
@@ -767,7 +773,9 @@
 		.casino-game:hover,
 		.casino-game:nth-child(even):hover,
 		.casino-game:active,
-		.casino-game:hover :global(svg.ta) {
+		.casino-game:hover :global(svg.ta),
+		.casino-game:hover :global(.lg-wrap.tile),
+		.casino-game:hover :global(.mb-wrap.tile) {
 			transform: none;
 		}
 	}
