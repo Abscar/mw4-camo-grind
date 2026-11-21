@@ -10,8 +10,8 @@ const KEY = 'mw4-camo-grind:sound';
 /** Overall loudness: moderate, never harsh. */
 export const VOLUME = 0.7;
 
-/** A camo gained, a weapon maxed by this tick, or the tick that unlocked Divergence. */
-export type SoundKind = 'camo' | 'maxed' | 'divergence';
+/** A camo gained, a weapon maxed by this tick, the tick that unlocked Divergence, or the roulette ball's clack. */
+export type SoundKind = 'camo' | 'maxed' | 'divergence' | 'clack';
 
 type Ctx = BaseAudioContext;
 
@@ -192,12 +192,32 @@ export function burgerChomp(ctx: Ctx, out: AudioNode, t: number): void {
 	gulp.stop(t + 0.42);
 }
 
+/** The roulette ball hitting a fret or dropping into its pocket: a short hard click (~30 ms). */
+export function clack(ctx: Ctx, out: AudioNode, t: number): void {
+	const src = ctx.createBufferSource();
+	src.buffer = noise(ctx);
+	const bp = ctx.createBiquadFilter();
+	bp.type = 'bandpass';
+	bp.frequency.value = 3200;
+	bp.Q.value = 2.2;
+	src.connect(bp).connect(envelope(ctx, t, 0.001, 0.45, 0.03)).connect(out);
+	src.start(t, 0.2, 0.05);
+	const knock = ctx.createOscillator();
+	knock.type = 'triangle';
+	knock.frequency.setValueAtTime(1900, t);
+	knock.frequency.exponentialRampToValueAtTime(1100, t + 0.025);
+	knock.connect(envelope(ctx, t, 0.001, 0.18, 0.03)).connect(out);
+	knock.start(t);
+	knock.stop(t + 0.05);
+}
+
 const PACKS: Record<string, (ctx: Ctx, out: AudioNode, t: number) => void> = { 'sound-bong': bongBubbles, 'sound-horn': airHorn, 'sound-chomp': burgerChomp };
 
 /** Schedule one sound at time `t` on any context (also an OfflineAudioContext, for tests). A sound pack replaces the tick. */
 export function schedule(kind: SoundKind, ctx: Ctx, out: AudioNode, t: number, pack: string | null = null): void {
 	const tick = (pack && PACKS[pack]) || null;
-	if (tick && kind === 'camo') tick(ctx, out, t);
+	if (kind === 'clack') clack(ctx, out, t);
+	else if (tick && kind === 'camo') tick(ctx, out, t);
 	else if (tick) {
 		// a maxed weapon / Divergence: your pack's sound, then the chime / boom without its own tick
 		tick(ctx, out, t);

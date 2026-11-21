@@ -49,8 +49,123 @@
 	let result = $state<number | null>(null);
 	let net = $state<number | null>(null);
 	let history = $state<number[]>([]);
-	let rotation = $state(0);
-	let spinMs = $state(0);
+	const uid = $props.id();
+
+	// ---- the spin (2026-11-21, the user: "gör en ny snygg animation när man snurrar roulettebordet") ----
+	// One rAF loop moves the wheel and the ball together: the wheel turns clockwise and slows down, the ball
+	// is launched the other way round the track, slows, drops in with a few bounces over the frets and is
+	// carried into the winning pocket, which ends at the top under the marker. The result is worked out
+	// (and booked) before any of it moves; the animation only shows it.
+	const T = 6200; // whole spin, ms
+	const T_DROP = 3500; // the ball leaves the track
+	const T_LOCK = 4800; // the ball sits in its pocket and rides with the wheel
+	const R_TRACK = 99;
+	const R_POCKET = 69;
+	const BALL_TURNS = 1800; // degrees the ball rolls before it drops in
+	const DROP_BOUNCES = 3;
+	const outCubic = (u: number) => 1 - (1 - u) ** 3;
+	const outQuad = (u: number) => 1 - (1 - u) ** 2;
+	const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+
+	/** The wheel's turn (degrees, clockwise). */
+	let wheelAngle = $state(0);
+	let ball = $state<{ x: number; y: number } | null>(null);
+	/** The light streak behind the fast ball: a few arc pieces along its track, fading out. */
+	let tail = $state<{ d: string; o: number; w: number }[]>([]);
+	/** 0–1: how smeared the numbers look (the wheel's speed). */
+	let blur = $state(0);
+	let callout = $state(false);
+	/** Win show after the ball lands: sparkles + "+n 🍔" (+ BIG WIN / STRAIGHT UP). */
+	let show = $state<{ key: number; win: number; big: boolean; straight: boolean } | null>(null);
+	let showKey = 0;
+	let showTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => () => clearTimeout(showTimer));
+
+	const polar = (deg: number, r: number) => {
+		const a = ((deg - 90) * Math.PI) / 180;
+		return { x: Math.cos(a) * r, y: Math.sin(a) * r };
+	};
+
+	/** Plays the spin from the wheel's turn now to `Wf`; resolves when the ball has landed. */
+	function animate(Wf: number): Promise<void> {
+		const W0 = wheelAngle;
+		const dW = Wf - W0;
+		const W = (t: number) => W0 + dW * outCubic(clamp01(t / T));
+		const Wv = (t: number) => (dW * 3 * (1 - clamp01(t / T)) ** 2) / T; // deg per ms
+		// the winning pocket's place right now: at the top (0°) once the wheel stops
+		const P = (t: number) => W(t) - Wf;
+		// the ball's free roll (counter-clockwise), placed so it meets its pocket at a natural pace:
+		// relative to the pocket it starts the drop `rho` degrees away and closes in on it smoothly
+		const uDrop = T_DROP / T_LOCK;
+		const ballV = (-BALL_TURNS * 2 * (1 - uDrop)) / T_LOCK;
+		const rel = ballV - Wv(T_DROP);
+		const span = T_LOCK - T_DROP;
+		const rho = (-rel * span) / 1.5;
+		const m0 = Math.max(-3, Math.min(-0.2, (rel * span) / rho));
+		const base = P(T_DROP) + rho - BALL_TURNS * (1 - outQuad(uDrop));
+		const free = (t: number) => base + BALL_TURNS * (1 - outQuad(clamp01(t / T_LOCK)));
+		const hermite = (v: number) => 2 * v ** 3 - 3 * v ** 2 + 1 + m0 * (v ** 3 - 2 * v ** 2 + v);
+		/** The ball's angle (deg) and distance from the middle at time t. */
+		const ballAt = (t: number) => {
+			if (t >= T_LOCK) {
+				const s = (t - T_LOCK) / 1000;
+				return { a: P(t), r: R_POCKET + 1.4 * Math.sin(s * 24) * Math.exp(-s * 7) };
+			}
+			if (t <= T_DROP) return { a: free(t), r: R_TRACK + 0.5 * Math.sin(t / 41) };
+			const v = (t - T_DROP) / span;
+			const hop = 8 * Math.abs(Math.sin(v * Math.PI * DROP_BOUNCES)) * (1 - v) ** 1.3;
+			const skip = 7 * Math.sin(v * Math.PI * 4) * (1 - v) ** 2;
+			return { a: P(t) + rho * hermite(v) + skip, r: R_POCKET + (R_TRACK - R_POCKET) * (1 - v) ** 1.6 + hop };
+		};
+		const arcPiece = (r: number, from: number, to: number) => {
+			const p = polar(from, r);
+			const q = polar(to, r);
+			return `M${f2(p.x)} ${f2(p.y)}A${f2(r)} ${f2(r)} 0 0 1 ${f2(q.x)} ${f2(q.y)}`;
+		};
+		let clacks = 0;
+		const frame = (t: number) => {
+			wheelAngle = W(t);
+			blur = 0.78 * clamp01(t / 350) * (1 - clamp01(t / T)) ** 2;
+			const { a, r } = ballAt(t);
+			ball = polar(a, r);
+			// the streak behind it (the ball runs counter-clockwise, so behind = larger angles)
+			const fast = t < T_DROP ? 1 : t < T_LOCK ? 1 - (t - T_DROP) / span : 0;
+			const len = fast * Math.min(55, ((BALL_TURNS * 2 * (1 - clamp01(t / T_LOCK))) / T_LOCK) * 75 + 8);
+			tail = len < 2 ? [] : Array.from({ length: 5 }, (_, j) => ({ d: arcPiece(r, a + 3 + (len * j) / 5, a + 3 + (len * (j + 1)) / 5), o: (0.42 - j * 0.08) * fast, w: 5 - j * 0.7 }));
+			callout = t > 1500 && t < 2900;
+			// the ball's clacks: dropping off the track, each bounce, then into the pocket
+			const hits = t < T_DROP ? 0 : t >= T_LOCK ? DROP_BOUNCES + 1 : 1 + Math.floor(((t - T_DROP) / span) * DROP_BOUNCES);
+			while (clacks < hits) {
+				clacks++;
+				sound.play('clack');
+			}
+		};
+		return new Promise((done) => {
+			const start = performance.now();
+			let raf = 0;
+			let finished = false;
+			const finish = () => {
+				if (finished) return;
+				finished = true;
+				cancelAnimationFrame(raf);
+				clearTimeout(timer);
+				frame(T);
+				tail = [];
+				blur = 0;
+				callout = false;
+				done();
+			};
+			const step = (now: number) => {
+				const t = now - start;
+				if (t >= T) return finish();
+				frame(t);
+				raf = requestAnimationFrame(step);
+			};
+			raf = requestAnimationFrame(step);
+			// a hidden tab draws no frames: land the ball anyway
+			const timer = setTimeout(finish, T + 400);
+		});
+	}
 
 	const onTable = $derived(Object.values(bets).reduce<number>((sum, x) => sum + (x ?? 0), 0));
 	// the chips on the table are set aside (and, while the wheel turns, the result too)
@@ -76,7 +191,6 @@
 	}
 
 	const SEG = 360 / WHEEL.length;
-	const sleep = (ms: number) => new Promise<void>((res) => setTimeout(res, ms));
 
 	async function spin() {
 		if (spinning || onTable < 1) return;
@@ -84,26 +198,58 @@
 		const forced = squad.takeForced('roulette');
 		const n = forced ? forced.what : lucky(squad.luck('roulette'), rand, () => spinNumber(rand), (x) => rouletteNet(bets, x));
 		const won = rouletteNet(bets, n);
+		const staked = onTable;
 		squad.recordGame(won);
 		unrevealed = won;
 		spinning = true;
 		result = null;
 		net = null;
+		show = null;
+		clearTimeout(showTimer);
 		const k = WHEEL.indexOf(n as (typeof WHEEL)[number]);
+		// the wheel ends with the winning pocket at the top: at least 3 more turns from where it is
 		const want = (((-k * SEG) % 360) + 360) % 360;
-		const base = rotation - (((rotation % 360) + 360) % 360);
-		spinMs = reduce() ? 0 : 4200;
-		rotation = base + 360 * 5 + want;
-		await sleep(spinMs + 120);
+		const now = ((wheelAngle % 360) + 360) % 360;
+		const Wf = wheelAngle + ((want - now + 360) % 360) + 360 * 3;
+		if (reduce()) {
+			wheelAngle = Wf;
+			ball = polar(0, R_POCKET);
+		} else await animate(Wf);
 		result = n;
 		net = won;
 		unrevealed = 0;
 		history = [n, ...history].slice(0, 12);
 		spinning = false;
 		if (won > 0) sound.play(won >= 100 ? 'maxed' : 'camo');
-		const straight = Object.keys(bets).some((s) => s === `n${n}`);
+		const straight = (bets[`n${n}` as RouletteSpot] ?? 0) > 0;
+		if (won > 0) {
+			show = { key: ++showKey, win: won, big: won >= staked * 10, straight };
+			showTimer = setTimeout(() => (show = null), 2600);
+		}
 		if (Math.abs(won) >= 100 || (straight && won > 0)) squad.casinoNews(t.casino.event.roulette(won, n, r.colors[colorOf(n)]));
 	}
+
+	// the wheel's drawing (fixed; the rotor turns as one group)
+	const f2 = (x: number) => Number(x.toFixed(2));
+	const ring = (i: number, r0: number, r1: number) => {
+		const a = polar((i - 0.5) * SEG, r1);
+		const b = polar((i + 0.5) * SEG, r1);
+		const c = polar((i + 0.5) * SEG, r0);
+		const d = polar((i - 0.5) * SEG, r0);
+		return `M${f2(a.x)} ${f2(a.y)}A${r1} ${r1} 0 0 1 ${f2(b.x)} ${f2(b.y)}L${f2(c.x)} ${f2(c.y)}A${r0} ${r0} 0 0 0 ${f2(d.x)} ${f2(d.y)}Z`;
+	};
+	const FACE = { red: '#c8141c', black: '#171717', green: '#1b8a34' } as const;
+	const POCKET = { red: '#76090e', black: '#0a0a0a', green: '#0d5320' } as const;
+	const SEGS = WHEEL.map((n, i) => ({ n, i, c: colorOf(n), face: ring(i, 76, 90), pocket: ring(i, 62, 76) }));
+	const FRETS = WHEEL.map((_, i) => {
+		const a = polar((i + 0.5) * SEG, 62);
+		const b = polar((i + 0.5) * SEG, 90);
+		return `M${f2(a.x)} ${f2(a.y)}L${f2(b.x)} ${f2(b.y)}`;
+	}).join('');
+	const DEFLECTORS = Array.from({ length: 8 }, (_, i) => i * 45 + 22.5);
+	const TURRET = [45, 135, 225, 315];
+	const SPARKS = Array.from({ length: 22 }, (_, i) => ({ a: i * (360 / 22) + (i % 2) * 7, d: 70 + ((i * 37) % 45), kind: i % 3 }));
+	const winPocket = $derived(result === null || spinning ? null : ring(WHEEL.indexOf(result as (typeof WHEEL)[number]), 62, 90));
 
 	// the numbers' places: across (wide) and standing up (phones)
 	const NUMS = Array.from({ length: 36 }, (_, i) => i + 1).map((n) => ({
@@ -130,32 +276,86 @@
 <div class="rl">
 	<div class="rl-top">
 		<!-- the wheel -->
-		<div class="rl-wheel-wrap">
-			<svg class="rl-wheel" viewBox="-110 -110 220 220" role="img" aria-label={result !== null ? `${r.wheel}: ${r.result(result, r.colors[colorOf(result)])}` : r.wheel}>
-				<circle r="108" fill="#5a2a10" stroke="#ffc928" stroke-width="4" />
-				<g style:transform="rotate({rotation}deg)" style:transition={spinMs ? `transform ${spinMs}ms cubic-bezier(0.12, 0.75, 0.22, 1)` : 'none'}>
-					{#each WHEEL as n, i (n)}
-						{@const a0 = ((i - 0.5) * SEG - 90) * (Math.PI / 180)}
-						{@const a1 = ((i + 0.5) * SEG - 90) * (Math.PI / 180)}
-						<path
-							d="M{Math.cos(a0) * 100} {Math.sin(a0) * 100} A100 100 0 0 1 {Math.cos(a1) * 100} {Math.sin(a1) * 100} L{Math.cos(a1) * 66} {Math.sin(a1) * 66} A66 66 0 0 0 {Math.cos(a0) * 66} {Math.sin(a0) * 66} Z"
-							fill={colorOf(n) === 'red' ? '#d2161e' : colorOf(n) === 'black' ? '#141414' : '#1f9a3a'}
-							stroke="#e8c070"
-							stroke-width="0.8"
-						/>
-						<text x="0" y="-86" transform="rotate({i * SEG})" text-anchor="middle" dominant-baseline="middle" font-size="9.5" font-weight="800" fill="#fff" font-family="Bahnschrift, sans-serif">{n}</text>
+		<div class="rl-wheel-wrap" class:spinning>
+			<svg class="rl-wheel" viewBox="-113 -113 226 226" role="img" aria-label={result !== null ? `${r.wheel}: ${r.result(result, r.colors[colorOf(result)])}` : r.wheel}>
+				<defs>
+					<radialGradient id="{uid}-wood" r="50%"><stop offset="0.82" stop-color="#7a3a14" /><stop offset="0.93" stop-color="#4a1f08" /><stop offset="1" stop-color="#2a1004" /></radialGradient>
+					<radialGradient id="{uid}-track" r="50%"><stop offset="0.86" stop-color="#140c07" /><stop offset="0.95" stop-color="#3a2516" /><stop offset="1" stop-color="#1c110a" /></radialGradient>
+					<radialGradient id="{uid}-cone" cx="42%" cy="38%" r="62%"><stop offset="0" stop-color="#b8682a" /><stop offset="0.6" stop-color="#6e3412" /><stop offset="1" stop-color="#341505" /></radialGradient>
+					<radialGradient id="{uid}-chrome" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#ffffff" /><stop offset="0.45" stop-color="#c9d1d8" /><stop offset="1" stop-color="#5d666e" /></radialGradient>
+					<linearGradient id="{uid}-arm" x1="0" x2="1"><stop offset="0" stop-color="#7d868e" /><stop offset="0.5" stop-color="#f2f5f7" /><stop offset="1" stop-color="#7d868e" /></linearGradient>
+					<radialGradient id="{uid}-ball" cx="34%" cy="30%" r="70%"><stop offset="0" stop-color="#ffffff" /><stop offset="0.55" stop-color="#eef0f2" /><stop offset="1" stop-color="#9ea4aa" /></radialGradient>
+					<radialGradient id="{uid}-gold" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6b0" /><stop offset="1" stop-color="#c98a00" /></radialGradient>
+				</defs>
+				<!-- the bowl: wooden rim, polished ball track, gold deflectors -->
+				<circle r="111" fill="url(#{uid}-wood)" stroke="#ffc928" stroke-width="2.2" />
+				<circle r="104" fill="url(#{uid}-track)" />
+				<path d="M-74.9 -72.1A104 104 0 0 1 49.6 -91.4" fill="none" stroke="#fff" stroke-opacity="0.13" stroke-width="5" stroke-linecap="round" transform="scale(0.95)" />
+				{#each DEFLECTORS as a (a)}
+					<path d="M0 -95.6L1.4 -93L0 -90.4L-1.4 -93Z" fill="url(#{uid}-gold)" stroke="#6a4400" stroke-width="0.4" transform="rotate({a})" />
+				{/each}
+				<!-- the rotor: numbers, pockets, frets, cone and turret, turning as one -->
+				<g class="rl-rotor" style:transform="rotate({wheelAngle}deg)">
+					{#each SEGS as s (s.n)}
+						<path d={s.face} fill={FACE[s.c]} />
+						<path d={s.pocket} fill={POCKET[s.c]} />
+						<text x="0" y="-83" transform="rotate({s.i * SEG})" text-anchor="middle" dominant-baseline="central" font-size="8.2" font-weight="800" fill="#fff" font-family="Bahnschrift, sans-serif">{s.n}</text>
 					{/each}
-					<circle r="66" fill="#3d1a08" stroke="#e8c070" stroke-width="1.5" />
-					{#each Array.from({ length: 8 }) as _, i (i)}
-						<path d="M0 0 L0 -58" stroke="#c9a050" stroke-width="3" transform="rotate({i * 45})" stroke-linecap="round" />
+					<path d={FRETS} stroke="#e6d39c" stroke-width="0.7" fill="none" />
+					<circle r="90" fill="none" stroke="#e8c070" stroke-width="1.3" />
+					<circle r="76" fill="none" stroke="#e8c070" stroke-width="0.8" />
+					<circle r="62" fill="url(#{uid}-cone)" stroke="#e8c070" stroke-width="1.5" />
+					<circle r="46" fill="none" stroke="#2a1004" stroke-opacity="0.55" stroke-width="5" />
+					<circle r="44" fill="none" stroke="url(#{uid}-chrome)" stroke-width="1.6" />
+					{#each TURRET as a (a)}
+						<g transform="rotate({a})">
+							<rect x="-1.7" y="-34" width="3.4" height="34" rx="1.7" fill="url(#{uid}-arm)" />
+							<circle cy="-34" r="3.4" fill="url(#{uid}-chrome)" />
+						</g>
 					{/each}
-					<circle r="16" fill="url(#rl-hub)" stroke="#5a3200" stroke-width="2" />
+					<circle r="9" fill="url(#{uid}-chrome)" stroke="#4d555c" stroke-width="0.8" />
+					<circle r="3.2" fill="url(#{uid}-gold)" />
+					{#if winPocket}<path class="rl-win-pocket" d={winPocket} fill="#ffe066" fill-opacity="0.18" stroke="#ffe066" stroke-width="1.8" />{/if}
 				</g>
-				<defs><radialGradient id="rl-hub" cx="35%" cy="30%"><stop offset="0" stop-color="#fff6b0" /><stop offset="1" stop-color="#b86e00" /></radialGradient></defs>
-				<!-- the pointer and, once it stops, the ball in the top pocket -->
-				<path d="M0 -96 L-7 -110 L7 -110 Z" fill="#ffd23a" stroke="#5a2a00" stroke-width="1.5" />
-				{#if result !== null && !spinning}<circle cx="0" cy="-74" r="5" fill="#fff" stroke="#888" stroke-width="1" />{/if}
+				<!-- speed smear over the numbers while the wheel is fast -->
+				{#if blur > 0.01}<circle r="76" fill="none" stroke="#4a0d10" stroke-width="28" opacity={blur} />{/if}
+				<!-- the ball and the light streak behind it -->
+				{#if tail.length}
+					<g class="rl-tail" fill="none" stroke="#fff6dc" stroke-linecap="round">
+						{#each tail as s, i (i)}<path d={s.d} stroke-width={s.w} opacity={s.o} />{/each}
+					</g>
+				{/if}
+				{#if ball}
+					<circle cx={ball.x + 0.9} cy={ball.y + 1.4} r="4.3" fill="#000" opacity="0.4" />
+					<circle class="rl-ballpt" cx={ball.x} cy={ball.y} r="4.3" fill="url(#{uid}-ball)" stroke="#8a9096" stroke-width="0.4" />
+				{/if}
+				<!-- the marker over the winning pocket -->
+				<path d="M0 -102.5L-4.6 -111.5L4.6 -111.5Z" fill="url(#{uid}-gold)" stroke="#5a2a00" stroke-width="1" />
+				<!-- the result in the middle once it lands -->
+				{#if result !== null && !spinning}
+					{#key history.length}
+						<g class="rl-medal">
+							<circle r="21" fill={FACE[colorOf(result)]} stroke="#ffd23a" stroke-width="2.6" />
+							<circle r="17" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.8" />
+							<text y="1" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="900" fill="#fff" font-family="Bahnschrift, sans-serif">{result}</text>
+						</g>
+					{/key}
+				{/if}
 			</svg>
+			{#if callout}<span class="rl-call font-head" aria-hidden="true">{r.noMoreBets}</span>{/if}
+			{#if show}
+				{#key show.key}
+					<div class="rl-burst" class:big={show.big} aria-hidden="true">
+						{#each SPARKS.slice(0, show.big ? 22 : 14) as s, i (i)}
+							<i data-kind={s.kind} style:--a="{s.a}deg" style:--d="{show.big ? s.d + 20 : s.d}px"></i>
+						{/each}
+					</div>
+					<span class="rl-float font-head num" aria-hidden="true">
+						{#if show.straight || show.big}<small>{show.straight ? r.straightUp : r.bigWin}</small>{/if}
+						+{show.win.toLocaleString('en-US')} 🍔
+					</span>
+				{/key}
+			{/if}
 		</div>
 		<div class="rl-side">
 			<p class="rl-result font-head" aria-live="polite">
@@ -244,17 +444,200 @@
 		}
 	}
 	.rl-wheel-wrap {
+		position: relative;
 		justify-self: center;
 		width: min(240px, 80cqi);
+		transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+	.rl-wheel-wrap.spinning {
+		transform: scale(1.04);
 	}
 	.rl-wheel {
 		display: block;
 		width: 100%;
 		height: auto;
 		filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.5));
+		transition: filter 0.45s;
 	}
-	.rl-wheel g {
+	.rl-wheel-wrap.spinning .rl-wheel {
+		filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.5)) drop-shadow(0 0 16px rgb(255 200 60 / 0.45));
+	}
+	.rl-rotor {
 		transform-origin: 0 0;
+	}
+	/* the winning pocket blinks a few times, then stays lit */
+	.rl-win-pocket {
+		filter: drop-shadow(0 0 3px #ffd23a);
+		animation: rl-pocket 0.42s ease-in-out 6 alternate;
+	}
+	@keyframes rl-pocket {
+		from {
+			fill-opacity: 0.05;
+			stroke-opacity: 0.4;
+		}
+		to {
+			fill-opacity: 0.35;
+			stroke-opacity: 1;
+		}
+	}
+	.rl-medal {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: rl-medal 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) both;
+	}
+	@keyframes rl-medal {
+		from {
+			transform: scale(0);
+		}
+		to {
+			transform: scale(1);
+		}
+	}
+	/* the croupier's call while the ball runs */
+	.rl-call {
+		position: absolute;
+		left: 50%;
+		top: 66%;
+		padding: 4px 12px;
+		border: 2px solid #ffd23a;
+		border-radius: 999px;
+		background: rgb(20 8 2 / 0.86);
+		color: #ffe066;
+		font-size: 13px;
+		font-weight: 900;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		pointer-events: none;
+		box-shadow: 0 0 14px rgb(255 200 60 / 0.5);
+		animation: rl-call 1.4s ease both;
+	}
+	@keyframes rl-call {
+		0% {
+			opacity: 0;
+			transform: translate(-50%, -50%) scale(0.6);
+		}
+		14% {
+			opacity: 1;
+			transform: translate(-50%, -50%) scale(1.1);
+		}
+		24%,
+		80% {
+			opacity: 1;
+			transform: translate(-50%, -50%) scale(1);
+		}
+		100% {
+			opacity: 0;
+			transform: translate(-50%, -80%) scale(0.95);
+		}
+	}
+	/* the win: sparkles out of the middle + the burgers floating up */
+	.rl-burst {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+	.rl-burst i {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 9px;
+		height: 9px;
+		margin: -4.5px 0 0 -4.5px;
+		background: radial-gradient(circle, #fff9c4 0 30%, #ffc928 60%, transparent 70%);
+		clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+		animation: rl-spark 1.1s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+	}
+	.rl-burst i[data-kind='1'] {
+		width: 7px;
+		height: 7px;
+		border-radius: 999px;
+		clip-path: none;
+		background: radial-gradient(circle, #fff 0 25%, #e2261f 30% 70%, #fff 72%);
+	}
+	.rl-burst i[data-kind='2'] {
+		width: 6px;
+		height: 6px;
+		clip-path: none;
+		border-radius: 999px;
+		background: #ffe066;
+		box-shadow: 0 0 6px #ffd23a;
+	}
+	.rl-burst.big i {
+		animation-duration: 1.5s;
+	}
+	@keyframes rl-spark {
+		0% {
+			opacity: 0;
+			transform: rotate(var(--a)) translateY(0) scale(0.4);
+		}
+		12% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: rotate(var(--a)) translateY(calc(var(--d) * -1)) scale(1.1);
+		}
+	}
+	.rl-float {
+		position: absolute;
+		left: 50%;
+		top: 30%;
+		display: grid;
+		justify-items: center;
+		color: #ffe066;
+		font-size: 22px;
+		font-weight: 900;
+		white-space: nowrap;
+		text-shadow:
+			0 2px 0 #5a2a00,
+			0 0 12px rgb(255 190 40 / 0.8);
+		pointer-events: none;
+		animation: rl-float 2.4s ease-out both;
+	}
+	.rl-float small {
+		font-size: 13px;
+		letter-spacing: 0.1em;
+		color: #fff;
+	}
+	@keyframes rl-float {
+		0% {
+			opacity: 0;
+			transform: translate(-50%, 10px) scale(0.6);
+		}
+		12% {
+			opacity: 1;
+			transform: translate(-50%, 0) scale(1.12);
+		}
+		22% {
+			transform: translate(-50%, 0) scale(1);
+		}
+		75% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(-50%, -46px) scale(1);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.rl-wheel-wrap,
+		.rl-wheel-wrap.spinning {
+			transform: none;
+			transition: none;
+		}
+		.rl-win-pocket,
+		.rl-medal {
+			animation: none;
+		}
+		.rl-call,
+		.rl-burst {
+			display: none;
+		}
+		.rl-float {
+			animation: none;
+			transform: translate(-50%, 0);
+		}
 	}
 	.rl-result {
 		display: flex;
@@ -419,6 +802,20 @@
 	}
 	.rl-cell.hit {
 		box-shadow: inset 0 0 0 3px #ffd23a, 0 0 12px #ffd23a;
+		animation: rl-hit 0.42s ease-in-out 6 alternate;
+	}
+	@keyframes rl-hit {
+		from {
+			filter: brightness(1);
+		}
+		to {
+			filter: brightness(1.45);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.rl-cell.hit {
+			animation: none;
+		}
 	}
 	.rl-chip {
 		position: absolute;
