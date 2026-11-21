@@ -95,7 +95,7 @@ import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type Loa
 import { cleanDonations, giveTo, goalPassed, karmaBalance, loveFor, mergeDonations, squadGiving, withLove, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
 import { buyKarmaItem, cleanKarmaShop, heartsOf, mergeKarmaShop, ownKarmaItems, KARMA_BY_ID, type Hearts, type KarmaBuyResult, type KarmaShopState } from './karma-shop.ts';
 import { is420 } from './four20.ts';
-import { cleanTune, forcedFor, luckFor, withUsed, type CasinoTune, type ForceKind, type RigGame } from './casino-rig.ts';
+import { cleanTune, forcedFor, karmaLuck, luckFor, withUsed, type CasinoTune, type ForceKind, type KarmaLuck, type RigGame } from './casino-rig.ts';
 
 const KEY = 'mw4-camo-grind:squad';
 /** Your own K/D, W/L … updates (squad-combat.ts), kept on this device too so leaving a squad doesn't lose them. */
@@ -949,9 +949,14 @@ class Squad {
 		return outcome === 'ok';
 	}
 
-	/** Your luck in a game: its odds + your own luck (casino-rig.ts). */
+	/** Your karma luck on the slot machines, from the hearts you've earned in BurgiGives (casino-rig.ts). */
+	get myKarmaLuck(): KarmaLuck {
+		return karmaLuck(this.myHearts.earned);
+	}
+
+	/** Your luck in a game: its odds + your own luck + your karma luck on the slots (casino-rig.ts). */
 	luck(game: RigGame): number {
-		return luckFor(this.doc?.tune, game, this.me?.id);
+		return luckFor(this.doc?.tune, game, this.me?.id, this.myKarmaLuck.luck);
 	}
 
 	/** The forced result your next play in a game would take (without taking it), or null. */

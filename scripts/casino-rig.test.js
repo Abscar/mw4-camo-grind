@@ -8,8 +8,11 @@ import {
 	extraDraws,
 	f2Matches,
 	forcedFor,
+	karmaCounts,
+	karmaLuck,
 	kushForced,
 	kushMatches,
+	KARMA_MAX,
 	KUSH_BIG,
 	lucky,
 	luckFor,
@@ -21,6 +24,9 @@ import {
 } from '../src/lib/casino-rig.ts';
 import { evaluate, play, playScreen, FREE_SPINS } from '../src/lib/casino-slots.ts';
 import { play as f2play } from '../src/lib/fortune2.ts';
+import { playBook } from '../src/lib/book.ts';
+import { ORG_IDS } from '../src/lib/donations.ts';
+import { heartsEarned } from '../src/lib/karma-shop.ts';
 import { dealerStart, emptyTable, fromTableWire, placeBet, playHand, roundShoe, sit, stretchScore, tableShoe, toTableWire, viewRound } from '../src/lib/bj-table.ts';
 import { rouletteNet, spinNumber } from '../src/lib/squad-casino.ts';
 import { seeded } from '../src/lib/squad-fun.ts';
@@ -242,4 +248,86 @@ test('Kushburst: a picked result is read back, and each kind gives what it says'
 		assert.ok(big.win >= 100 * KUSH_BIG);
 		assert.equal(kushForced('blank', 100, rand).win, 0);
 	}
+});
+
+// ---------------------------------------------------------------------------------------------
+// Karma luck (2026-11-20): hearts earned in BurgiGives → luck on the slot machines
+
+test('karma luck: +5 per step of hearts earned, up to +40', () => {
+	assert.equal(KARMA_MAX, 40);
+	assert.deepEqual(karmaLuck(0), { luck: 0, step: 0, steps: 8, hearts: 0, next: 10, need: 10, nextLuck: 5 });
+	assert.equal(karmaLuck(9).luck, 0);
+	assert.equal(karmaLuck(9).need, 1);
+	assert.equal(karmaLuck(10).luck, 5, 'the first step at 10 hearts');
+	const k = karmaLuck(11);
+	assert.equal(k.next, 25);
+	assert.equal(k.need, 14);
+	assert.equal(k.nextLuck, 10);
+	assert.equal(karmaLuck(120).luck, 20);
+	assert.equal(karmaLuck(2499).luck, 35);
+	const top = karmaLuck(2500);
+	assert.equal(top.luck, 40);
+	assert.equal(top.next, null);
+	assert.equal(top.need, 0);
+	assert.equal(top.nextLuck, null);
+	assert.equal(karmaLuck(1e9).luck, 40, 'never past the top');
+	for (const junk of [-5, NaN, Infinity]) assert.equal(karmaLuck(junk).luck, 0);
+	// it only grows with more hearts
+	let last = 0;
+	for (let h = 0; h <= 3000; h += 7) {
+		const l = karmaLuck(h).luck;
+		assert.ok(l >= last);
+		last = l;
+	}
+	// a first gift: 1,000 🍔 to one cause = 1 + 10 hearts = the first step
+	const once = { dev: { devA: { s: { holk: 1000 }, at: 5 } } };
+	assert.equal(heartsEarned(once).earned, 11);
+	assert.equal(karmaLuck(heartsEarned(once).earned).luck, 5);
+	// 1,000 🍔 to every cause = 11 + 110 = 121 hearts = +20
+	const all = { dev: { devA: { s: Object.fromEntries(ORG_IDS.map((o) => [o, 1000])), at: 5 } } };
+	assert.equal(karmaLuck(heartsEarned(all).earned).luck, 20);
+});
+
+test('karma luck counts on the slot machines only, and adds to the control room’s settings', () => {
+	for (const g of ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood']) {
+		assert.ok(karmaCounts(g), g);
+		assert.equal(luckFor(undefined, g, A, 25), 25);
+	}
+	for (const g of ['roulette', 'blackjack', 'bank', 'donate', 'admin']) assert.ok(!karmaCounts(g), g);
+	assert.equal(luckFor(undefined, 'roulette', A, 40), 0);
+	assert.equal(luckFor(undefined, 'blackjack', A, 40), 0);
+	const t = { odds: { slots: 20, book: -10 }, luck: { [A]: 30, [B]: -100 } };
+	assert.equal(luckFor(t, 'slots', A, 15), 65, 'odds + luck + karma');
+	assert.equal(luckFor(t, 'book', A, 15), 35);
+	assert.equal(luckFor(t, 'slots', A, 80), 100, 'clamped at +100');
+	assert.equal(luckFor(t, 'fortune2', B, 40), -60, 'karma eases a minus setting');
+	assert.equal(luckFor({ odds: { stash: -100 }, luck: { [B]: -100 } }, 'stash', B, 40), -100, 'still −100 with the game’s odds down too');
+	assert.equal(luckFor(t, 'roulette', A, 40), 30, 'roulette: Abscar’s luck only');
+	assert.equal(luckFor(t, 'slots', undefined, 15), 35, 'a visitor: odds + karma');
+});
+
+test('karma luck makes the slot machines pay back more', () => {
+	const run = (luck, seed, draw) => {
+		const r = seeded(seed);
+		let staked = 0;
+		let won = 0;
+		let hits = 0;
+		const N = 20_000;
+		for (let i = 0; i < N; i++) {
+			const p = lucky(luck, r, () => draw(r), (x) => x.net);
+			staked += p.win - p.net;
+			won += p.win;
+			if (p.win > 0) hits++;
+		}
+		return { rtp: won / staked, hit: hits / N };
+	};
+	// Book Of Skedd runs on real odds (≈ 96 % back); the party-odds machines move the same way from ≈ 4×.
+	// Payback jumps around with the rare big wins, so the steps are checked on how often a spin wins.
+	const book = (r) => playBook(10, 10, r);
+	const [b0, b20, b40] = [run(0, 5, book), run(20, 5, book), run(KARMA_MAX, 5, book)];
+	const say = (x) => `${x.rtp.toFixed(2)}× / ${(x.hit * 100).toFixed(0)} %`;
+	assert.ok(b20.hit > b0.hit + 0.04 && b40.hit > b20.hit + 0.04, `Book Of Skedd: 0 ${say(b0)} · +20 ${say(b20)} · +40 ${say(b40)}`);
+	assert.ok(b40.rtp > b0.rtp + 0.3, `Book Of Skedd pays back more: 0 ${say(b0)} · +40 ${say(b40)}`);
+	const [s0, s40] = [run(0, 9, (r) => play(10, r)), run(KARMA_MAX, 9, (r) => play(10, r))];
+	assert.ok(s40.hit > s0.hit + 0.08 && s40.rtp > s0.rtp + 0.3, `Abscar’s Fortune: 0 ${say(s0)} · +40 ${say(s40)}`);
 });

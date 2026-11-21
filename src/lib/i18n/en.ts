@@ -1049,7 +1049,10 @@ export const en = {
 		},
 		luck: {
 			heading: 'Luck per player',
-			intro: 'In every game. Odds and luck add up: odds +20 and luck +30 = +50 for that player in that game.'
+			intro: 'In every game. Odds and luck add up: odds +20 and luck +30 = +50 for that player in that game. On the slot machines each player’s karma luck (❤️, from giving burgers away in BurgiGives, up to +40) adds on top.',
+			karma: (luck: number, hearts: number) => `❤️ Karma luck +${luck} on the slots (${hearts.toLocaleString('en-US')} ❤️ earned)`,
+			noKarma: '❤️ No karma luck yet (hasn’t given burgers away)',
+			total: (range: string) => `On the slots in all: ${range}`
 		},
 		value: (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0'),
 		/** What a luck / odds value does, in words. */
@@ -1060,7 +1063,7 @@ export const en = {
 			if (draws === 1) return `${head}: ${which} of 2 in ${chance} % of games`;
 			return `${head}: every game ${which} of ${draws}${chance ? `, ${which} of ${draws + 1} in ${chance} %` : ''}`;
 		},
-		how: 'How luck works: the game is played out as usual, then (as often as the setting says) once or twice more behind the scenes, and the best result counts (or the worst, for minus). ±50 = always two tries, ±100 = always three.',
+		how: 'How luck works: the game is played out as usual, then (as often as the setting says) once or twice more behind the scenes, and the best result counts (or the worst, for minus). ±50 = always two tries, ±100 = always three. Karma luck adds to your settings like a third slider (the player sees only their karma luck, never yours): to make someone with lots of karma unlucky anyway, pull their slider further down or pick their result below.',
 		guide: 'Small steps go a long way. With the party odds the slot machines give back about 4× what goes in; at +50 about 8×, at −50 less than goes in (roughly half), at −100 almost nothing. Book Of Skedd runs on real odds (about 96 % back): at +50 about 1.8×, at −50 about a tenth; its gamble card follows luck too (+50 guesses the colour right 3 times in 4). On red at roulette, +50 wins about 3 spins in 4 and −50 about 1 in 4. At blackjack a player normally wins about 4 hands in 10; at +50 about 6, at −50 about 2.5.',
 		changed: (n: number) => (n ? `${n} changed` : 'all normal'),
 		resetAll: 'Everything back to normal',
@@ -1305,6 +1308,21 @@ export const en = {
 				`${name} is the house: every burger anyone else loses here or on bets, spends in BurgiShop or pays as loan interest goes to ${name}’s account. ${n.toLocaleString('en-US')} 🍔 so far.`,
 			mine: (n: number) => `You’re the house: every burger the others lose here or on bets, spend in BurgiShop or pay as loan interest goes to your account. ${n.toLocaleString('en-US')} 🍔 so far.`,
 			none: 'Abscar is the house: once Abscar is in the squad, every burger the others lose here or on bets, or spend in BurgiShop, goes to Abscar’s account.'
+		},
+		/** Karma luck on the slot machines (2026-11-20, the user: "baserat på hur mycket karma man fått för att man
+		 *  donerat burgare så ska man få mer och mer tur på slotsen"; casino-rig.ts karmaLuck). */
+		karmaLuck: {
+			heading: 'Karma luck',
+			value: (n: number) => `+${n}`,
+			on: (hearts: number) => `Your ${hearts.toLocaleString('en-US')} ❤️ from giving burgers away make every slot machine kinder to you.`,
+			none: 'Give burgers away in BurgiGives and every slot machine gets kinder to you.',
+			chance: (pct: number) => `${pct} % of your spins get a hidden second try, and the better one counts.`,
+			next: (need: number, luck: number) => `${need.toLocaleString('en-US')} ❤️ more for +${luck}`,
+			top: 'Top karma: the most luck there is',
+			steps: (step: number, steps: number) => `Karma step ${step} of ${steps}`,
+			how: (perStep: number, max: number) =>
+				`1 ❤️ for every 1,000 🍔 you give, +10 ❤️ for each cause you give 1,000 🍔 or more. Each step adds +${perStep} on all the slot machines (not roulette or blackjack), up to +${max}. Spending hearts in KarmaShop never lowers it.`,
+			give: 'Give burgers'
 		},
 		board: {
 			heading: 'Casino leaderboard',

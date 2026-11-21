@@ -11,8 +11,11 @@
 	import { BOOK_FORCES, type BookForce } from '#lib/book.ts';
 	import { evaluate, FREE_SPINS, SYMBOLS, type SlotSymbol } from '#lib/casino-slots.ts';
 	import {
+		karmaLuck,
+		luckFor,
 		luckWords,
 		presetScreen,
+		KARMA_GAMES,
 		DEALER_MAX,
 		DEALER_PRESETS,
 		F2_FORCES,
@@ -30,7 +33,9 @@
 		type Forced,
 		type RigGame
 	} from '#lib/casino-rig.ts';
+	import type { DonationBook } from '#lib/donations.ts';
 	import { t } from '#lib/i18n/en.ts';
+	import { heartsEarned } from '#lib/karma-shop.ts';
 	import { SKW_FORCES, type SkwForce } from '#lib/skeddwood.ts';
 	import { colorOf, handValue, isBlackjack, type Card } from '#lib/squad-casino.ts';
 	import { makeMemberId } from '#lib/squad-codec.ts';
@@ -70,6 +75,16 @@
 	const luckChanged = $derived(squad.entries.filter((e) => tune.luck?.[e.id]).length);
 	const setOdds = (g: RigGame, v: number) => save((x) => ({ ...x, odds: { ...x.odds, [g]: v } }), `o:${g}`);
 	const setLuck = (id: string, v: number) => save((x) => ({ ...x, luck: { ...x.luck, [id]: v } }), `l:${id}`);
+	/** A player's karma luck (hearts earned in BurgiGives) and what they get on the slots in all, with the
+	 *  sliders as they are now (the games' odds can differ, so lowest … highest). */
+	function karmaRow(id: string, donations: DonationBook | undefined) {
+		const kl = karmaLuck(heartsEarned(donations).earned);
+		const now: CasinoTune = { odds: Object.fromEntries(RIG_GAMES.map((g) => [g, oddsOf(g)])), luck: { [id]: luckOf(id) } };
+		const all = KARMA_GAMES.map((g) => luckFor(now, g, id, kl.luck));
+		const lo = Math.min(...all);
+		const hi = Math.max(...all);
+		return { kl, lo, hi, range: lo === hi ? r.value(lo) : `${r.value(lo)} … ${r.value(hi)}` };
+	}
 	const rangeValue = (e: Event) => Number((e.currentTarget as HTMLInputElement).value);
 
 	/* ---------- picked results: who, how long, what; saved with a new id each time ---------- */
@@ -201,6 +216,7 @@
 			<ul class="grid gap-1.5">
 				{#each squad.entries as e (e.id)}
 					{@const v = luckOf(e.id)}
+					{@const k = karmaRow(e.id, e.member.donations)}
 					<li class="rig-row">
 						<label class="rig-slider">
 							<span class="rig-name flex min-w-0 items-center gap-2 font-head">
@@ -222,6 +238,12 @@
 							<b class="rig-val num" data-dir={v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}>{r.value(v)}</b>
 						</label>
 						<p class="rig-effect">{effect(v)}</p>
+						<p class="rig-karma" data-karma={k.kl.luck}>
+							<span class="rig-karma-own">{k.kl.luck ? r.luck.karma(k.kl.luck, k.kl.hearts) : r.luck.noKarma}</span>
+							<span class="rig-karma-total" data-total={k.lo === k.hi ? k.lo : undefined}
+								>{r.luck.total(k.range)}{#if k.lo === k.hi}: {effect(k.lo)}{/if}</span
+							>
+						</p>
 					</li>
 				{/each}
 			</ul>
@@ -539,6 +561,26 @@
 	.rig-effect {
 		font-size: 12px;
 		color: var(--t-muted);
+	}
+	/* the player's karma luck (hearts from BurgiGives) and what they get on the slots with it */
+	.rig-karma {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2px 10px;
+		margin-top: 2px;
+		padding-top: 4px;
+		border-top: 1px dashed rgb(255 130 190 / 0.35);
+		font-size: 12px;
+	}
+	.rig-karma-own {
+		color: #ffa8d2;
+	}
+	.rig-karma[data-karma='0'] .rig-karma-own {
+		color: var(--t-muted);
+	}
+	.rig-karma-total {
+		font-weight: 700;
+		color: var(--t-fg);
 	}
 	/* phones: the name on its own line, slider + number under it */
 	@media (max-width: 520px) {

@@ -52,6 +52,8 @@
 	import StashLogo from './StashLogo.svelte';
 	import SkeddwoodLogo from './SkeddwoodLogo.svelte';
 	import CasinoRig from './CasinoRig.svelte';
+	import CasinoKarmaLuck from './CasinoKarmaLuck.svelte';
+	import { karmaCounts } from '#lib/casino-rig.ts';
 	import CasinoLoans from './CasinoLoans.svelte';
 	import CasinoDonate from './CasinoDonate.svelte';
 	import { bjTable } from '#lib/bjTable.svelte.ts';
@@ -191,6 +193,11 @@
 					{#each UTILS as g (g)}{@render tile(g, 0)}{/each}
 				</div>
 			</div>
+
+			<!-- karma luck: hearts from giving burgers away make the slot machines kinder (casino-rig.ts) -->
+			{#if karmaCounts(game) || game === 'donate'}
+				<CasinoKarmaLuck onGive={game === 'donate' ? undefined : () => pick('donate')} />
+			{/if}
 
 			{#key game}
 				{#if game === 'slots'}

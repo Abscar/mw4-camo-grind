@@ -21,6 +21,13 @@
  *   nothing (kushForced). Abscar's Stash (2026-11-20): Sky High Spins, a smoke-cloud win, a big win or
  *   nothing, drawn the same way. Roulette: the number. Blackjack: the dealer's cards in order.
  *
+ * - Karma luck (2026-11-20, the user: "baserat på hur mycket karma man fått för att man donerat burgare så
+ *   ska man få mer och mer tur på slotsen"): the hearts a member has earned by giving burgers away in
+ *   BurgiGives (karma-shop.ts heartsEarned: earned, not what's left after KarmaShop, so buying something
+ *   never costs luck) give extra luck on the slot machines (KARMA_GAMES), +5 per step (KARMA_STEPS), at
+ *   most +40. It adds to Abscar's odds and luck like a third slider (`luckFor`'s `karma`), within ±100.
+ *   Worked out from the member's own donations on their own page, so nothing new is stored or synced.
+ *
  * No browser APIs and no runes (scripts/casino-rig.test.js).
  */
 
@@ -191,9 +198,57 @@ export function cleanTune(raw: unknown): CasinoTune | undefined {
 // ---------------------------------------------------------------------------------------------
 // Luck
 
-/** A member's luck in a game: the game's odds + their own luck, within ±LUCK_MAX. */
-export function luckFor(tune: CasinoTune | undefined, game: RigGame, id: string | undefined): number {
-	return cleanLuck((tune?.odds?.[game] ?? 0) + (id ? (tune?.luck?.[id] ?? 0) : 0));
+/**
+ * A member's luck in a game: the game's odds + their own luck (+ their karma luck on the slot machines),
+ * within ±LUCK_MAX.
+ */
+export function luckFor(tune: CasinoTune | undefined, game: RigGame, id: string | undefined, karma = 0): number {
+	return cleanLuck((tune?.odds?.[game] ?? 0) + (id ? (tune?.luck?.[id] ?? 0) : 0) + (karmaCounts(game) ? cleanLuck(karma) : 0));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Karma luck: hearts earned in BurgiGives → luck on the slot machines
+
+/** The games karma luck works in: the slot machines (not roulette or blackjack). */
+export const KARMA_GAMES: readonly RigGame[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood'];
+/** Hearts earned for each step of karma luck (1 ❤️ per 1,000 🍔 given + 10 ❤️ per cause, karma-shop.ts). */
+export const KARMA_STEPS: readonly number[] = [10, 25, 50, 100, 250, 500, 1000, 2500];
+/** Luck per step: +5 at the first, +40 at the top. */
+export const KARMA_PER_STEP = 5;
+/** The most karma luck there is. */
+export const KARMA_MAX = KARMA_STEPS.length * KARMA_PER_STEP;
+
+/** True for the games karma luck works in (any tab id: the casino's tiles include the bank, donations…). */
+export const karmaCounts = (game: string): boolean => (KARMA_GAMES as readonly string[]).includes(game);
+
+export interface KarmaLuck {
+	/** Luck on the slot machines: 0 … KARMA_MAX. */
+	luck: number;
+	/** Steps reached (0 … steps). */
+	step: number;
+	steps: number;
+	/** Hearts earned. */
+	hearts: number;
+	/** Hearts the next step needs in all (null at the top), how many more, and its luck. */
+	next: number | null;
+	need: number;
+	nextLuck: number | null;
+}
+
+/** Karma luck for a number of hearts earned. */
+export function karmaLuck(hearts: number): KarmaLuck {
+	const h = Number.isFinite(hearts) && hearts > 0 ? Math.floor(hearts) : 0;
+	const step = KARMA_STEPS.filter((s) => h >= s).length;
+	const next = step < KARMA_STEPS.length ? KARMA_STEPS[step] : null;
+	return {
+		luck: step * KARMA_PER_STEP,
+		step,
+		steps: KARMA_STEPS.length,
+		hearts: h,
+		next,
+		need: next === null ? 0 : next - h,
+		nextLuck: next === null ? null : (step + 1) * KARMA_PER_STEP
+	};
 }
 
 /** How many extra draws a play gets at this luck: ±50 = one, ±100 = two, in between a chance of the next. */
