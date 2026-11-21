@@ -256,8 +256,9 @@ export const en = {
 		ingman: 'Ingman',
 		ingmanMotto: 'Jim and Pro player',
 		/** the sixth squad member (2026-11-20, the user's ask "lägg till AW som operator"), drawn the way the user
-		    described him (AwEmblem); no sign yet */
+		    described him (AwEmblem); his sign in the user's words (2026-11-21) */
 		aw: 'AW',
+		awMotto: 'Sleep is optional',
 		certified: 'Certified grinder',
 		recordTitle: 'BO6 + BO7',
 		record: ['Prestige Master', 'Max level', 'All calling cards'],
@@ -391,7 +392,7 @@ export const en = {
 			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)',
 			'DA JEEVEN ......... ONLINE (certified grinder: Prestige Master in BO6 + BO7, holk: lit)',
 			'INGMAN ............ ONLINE (class: wizard, pipe: lit, Jim and Pro player)',
-			'AW ................ ONLINE (new recruit, eyes: wide open, sleep: optional)'
+			'AW ................ ONLINE (new recruit, eyes: wide open, Sleep is optional)'
 		],
 		/** `squad` while you're in a squad (2026-11-14): the real list, online first */
 		squadLive: (name: string, online: boolean, seen: string, hb: number, total: number) =>

@@ -377,7 +377,8 @@
 			{@render mastery(t.operator.ingman, statuses.ingman, slacker === 'ingman' || !!pr.ingman.slacker, t.operator.ingmanMotto, 'wizard', 'ingman')}
 		</div>
 
-		<!-- AW (2026-11-20, the user's friend), drawn the way the user described him (AwEmblem); no sign yet -->
+		<!-- AW (2026-11-20, the user's friend), drawn the way the user described him (AwEmblem), with his sign
+	     "Sleep is optional" (2026-11-21) -->
 		<div class="op-member">
 			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('aw') ? undefined : ''}>
 				<OpGear aura={gear.aw.aura?.id} effect={gear.aw.effect?.id} badge={gear.aw.badge?.id} pet={gear.aw.pet?.id} smoked={!!pr.aw['smoke-bomb']} extra={extras.aw}><AwEmblem face={faceOf(gear.aw)} /></OpGear>
@@ -385,7 +386,7 @@
 			</div>
 			{@render stamp('aw', t.operator.aw)}
 			{@render high('aw')}
-			{@render mastery(t.operator.aw, statuses.aw, slacker === 'aw' || !!pr.aw.slacker, '', 'purple', 'aw')}
+			{@render mastery(t.operator.aw, statuses.aw, slacker === 'aw' || !!pr.aw.slacker, t.operator.awMotto, 'teal', 'aw')}
 		</div>
 	</div>
 </div>
@@ -627,6 +628,16 @@
 		box-shadow:
 			0 2px 5px rgb(0 0 0 / 0.55),
 			0 0 10px rgb(140 255 60 / 0.45);
+	}
+	/* AW's is teal like his shirt, slapped on the other way (2026-11-21) */
+	.sq-motto[data-tone='teal'] {
+		background: linear-gradient(135deg, #5ff0e0, #1aa79a 55%, #0b5f57);
+		color: #04201d;
+		text-shadow: 0 1px 0 rgb(200 255 248 / 0.6);
+		transform: rotate(-6deg);
+		box-shadow:
+			0 2px 5px rgb(0 0 0 / 0.55),
+			0 0 10px rgb(40 220 200 / 0.45);
 	}
 	/* Abscar's is moss green like his ghillie and a bit smaller; a second one in the list would be slapped on
 	   the other way and a little further left, so they read as loose stickers, not a list */
