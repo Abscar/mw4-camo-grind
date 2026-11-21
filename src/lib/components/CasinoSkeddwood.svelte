@@ -49,6 +49,8 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { AutoSpin } from '#lib/autoSpin.svelte.ts';
+	import AutoSpinControls from './AutoSpinControls.svelte';
 	import SkeddSprite from './SkeddSprite.svelte';
 	import SkeddwoodLogo from './SkeddwoodLogo.svelte';
 
@@ -319,7 +321,7 @@
 				if (tapGo === done) tapGo = null;
 				res();
 			};
-			const timer = setTimeout(done, autoLeft > 0 ? Math.min(ms, 1800) : ms);
+			const timer = setTimeout(done, auto.running ? Math.min(ms, 1800) : ms);
 			tapGo = done;
 		});
 	}
@@ -437,43 +439,20 @@
 		await run(lucky(squad.luck('skeddwood'), rand, () => buy(k, bet, rand), (p) => p.net));
 	}
 
-	/* ---------- auto spin ---------- */
-	const AUTO_COUNTS = [10, 25, 50, 100];
-	let autoCount = $state(25);
-	let autoLeft = $state(0);
+	/* ---------- auto spin (the same on every machine: autoSpin.svelte.ts) ---------- */
+	const auto = new AutoSpin();
 	let alive = true;
-	function stopAuto(text?: string) {
-		if (autoLeft > 0 && text) toast.show(text, undefined, 4000);
-		autoLeft = 0;
-	}
 	async function runAuto() {
-		if (autoLeft > 0) {
-			stopAuto();
-			return;
-		}
-		autoLeft = autoCount;
-		while (alive && autoLeft > 0) {
-			if (bet > shown) {
-				stopAuto(t.casino.broke);
-				break;
-			}
-			await spin();
-			if (!alive || autoLeft === 0) break;
-			autoLeft -= 1;
-			await sleep(celebrate ? T(3000) : T(600));
-		}
-		if (alive && autoLeft === 0) message = message || sl.autoDone;
-		autoLeft = 0;
+		const end = await auto.run({
+			spin,
+			ready: () => bet <= shown,
+			wait: () => (celebrate ? T(3000) : T(600))
+		});
+		if (end === 'done' && alive) message = message || t.casino.autoSpin.done;
 	}
-	$effect(() => {
-		const hide = () => document.visibilityState === 'hidden' && stopAuto();
-		document.addEventListener('visibilitychange', hide);
-		return () => {
-			alive = false;
-			autoLeft = 0;
-			document.removeEventListener('visibilitychange', hide);
-			tapGo?.();
-		};
+	$effect(() => () => {
+		alive = false;
+		tapGo?.();
 	});
 
 	function stepBet(dir: 1 | -1) {
@@ -619,21 +598,15 @@
 				</div>
 			</div>
 			<div class="led win"><span>{s.lastWin}</span><b class="num">{lastWin.toLocaleString('en-US')}</b></div>
-			<button type="button" class="spin font-head" bind:this={spinBtn} disabled={spinning || autoLeft > 0} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
+			<button type="button" class="spin font-head" bind:this={spinBtn} disabled={spinning || auto.running} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
 		</div>
 
-		<!-- auto spin + turbo -->
-		<div class="auto" role="group" aria-label={sl.autoLabel}>
-			<button type="button" class="auto-btn font-head" aria-pressed={autoLeft > 0} disabled={autoLeft === 0 && (spinning || bet > shown)} onclick={() => void runAuto()}>
-				{autoLeft > 0 ? sl.autoStop(autoLeft) : sl.auto(autoCount)}
-			</button>
-			{#if autoLeft === 0}
-				{#each AUTO_COUNTS as n (n)}
-					<button type="button" class="auto-n num font-head" aria-pressed={autoCount === n} aria-label={sl.autoCount(n)} onclick={() => (autoCount = n)}>{n}</button>
-				{/each}
-			{/if}
-			<button type="button" class="turbo font-head" aria-pressed={turbo} onclick={() => setTurbo(!turbo)}>⚡ {s.turbo}</button>
-		</div>
+		<!-- auto spin (10 · 25 · 50 · 100 · 1,000) + turbo -->
+		<AutoSpinControls {auto} blocked={spinning || bet > shown} onstart={() => void runAuto()}>
+			{#snippet extra()}
+				<button type="button" class="turbo font-head" aria-pressed={turbo} onclick={() => setTurbo(!turbo)}>⚡ {s.turbo}</button>
+			{/snippet}
+		</AutoSpinControls>
 
 		<!-- buy bonus -->
 		<div class="buy" role="group" aria-label={s.buy}>
@@ -647,7 +620,7 @@
 				<span class="buy-label font-head">{s.buy}</span>
 				<div class="buy-list">
 					{#each SKW_BUYS as k (k)}
-						<button type="button" class="buy-btn" data-buy={k} disabled={spinning || autoLeft > 0 || price(k) > shown} onclick={() => askBuy(k)}>
+						<button type="button" class="buy-btn" data-buy={k} disabled={spinning || auto.running || price(k) > shown} onclick={() => askBuy(k)}>
 							<svg viewBox="0 0 64 64" aria-hidden="true"><use href="#{u}-{k === 'gold' ? 'skull' : k === 'lucky' ? 'star' : 'sixgun'}" width="64" height="64" /></svg>
 							<span class="min-w-0 text-left">
 								<b class="block font-head">{s.buyKinds[k]}</b>
@@ -1462,17 +1435,19 @@
 	.spin:disabled {
 		filter: grayscale(0.5) brightness(0.8);
 	}
-	.auto {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 6px;
-		margin-top: 8px;
+	/* the auto spin controls (AutoSpinControls) in this cabinet's colours */
+	.skw {
+		--auto-accent: #e8b84a;
+		--auto-bg: #3a1e0c;
+		--auto-ink: #ffd23a;
+		--auto-on-ink: #3a1404;
+		--auto-chip-bg: #0c0502;
+		--auto-chip-ink: #ffc98a;
+		--auto-line: #5a3218;
 	}
-	.auto-btn,
 	.turbo {
 		min-height: 44px;
-		padding: 0 16px;
+		padding: 0 12px;
 		border: 2px solid #e8b84a;
 		border-radius: 999px;
 		background: #3a1e0c;
@@ -1482,32 +1457,10 @@
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 	}
-	.turbo {
-		margin-left: auto;
-		padding: 0 12px;
-	}
-	.auto-btn[aria-pressed='true'],
 	.turbo[aria-pressed='true'] {
 		background: #ffc928;
 		color: #3a1404;
 		box-shadow: 0 0 12px rgb(255 201 40 / 0.7);
-	}
-	.auto-btn:disabled {
-		opacity: 0.45;
-	}
-	.auto-n {
-		width: 44px;
-		height: 44px;
-		border-radius: 999px;
-		background: #0c0502;
-		color: #ffc98a;
-		font-size: 13px;
-		font-weight: 800;
-		box-shadow: inset 0 0 0 2px #5a3218;
-	}
-	.auto-n[aria-pressed='true'] {
-		color: #ffd23a;
-		box-shadow: inset 0 0 0 2px #e8b84a;
 	}
 	.buy {
 		display: flex;

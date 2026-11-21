@@ -59,6 +59,8 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { AutoSpin } from '#lib/autoSpin.svelte.ts';
+	import AutoSpinControls from './AutoSpinControls.svelte';
 	import BookLogo from './BookLogo.svelte';
 	import BookSymbolView from './BookSymbol.svelte';
 
@@ -208,7 +210,7 @@
 		b.page = special;
 		b.done = true;
 		sound.play('divergence');
-		await waitTap(autoLeft > 0 ? 1600 : reduce() ? 2600 : 4200);
+		await waitTap(auto.running ? 1600 : reduce() ? 2600 : 4200);
 		banner = null;
 	}
 
@@ -245,7 +247,7 @@
 		won = Math.min(won, Math.max(0, p.win - p.base.win));
 		banner = { kind: 'outro', spins: p.free.length, won };
 		lastWin = p.win;
-		await waitTap(autoLeft > 0 ? 1800 : reduce() ? 1500 : 3200);
+		await waitTap(auto.running ? 1800 : reduce() ? 1500 : 3200);
 		banner = null;
 	}
 
@@ -280,7 +282,7 @@
 		}
 		spinning = false;
 		// the gamble is offered after a win (auto spin collects by itself)
-		if (p.win > 0 && autoLeft === 0 && canGamble(p.win, p.bet, 'red', 0)) offer = { amount: p.win, bet: p.bet, start: p.win };
+		if (p.win > 0 && !auto.running && canGamble(p.win, p.bet, 'red', 0)) offer = { amount: p.win, bet: p.bet, start: p.win };
 	}
 
 	async function spin() {
@@ -387,47 +389,26 @@
 	const SUITS: Suit[] = ['H', 'D', 'C', 'S'];
 	const cardText = (c: Card) => s.cardIs(rankLabel(c.r), s.suits[c.s]);
 
-	/* ----- auto spin ----- */
-	const AUTO_COUNTS = [10, 25, 50, 100];
-	let autoCount = $state(25);
-	let autoLeft = $state(0);
+	/* ----- auto spin (the same on every machine: autoSpin.svelte.ts; no gambling in a run) ----- */
+	const auto = new AutoSpin();
 	let alive = true;
-	const stopAuto = (text?: string) => {
-		if (autoLeft > 0 && text) toast.show(text, undefined, 4000);
-		autoLeft = 0;
-	};
 	async function runAuto() {
-		if (autoLeft > 0) {
-			stopAuto();
-			return;
-		}
-		if (gambleOpen) return;
-		offer = null;
-		autoLeft = autoCount;
-		while (alive && autoLeft > 0) {
-			if (bet > shown) {
-				stopAuto(t.casino.broke);
-				break;
-			}
-			await spin();
+		if (!auto.running) {
+			if (gambleOpen) return;
 			offer = null;
-			if (!alive || autoLeft === 0) break;
-			autoLeft -= 1;
-			await sleep(celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 600);
 		}
-		if (alive && autoLeft === 0) message = message || t.casino.slots.autoDone;
-		autoLeft = 0;
+		const end = await auto.run({
+			spin,
+			ready: () => bet <= shown,
+			wait: () => (celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 600),
+			between: () => (offer = null)
+		});
+		if (end === 'done' && alive) message = message || t.casino.autoSpin.done;
 	}
 
-	$effect(() => {
-		const hide = () => document.visibilityState === 'hidden' && stopAuto();
-		document.addEventListener('visibilitychange', hide);
-		return () => {
-			alive = false;
-			autoLeft = 0;
-			document.removeEventListener('visibilitychange', hide);
-			tapGo?.();
-		};
+	$effect(() => () => {
+		alive = false;
+		tapGo?.();
 	});
 
 	const reelText = (r: number) => s.reelLabel(r + 1, screen.grid[r].map((x) => s.symbols[x]).join(', '));
@@ -555,10 +536,10 @@
 				</div>
 			</div>
 			<div class="led win"><span>{s.lastWin}</span><b class="num">{fmt(lastWin)}</b></div>
-			<button type="button" class="spin font-head" bind:this={spinBtn} disabled={spinning || gambleOpen || autoLeft > 0} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
+			<button type="button" class="spin font-head" bind:this={spinBtn} disabled={spinning || gambleOpen || auto.running} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
 		</div>
 
-		<!-- gamble the last win, or auto spin -->
+		<!-- gamble the last win, or auto spin (10 · 25 · 50 · 100 · 1,000) -->
 		<div class="row2">
 			{#if offer && !spinning && !gambleOpen}
 				<button type="button" class="gamble-btn font-head" onclick={() => void openGamble()}>
@@ -566,16 +547,7 @@
 					{s.gambleOffer(offer.amount)}
 				</button>
 			{/if}
-			<div class="auto" role="group" aria-label={t.casino.slots.autoLabel}>
-				<button type="button" class="auto-btn font-head" aria-pressed={autoLeft > 0} disabled={autoLeft === 0 && (spinning || gambleOpen || bet > shown)} onclick={() => void runAuto()}>
-					{autoLeft > 0 ? t.casino.slots.autoStop(autoLeft) : t.casino.slots.auto(autoCount)}
-				</button>
-				{#if autoLeft === 0}
-					{#each AUTO_COUNTS as n (n)}
-						<button type="button" class="auto-n num font-head" aria-pressed={autoCount === n} aria-label={t.casino.slots.autoCount(n)} onclick={() => (autoCount = n)}>{n}</button>
-					{/each}
-				{/if}
-			</div>
+			<AutoSpinControls {auto} blocked={spinning || gambleOpen || bet > shown} onstart={() => void runAuto()} />
 		</div>
 
 		<!-- the gamble: over the whole cabinet -->
@@ -1200,6 +1172,16 @@
 	.spin:disabled {
 		filter: grayscale(0.5) brightness(0.8);
 	}
+	/* the auto spin controls (AutoSpinControls) in this cabinet's colours */
+	.book-machine {
+		--auto-accent: #d9a521;
+		--auto-bg: #0b3a1d;
+		--auto-ink: #ffd23a;
+		--auto-on-ink: #0b3a1d;
+		--auto-chip-bg: #031008;
+		--auto-chip-ink: #a8e08a;
+		--auto-line: #1f5a2a;
+	}
 	/* gamble + auto row */
 	.row2 {
 		display: flex;
@@ -1207,6 +1189,9 @@
 		align-items: center;
 		gap: 6px;
 		margin-top: 8px;
+	}
+	.row2 > :global(.as) {
+		margin-top: 0;
 	}
 	.gamble-btn {
 		display: inline-flex;
@@ -1228,46 +1213,6 @@
 		to {
 			box-shadow: 0 0 4px rgb(255 60 60 / 0.3);
 		}
-	}
-	.auto {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 6px;
-	}
-	.auto-btn {
-		min-height: 44px;
-		padding: 0 16px;
-		border: 2px solid #d9a521;
-		border-radius: 999px;
-		background: #0b3a1d;
-		color: #ffd23a;
-		font-size: 13px;
-		font-weight: 900;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-	.auto-btn[aria-pressed='true'] {
-		background: #ffc928;
-		color: #0b3a1d;
-		box-shadow: 0 0 12px rgb(255 201 40 / 0.7);
-	}
-	.auto-btn:disabled {
-		opacity: 0.45;
-	}
-	.auto-n {
-		width: 44px;
-		height: 44px;
-		border-radius: 999px;
-		background: #031008;
-		color: #a8e08a;
-		font-size: 13px;
-		font-weight: 800;
-		box-shadow: inset 0 0 0 2px #1f5a2a;
-	}
-	.auto-n[aria-pressed='true'] {
-		color: #ffd23a;
-		box-shadow: inset 0 0 0 2px #d9a521;
 	}
 	/* ---------- the gamble (over the whole cabinet) ---------- */
 	.gamble {

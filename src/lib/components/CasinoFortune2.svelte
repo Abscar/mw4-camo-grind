@@ -53,6 +53,8 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { AutoSpin } from '#lib/autoSpin.svelte.ts';
+	import AutoSpinControls from './AutoSpinControls.svelte';
 	import Fortune2Piece, { CREW_COLOUR, short } from './Fortune2Piece.svelte';
 	import Fortune2Holk from './Fortune2Holk.svelte';
 	import MybotsLogo from './MybotsLogo.svelte';
@@ -376,7 +378,7 @@
 	}
 	async function focusOverlay() {
 		await tick();
-		if (autoLeft === 0) overlayEl?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+		if (!auto.running) overlayEl?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
 	}
 	function focusBack() {
 		if (overlayEl && overlayEl.contains(document.activeElement)) void tick().then(() => spinBtn?.focus());
@@ -410,7 +412,7 @@
 		message = `${s.munch.won}: +${short(burgersOf(m.pay, bet))} 🍔`;
 		sound.play(m.full ? 'divergence' : 'maxed');
 		void focusOverlay();
-		await waitTap(autoLeft > 0 ? 1900 : 5200);
+		await waitTap(auto.running ? 1900 : 5200);
 		focusBack();
 		munch = null;
 	}
@@ -423,7 +425,7 @@
 		banner = { kind: 'intro', bonus: p.bonus ?? 'hotbox', spins: total };
 		sound.play('maxed');
 		void focusOverlay();
-		await waitTap(autoLeft > 0 ? 1800 : 4200);
+		await waitTap(auto.running ? 1800 : 4200);
 		focusBack();
 		banner = null;
 		for (const [i, fs] of p.free.entries()) {
@@ -449,7 +451,7 @@
 		freeState = null;
 		banner = { kind: 'outro', spins: p.free.length, won: Math.min(p.win, Math.round(burgersOf(won, bet))) };
 		void focusOverlay();
-		await waitTap(autoLeft > 0 ? 1800 : 3800);
+		await waitTap(auto.running ? 1800 : 3800);
 		focusBack();
 		banner = null;
 	}
@@ -522,42 +524,19 @@
 		await run(lucky(squad.luck('fortune2'), rand, () => buy(kind, bet, rand), (p) => p.net));
 	}
 
-	/* ---------- auto spin ---------- */
-	const AUTO_COUNTS = [10, 25, 50, 100];
-	let autoCount = $state(25);
-	let autoLeft = $state(0);
-	function stopAuto(text?: string) {
-		if (autoLeft > 0 && text) toast.show(text, undefined, 4000);
-		autoLeft = 0;
-	}
+	/* ---------- auto spin (the same on every machine: autoSpin.svelte.ts) ---------- */
+	const auto = new AutoSpin();
 	async function runAuto() {
-		if (autoLeft > 0) {
-			stopAuto();
-			return;
-		}
-		autoLeft = autoCount;
-		while (alive && autoLeft > 0) {
-			if (bet > shown) {
-				stopAuto(t.casino.broke);
-				break;
-			}
-			await spin();
-			if (!alive || autoLeft === 0) break;
-			autoLeft -= 1;
-			await sleep(celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 500);
-		}
-		if (alive && autoLeft === 0 && !busy) message = message || sl.autoDone;
-		autoLeft = 0;
+		const end = await auto.run({
+			spin,
+			ready: () => bet <= shown,
+			wait: () => (celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 500)
+		});
+		if (end === 'done' && alive && !busy) message = message || t.casino.autoSpin.done;
 	}
-	$effect(() => {
-		const hide = () => document.visibilityState === 'hidden' && stopAuto();
-		document.addEventListener('visibilitychange', hide);
-		return () => {
-			alive = false;
-			autoLeft = 0;
-			document.removeEventListener('visibilitychange', hide);
-			tapGo?.();
-		};
+	$effect(() => () => {
+		alive = false;
+		tapGo?.();
 	});
 	function stepBet(dir: 1 | -1) {
 		const i = F2_BETS.indexOf(bet);
@@ -755,23 +734,16 @@
 				</div>
 			</div>
 			<div class="f2-led win"><span>{s.lastWin}</span><b class="num" style:--n={winText.length}>{winText}</b></div>
-			<button type="button" class="f2-spin font-head" bind:this={spinBtn} disabled={busy || autoLeft > 0} onclick={() => void spin()}>{busy ? '…' : s.spin}</button>
+			<button type="button" class="f2-spin font-head" bind:this={spinBtn} disabled={busy || auto.running} onclick={() => void spin()}>{busy ? '…' : s.spin}</button>
 		</div>
 
-		<!-- auto spin, turbo, skip -->
-		<div class="f2-auto" role="group" aria-label={sl.autoLabel}>
-			<button type="button" class="f2-auto-btn font-head" aria-pressed={autoLeft > 0} disabled={autoLeft === 0 && (busy || bet > shown)} onclick={() => void runAuto()}>
-				{autoLeft > 0 ? sl.autoStop(autoLeft) : sl.auto(autoCount)}
-			</button>
-			{#if autoLeft === 0}
-				{#each AUTO_COUNTS as n (n)}
-					<button type="button" class="f2-auto-n num font-head" aria-pressed={autoCount === n} aria-label={sl.autoCount(n)} onclick={() => (autoCount = n)}>{n}</button>
-				{/each}
-			{/if}
-			<span class="flex-1"></span>
-			<button type="button" class="f2-auto-n f2-turbo font-head" aria-pressed={turbo} onclick={toggleTurbo}>⚡ {s.turbo}</button>
-			<button type="button" class="f2-auto-n f2-skip font-head" aria-label={s.skipLabel} disabled={!busy || skip} onclick={() => (skip = true)}>{s.skip} ▸▸</button>
-		</div>
+		<!-- auto spin (10 · 25 · 50 · 100 · 1,000), turbo, skip -->
+		<AutoSpinControls {auto} blocked={busy || bet > shown} onstart={() => void runAuto()} btnClass="f2-auto-btn">
+			{#snippet extra()}
+				<button type="button" class="f2-auto-n f2-turbo font-head" aria-pressed={turbo} onclick={toggleTurbo}>⚡ {s.turbo}</button>
+				<button type="button" class="f2-auto-n f2-skip font-head" aria-label={s.skipLabel} disabled={!busy || skip} onclick={() => (skip = true)}>{s.skip} ▸▸</button>
+			{/snippet}
+		</AutoSpinControls>
 
 		<!-- buy bonus -->
 		<div class="f2-buy" role="group" aria-label={s.buy}>
@@ -785,7 +757,7 @@
 				<span class="f2-buy-label font-head">{s.buy}</span>
 				<div class="f2-buy-list">
 					{#each BUY_KINDS as kind (kind)}
-						<button type="button" class="f2-buy-btn" data-buy={kind} disabled={busy || autoLeft > 0 || price(kind) > shown} onclick={() => askBuy(kind)}>
+						<button type="button" class="f2-buy-btn" data-buy={kind} disabled={busy || auto.running || price(kind) > shown} onclick={() => askBuy(kind)}>
 							<span class="f2-buy-ico"><Fortune2Piece piece={kind === 'munchies' ? { kind: 'letter', letter: 0 } : kind === 'super' ? { kind: 'wild' } : { kind: 'ketchup' }} /></span>
 							<span class="min-w-0 text-left">
 								<b class="block font-head">{s.buyKinds[kind]}</b>
@@ -1741,7 +1713,6 @@
 	.f2-spin:disabled {
 		filter: grayscale(0.5) brightness(0.8);
 	}
-	.f2-auto,
 	.f2-buy {
 		display: flex;
 		flex-wrap: wrap;
@@ -1749,7 +1720,16 @@
 		gap: 6px;
 		margin-top: 8px;
 	}
-	.f2-auto-btn,
+	/* the auto spin controls (AutoSpinControls) in this cabinet's colours */
+	.f2 {
+		--auto-accent: #7dff6a;
+		--auto-bg: rgb(255 255 255 / 0.08);
+		--auto-ink: #c8ffb8;
+		--auto-on-ink: #10240c;
+		--auto-chip-bg: #1a0b33;
+		--auto-chip-ink: #ddd0ff;
+		--auto-line: rgb(201 182 255 / 0.5);
+	}
 	.f2-auto-n,
 	.f2-buy-yes,
 	.f2-buy-no {
@@ -1764,13 +1744,12 @@
 	.f2-auto-n {
 		min-width: 44px;
 	}
-	.f2-auto-btn[aria-pressed='true'],
 	.f2-auto-n[aria-pressed='true'] {
 		background: rgb(125 255 106 / 0.2);
 		box-shadow: inset 0 0 0 2px #7dff6a;
 		color: #c8ffb8;
 	}
-	.f2-auto button:disabled,
+	.f2-auto-n:disabled,
 	.f2-buy button:disabled {
 		opacity: 0.4;
 	}

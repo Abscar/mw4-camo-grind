@@ -46,6 +46,8 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { AutoSpin } from '#lib/autoSpin.svelte.ts';
+	import AutoSpinControls from './AutoSpinControls.svelte';
 	import StashSymbol from './StashSymbol.svelte';
 	import StashLogo from './StashLogo.svelte';
 
@@ -285,7 +287,7 @@
 	}
 	async function focusOverlay() {
 		await tick();
-		if (autoLeft === 0) overlayEl?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+		if (!auto.running) overlayEl?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
 	}
 	function focusBack() {
 		if (overlayEl && overlayEl.contains(document.activeElement)) void tick().then(() => spinBtn?.focus());
@@ -299,7 +301,7 @@
 		banner = { kind: 'intro', bonus: p.bonus === 'super' ? 'super' : 'free', spins: total };
 		sound.play('maxed');
 		void focusOverlay();
-		await waitTap(autoLeft > 0 ? 1800 : 4200);
+		await waitTap(auto.running ? 1800 : 4200);
 		focusBack();
 		banner = null;
 		for (const [i, fs] of p.free.entries()) {
@@ -320,7 +322,7 @@
 		freeState = null;
 		banner = { kind: 'outro', spins: p.free.length, won: Math.min(p.win, Math.round(burgersOf(won, bet))) };
 		void focusOverlay();
-		await waitTap(autoLeft > 0 ? 1800 : 3800);
+		await waitTap(auto.running ? 1800 : 3800);
 		focusBack();
 		banner = null;
 	}
@@ -390,42 +392,19 @@
 		await run(lucky(squad.luck('stash'), rand, () => buy(kind, bet, rand), (p) => p.net));
 	}
 
-	/* ---------- auto spin ---------- */
-	const AUTO_COUNTS = [10, 25, 50, 100];
-	let autoCount = $state(25);
-	let autoLeft = $state(0);
-	function stopAuto(text?: string) {
-		if (autoLeft > 0 && text) toast.show(text, undefined, 4000);
-		autoLeft = 0;
-	}
+	/* ---------- auto spin (the same on every machine: autoSpin.svelte.ts) ---------- */
+	const auto = new AutoSpin();
 	async function runAuto() {
-		if (autoLeft > 0) {
-			stopAuto();
-			return;
-		}
-		autoLeft = autoCount;
-		while (alive && autoLeft > 0) {
-			if (cost > shown) {
-				stopAuto(t.casino.broke);
-				break;
-			}
-			await spin();
-			if (!alive || autoLeft === 0) break;
-			autoLeft -= 1;
-			await sleep(celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 450);
-		}
-		if (alive && autoLeft === 0 && !busy) message = message || sl.autoDone;
-		autoLeft = 0;
+		const end = await auto.run({
+			spin,
+			ready: () => cost <= shown,
+			wait: () => (celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 450)
+		});
+		if (end === 'done' && alive && !busy) message = message || t.casino.autoSpin.done;
 	}
-	$effect(() => {
-		const hide = () => document.visibilityState === 'hidden' && stopAuto();
-		document.addEventListener('visibilitychange', hide);
-		return () => {
-			alive = false;
-			autoLeft = 0;
-			document.removeEventListener('visibilitychange', hide);
-			tapGo?.();
-		};
+	$effect(() => () => {
+		alive = false;
+		tapGo?.();
 	});
 	function stepBet(dir: 1 | -1) {
 		const i = STASH_BETS.indexOf(bet);
@@ -545,11 +524,11 @@
 				</div>
 			</div>
 			<div class="st-led win"><span>{s.lastWin}</span><b class="num" style:--n={winText.length}>{winText}</b></div>
-			<button type="button" class="st-spin font-head" bind:this={spinBtn} disabled={busy || autoLeft > 0} onclick={() => void spin()}>{busy ? '…' : s.spin}</button>
+			<button type="button" class="st-spin font-head" bind:this={spinBtn} disabled={busy || auto.running} onclick={() => void spin()}>{busy ? '…' : s.spin}</button>
 		</div>
 
 		<!-- Double chance -->
-		<button type="button" class="st-ante" aria-pressed={ante} disabled={busy || autoLeft > 0} onclick={toggleAnte}>
+		<button type="button" class="st-ante" aria-pressed={ante} disabled={busy || auto.running} onclick={toggleAnte}>
 			<span class="st-ante-ico" aria-hidden="true"><StashSymbol kind="holk" /></span>
 			<span class="min-w-0 text-left">
 				<b class="block font-head">{s.ante} · {ante ? s.anteOn : s.anteOff}</b>
@@ -558,20 +537,13 @@
 			<span class="st-switch" aria-hidden="true"><span></span></span>
 		</button>
 
-		<!-- auto spin, turbo, skip -->
-		<div class="st-auto" role="group" aria-label={sl.autoLabel}>
-			<button type="button" class="st-auto-btn font-head" aria-pressed={autoLeft > 0} disabled={autoLeft === 0 && (busy || cost > shown)} onclick={() => void runAuto()}>
-				{autoLeft > 0 ? sl.autoStop(autoLeft) : sl.auto(autoCount)}
-			</button>
-			{#if autoLeft === 0}
-				{#each AUTO_COUNTS as n (n)}
-					<button type="button" class="st-auto-n num font-head" aria-pressed={autoCount === n} aria-label={sl.autoCount(n)} onclick={() => (autoCount = n)}>{n}</button>
-				{/each}
-			{/if}
-			<span class="flex-1"></span>
-			<button type="button" class="st-auto-n font-head" aria-pressed={turbo} onclick={toggleTurbo}>⚡ {s.turbo}</button>
-			<button type="button" class="st-auto-n font-head" aria-label={s.skipLabel} disabled={!busy || skip} onclick={() => (skip = true)}>{s.skip} ▸▸</button>
-		</div>
+		<!-- auto spin (10 · 25 · 50 · 100 · 1,000), turbo, skip -->
+		<AutoSpinControls {auto} blocked={busy || cost > shown} onstart={() => void runAuto()} btnClass="st-auto-btn">
+			{#snippet extra()}
+				<button type="button" class="st-auto-n font-head" aria-pressed={turbo} onclick={toggleTurbo}>⚡ {s.turbo}</button>
+				<button type="button" class="st-auto-n font-head" aria-label={s.skipLabel} disabled={!busy || skip} onclick={() => (skip = true)}>{s.skip} ▸▸</button>
+			{/snippet}
+		</AutoSpinControls>
 
 		<!-- buy bonus -->
 		<div class="st-buy" role="group" aria-label={sl.buy}>
@@ -585,7 +557,7 @@
 				<span class="st-buy-label font-head">{sl.buy}{#if ante}<span class="st-buy-off"> · {s.buyOff}</span>{/if}</span>
 				<div class="st-buy-list">
 					{#each BUY_KINDS as kind (kind)}
-						<button type="button" class="st-buy-btn" data-buy={kind} disabled={busy || ante || autoLeft > 0 || price(kind) > shown} onclick={() => askBuy(kind)}>
+						<button type="button" class="st-buy-btn" data-buy={kind} disabled={busy || ante || auto.running || price(kind) > shown} onclick={() => askBuy(kind)}>
 							<span class="st-buy-ico"><StashSymbol kind={kind === 'super' ? 'cloud' : 'holk'} value={kind === 'super' ? 10 : undefined} /></span>
 							<span class="min-w-0 text-left">
 								<b class="block font-head">{s.buyKinds[kind]}</b>
@@ -1227,7 +1199,6 @@
 	.st-ante[aria-pressed='true'] .st-switch span {
 		transform: translateX(18px);
 	}
-	.st-auto,
 	.st-buy {
 		display: flex;
 		flex-wrap: wrap;
@@ -1235,7 +1206,16 @@
 		gap: 6px;
 		margin-top: 8px;
 	}
-	.st-auto-btn,
+	/* the auto spin controls (AutoSpinControls) in this cabinet's colours */
+	.st {
+		--auto-accent: #5fe36a;
+		--auto-bg: rgb(255 255 255 / 0.08);
+		--auto-ink: #c8ffb8;
+		--auto-on-ink: #0c2410;
+		--auto-chip-bg: #1a0d2e;
+		--auto-chip-ink: #ddd0ff;
+		--auto-line: rgb(205 182 255 / 0.5);
+	}
 	.st-auto-n,
 	.st-buy-yes,
 	.st-buy-no {
@@ -1250,13 +1230,12 @@
 	.st-auto-n {
 		min-width: 44px;
 	}
-	.st-auto-btn[aria-pressed='true'],
 	.st-auto-n[aria-pressed='true'] {
 		background: rgb(95 227 106 / 0.2);
 		box-shadow: inset 0 0 0 2px #5fe36a;
 		color: #c8ffb8;
 	}
-	.st-auto button:disabled,
+	.st-auto-n:disabled,
 	.st-buy button:disabled {
 		opacity: 0.4;
 	}

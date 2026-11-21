@@ -43,6 +43,8 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { AutoSpin } from '#lib/autoSpin.svelte.ts';
+	import AutoSpinControls from './AutoSpinControls.svelte';
 	import KushSymbolView from './KushSymbol.svelte';
 	import KushLogo from './KushLogo.svelte';
 
@@ -249,43 +251,20 @@
 		void tick().then(() => spinBtn?.focus());
 	}
 
-	/* ----- auto spin ----- */
-	const AUTO_COUNTS = [10, 25, 50, 100];
-	let autoCount = $state(25);
-	let autoLeft = $state(0);
+	/* ----- auto spin (the same on every machine: autoSpin.svelte.ts) ----- */
+	const auto = new AutoSpin();
 	let alive = true;
-	function stopAuto(text?: string) {
-		if (autoLeft > 0 && text) toast.show(text, undefined, 4000);
-		autoLeft = 0;
-	}
 	async function runAuto() {
-		if (autoLeft > 0) {
-			stopAuto();
-			return;
-		}
-		autoLeft = autoCount;
-		while (alive && autoLeft > 0) {
-			if (bet > shown) {
-				stopAuto(t.casino.broke);
-				break;
-			}
-			await spin();
-			if (!alive || autoLeft === 0) break;
-			autoLeft -= 1;
+		const end = await auto.run({
+			spin,
+			ready: () => bet <= shown,
 			// a big win gets its moment before the next spin
-			await sleep(celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 650);
-		}
-		if (alive && autoLeft === 0) message = message || s.autoDone;
-		autoLeft = 0;
+			wait: () => (celebrate ? (reduce() ? 1800 : 3000) : reduce() ? 250 : 650)
+		});
+		if (end === 'done' && alive) message = message || t.casino.autoSpin.done;
 	}
-	$effect(() => {
-		const hide = () => document.visibilityState === 'hidden' && stopAuto();
-		document.addEventListener('visibilitychange', hide);
-		return () => {
-			alive = false;
-			autoLeft = 0;
-			document.removeEventListener('visibilitychange', hide);
-		};
+	$effect(() => () => {
+		alive = false;
 	});
 
 	function stepBet(dir: 1 | -1) {
@@ -422,20 +401,11 @@
 					</div>
 				</div>
 				<div class="led win"><span>{s.lastWin}</span><b class="num">{lastWin.toLocaleString('en-US')}</b></div>
-				<button type="button" class="spin font-head" bind:this={spinBtn} disabled={spinning || autoLeft > 0} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
+				<button type="button" class="spin font-head" bind:this={spinBtn} disabled={spinning || auto.running} onclick={() => void spin()}>{spinning ? '…' : s.spin}</button>
 			</div>
 
-			<!-- auto spin -->
-			<div class="auto" role="group" aria-label={s.autoLabel}>
-				<button type="button" class="auto-btn font-head" aria-pressed={autoLeft > 0} disabled={autoLeft === 0 && (spinning || bet > shown)} onclick={() => void runAuto()}>
-					{autoLeft > 0 ? s.autoStop(autoLeft) : s.auto(autoCount)}
-				</button>
-				{#if autoLeft === 0}
-					{#each AUTO_COUNTS as n (n)}
-						<button type="button" class="auto-n num font-head" aria-pressed={autoCount === n} aria-label={s.autoCount(n)} onclick={() => (autoCount = n)}>{n}</button>
-					{/each}
-				{/if}
-			</div>
+			<!-- auto spin (10 · 25 · 50 · 100 · 1,000) -->
+			<AutoSpinControls {auto} blocked={spinning || bet > shown} onstart={() => void runAuto()} />
 
 			<!-- buy: a spin that starts with a leaf, or one that starts as a KUSHBURST; asked first -->
 			<div class="buy" role="group" aria-label={s.buy}>
@@ -449,7 +419,7 @@
 					<span class="buy-label font-head">{s.buy}</span>
 					<div class="buy-list">
 						{#each KUSH_BUYS as k (k)}
-							<button type="button" class="buy-btn" data-buy={k} disabled={spinning || autoLeft > 0 || price(k) > shown} onclick={() => askBuy(k)}>
+							<button type="button" class="buy-btn" data-buy={k} disabled={spinning || auto.running || price(k) > shown} onclick={() => askBuy(k)}>
 								<KushSymbolView symbol={k === 'burst' ? 'x420' : 'leaf'} size={30} />
 								<span class="min-w-0 text-left">
 									<b class="block font-head">{s.buyKinds[k]}</b>
@@ -1076,47 +1046,15 @@
 	.spin:disabled {
 		filter: grayscale(0.5) brightness(0.8);
 	}
-	/* auto spin row */
-	.auto {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 6px;
-		margin-top: 8px;
-	}
-	.auto-btn {
-		min-height: 44px;
-		padding: 0 16px;
-		border: 2px solid #8dff5a;
-		border-radius: 999px;
-		background: #12042a;
-		color: #b6ff7a;
-		font-size: 13px;
-		font-weight: 900;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-	.auto-btn[aria-pressed='true'] {
-		background: #8dff5a;
-		color: #12042a;
-		box-shadow: 0 0 12px rgb(141 255 90 / 0.7);
-	}
-	.auto-btn:disabled {
-		opacity: 0.45;
-	}
-	.auto-n {
-		width: 44px;
-		height: 44px;
-		border-radius: 999px;
-		background: #07020f;
-		color: #ff9ad9;
-		font-size: 13px;
-		font-weight: 800;
-		box-shadow: inset 0 0 0 2px #4a1a7a;
-	}
-	.auto-n[aria-pressed='true'] {
-		color: #b6ff7a;
-		box-shadow: inset 0 0 0 2px #8dff5a;
+	/* the auto spin controls (AutoSpinControls) in this cabinet's colours */
+	.kush-wrap {
+		--auto-accent: #8dff5a;
+		--auto-bg: #12042a;
+		--auto-ink: #b6ff7a;
+		--auto-on-ink: #12042a;
+		--auto-chip-bg: #07020f;
+		--auto-chip-ink: #ff9ad9;
+		--auto-line: #4a1a7a;
 	}
 	/* buy */
 	.buy {
