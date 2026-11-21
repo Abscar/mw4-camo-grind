@@ -60,7 +60,7 @@
 	/** The blackjack table's "n at the table" on its button (read now and then while this is on screen). */
 	let casinoEl = $state<HTMLElement>();
 	$effect(() => (casinoEl && squad.on ? bjTable.lobby(casinoEl) : undefined));
-	const atTable = $derived(squad.on ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
+	const atTable = $derived(squad.on && bjTable.online ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
 	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
@@ -178,6 +178,8 @@
 					<span class="casino-game-name font-head">{c.games[g]}</span>
 					{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
 							><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span
+						>{:else if g === 'blackjack' && squad.on && !bjTable.online}<span class="casino-live off font-head" title={c.blackjack.online.tileOff}
+							><span aria-hidden="true">{c.blackjack.online.off}</span><span class="sr-only"> ({c.blackjack.online.tileOff})</span></span
 						>{/if}
 				</button>
 			{/snippet}
@@ -562,6 +564,14 @@
 		font-size: 12px;
 		font-weight: 900;
 		line-height: 1;
+	}
+	/* the online table switched off on this device (CasinoBlackjack's switch): a grey OFF tag instead */
+	.casino-live.off {
+		background: #4a4a4a;
+		box-shadow: 0 0 0 1.5px #9a9a9a;
+		font-size: 10px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 	}
 	/* ---------- the casino floor's tiles (2026-11-20): a light sweeps across them in turn, the picked one
 	   glows on and off, they lift and tilt under the mouse, press in on a tap, and one wears a HOT badge */

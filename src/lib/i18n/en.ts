@@ -1896,7 +1896,21 @@ export const en = {
 				away: 'Left the table'
 			},
 			othersResult: { blackjack: 'Blackjack!', win: 'Wins', dealerBust: 'Wins', push: 'Push', lose: 'Loses', bust: 'Bust' },
-			satEvent: 'sat down at the blackjack table: pull up a chair 🃏'
+			satEvent: 'sat down at the blackjack table: pull up a chair 🃏',
+			/** On / off per device (2026-11-20, the user: "an on/off button for the blackjack online mode so I can turn it off when it's not used"). */
+			online: {
+				label: 'Online table',
+				on: 'On',
+				off: 'Off',
+				onNote: 'Not playing? Turn it off and this device stops checking the table.',
+				offNote: 'Off on this device: Blackjack doesn’t check the table or send anything.',
+				offTitle: 'The online table is off',
+				offBody: 'This device doesn’t check the blackjack table or send anything to it, and the Blackjack tile shows no player count. Your friends can still play. Turn it on to sit down with them.',
+				turnOn: 'Turn the table on',
+				waitHand: 'Finish your hand first: the table can go off once it’s booked.',
+				waitReading: 'One second: checking the table for a hand of yours first.',
+				tileOff: 'Online table off on this device'
+			}
 		}
 	},
 	/** The Squad tab (SquadSection; squad.svelte.ts): friends' grind side by side, Online / Offline (2026-11-14). */

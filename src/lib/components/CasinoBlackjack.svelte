@@ -11,6 +11,10 @@
 	pair or a straight", then "both" to free boosts and real side bets): a won hand is multiplied by its card
 	boost and the win-streak boost (the streak is kept per device and goes with each bet), and "Perfect
 	Pairs" / "21+3" side bets (a chip the size of the bet each) are settled on the deal, booked with the hand.
+	Online table on / off (2026-11-20, the user: "an on/off button for the blackjack online mode so I can
+	turn it off when it's not used"): per device, a switch at the top; off = the table isn't read or written
+	at all (bjTable.svelte.ts) and the screen says so with a button to turn it on. It won't go off while a
+	hand of yours is being played or waits to be booked (a toast says why).
 -->
 <script lang="ts">
 	import { canAct, handSides, viewRound, GRACE, type HandPlay, type SeatPlay } from '#lib/bj-table.ts';
@@ -134,6 +138,13 @@
 	async function dealNow() {
 		if (!(await bjTable.dealNow())) toast.show(b.failed, undefined, 5000);
 	}
+	const o = b.online;
+	async function toggleOnline() {
+		if (bjTable.online) {
+			const block = bjTable.offBlock;
+			if (block || !(await bjTable.setOnline(false))) toast.show(block === 'reading' ? o.waitReading : o.waitHand, undefined, 5000);
+		} else await bjTable.setOnline(true);
+	}
 
 	/** A seat's status line: waiting / bet in / thinking 12 s / stands / bust … / the result. */
 	function status(s: Spot): { text: string; tone: string } {
@@ -167,134 +178,162 @@
 {/snippet}
 
 <div class="bj" bind:this={root}>
-	<div class="bj-table">
-		<!-- the dealer -->
-		<div class="bj-hand">
-			<p class="bj-who font-head">
-				{b.dealer}{#if dealerShown.length}<span class="bj-total num">{b.total(dv.total, dv.soft)}</span>{/if}
-			</p>
-			<div
-				class="bj-cards"
-				role="img"
-				aria-label={dealerShown.length ? b.handLabel(b.dealer, [...dealerShown.map(cardText), ...(hideHole ? [b.hidden] : [])].join(', '), String(dv.total)) : b.dealer}
-			>
-				{#each dealerShown as c, i (i)}{@render card(c, i)}{/each}
-				{#if hideHole}{@render card(null, 1)}{/if}
+	<!-- the online table on / off on this device -->
+	<div class="bj-online">
+		<button type="button" class="bj-online-btn font-head" aria-pressed={bjTable.online} aria-describedby="bj-online-note" onclick={toggleOnline}>
+			<span class="bj-switch" aria-hidden="true"><span class="bj-knob"></span></span>
+			{o.label}
+			<b class="bj-online-state" aria-hidden="true">{bjTable.online ? o.on : o.off}</b>
+		</button>
+		<p id="bj-online-note" class="bj-online-note">{bjTable.online ? o.onNote : o.offNote}</p>
+	</div>
+
+	{#if !bjTable.online}
+		<div class="bj-off">
+			<svg class="bj-off-art" viewBox="0 0 64 48" aria-hidden="true">
+				<!-- a plug pulled out of its socket -->
+				<rect x="40" y="10" width="20" height="28" rx="5" fill="#0b3e1d" stroke="#c9a050" stroke-width="2.5" />
+				<rect x="47" y="17" width="2.5" height="6" rx="1" fill="#c9a050" />
+				<rect x="51" y="17" width="2.5" height="6" rx="1" fill="#c9a050" />
+				<path d="M4 34 C 10 34, 12 24, 20 24" fill="none" stroke="#fff6d0" stroke-width="3" stroke-linecap="round" />
+				<rect x="19" y="17" width="12" height="14" rx="3" fill="#fff6d0" />
+				<rect x="31" y="19.5" width="5" height="2.5" rx="1" fill="#c9a050" />
+				<rect x="31" y="26" width="5" height="2.5" rx="1" fill="#c9a050" />
+			</svg>
+			<p class="bj-off-title font-head">{o.offTitle}</p>
+			<p class="bj-off-body">{o.offBody}</p>
+			<button type="button" class="btn btn-primary mt-3" onclick={toggleOnline}>{o.turnOn}</button>
+		</div>
+	{:else}
+		<div class="bj-table">
+			<!-- the dealer -->
+			<div class="bj-hand">
+				<p class="bj-who font-head">
+					{b.dealer}{#if dealerShown.length}<span class="bj-total num">{b.total(dv.total, dv.soft)}</span>{/if}
+				</p>
+				<div
+					class="bj-cards"
+					role="img"
+					aria-label={dealerShown.length ? b.handLabel(b.dealer, [...dealerShown.map(cardText), ...(hideHole ? [b.hidden] : [])].join(', '), String(dv.total)) : b.dealer}
+				>
+					{#each dealerShown as c, i (i)}{@render card(c, i)}{/each}
+					{#if hideHole}{@render card(null, 1)}{/if}
+				</div>
+			</div>
+
+			<!-- what's happening -->
+			<div class="bj-mid" aria-live="polite">
+				{#if bjTable.trouble}
+					<p class="bj-note">{b.trouble}</p>
+				{:else if phase === 'betting' && round}
+					<p class="bj-note bj-clock">{myState === 'join' ? b.betsCloseJoin(opener, secs(round.dealAt)) : b.betsClose(secs(round.dealAt))}</p>
+				{:else if phase === 'settle'}
+					<p class="bj-note">{b.dealerTurn}</p>
+				{:else if phase === 'done' && myPlay?.result && myPlay.net !== undefined}
+					<p class="bj-result font-head" data-result={myPlay.result}>{b.results[myPlay.result]} <span class="num">{b.net(myPlay.net)}</span></p>
+				{:else if myTurn}
+					<p class="bj-note bj-clock">{b.yourMove(secs(myPlay?.deadline ?? null))}</p>
+				{:else if myState === 'in' && phase === 'play'}
+					<p class="bj-note">{b.waitingOthers}</p>
+				{:else if bjTable.last && !myPlay}
+					<p class="bj-note">{b.lastHand(b.results[bjTable.last.result], b.net(bjTable.last.net))}</p>
+				{/if}
+			</div>
+
+			<!-- the others -->
+			{#if others.length}
+				<ul class="bj-seats" aria-label={b.seatsLabel}>
+					{#each others as s (s.id)}
+						{@const st = status(s)}
+						{@const v = total(s.sp?.play)}
+						<li class="bj-seat" data-tone={st.tone} class:away={s.away} class:gold={goldOf(s.id)}>
+							<div class="bj-seat-head">
+								<SquadAvatar name={s.name} op={s.op} size={28} />
+								<b class="min-w-0 flex-1 truncate font-head">{s.name}</b>
+								{#if s.sp}<span class="bj-chip num" title={b.betChip(s.sp.hand.bet)}>{s.sp.hand.bet * (s.sp.play?.doubled ? 2 : 1)}</span>{/if}
+							</div>
+							<div class="bj-small">{@render hand(s.name, s.sp?.play ?? null)}</div>
+							<p class="bj-seat-status">
+								{#if v}<span class="bj-total num">{b.total(v.total, v.soft)}</span>{/if}
+								<span class="bj-st">{st.text}</span>
+								{#if s.away}<span class="bj-left">{b.seatStatus.away}</span>{/if}
+							</p>
+							{#each s.sp?.sides.filter((x) => x.net > 0 && x.kind) ?? [] as x (x.bet)}
+								<p class="bj-seat-side font-head">{b.sideWin(b.sides[x.bet], b.kinds[x.kind!], x.net)}</p>
+							{/each}
+						</li>
+					{/each}
+				</ul>
+			{:else if bjTable.sitState === 'ok'}
+				<p class="bj-alone">{b.alone}</p>
+			{/if}
+
+			<!-- you (not while you only watch) -->
+			<div class="bj-hand bj-me" hidden={watching} class:gold={goldOf(meId)}>
+				<p class="bj-who font-head">
+					{b.you}{#if myPlay?.play}{@const v = handValue(myPlay.play.cards)}<span class="bj-total num">{b.total(v.total, v.soft)}</span>{/if}{#if myPlay?.play?.doubled}<span class="bj-dbl">×2</span>{/if}
+					{#if myPlay}<span class="bj-chip num" title={b.betChip(myPlay.hand.bet)}>{myPlay.hand.bet * (myPlay.play?.doubled ? 2 : 1)}</span>{/if}
+				</p>
+				{@render hand(b.you, myPlay?.play ?? null)}
 			</div>
 		</div>
 
-		<!-- what's happening -->
-		<div class="bj-mid" aria-live="polite">
-			{#if bjTable.trouble}
-				<p class="bj-note">{b.trouble}</p>
-			{:else if phase === 'betting' && round}
-				<p class="bj-note bj-clock">{myState === 'join' ? b.betsCloseJoin(opener, secs(round.dealAt)) : b.betsClose(secs(round.dealAt))}</p>
-			{:else if phase === 'settle'}
-				<p class="bj-note">{b.dealerTurn}</p>
-			{:else if phase === 'done' && myPlay?.result && myPlay.net !== undefined}
-				<p class="bj-result font-head" data-result={myPlay.result}>{b.results[myPlay.result]} <span class="num">{b.net(myPlay.net)}</span></p>
-			{:else if myTurn}
-				<p class="bj-note bj-clock">{b.yourMove(secs(myPlay?.deadline ?? null))}</p>
-			{:else if myState === 'in' && phase === 'play'}
-				<p class="bj-note">{b.waitingOthers}</p>
-			{:else if bjTable.last && !myPlay}
-				<p class="bj-note">{b.lastHand(b.results[bjTable.last.result], b.net(bjTable.last.net))}</p>
-			{/if}
-		</div>
-
-		<!-- the others -->
-		{#if others.length}
-			<ul class="bj-seats" aria-label={b.seatsLabel}>
-				{#each others as s (s.id)}
-					{@const st = status(s)}
-					{@const v = total(s.sp?.play)}
-					<li class="bj-seat" data-tone={st.tone} class:away={s.away} class:gold={goldOf(s.id)}>
-						<div class="bj-seat-head">
-							<SquadAvatar name={s.name} op={s.op} size={28} />
-							<b class="min-w-0 flex-1 truncate font-head">{s.name}</b>
-							{#if s.sp}<span class="bj-chip num" title={b.betChip(s.sp.hand.bet)}>{s.sp.hand.bet * (s.sp.play?.doubled ? 2 : 1)}</span>{/if}
-						</div>
-						<div class="bj-small">{@render hand(s.name, s.sp?.play ?? null)}</div>
-						<p class="bj-seat-status">
-							{#if v}<span class="bj-total num">{b.total(v.total, v.soft)}</span>{/if}
-							<span class="bj-st">{st.text}</span>
-							{#if s.away}<span class="bj-left">{b.seatStatus.away}</span>{/if}
-						</p>
-						{#each s.sp?.sides.filter((x) => x.net > 0 && x.kind) ?? [] as x (x.bet)}
-							<p class="bj-seat-side font-head">{b.sideWin(b.sides[x.bet], b.kinds[x.kind!], x.net)}</p>
-						{/each}
-					</li>
-				{/each}
-			</ul>
-		{:else if bjTable.sitState === 'ok'}
-			<p class="bj-alone">{b.alone}</p>
-		{/if}
-
-		<!-- you (not while you only watch) -->
-		<div class="bj-hand bj-me" hidden={watching} class:gold={goldOf(meId)}>
-			<p class="bj-who font-head">
-				{b.you}{#if myPlay?.play}{@const v = handValue(myPlay.play.cards)}<span class="bj-total num">{b.total(v.total, v.soft)}</span>{/if}{#if myPlay?.play?.doubled}<span class="bj-dbl">×2</span>{/if}
-				{#if myPlay}<span class="bj-chip num" title={b.betChip(myPlay.hand.bet)}>{myPlay.hand.bet * (myPlay.play?.doubled ? 2 : 1)}</span>{/if}
-			</p>
-			{@render hand(b.you, myPlay?.play ?? null)}
-		</div>
-	</div>
-
-	<!-- boosts: your win streak, this hand's card boost, your side bets' results, what the boosts added -->
-	{#if !watching}
-		<div class="bj-boosts mt-2" aria-live="polite">
-			<span class="bj-streak font-head" data-hot={bjTable.streak >= 2}>
-				{#if bjTable.streak > 0}{b.streak(bjTable.streak)}{:else}{b.streakNone}{/if}
-				{#if nextStreakBoost > 1}<b class="num">{b.streakNext(mult(nextStreakBoost))}</b>{/if}
-			</span>
-			{#if myPlay?.boost && phase !== 'done'}
-				<span class="bj-boost font-head" data-big={BJ_BOOSTS[myPlay.boost] >= 2}>⚡ {b.boost(b.kinds[myPlay.boost], mult(BJ_BOOSTS[myPlay.boost]))}</span>
-			{/if}
-			{#each myPlay?.sides ?? [] as x (x.bet)}
-				<span class="bj-side font-head" data-won={x.net > 0}>
-					{x.kind && x.net > 0 ? b.sideWin(b.sides[x.bet], b.kinds[x.kind], x.net) : b.sideLose(b.sides[x.bet], -x.net)}
+		<!-- boosts: your win streak, this hand's card boost, your side bets' results, what the boosts added -->
+		{#if !watching}
+			<div class="bj-boosts mt-2" aria-live="polite">
+				<span class="bj-streak font-head" data-hot={bjTable.streak >= 2}>
+					{#if bjTable.streak > 0}{b.streak(bjTable.streak)}{:else}{b.streakNone}{/if}
+					{#if nextStreakBoost > 1}<b class="num">{b.streakNext(mult(nextStreakBoost))}</b>{/if}
 				</span>
-			{/each}
-			{#if phase === 'done' && myPlay?.mult && myPlay.mult > 1 && myPlay.extra}
-				<span class="bj-boost font-head" data-big="true">{b.boostApplied(mult(myPlay.mult), myPlay.extra)}</span>
-			{/if}
-		</div>
-	{/if}
-
-	{#if watching}
-		<p class="mt-3 text-sm text-fg">{bjTable.sitState === 'full' ? b.full : b.otherDevice}</p>
-	{:else if myTurn}
-		<div class="mt-3 flex flex-wrap gap-2">
-			<button type="button" class="btn btn-primary" onclick={() => move('h')}>{b.hit}</button>
-			<button type="button" class="btn" onclick={() => move('s')}>{b.stand}</button>
-			<button type="button" class="btn" disabled={!canDouble} onclick={() => move('d')}>{b.double}</button>
-		</div>
-	{:else if myState === 'in'}
-		{#if phase === 'betting'}
-			<button type="button" class="btn mt-3" disabled={bjTable.busy} onclick={dealNow}>{b.dealNow}</button>
+				{#if myPlay?.boost && phase !== 'done'}
+					<span class="bj-boost font-head" data-big={BJ_BOOSTS[myPlay.boost] >= 2}>⚡ {b.boost(b.kinds[myPlay.boost], mult(BJ_BOOSTS[myPlay.boost]))}</span>
+				{/if}
+				{#each myPlay?.sides ?? [] as x (x.bet)}
+					<span class="bj-side font-head" data-won={x.net > 0}>
+						{x.kind && x.net > 0 ? b.sideWin(b.sides[x.bet], b.kinds[x.kind], x.net) : b.sideLose(b.sides[x.bet], -x.net)}
+					</span>
+				{/each}
+				{#if phase === 'done' && myPlay?.mult && myPlay.mult > 1 && myPlay.extra}
+					<span class="bj-boost font-head" data-big="true">{b.boostApplied(mult(myPlay.mult), myPlay.extra)}</span>
+				{/if}
+			</div>
 		{/if}
-	{:else}
-		<div class="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t.casino.bet}>
-			{#each BETS as v (v)}
-				<button type="button" class="bj-bet num font-head" aria-pressed={stake === v} disabled={v > free} onclick={() => (stake = v)}>{v}</button>
-			{/each}
-		</div>
-		<!-- side bets: a chip the size of the bet each, settled on the deal -->
-		<div class="mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label={b.sidesLabel}>
-			<span class="bj-sides-label font-head">{b.sidesLabel}</span>
-			{#each SIDE_BETS as k (k)}
-				<button type="button" class="bj-side-btn font-head" aria-pressed={sides[k]} onclick={() => toggleSide(k)}>
-					<span class="bj-side-tick" aria-hidden="true">{sides[k] ? '✔' : ''}</span>
-					{b.sides[k]} · <span class="num">{t.casino.burgers(stake)}</span>
-				</button>
-			{/each}
-		</div>
-		{#if myState === 'wait' || myState === 'pause'}
-			<button type="button" class="btn btn-primary mt-2" disabled>{myState === 'wait' ? b.inProgress : b.pause}</button>
+
+		{#if watching}
+			<p class="mt-3 text-sm text-fg">{bjTable.sitState === 'full' ? b.full : b.otherDevice}</p>
+		{:else if myTurn}
+			<div class="mt-3 flex flex-wrap gap-2">
+				<button type="button" class="btn btn-primary" onclick={() => move('h')}>{b.hit}</button>
+				<button type="button" class="btn" onclick={() => move('s')}>{b.stand}</button>
+				<button type="button" class="btn" disabled={!canDouble} onclick={() => move('d')}>{b.double}</button>
+			</div>
+		{:else if myState === 'in'}
+			{#if phase === 'betting'}
+				<button type="button" class="btn mt-3" disabled={bjTable.busy} onclick={dealNow}>{b.dealNow}</button>
+			{/if}
 		{:else}
-			<button type="button" class="btn btn-primary mt-2" disabled={cost > free || bjTable.busy} onclick={bet}>
-				{myState === 'join' ? b.join : othersSeated ? b.openHand : b.deal} · {t.casino.burgers(cost)}
-			</button>
+			<div class="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t.casino.bet}>
+				{#each BETS as v (v)}
+					<button type="button" class="bj-bet num font-head" aria-pressed={stake === v} disabled={v > free} onclick={() => (stake = v)}>{v}</button>
+				{/each}
+			</div>
+			<!-- side bets: a chip the size of the bet each, settled on the deal -->
+			<div class="mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label={b.sidesLabel}>
+				<span class="bj-sides-label font-head">{b.sidesLabel}</span>
+				{#each SIDE_BETS as k (k)}
+					<button type="button" class="bj-side-btn font-head" aria-pressed={sides[k]} onclick={() => toggleSide(k)}>
+						<span class="bj-side-tick" aria-hidden="true">{sides[k] ? '✔' : ''}</span>
+						{b.sides[k]} · <span class="num">{t.casino.burgers(stake)}</span>
+					</button>
+				{/each}
+			</div>
+			{#if myState === 'wait' || myState === 'pause'}
+				<button type="button" class="btn btn-primary mt-2" disabled>{myState === 'wait' ? b.inProgress : b.pause}</button>
+			{:else}
+				<button type="button" class="btn btn-primary mt-2" disabled={cost > free || bjTable.busy} onclick={bet}>
+					{myState === 'join' ? b.join : othersSeated ? b.openHand : b.deal} · {t.casino.burgers(cost)}
+				</button>
+			{/if}
 		{/if}
 	{/if}
 
@@ -307,6 +346,107 @@
 </div>
 
 <style>
+	/* the online table on / off: a switch like a real one, green with the knob right when on */
+	.bj-online {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 12px;
+		margin-bottom: 10px;
+	}
+	.bj-online-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 44px;
+		padding: 0 14px 0 8px;
+		border: 2px solid #c9a050;
+		border-radius: 999px;
+		background: #0b3e1d;
+		color: #fff6d0;
+		font-size: 13px;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.bj-online-btn[aria-pressed='false'] {
+		border-color: rgb(255 246 208 / 0.35);
+		background: rgb(0 0 0 / 0.35);
+		color: rgb(255 246 208 / 0.85);
+	}
+	.bj-switch {
+		position: relative;
+		flex: none;
+		width: 42px;
+		height: 24px;
+		border-radius: 999px;
+		background: #1f9a45;
+		box-shadow: inset 0 0 0 1.5px #7dff6a, 0 0 8px rgb(125 255 106 / 0.45);
+		transition: background-color 0.2s, box-shadow 0.2s;
+	}
+	.bj-knob {
+		position: absolute;
+		top: 3px;
+		left: 21px;
+		width: 18px;
+		height: 18px;
+		border-radius: 999px;
+		background: #fffdf6;
+		box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+		transition: left 0.2s;
+	}
+	[aria-pressed='false'] .bj-switch {
+		background: #4a4a4a;
+		box-shadow: inset 0 0 0 1.5px #8a8a8a;
+	}
+	[aria-pressed='false'] .bj-knob {
+		left: 3px;
+	}
+	.bj-online-state {
+		min-width: 34px;
+		padding: 1px 8px;
+		border-radius: 999px;
+		background: #1f9a45;
+		color: #fff;
+		font-size: 11px;
+		text-align: center;
+	}
+	[aria-pressed='false'] .bj-online-state {
+		background: #5a5a5a;
+	}
+	.bj-online-note {
+		flex: 1 1 14rem;
+		color: var(--t-muted);
+		font-size: 12px;
+	}
+	/* off: the felt with a pulled plug */
+	.bj-off {
+		display: grid;
+		justify-items: center;
+		padding: 22px 16px 20px;
+		border-radius: 18px;
+		background: radial-gradient(120% 100% at 50% 0%, #2a4a33, #10241a);
+		box-shadow: inset 0 0 0 4px #4a3020, inset 0 0 0 7px #8a7444;
+		color: #fff6d0;
+		text-align: center;
+	}
+	.bj-off-art {
+		width: 96px;
+		height: 72px;
+	}
+	.bj-off-title {
+		margin-top: 6px;
+		font-size: 17px;
+		font-weight: 900;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.bj-off-body {
+		max-width: 34rem;
+		margin-top: 6px;
+		color: rgb(255 246 208 / 0.85);
+		font-size: 13px;
+	}
 	.bj-table {
 		display: grid;
 		gap: 10px;
@@ -676,6 +816,10 @@
 		.bj-card,
 		.bj-streak[data-hot='true'] {
 			animation: none;
+		}
+		.bj-switch,
+		.bj-knob {
+			transition: none;
 		}
 	}
 </style>
