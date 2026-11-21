@@ -1064,7 +1064,7 @@ export const en = {
 			return `${head}: every game ${which} of ${draws}${chance ? `, ${which} of ${draws + 1} in ${chance} %` : ''}`;
 		},
 		how: 'How luck works: the game is played out as usual, then (as often as the setting says) once or twice more behind the scenes, and the best result counts (or the worst, for minus). ±50 = always two tries, ±100 = always three. Karma luck adds to your settings like a third slider (the player sees only their karma luck, never yours): to make someone with lots of karma unlucky anyway, pull their slider further down or pick their result below.',
-		guide: 'Small steps go a long way. With the party odds the slot machines give back about 4× what goes in; at +50 about 8×, at −50 less than goes in (roughly half), at −100 almost nothing. Book Of Skedd runs on real odds (about 96 % back): at +50 about 1.8×, at −50 about a tenth; its gamble card follows luck too (+50 guesses the colour right 3 times in 4). On red at roulette, +50 wins about 3 spins in 4 and −50 about 1 in 4. At blackjack a player normally wins about 4 hands in 10; at +50 about 6, at −50 about 2.5.',
+		guide: 'Small steps go a long way. Every slot machine runs on normal odds (about 96–98 % back): at +50 about 1.8× what goes in, at −50 about a tenth, at −100 almost nothing. Book Of Skedd’s gamble card follows luck too (+50 guesses the colour right 3 times in 4). On red at roulette, +50 wins about 3 spins in 4 and −50 about 1 in 4. At blackjack a player normally wins about 4 hands in 10; at +50 about 6, at −50 about 2.5.',
 		changed: (n: number) => (n ? `${n} changed` : 'all normal'),
 		resetAll: 'Everything back to normal',
 		resetAsk: 'Put all odds, luck and picked results back to normal?',
@@ -1388,11 +1388,11 @@ export const en = {
 			biggest: 'Biggest win',
 			biggestSub: 'this week',
 			noBiggest: 'Jackpot up for grabs',
-			promo: ['Party odds on both slots: everybody wins', 'Your daily bonus lands every day you’re online', 'Abscar is the house: the house always eats', 'Hit something big and the whole squad sees it here'],
+			promo: ['Six slot machines, real odds, real tension', 'Your daily bonus lands every day you’re online', 'Abscar is the house: the house always eats', 'Hit something big and the whole squad sees it here'],
 			ago: (min: number) => (min < 1 ? 'just now' : min < 60 ? `${min} min ago` : min < 1440 ? `${Math.floor(min / 60)} h ago` : `${Math.floor(min / 1440)} d ago`),
 			hot: 'HOT',
 			hotLabel: 'Most wins in the squad today',
-			hotParty: 'Party odds: the big wins land here',
+			hotParty: 'The hottest machine on the floor',
 			gain: (n: number) => `+${n.toLocaleString('en-US')}`,
 			games: (n: number) => `${n.toLocaleString('en-US')} game${n === 1 ? '' : 's'}`,
 			place: (n: number) => (n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`),
@@ -1441,11 +1441,11 @@ export const en = {
 			weedWin: (x: number, raw: number, win: number) => `Weeds ×${x}: ${raw.toLocaleString('en-US')} → ${win.toLocaleString('en-US')} 🍔`,
 			weedLabel: (x: number) => `weed ×${x}`,
 			weedRow: 'Every weed on a winning screen adds up and multiplies its win (lines + ketchup), ×2 up to ×100. In normal spins only on reel 3, in free spins on every reel.',
-			/** party odds (2026-11-19, the user: "more wilds, double the wins, everyone should win, the jackpot more often, full screens") */
+			/** the extras left from the party odds (2026-11-19), rare since the normal odds (2026-11-21) */
 			randomWilds: (n: number) => (n === 1 ? 'A random WILD drops in!' : `${n} random WILDs drop in!`),
 			fullScreen: (symbol: string) => `FULL SCREEN: ${symbol}!`,
 			fullWin: (symbol: string, win: number) => `FULL SCREEN: ${symbol}! All 10 lines = ${win.toLocaleString('en-US')} 🍔`,
-			partyNote: 'Party odds: every pay is doubled and every symbol pays from 2 in a row. Random WILDs drop onto reels 2–4 now and then (in free spins on most spins, and they stick). Now and then the whole screen turns into one symbol (FULL SCREEN, all 10 lines pay five in a row); a screen full of WILDs is the BURGER JACKPOT. The wheel has two jackpot slices.',
+			partyNote: 'Rare extras: now and then random WILDs drop onto reels 2–4 (in free spins they stick), and once in a long while the whole screen turns into one symbol (FULL SCREEN, all 10 lines pay five in a row); a screen full of WILDs is the BURGER JACKPOT.',
 			maxWin: (x: number) => `MAX WIN: ${x.toLocaleString('en-US')}× your bet`,
 			maxNote: (x: number) => `One play (a spin with everything it starts, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`,
 			freeMore: (n: number) => `+${n} FREE SPINS!`,
@@ -1484,14 +1484,14 @@ export const en = {
 			buyWhat: { free: (n: number) => `${n} free spins`, box: 'the Burger Box', wheel: 'a spin of the bonus wheel' },
 			buyYes: 'Buy',
 			buyNo: 'Cancel',
-			buyNote: (free: number, box: number, wheel: number) => `Prices are times your bet: free spins ${free}×, Burger Box ${box}×, wheel ${wheel}×. They give back about as much as spinning (several times the price).`,
+			buyNote: (free: number, box: number, wheel: number) => `Prices are times your bet: free spins ${free}×, Burger Box ${box}×, wheel ${wheel}×. They give back about as much as spinning (a little less than the price, like a real casino).`,
 			lastWin: 'Win',
 			tiers: { win: 'WIN', big: 'BIG WIN', mega: 'MEGA WIN', jackpot: 'BURGER JACKPOT' },
 			lineWin: (line: number, count: number, symbol: string, win: number) => `Line ${line}: ${count} × ${symbol} = ${win} 🍔`,
 			scatterWin: (count: number, win: number, spins: number) => `${count} × Ketchup = ${win} 🍔 + ${spins} free spins`,
 			noWin: 'No win this time.',
 			paytable: 'Paytable & how it works',
-			how: 'Like a real video slot: 5 reels, 3 rows and 10 paylines. Each reel is a weighted strip, so pickles are common and burgers rare; every stop is equally likely (no near-miss tricks). Wins pay left to right from the first reel, 2, 3, 4 or 5 in a row, times your bet ÷ 10, the best win per line. WILD stands in for every paying symbol and pays the most itself. Ketchup pays anywhere on the screen and 3 or more give free spins (they can come again): every WILD that lands in them sticks where it is until they end (WILDs only land on reels 2, 3 and 4 there), random WILDs drop in and stick too, and weeds land on every reel. A weed carries a multiplier from ×2 up to ×100; when a spin wins, all the weeds on the screen add up and multiply its win. In normal spins weeds land only on reel 3. A BONUS box on each of reels 1, 3 and 5 opens the Burger Box: open boxes for burgers until one says COLLECT. A wheel on each of reels 2, 3 and 4 spins the bonus wheel: burgers, free spins or the jackpot. Both can come in free spins too. Or buy free spins, the Burger Box or a wheel spin straight away. Everything is decided the moment you pay; which box you tap only changes the order. This machine runs on party odds: in the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.',
+			how: 'Like a real video slot: 5 reels, 3 rows and 10 paylines. Each reel is a weighted strip, so pickles are common and burgers rare; every stop is equally likely (no near-miss tricks). Wins pay left to right from the first reel, 2, 3, 4 or 5 in a row, times your bet ÷ 10, the best win per line. WILD stands in for every paying symbol and pays the most itself. Ketchup pays anywhere on the screen and 3 or more give free spins (they can come again): every WILD that lands in them sticks where it is until they end (WILDs only land on reels 2, 3 and 4 there), random WILDs now and then drop in and stick too, and weeds land on every reel. A weed carries a multiplier from ×2 up to ×100; when a spin wins, all the weeds on the screen add up and multiply its win. In normal spins weeds land only on reel 3. A BONUS box on each of reels 1, 3 and 5 opens the Burger Box: open boxes for burgers until one says COLLECT. A wheel on each of reels 2, 3 and 4 spins the bonus wheel: burgers, free spins or the jackpot. Both can come in free spins too. Or buy free spins, the Burger Box or a wheel spin straight away. Everything is decided the moment you pay; which box you tap only changes the order. This machine runs on normal odds: in the long run it gives back about 98 % of what goes in, and about a quarter of spins win. Pretend burgers, never money.',
 			symbols: {
 				pickle: 'Pickle',
 				onion: 'Onion ring',
@@ -1548,13 +1548,13 @@ export const en = {
 			reelLeaf: (r: number) => `Reel ${r}: a leaf over the whole reel (WILD)`,
 			symbols: { lighter: 'Lighter', grinder: 'Grinder', papers: 'Rolling papers', brownie: 'Space brownie', bong: 'Bong', holk: 'Holk', x420: '420', leaf: 'Leaf (WILD)' },
 			paytable: 'Paytable & how it works',
-			how: 'A neon slot in the classic expanding-wild style: 5 reels, 3 rows and 10 paylines that pay both ways, from the left reel and from the right. Each reel is a weighted strip (lighters are common, 420s rare) and every stop is equally likely (no near-miss tricks). The leaf is the WILD: it lands only on reels 2, 3 and 4, grows over the whole reel and stays there while the other reels spin again for free (a respin). A new leaf in a respin grows too and gives one more respin, up to three. Leaves on all three middle reels at once = KUSHBURST: every win on that screen ×3. Everything is decided the moment you pay. This machine runs on party odds: in the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.',
+			how: 'A neon slot in the classic expanding-wild style: 5 reels, 3 rows and 10 paylines that pay both ways, from the left reel and from the right. Each reel is a weighted strip (lighters are common, 420s rare) and every stop is equally likely (no near-miss tricks). The leaf is the WILD: it lands only on reels 2, 3 and 4, grows over the whole reel and stays there while the other reels spin again for free (a respin). A new leaf in a respin grows too and gives one more respin, up to three. Leaves on all three middle reels at once = KUSHBURST: every win on that screen ×3. Everything is decided the moment you pay. This machine runs on normal odds: in the long run it gives back about 97 % of what goes in, and about a quarter of spins win. Pretend burgers, never money.',
 			leafRow: 'Lands on reels 2, 3 and 4 only. Grows over its reel, stands in for every symbol and holds while the other reels respin. Up to 3 respins.',
 			payRow: (a: number, b: number, c: number) => `3 → ${a} · 4 → ${b} · 5 → ${c}`,
 			payNote: 'Wins are times the line bet (your bet ÷ 10), on each of the 10 lines from the left reel and from the right reel; five in a row pays once.',
 			burstNote: (x: number) => `KUSHBURST: leaves on all three middle reels at once, and every win on that screen pays ×${x} (the respin after it too).`,
-			rainNote: (pct: number) => `Leaf rain: about ${pct} % of spins get one to three leaves blown onto the middle reels.`,
-			buyNote: (leaf: number, burst: number) => `Buy prices are times your bet: a spin with a leaf ${leaf}×, a KUSHBURST spin ${burst}×. They give back about as much as spinning (several times the price).`,
+			rainNote: (every: number) => `Leaf rain: about 1 spin in ${every.toLocaleString('en-US')} gets one to three leaves blown onto the middle reels.`,
+			buyNote: (leaf: number, burst: number) => `Buy prices are times your bet: a spin with a leaf ${leaf}×, a KUSHBURST spin ${burst}×. They give back about as much as spinning (a little less than the price, like a real casino).`,
 			maxNote: (x: number) => `One play (a spin with its respins) pays at most ${x.toLocaleString('en-US')}× your bet.`
 		},
 		/** Abscar's Fortune II, the Munchie Squad (2026-11-19, the user: "a new Abscar's Fortune like Pirots 5, our own symbols, crazy bonuses and free spins") */
@@ -1647,10 +1647,10 @@ export const en = {
 				`Abscar’s holk meter: every munchie taken fills it; at ${max} comes THE BIG HOLK: a giant holk smokes out the whole machine and ${wilds} sticky WILDs land all over the board (${free} in free spins). A sticky WILD stays in its cell (everything falls past it) until somebody takes it.`,
 			freeNote: (max: number) =>
 				`Hotbox Spins start from where the spin ended and keep everything: levels only go up, the field only grows, letters and the holk meter carry over, sticky WILDs nobody took stay put into the next spin, Abscar drops 2 WILDs next to the squad on every spin, and every time the holk meter fills up the Hotbox multiplier goes up by 1 (up to ×${max}) and multiplies every burger taken. Super Hotbox starts on the full 8 × 8 with every level at least 3, at ×2.`,
-			partyNote: 'Party odds: every pay is doubled (levels, coins and the coin game), WILDs, features and letters land far more often, Abscar drops WILDs into normal spins now and then, and now and then a MUNCHIE STORM turns every munchie on the board into one squad member’s.',
+			partyNote: 'Rare extras: now and then Abscar drops a WILD into a normal spin, and once in a long while a MUNCHIE STORM turns every munchie on the board into one squad member’s.',
 			munchNote: 'The Munchies: burger coins land on a 6 × 6 board with the squad in the corners and stay; 3 respins, and every new coin gives 3 again. ×2 / ×3 coins add up into one multiplier for the end, SQUAD coins take the value of every coin in their row and column, and a full board doubles everything.',
 			buyNote: (h: number, s: number, m: number) => `Buy bonus prices are times your bet: Hotbox Spins ${h}×, Super Hotbox ${s}×, The Munchies ${m}×. They give back about the same share as spinning.`,
-			rtpNote: 'Hotbox Spins come about once every 75 spins and The Munchies about once every 65. In the long run it gives back about 4½ times what goes in, so everybody wins. Pretend burgers, never money.',
+			rtpNote: 'Hotbox Spins come about once every 150 spins and The Munchies about once every 380. Normal odds: in the long run it gives back about 98 % of what goes in. Pretend burgers, never money.',
 			maxNote: (x: number) => `One play (a spin with everything it starts, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`
 		},
 		/** Book Of Skedd (book.ts, CasinoBook.svelte; 2026-11-20, the user: "a slot like Book Of Dead called Book Of Skedd, a cannabis leaf on the book, the bonus working the same, and gamble") */
@@ -1718,7 +1718,7 @@ export const en = {
 			bookRow: (a: number, b: number, c: number, spins: number) => `WILD on the lines and scatter: 3 → ${a}× bet · 4 → ${b}× · 5 → ${c}×, + ${spins} free spins`,
 			payNote: 'Line wins are times the bet per line. The spreading symbol pays its line win on every line you play.',
 			gambleNote: (steps: number, limit: number) => `Gamble: at most ${steps} times in a row, and only while what it would pay is at most ${limit}× your bet. A fair card from a full deck.`,
-			oddsNote: (x: number) => `Real odds like the real thing, not the party odds of the other machines: in the long run it gives back about 96 % of what goes in. Free spins come about once every 200 spins, and that’s where the big wins are. One spin with its free spins pays at most ${x.toLocaleString('en-US')}× your bet.`,
+			oddsNote: (x: number) => `Real odds like the real thing: in the long run it gives back about 96 % of what goes in. Free spins come about once every 200 spins, and that’s where the big wins are. One spin with its free spins pays at most ${x.toLocaleString('en-US')}× your bet.`,
 			reelLabel: (r: number, symbols: string) => `Reel ${r}: ${symbols}`
 		},
 		/** Abscar's Stash, the tumble slot (2026-11-20, the user: "a slot that works like 'sweet bonanza', an Abscar-friendly name, drugs instead of sweets") */
@@ -1783,9 +1783,9 @@ export const en = {
 			payRow: (a: string, b: string, c: string) => `8–9 → ${a} · 10–11 → ${b} · 12+ → ${c}`,
 			holkRow: (a: number, b: number, c: number, spins: number, re: number, more: number) => `4 → ${a}× bet · 5 → ${b}× · 6 → ${c}×, and ${spins} Sky High Spins (${re} in them: +${more})`,
 			cloudRow: '×2 up to ×100. On a winning screen every cloud adds up and multiplies the tumble win (not the holk pay).',
-			anteNote: 'Double chance: holks land more often, so Sky High Spins come about twice as often (about every 35 spins instead of every 53). A spin costs 25 % more; the win is worked out on your bet. Buying a bonus is off while it’s on.',
-			buyNote: (free: number, sup: number) => `Buy bonus prices are times your bet: Sky High Spins ${free}×, Super Sky High ${sup}× (every cloud ×10 or more). They give back about as much as spinning (several times the price).`,
-			rtpNote: 'Party odds like the other two machines: a win on almost every second spin, Sky High Spins about once every 53 spins, and in the long run it gives back about 4 times what goes in, so everybody wins. Pretend burgers, never money.'
+			anteNote: 'Double chance: holks land more often, so Sky High Spins come about twice as often (about every 155 spins instead of every 295). A spin costs 25 % more; the win is worked out on your bet. Buying a bonus is off while it’s on.',
+			buyNote: (free: number, sup: number) => `Buy bonus prices are times your bet: Sky High Spins ${free}×, Super Sky High ${sup}× (every cloud ×10 or more). They give back about as much as spinning (a little less than the price, like a real casino).`,
+			rtpNote: 'Normal odds: a win on about a quarter of spins, Sky High Spins about once every 300 spins, and in the long run it gives back about 96 % of what goes in. Pretend burgers, never money.'
 		},
 		/** Skeddwood (2026-11-20, the user: "another slot like Deadwood 2, called Skeddwood, the cowboy is Abscar's terminator exoskeleton with a cowboy hat") */
 		skeddwood: {
@@ -1873,7 +1873,7 @@ export const en = {
 			},
 			freeNote: 'Gold Rush Spins: every cowboy that lands stays put until the spins end, cowboys multiply each other, and a cowboy landing on a sticky one’s reel adds his multiplier to it. The Skedd landing upgrades to Divergence Spins (+2 spins). Divergence Spins: the Skedd stands on reel 5 on every spin, so the middle symbols split and every cowboy doubles on every spin.',
 			buyNote: (g: number, l: number, d: number) => `Buy bonus prices are times your bet: Gold Rush ${g}×, Lucky Draw ${l}× (4 in 5 Gold Rush, 1 in 5 Divergence), Divergence ${d}×. They give back about the same share as spinning.`,
-			rtpNote: 'Gold Rush comes about once every 75 spins, Divergence about once in 2,500. Party odds like the other machines: in the long run it gives back about 4 times what goes in, and about half the spins win. Pretend burgers, never money.',
+			rtpNote: 'Gold Rush comes about once every 280 spins, Divergence about once in 11,000. Normal odds: in the long run it gives back about 96–97 % of what goes in, and about a quarter of spins win. Pretend burgers, never money.',
 			maxNote: (x: number) => `One play (a spin with its free spins, or a bought bonus) pays at most ${x.toLocaleString('en-US')}× your bet.`,
 			fun: 'Our own take on a ways slot with nudging wilds: the squad on the posters, Abscar as the cowboy.'
 		},

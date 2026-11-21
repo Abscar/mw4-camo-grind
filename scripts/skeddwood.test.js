@@ -261,7 +261,7 @@ test('buy prices, the cap, tiers and the control room picks', () => {
 	assert.deepEqual(a.base.stops, stops);
 });
 
-test('long run: party odds like the other machines (about 4× back), about half the spins win', () => {
+test('long run: normal casino odds (about 96–97 % back), about a quarter of the spins win', () => {
 	const rand = seeded(2026);
 	const N = 120_000;
 	let paid = 0;
@@ -278,10 +278,10 @@ test('long run: party odds like the other machines (about 4× back), about half 
 		if (p.mode === 'divergence') div++;
 	}
 	const rtp = won / paid;
-	assert.ok(rtp > 2.8 && rtp < 6, `return ${rtp.toFixed(2)}×`);
-	assert.ok(hits / N > 0.42 && hits / N < 0.56, `hit rate ${(hits / N).toFixed(3)}`);
-	assert.ok(N / gold > 55 && N / gold < 110, `Gold Rush 1 in ${(N / gold).toFixed(0)}`);
-	assert.ok(div > 10 && N / div > 1200, `Divergence 1 in ${(N / div).toFixed(0)}`);
+	assert.ok(rtp > 0.75 && rtp < 1.25, `return ${rtp.toFixed(2)}×`);
+	assert.ok(hits / N > 0.22 && hits / N < 0.32, `hit rate ${(hits / N).toFixed(3)}`);
+	assert.ok(N / gold > 200 && N / gold < 400, `Gold Rush 1 in ${(N / gold).toFixed(0)}`);
+	assert.ok(div >= 2 && N / div > 4000, `Divergence 1 in ${(N / div).toFixed(0)}`);
 	for (const k of SKW_BUYS) {
 		let w = 0;
 		let c = 0;
@@ -291,6 +291,6 @@ test('long run: party odds like the other machines (about 4× back), about half 
 			w += p.win;
 			c += p.cost;
 		}
-		assert.ok(w / c > 2.5 && w / c < 6.5, `buy ${k}: ${(w / c).toFixed(2)}×`);
+		assert.ok(w / c > 0.6 && w / c < 1.5, `buy ${k}: ${(w / c).toFixed(2)}×`);
 	}
 });

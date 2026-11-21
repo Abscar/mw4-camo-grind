@@ -28,9 +28,16 @@
  *    Divergence the Skedd stands on reel 5 on every spin. Three GG tombstones in free spins = more spins.
  *  - Buy bonus: Gold Rush, Divergence, or the Lucky Draw (4 in 5 Gold Rush, 1 in 5 Divergence).
  *
- * PARTY ODDS like the other two machines (the user, 2026-11-19: "everyone should win, as if the money was
- * free"): more free spins than the original (8 + 8 instead of 5 + 6), bigger pays, more cowboys. Simulated
- * with .claude/testing/squad-casino/skeddwood-sim.mjs; scripts/skeddwood.test.js checks the ranges.
+ * NORMAL CASINO ODDS (2026-11-21, the user: "make the odds on all the slots completely normal"; until then
+ * party odds paid back ≈ 4.1×). Abscar sets luck by hand in the control room (casino-rig.ts adds it on top),
+ * so the machine itself is a fair, high-volatility one. Simulated with
+ * .claude/testing/squad-casino/skeddwood-sim.mjs (2M spins): RTP ≈ 96.5–97 % (base game ≈ 0.61, free spins
+ * ≈ 0.35), ≈ 27 % of spins win something, Gold Rush ≈ 1 in 280 (worth ≈ 90× the bet), Divergence ≈ 1 in
+ * 10–12k (≈ 450×), a cowboy shows ≈ every 8 spins, Quick Draw ≈ 1 in 50, the Skedd ≈ 1 in 40, High Noon
+ * ≈ 1 in 1,500. Bought features return ≈ 97 % (Gold Rush ≈ 88.5× for 91×, Divergence ≈ 470× for 485×,
+ * Lucky Draw ≈ 165× for 170×; 400k bought rounds each, the averages swing a lot below that). Reel 1 leans to the posters and reels 2–4 to the low
+ * symbols, so fewer spins line up a win. Still 8 + 8 free spins (more than the original's 5 + 6), paid for
+ * with longer reels. scripts/skeddwood.test.js checks the ranges.
  *
  * Everything is worked out the moment you pay (play / buy), so closing the page changes nothing. Pure, the
  * randomness passed in, so Node tests it. No browser APIs and no runes.
@@ -65,20 +72,20 @@ const PAYING = new Set<SkwSym>(PAY_SYMBOLS);
 const LOW_SET = new Set<SkwSym>(LOWS);
 
 /**
- * What 3, 4 and 5 reels pay per way, in hundredths of the bet (8 = 0.08 × the bet). The original's
- * paytable × 2.5 (party odds). Reel 5 has no low symbols, so five low symbols need the Skedd.
+ * What 3, 4 and 5 reels pay per way, in hundredths of the bet (8 = 0.08 × the bet). Tuned for normal odds
+ * (≈ 96.5 % back). Reel 5 has no low symbols, so five low symbols need the Skedd.
  */
 export const PAYS: Record<SkwPay, [number, number, number]> = {
-	ten: [28, 40, 120],
-	jack: [28, 40, 120],
-	queen: [28, 40, 120],
-	king: [40, 64, 144],
-	ace: [40, 64, 144],
-	ingman: [48, 72, 180],
-	lars: [48, 84, 240],
-	jeeven: [60, 96, 300],
-	phil: [60, 108, 360],
-	sixgun: [72, 120, 420]
+	ten: [20, 30, 90],
+	jack: [20, 30, 90],
+	queen: [20, 30, 90],
+	king: [30, 48, 109],
+	ace: [30, 48, 109],
+	ingman: [35, 54, 134],
+	lars: [35, 62, 179],
+	jeeven: [45, 71, 224],
+	phil: [45, 80, 268],
+	sixgun: [54, 90, 312]
 };
 
 /** Free spins: how many each mode starts with, and what 3+ tombstones / the upgrade add. */
@@ -101,7 +108,7 @@ export const SKW_BETS = [10, 20, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 export type SkwBuy = 'gold' | 'lucky' | 'divergence';
 export const SKW_BUYS: SkwBuy[] = ['gold', 'lucky', 'divergence'];
 /** What a bought feature costs, × the bet. */
-export const BUY_PRICE: Record<SkwBuy, number> = { gold: 38, lucky: 80, divergence: 250 };
+export const BUY_PRICE: Record<SkwBuy, number> = { gold: 91, lucky: 170, divergence: 485 };
 /** The Lucky Draw: the chance it's Divergence (otherwise Gold Rush). */
 export const LUCKY_DIVERGENCE = 0.2;
 
@@ -123,16 +130,18 @@ interface StripSpec {
 	skedds?: number;
 }
 
-const PAYS_1_4: Partial<Record<SkwPay, number>> = { ten: 12, jack: 12, queen: 11, king: 11, ace: 10, ingman: 5, lars: 4, jeeven: 4, phil: 3, sixgun: 3 };
-const PAYS_5: Partial<Record<SkwPay, number>> = { ingman: 9, lars: 8, jeeven: 7, phil: 6, sixgun: 4 };
-const FREE_PAYS_1_4: Partial<Record<SkwPay, number>> = { ten: 18, jack: 18, queen: 17, king: 16, ace: 15, ingman: 8, lars: 6, jeeven: 6, phil: 5, sixgun: 4 };
-const FREE_PAYS_5: Partial<Record<SkwPay, number>> = { ingman: 30, lars: 28, jeeven: 25, phil: 22, sixgun: 15 };
+/** Reel 1 leans to the posters, reels 2–4 to the low symbols, so fewer spins line up (hit rate ≈ 27 %). */
+const PAYS_1: Partial<Record<SkwPay, number>> = { ten: 8, jack: 8, queen: 8, king: 8, ace: 8, ingman: 22, lars: 22, jeeven: 21, phil: 21, sixgun: 20 };
+const PAYS_1_4: Partial<Record<SkwPay, number>> = { ten: 22, jack: 22, queen: 21, king: 20, ace: 20, ingman: 9, lars: 9, jeeven: 8, phil: 8, sixgun: 7 };
+const PAYS_5: Partial<Record<SkwPay, number>> = { ingman: 10, lars: 9, jeeven: 8, phil: 7, sixgun: 6 };
+const FREE_PAYS_1_4: Partial<Record<SkwPay, number>> = { ten: 22, jack: 22, queen: 21, king: 20, ace: 20, ingman: 12, lars: 11, jeeven: 10, phil: 9, sixgun: 8 };
+const FREE_PAYS_5: Partial<Record<SkwPay, number>> = { ingman: 20, lars: 18, jeeven: 16, phil: 14, sixgun: 12 };
 
 const BASE_SPECS: StripSpec[] = [
-	{ pays: PAYS_1_4, cylinders: 1 },
-	{ pays: PAYS_1_4, cowboys: 1, skulls: 5, stars: 1 },
-	{ pays: PAYS_1_4, cowboys: 1, skulls: 5 },
-	{ pays: PAYS_1_4, cowboys: 1, skulls: 5, stars: 1 },
+	{ pays: PAYS_1, cylinders: 1 },
+	{ pays: PAYS_1_4, cowboys: 1, skulls: 6, stars: 1 },
+	{ pays: PAYS_1_4, cowboys: 1, skulls: 6 },
+	{ pays: PAYS_1_4, cowboys: 1, skulls: 6, stars: 1 },
 	{ pays: PAYS_5, skedds: 1 }
 ];
 /** Free spins' reels: tombstones on reels 1–4, no skulls, the Skedd rarer on reel 5. */

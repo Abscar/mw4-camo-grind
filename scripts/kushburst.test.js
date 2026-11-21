@@ -1,6 +1,6 @@
 // Kushburst, BurgiCasino's expanding-leaf slot (src/lib/kushburst.ts): strips, both-ways lines, the leaf
 // that grows over its reel and gives respins, KUSHBURST ×3, buys, the cap, and the long-run return over
-// many seeded spins (party odds: about 4× back). `npm test`.
+// many seeded spins (normal odds: about 97 % back). `npm test`.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
@@ -146,7 +146,7 @@ test('buys: priced × the bet, start with a leaf / a KUSHBURST', () => {
 	}
 });
 
-test('the long run: party odds, about 4× back, the features come often enough', () => {
+test('the long run: normal odds, about 97 % back, the features come often enough', () => {
 	const rand = seeded(20261120);
 	const n = 200000;
 	let paid = 0;
@@ -163,10 +163,10 @@ test('the long run: party odds, about 4× back, the features come often enough',
 		if (p.steps.some((s) => s.mult > 1)) burst++;
 	}
 	const rtp = won / paid;
-	assert.ok(rtp > 3 && rtp < 5, `RTP ${rtp.toFixed(3)}`);
-	assert.ok(hits / n > 0.45 && hits / n < 0.65, `hit rate ${(hits / n).toFixed(3)}`);
-	assert.ok(n / leaf > 3 && n / leaf < 7, `a leaf every ${(n / leaf).toFixed(1)} spins`);
-	assert.ok(n / burst > 80 && n / burst < 260, `a KUSHBURST every ${(n / burst).toFixed(0)} spins`);
+	assert.ok(rtp > 0.9 && rtp < 1.03, `RTP ${rtp.toFixed(3)}`);
+	assert.ok(hits / n > 0.2 && hits / n < 0.33, `hit rate ${(hits / n).toFixed(3)}`);
+	assert.ok(n / leaf > 7 && n / leaf < 12, `a leaf every ${(n / leaf).toFixed(1)} spins`);
+	assert.ok(n / burst > 800 && n / burst < 2200, `a KUSHBURST every ${(n / burst).toFixed(0)} spins`);
 	for (const k of KUSH_BUYS) {
 		let c = 0;
 		let w = 0;
@@ -175,6 +175,6 @@ test('the long run: party odds, about 4× back, the features come often enough',
 			c += p.cost;
 			w += p.win;
 		}
-		assert.ok(w / c > 2.8 && w / c < 5, `buy ${k} gives back ${(w / c).toFixed(3)}×`);
+		assert.ok(w / c > 0.88 && w / c < 1.06, `buy ${k} gives back ${(w / c).toFixed(3)}×`);
 	}
 });

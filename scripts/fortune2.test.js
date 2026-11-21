@@ -200,7 +200,7 @@ test('The Munchies: respins start over with every new coin, squad coins take the
 	}
 });
 
-test('party extras: Abscar drops WILDs on every free spin, a MUNCHIE STORM turns the whole board one colour', () => {
+test('extras (rare since the normal odds): Abscar drops WILDs now and then, a MUNCHIE STORM turns the whole board one colour', () => {
 	const rand = seeded(23);
 	let storms = 0;
 	let baseDrops = 0;
@@ -209,11 +209,6 @@ test('party extras: Abscar drops WILDs on every free spin, a MUNCHIE STORM turns
 		for (const s of spinsOf(p)) {
 			const v = startView(s);
 			const isFree = p.free.includes(s);
-			// a free spin: right after the fill Abscar drops WILDs next to the squad
-			if (isFree) {
-				const d = s.events.find((e) => e.t === 'drop');
-				assert.ok(d && d.add.length > 0 && d.add.every(([piece]) => piece.kind === 'wild'), 'free spin starts with a WILD drop');
-			}
 			for (const ev of s.events) {
 				if (ev.t === 'drop' && !isFree && ev.add.every(([piece]) => piece.kind === 'wild') && s.events.indexOf(ev) <= 3) baseDrops++;
 				applyEvent(v, ev);
@@ -226,7 +221,7 @@ test('party extras: Abscar drops WILDs on every free spin, a MUNCHIE STORM turns
 		}
 	}
 	assert.ok(storms > 5, `${storms} storms`);
-	assert.ok(baseDrops > 100, `${baseDrops} WILD drops in normal spins`);
+	assert.ok(baseDrops > 40, `${baseDrops} WILD drops in normal spins`);
 });
 
 test('the big holk: a full meter lands sticky WILDs all over the board; they hold their cell and stay into the next free spin', () => {
@@ -323,7 +318,7 @@ test('a play pays its spins and coin games rounded, capped at MAX_WIN × the bet
 	}
 });
 
-test('long run: party odds, several times the bet back from spinning and from each bought feature', () => {
+test('long run: normal odds, about 97 % back from spinning and from each bought feature', () => {
 	const rand = seeded(2026);
 	let paid = 0;
 	let won = 0;
@@ -336,9 +331,9 @@ test('long run: party odds, several times the bet back from spinning and from ea
 		if (p.bonus) bonus++;
 	}
 	const rtp = won / paid;
-	// heavy tail (free spins), so a wide range; fortune2-sim.mjs over millions of spins lands ≈ 4×
-	assert.ok(rtp > 2.8 && rtp < 6.5, `RTP ${rtp}`);
-	assert.ok(N / bonus > 50 && N / bonus < 110, `free spins 1 in ${N / bonus}`);
+	// heavy tail (free spins), so a wide range; fortune2-sim.mjs over millions of spins lands ≈ 99 %
+	assert.ok(rtp > 0.8 && rtp < 1.2, `RTP ${rtp}`);
+	assert.ok(N / bonus > 110 && N / bonus < 200, `free spins 1 in ${N / bonus}`);
 	for (const kind of BUY_KINDS) {
 		let c = 0;
 		let w = 0;
@@ -348,6 +343,6 @@ test('long run: party odds, several times the bet back from spinning and from ea
 			c += p.cost;
 			w += p.win;
 		}
-		assert.ok(w / c > 2.5 && w / c < 6.5, `${kind}: ${w / c}`);
+		assert.ok(w / c > 0.75 && w / c < 1.25, `${kind}: ${w / c}`);
 	}
 });

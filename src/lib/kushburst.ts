@@ -11,13 +11,16 @@
  *    (an expanding wild), the leaf reels hold and the other reels spin again for free (a respin). A new leaf
  *    in the respin grows too and gives one more respin, so at most three respins.
  *  - KUSHBURST: all three middle reels leaves at once = that screen pays ×3 (KUSH_MULT).
- *  - Leaf rain (party odds): now and then a paid spin gets one to three leaves blown onto the middle reels.
+ *  - Leaf rain: once in a while (rare) a paid spin gets one to three leaves blown onto the middle reels.
  *  - Buy: a spin that starts with a leaf on a middle reel, or one that starts as a KUSHBURST.
  *  - A play (a spin with its respins, or a bought one) pays at most MAX_WIN × the bet.
  *
- * PARTY ODDS like the two Abscar's Fortune machines (the user, 2026-11-19: "everyone should win, as if the
- * money was free"): in the long run it gives back about 4× what goes in on purpose (pretend burgers).
- * Simulated with .claude/testing/squad-casino/kush-sim.mjs; scripts/kushburst.test.js checks the ranges.
+ * NORMAL CASINO ODDS (2026-11-21, the user: "make the odds on all the slots completely normal"; the party
+ * odds of 2026-11-20 gave back ≈ 3.9×). Abscar's control room adds luck on top (casino-rig.ts), so the base
+ * game is a fair machine: simulated over 1.5M spins (.claude/testing/squad-casino/kush-sim.mjs) it gives back
+ * ≈ 97 % (base screens ≈ 45 %, respins ≈ 52 % of which KUSHBURST screens ≈ 18 %), ≈ 27 % of spins win, a leaf
+ * (respin) ≈ 1 spin in 9, a KUSHBURST ≈ 1 in 1,300, leaf rain ≈ 1 in 500, ≥ 25× the bet ≈ 1 in 250; the buys
+ * give back ≈ 96–98 % (a leaf 8×, a KUSHBURST 250× the bet). scripts/kushburst.test.js checks the ranges.
  * Every stop is equally likely (no near-miss tricks).
  *
  * Everything is worked out the moment you pay (play / buy return every step), then the page shows it.
@@ -40,15 +43,19 @@ export const KUSH_ROWS = 3;
 /** The reels a leaf lands on (and grows over). */
 export const LEAF_REELS = [1, 2, 3];
 
-/** Stops per paying symbol on every reel (the weighting: lighters common, 420s rare). */
-const WEIGHTS: Record<KushPay, number> = {
-	lighter: 9,
-	grinder: 9,
-	papers: 8,
-	brownie: 7,
-	bong: 5,
-	holk: 4,
-	x420: 3
+/**
+ * Stops per paying symbol on each reel (reel 1 … reel 5; 80 per reel). The outer four reels lean on the
+ * cheap symbols (lighters common, 420s rare), the middle reel on the dear ones, so three in a row doesn't
+ * come too easily (about one spin in four wins, like a real machine of this kind).
+ */
+const WEIGHTS: Record<KushPay, [number, number, number, number, number]> = {
+	lighter: [18, 18, 2, 18, 18],
+	grinder: [18, 18, 2, 18, 18],
+	papers: [15, 15, 4, 15, 15],
+	brownie: [12, 12, 10, 12, 12],
+	bong: [8, 8, 20, 8, 8],
+	holk: [6, 6, 22, 6, 6],
+	x420: [3, 3, 20, 3, 3]
 };
 /** Leaf stops per reel (only on reels 2–4). */
 const LEAF_STOPS = [0, 1, 1, 1, 0];
@@ -57,7 +64,7 @@ const LEAF_STOPS = [0, 1, 1, 1, 0];
 export const KUSH_STRIPS: KushSymbol[][] = Array.from({ length: KUSH_REELS }, (_, r) => shuffled(r));
 
 function shuffled(reel: number): KushSymbol[] {
-	const list: KushSymbol[] = KUSH_PAYING.flatMap((s) => Array<KushSymbol>(WEIGHTS[s]).fill(s));
+	const list: KushSymbol[] = KUSH_PAYING.flatMap((s) => Array<KushSymbol>(WEIGHTS[s][reel]).fill(s));
 	const leaves = LEAF_STOPS[reel];
 	let x = 0x2545f491 ^ (reel * 0x9e3779b1);
 	const next = () => {
@@ -80,7 +87,7 @@ function shuffled(reel: number): KushSymbol[] {
 	return out;
 }
 
-/** What 3, 4 and 5 in a row pay, times the line bet (= the bet ÷ 10). Party odds. */
+/** What 3, 4 and 5 in a row pay, times the line bet (= the bet ÷ 10). */
 export const KUSH_PAYS: Record<KushPay, [number, number, number]> = {
 	lighter: [4, 10, 25],
 	grinder: [4, 10, 25],
@@ -92,8 +99,8 @@ export const KUSH_PAYS: Record<KushPay, [number, number, number]> = {
 };
 /** A screen with all three middle reels leaves (a KUSHBURST) pays this many times over. */
 export const KUSH_MULT = 3;
-/** Leaf rain: the chance a paid spin gets leaves blown in, and how many ([leaves, how often]). */
-export const LEAF_RAIN = 0.04;
+/** Leaf rain: the chance a paid spin gets leaves blown in (rare: about 1 spin in 500), and how many ([leaves, how often]). */
+export const LEAF_RAIN = 0.002;
 export const RAIN_LEAVES: [number, number][] = [
 	[1, 70],
 	[2, 25],
@@ -110,7 +117,7 @@ export const KUSH_LINES = 10;
 export type KushBuy = 'leaf' | 'burst';
 export const KUSH_BUYS: KushBuy[] = ['leaf', 'burst'];
 /** What a bought spin costs, × the bet. */
-export const KUSH_BUY_PRICE: Record<KushBuy, number> = { leaf: 4, burst: 75 };
+export const KUSH_BUY_PRICE: Record<KushBuy, number> = { leaf: 8, burst: 250 };
 
 /* ---------- results ---------- */
 

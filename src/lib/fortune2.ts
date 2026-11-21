@@ -93,7 +93,7 @@ export const fieldSize = (open: number) => OPEN[open].r1 - OPEN[open].r0 + 1;
 
 export const LEVELS = 7;
 /** What one munchie pays at its colour's level 1–7, in hundredths of the bet. */
-export const LEVEL_PAYS = [4, 10, 20, 32, 52, 84, 140];
+export const LEVEL_PAYS = [2, 5, 10, 16, 26, 42, 70];
 export const LETTERS = ['M', 'U', 'N', 'C', 'H'];
 /** Munchies taken to fill Abscar's holk meter. */
 export const METER_MAX = 30;
@@ -103,16 +103,16 @@ export const METER_MAX = 30;
  * WILDs on this many munchies all over the field (fewer in free spins, where they carry over).
  */
 export const HOLK_WILDS = 10;
-export const HOLK_WILDS_FREE = 8;
+export const HOLK_WILDS_FREE = 6;
 
 /** Burger coins on the board: [hundredths of the bet, how often]. */
 export const COIN_VALUES: [number, number][] = [
-	[20, 38],
-	[40, 30],
-	[100, 17],
-	[200, 10],
-	[500, 4],
-	[1000, 1]
+	[10, 38],
+	[20, 30],
+	[50, 17],
+	[100, 10],
+	[250, 4],
+	[500, 1]
 ];
 
 /** What a new cell holds: [kind, weight] (items are split evenly over the four colours). */
@@ -144,23 +144,30 @@ const table = (ketchup: number, f: Partial<Record<Kind, number>>): Table => [
  * Abscar drops WILDs next to the squad on every free spin (and now and then in a normal one), and a MUNCHIE
  * STORM now and then turns every munchie on the board into one squad member's. It gives back far more than
  * it takes on purpose (pretend burgers); fortune2-sim.mjs has the numbers.
+ *
+ * NORMAL ODDS AGAIN (2026-11-20, the user: "gör så att abscars fortune och mybots 5 får vanliga odds igen, så
+ * att jag styr all odds, tur osv genom admin panelen"): the pays, features, ketchup, retriggers, coin game and
+ * Hotbox cap are back at the values from before the party odds; the storm and Abscar's WILD drops stay but
+ * rarely (STORM_CHANCE, BASE_WILD_CHANCE; no WILD drop on every free spin), the big holk drops 6 sticky WILDs in
+ * free spins (was 8), the Hotbox multiplier stops at ×8 (MULT_MAX; ×15 ran away with the big holk) and the buys are
+ * priced for ≈ 96 %. Simulated (fortune2-sim.mjs): RTP ≈ 99 %, Hotbox ≈ 1 in 150 worth ≈ 53× the bet. Abscar's control room (casino-rig.ts) does the rest.
  */
-const BASE_FEATURES = { wild: 4, up: 3, swap: 1.0, coin: 2, frag: 1.4, letter: 6 };
-const FREE_FEATURES = { wild: 1.7, up: 1.3, swap: 0.8, coin: 1.2, frag: 1.0, letter: 1.8 };
-export const BASE_TABLES: Tables = { fill: table(1.9, BASE_FEATURES), fall: table(0.05, BASE_FEATURES) };
-export const FREE_TABLES: Tables = { fill: table(1.3, FREE_FEATURES), fall: table(0.05, FREE_FEATURES) };
+const BASE_FEATURES = { wild: 2.2, up: 2.2, swap: 0.7, coin: 1.35, frag: 1.0, letter: 4.2 };
+const FREE_FEATURES = { wild: 2.0, up: 1.5, swap: 0.8, coin: 1.2, frag: 1.0, letter: 1.4 };
+export const BASE_TABLES: Tables = { fill: table(1.38, BASE_FEATURES), fall: table(0.05, BASE_FEATURES) };
+export const FREE_TABLES: Tables = { fill: table(1.23, FREE_FEATURES), fall: table(0.05, FREE_FEATURES) };
 /** MUNCHIE STORM: chance per spin (normal and free) that every munchie turns into one squad member's. */
-export const STORM_CHANCE = 1 / 120;
+export const STORM_CHANCE = 1 / 600;
 /** Abscar's WILD drop: WILDs next to the squad on every free spin; in a normal spin now and then. */
-export const FREE_WILD_DROPS = 2;
-export const BASE_WILD_CHANCE = 0.15;
-export const BASE_WILD_DROPS = 2;
+export const FREE_WILD_DROPS = 0;
+export const BASE_WILD_CHANCE = 0.03;
+export const BASE_WILD_DROPS = 1;
 
 export const FREE_SPINS = 10;
 /** Ketchups in a free spin → more spins. */
 export const RETRIGGER: [number, number][] = [
-	[4, 6],
-	[3, 4]
+	[4, 5],
+	[3, 3]
 ];
 export const FREE_MAX = 60;
 export const SUPER_LEVEL = 3;
@@ -170,7 +177,7 @@ export const SUPER_LEVEL = 3;
  * free spins is multiplied by it (the coin game isn't).
  */
 export const SUPER_MULT = 2;
-export const MULT_MAX = 3;
+export const MULT_MAX = 8;
 /** Safety nets: walking rounds per spin, steps per walk. */
 const MAX_ROUNDS = 120;
 const MAX_STEPS = 64;
@@ -186,13 +193,13 @@ export const MUNCH_RESPINS = 3;
 /** Chance per empty cell per respin that a coin lands there. */
 export const MUNCH_CHANCE = 0.04;
 export const MUNCH_CASH: [number, number][] = [
-	[24, 34],
-	[50, 30],
-	[100, 18],
-	[240, 11],
-	[560, 5],
-	[1200, 1.5],
-	[3000, 0.5]
+	[12, 34],
+	[25, 30],
+	[50, 18],
+	[120, 11],
+	[280, 5],
+	[600, 1.5],
+	[1500, 0.5]
 ];
 /** What kind a landing coin is: [kind, weight]. */
 const MUNCH_KINDS: ['cash' | 'mult' | 'squad', number][] = [
@@ -288,7 +295,7 @@ export interface F2Spin {
 export type F2Buy = 'hotbox' | 'super' | 'munchies';
 export const BUY_KINDS: F2Buy[] = ['hotbox', 'super', 'munchies'];
 /** What a bought feature costs, × the bet. */
-export const BUY_PRICE: Record<F2Buy, number> = { hotbox: 30, super: 75, munchies: 12 };
+export const BUY_PRICE: Record<F2Buy, number> = { hotbox: 47, super: 173, munchies: 26 };
 export type Bonus = 'hotbox' | 'super';
 
 export interface F2Play {

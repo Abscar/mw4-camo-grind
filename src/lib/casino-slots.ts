@@ -45,7 +45,13 @@
  * FULL SCREEN (FULL_CHANCE; all WILDs = the BURGER JACKPOT), two jackpot slices on the wheel, cheaper buys.
  * It now gives back about 4× what goes in on purpose (pretend burgers): ≈ 68 % of spins win, free spins
  * about every 50 spins, Burger Box / wheel about every 125, the jackpot about 1 in 15,000 (it was ≈ 1 in
- * 330,000). The ≈ 97 % notes above are history. Simulated with slot-sim4.mjs; the test checks the ranges.
+ * 330,000). Simulated with slot-sim4.mjs; the test checks the ranges.
+ *
+ * NORMAL ODDS AGAIN (2026-11-21, the user: "make the odds on all the slots completely normal", so Abscar steers
+ * odds and luck only from the control room, casino-rig.ts): pays, ketchup / box / wheel stops, free spins and the
+ * wheel are back at the values from before the party odds; random WILDs and FULL SCREEN stay but rarely
+ * (BASE_RANDOM_CHANCE, FREE_RANDOM_WILDS, FULL_CHANCE). Simulated: RTP ≈ 98 % (lines .63, free .18, box .09,
+ * wheel .08), hit ≈ 27 %, free spins ≈ every 59 spins, box / wheel ≈ every 260, buys ≈ 96–99 %.
  *
  * Pure, the randomness passed in, so Node tests it. No browser APIs and no runes.
  */
@@ -74,13 +80,13 @@ const WEIGHTS: Record<PaySymbol, number> = {
 	wild: 2
 };
 /** Ketchup stops per reel. */
-const SCATTER_STOPS = [3, 3, 3, 2, 2];
+const SCATTER_STOPS = [3, 3, 2, 2, 2];
 /** The reels each bonus symbol sits on (one visible on each of them = the bonus). */
 export const BOX_REELS = [0, 2, 4];
 export const WHEEL_REELS = [1, 2, 3];
 /** Stops per bonus symbol on each reel (0 on the reels it doesn't sit on). */
-const BOX_STOPS = [4, 0, 4, 0, 4];
-const WHEEL_STOPS = [0, 4, 4, 4, 0];
+const BOX_STOPS = [3, 0, 3, 0, 3];
+const WHEEL_STOPS = [0, 3, 3, 3, 0];
 /**
  * Random WILDs (2026-11-19, the user: "more wilds, more random sticky wilds"): they drop onto reels 2–4
  * (never reels 1 or 5, so they always stand in for a symbol rather than making a WILD-only line). In free
@@ -88,10 +94,10 @@ const WHEEL_STOPS = [0, 4, 4, 4, 0];
  */
 export const RANDOM_WILD_REELS = [1, 2, 3];
 export const FREE_RANDOM_WILDS: [number, number][] = [
-	[0, 88],
-	[1, 12]
+	[0, 99],
+	[1, 1]
 ];
-export const BASE_RANDOM_CHANCE = 0.06;
+export const BASE_RANDOM_CHANCE = 0.003;
 export const BASE_RANDOM_WILDS: [number, number][] = [
 	[1, 60],
 	[2, 30],
@@ -165,33 +171,33 @@ function spread(reel: number, weeds: number, wilds: number): SlotSymbol[] {
 
 /** What 3, 4 and 5 in a row pay, times the line bet (= the bet ÷ 10). */
 export const PAYS: Record<PaySymbol, [number, number, number]> = {
-	pickle: [16, 40, 140],
-	onion: [16, 40, 140],
-	tomato: [16, 50, 200],
-	cheese: [30, 80, 300],
-	fries: [40, 120, 400],
-	shake: [60, 160, 700],
-	hotdog: [70, 300, 1200],
-	burger: [150, 600, 3000],
-	wild: [300, 1500, 10000]
+	pickle: [8, 20, 70],
+	onion: [8, 20, 70],
+	tomato: [8, 25, 100],
+	cheese: [15, 40, 150],
+	fries: [20, 60, 200],
+	shake: [30, 80, 350],
+	hotdog: [35, 150, 600],
+	burger: [75, 300, 1500],
+	wild: [150, 750, 5000]
 };
 /**
  * Symbols that also pay for just 2 in a row from the first reel (times the line bet). Wild and burger
  * since 2026-11-16 ("raise the odds a bit"); every pay doubled and hot dog + shake added on 2026-11-19
  * (the user: "more wins, double them, everyone should win, as if the money was free").
  */
-export const PAYS2: Partial<Record<PaySymbol, number>> = { pickle: 1, onion: 1, tomato: 1, cheese: 2, fries: 2, shake: 4, hotdog: 6, burger: 8, wild: 16 };
+export const PAYS2: Partial<Record<PaySymbol, number>> = { wild: 8, burger: 4 };
 /** Ketchup anywhere: what 3, 4, 5 pay times the whole bet, and the free spins they give. */
-export const SCATTER_PAYS: [number, number, number] = [4, 20, 100];
-export const FREE_SPINS: [number, number, number] = [8, 10, 15];
-/** Free spins' line and ketchup wins multiplier (×1 from 2026-11-16, ×2 again since the party odds of 2026-11-19). */
+export const SCATTER_PAYS: [number, number, number] = [2, 10, 50];
+export const FREE_SPINS: [number, number, number] = [7, 10, 16];
+/** Free spins' line and ketchup wins multiplier (×1 since 2026-11-16). */
 export const FREE_MULT = 1;
 /**
  * FULL SCREEN (2026-11-19, the user: "the jackpot more often, full screens of the same symbol, lots of
  * crazy stuff"): now and then the whole screen turns into one paying symbol, so all 10 lines pay five in a
  * row; a screen full of WILDs is the BURGER JACKPOT. Sticky WILDs stay WILDs.
  */
-export const FULL_CHANCE = 1 / 1500;
+export const FULL_CHANCE = 1 / 100000;
 export const FULL_SYMBOLS: [PaySymbol, number][] = [
 	['pickle', 25],
 	['onion', 25],
@@ -233,14 +239,14 @@ export const SLOT_BETS = [10, 20, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 export const BOX_COUNT = 12;
 /** What a box can hold: [× the bet, how often]. */
 export const BOX_PRIZES: [number, number][] = [
-	[2, 30],
-	[4, 26],
-	[6, 18],
-	[10, 12],
-	[16, 7],
-	[24, 4],
-	[50, 2],
-	[100, 1]
+	[1, 30],
+	[2, 26],
+	[3, 18],
+	[5, 12],
+	[8, 7],
+	[12, 4],
+	[25, 2],
+	[50, 1]
 ];
 /** The first picks never say COLLECT. */
 export const BOX_SAFE = 3;
@@ -258,18 +264,18 @@ export interface WheelSlice {
 }
 /** The wheel's 12 slices, clockwise from the top; each as likely as any other. */
 export const WHEEL: WheelSlice[] = [
-	{ win: 10 },
+	{ win: 5 },
 	{ spins: 8 },
-	{ win: 16 },
-	{ win: 200, jackpot: true },
+	{ win: 8 },
+	{ win: 12 },
 	{ spins: 10 },
-	{ win: 10 },
-	{ win: 40 },
+	{ win: 5 },
 	{ win: 20 },
+	{ win: 10 },
 	{ spins: 8 },
-	{ win: 16 },
-	{ win: 80 },
-	{ win: 200, jackpot: true }
+	{ win: 8 },
+	{ win: 40 },
+	{ win: 100, jackpot: true }
 ];
 
 /* ---------- buy bonus ---------- */
@@ -277,7 +283,7 @@ export const WHEEL: WheelSlice[] = [
 export type BuyKind = 'free' | 'box' | 'wheel';
 export const BUY_KINDS: BuyKind[] = ['free', 'box', 'wheel'];
 /** What a bought feature costs, × the bet. */
-export const BUY_PRICE: Record<BuyKind, number> = { free: 20, box: 11, wheel: 17 };
+export const BUY_PRICE: Record<BuyKind, number> = { free: 21, box: 21, wheel: 22 };
 /** Free spins you get when you buy them. */
 export const BUY_FREE_SPINS = 10;
 

@@ -201,7 +201,7 @@ test('a lone spin can run on its own random source', () => {
 	for (const col of s.start) assert.equal(col.length, ROWS);
 });
 
-test('the long run: party odds (several times back), wins on almost half the spins, Sky High Spins every ~50', () => {
+test('the long run: normal odds (≈ 96 % back), wins on about a quarter of the spins, Sky High Spins every ~300', () => {
 	const rand = seeded(2026);
 	const N = 60000;
 	let paid = 0;
@@ -216,9 +216,9 @@ test('the long run: party odds (several times back), wins on almost half the spi
 		if (p.bonus) bonus++;
 	}
 	const rtp = won / paid;
-	assert.ok(rtp > 2.8 && rtp < 6, `RTP ${rtp.toFixed(2)}`);
-	assert.ok(hits / N > 0.4 && hits / N < 0.55, `hit ${(hits / N).toFixed(3)}`);
-	assert.ok(N / bonus > 35 && N / bonus < 80, `bonus 1 in ${Math.round(N / bonus)}`);
+	assert.ok(rtp > 0.75 && rtp < 1.2, `RTP ${rtp.toFixed(2)}`);
+	assert.ok(hits / N > 0.2 && hits / N < 0.28, `hit ${(hits / N).toFixed(3)}`);
+	assert.ok(N / bonus > 200 && N / bonus < 420, `bonus 1 in ${Math.round(N / bonus)}`);
 	for (const kind of BUY_KINDS) {
 		let p2 = 0;
 		let w2 = 0;
@@ -227,6 +227,6 @@ test('the long run: party odds (several times back), wins on almost half the spi
 			p2 += p.cost;
 			w2 += p.win;
 		}
-		assert.ok(w2 / p2 > 2.5 && w2 / p2 < 6.5, `${kind} ${(w2 / p2).toFixed(2)}`);
+		assert.ok(w2 / p2 > 0.75 && w2 / p2 < 1.25, `${kind} ${(w2 / p2).toFixed(2)}`);
 	}
 });

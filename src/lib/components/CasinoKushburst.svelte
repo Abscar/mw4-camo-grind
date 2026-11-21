@@ -451,7 +451,7 @@
 	</ul>
 	<p class="pb-1">{s.payNote}</p>
 	<p class="pb-1">{s.burstNote(KUSH_MULT)}</p>
-	<p class="pb-1">{s.rainNote(Math.round(LEAF_RAIN * 100))}</p>
+	<p class="pb-1">{s.rainNote(Math.round(1 / LEAF_RAIN / 10) * 10)}</p>
 	<p class="pb-1">{s.buyNote(KUSH_BUY_PRICE.leaf, KUSH_BUY_PRICE.burst)}</p>
 	<p class="pb-1">{s.maxNote(KUSH_MAX_WIN)}</p>
 </details>

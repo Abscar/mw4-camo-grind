@@ -19,9 +19,13 @@
  *   it's on, like the real ones.
  * - Buy: Sky High Spins, or Super Sky High (every cloud at least ×10, `SUPER_VALUES`).
  *
- * PARTY ODDS like the squad's other two machines (casino-slots.ts / fortune2.ts, the user's "alla ska
- * vinna"): low symbols are common so 8+ comes often, and in the long run it gives back several times what
- * goes in (see scripts/stash.test.js for the ranges and `.claude/testing/squad-casino/stash-sim.mjs`).
+ * NORMAL CASINO ODDS (2026-11-21, the user: "make the odds on all the slots completely normal"; until then
+ * it had "party odds" that gave back ≈ 4.1×). Abscar sets luck by hand in the control room (casino-rig.ts
+ * adds it on top), so the base game is a fair, real-casino machine. Simulated over 4M seeded spins
+ * (`.claude/testing/squad-casino/stash-sim.mjs`): RTP ≈ 96.3 % (tumbles ≈ 71.7 %, holk pays ≈ 1.5 %, Sky
+ * High Spins ≈ 23 %), a win on ≈ 24 % of spins, Sky High Spins ≈ 1 in 295 (a run is worth ≈ 68× the bet).
+ * Double chance: RTP ≈ 96.3 % of its cost, Sky High Spins ≈ 1 in 157. Buys: Sky High Spins 70× ≈ 96.8 %,
+ * Super Sky High 175× ≈ 97 %. The ranges are checked in scripts/stash.test.js.
  *
  * The whole play (a spin with its free spins, or a bought bonus) is worked out at once and booked before
  * anything shows; the page only plays back `StashSpin.steps`. No browser APIs, no runes.
@@ -49,37 +53,38 @@ export const rowOfKey = (k: number) => k % ROWS;
 
 /** The fewest of one symbol that pays. */
 export const MIN_PAY = 8;
-/** Pays in hundredths of the bet for 8–9, 10–11 and 12+ of a symbol (party odds: generous on purpose). */
+/** Pays in hundredths of the bet for 8–9, 10–11 and 12+ of a symbol (normal odds, see the header). */
 export const PAYS: Record<Sym, [number, number, number]> = {
-	bud: [50, 120, 400],
-	shroom: [70, 160, 600],
-	brownie: [90, 200, 800],
-	tab: [130, 260, 1200],
-	lean: [170, 340, 1600],
-	blue: [260, 500, 2400],
-	green: [360, 800, 3200],
-	purple: [500, 1600, 5000],
-	heart: [1600, 4000, 9000]
+	bud: [60, 160, 525],
+	shroom: [90, 215, 790],
+	brownie: [110, 265, 1050],
+	tab: [170, 335, 1580],
+	lean: [225, 445, 2105],
+	blue: [335, 650, 3155],
+	green: [475, 1050, 4210],
+	purple: [650, 2105, 6525],
+	heart: [2105, 5260, 11575]
 };
 /** Which pay step a count falls in (−1 = doesn't pay). */
 export const payStep = (n: number) => (n >= 12 ? 2 : n >= 10 ? 1 : n >= MIN_PAY ? 0 : -1);
 
-/** Symbol weights per drawn cell: lows common, the red heart rare. */
+/** Symbol weights per drawn cell: lows a bit more common, the red heart rarest (fairly flat, so 8+ of one
+ * symbol lands on about a quarter of the spins). */
 export const WEIGHTS: Record<Sym, number> = {
-	bud: 23.5,
-	shroom: 21,
-	brownie: 17,
-	tab: 14,
+	bud: 16,
+	shroom: 15,
+	brownie: 14,
+	tab: 13,
 	lean: 12,
 	blue: 9,
-	green: 7,
-	purple: 5,
-	heart: 3.5
+	green: 8,
+	purple: 7,
+	heart: 6
 };
 
 /** The holk (scatter): its chance per drawn cell (a reel never holds two). Double chance doubles it. */
-export const HOLK_CHANCE = { base: 0.036, free: 0.026 };
-export const ANTE_HOLK = 1.15;
+export const HOLK_CHANCE = { base: 0.025, free: 0.026 };
+export const ANTE_HOLK = 1.2;
 /** Holk pays (× the bet) for 4, 5, 6 on the screen when the tumbling stops. */
 export const HOLK_PAYS: Record<number, number> = { 4: 4, 5: 8, 6: 120 };
 /** Holks that start Sky High Spins (normal spin) / give more in them. */
@@ -91,11 +96,11 @@ export const RETRIGGER = 5;
 export const FREE_MAX = 100;
 
 /** A smoke cloud's chance per drawn cell. */
-export const CLOUD_CHANCE = { base: 0.002, free: 0.08 };
+export const CLOUD_CHANCE = { base: 0.0012, free: 0.11 };
 /** Cloud multipliers and their weights. */
 export const CLOUD_VALUES: [number, number][] = [
-	[2, 30],
-	[3, 20],
+	[2, 13],
+	[3, 12],
 	[4, 13],
 	[5, 10],
 	[6, 7],
@@ -118,7 +123,7 @@ export const anteCost = (bet: number) => Math.round(bet * ANTE_COST);
 export type StashBuy = 'free' | 'super';
 export const BUY_KINDS: StashBuy[] = ['free', 'super'];
 /** Buy prices, × the bet. */
-export const BUY_PRICE: Record<StashBuy, number> = { free: 30, super: 85 };
+export const BUY_PRICE: Record<StashBuy, number> = { free: 70, super: 175 };
 
 export const STASH_BETS = [10, 20, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 /** One play pays at most this many times the bet. */

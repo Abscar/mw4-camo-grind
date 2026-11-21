@@ -57,7 +57,7 @@ export const F2_TRIES = 30_000;
 /** What a Kushburst spin can be forced to have (2026-11-20). */
 export type KushForce = 'leaf' | 'kushburst' | 'big' | 'blank';
 export const KUSH_FORCES: KushForce[] = ['leaf', 'kushburst', 'big', 'blank'];
-/** Kushburst "big win": at least this many times the bet (≈ 1 spin in 45). */
+/** Kushburst "big win": at least this many times the bet (≈ 1 spin in 250 since the normal odds). */
 export const KUSH_BIG = 25;
 /** Spins Kushburst draws at most looking for a big win / a blank one (each takes a few µs). */
 export const KUSH_TRIES = 5000;
@@ -85,7 +85,7 @@ export interface Forced<T> {
 
 export type ForceKind = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'roulette' | 'blackjack';
 /** Skeddwood spins the page draws at most looking for a forced feature (Divergence ≈ 1 in 2,500, ≈ 8 µs each). */
-export const SKW_TRIES = 40_000;
+export const SKW_TRIES = 150_000;
 
 export interface CasinoTune {
 	/** Per game, added to every member's luck there. */
