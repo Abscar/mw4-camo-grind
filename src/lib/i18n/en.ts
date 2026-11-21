@@ -1881,6 +1881,13 @@ export const en = {
 			spin: 'Spin',
 			clear: 'Clear',
 			chip: 'Chip',
+			allIn: 'All in',
+			amountLabel: 'Your own chip amount',
+			amountHint: 'Own amount, e.g. 2.5m',
+			amountUse: 'Use',
+			badAmount: 'Type an amount like 1500, 10k or 2.5m.',
+			chipNow: (n: number, tooBig: boolean) => `Chip: ${n.toLocaleString('en-US')} 🍔${tooBig ? ' (more than you have free)' : ''} · no table limit`,
+			chipAllIn: (n: number) => `All in: a tap puts all your ${n.toLocaleString('en-US')} free 🍔 on the spot`,
 			onTable: (n: number) => `${n.toLocaleString('en-US')} 🍔 on the table`,
 			result: (n: number, color: string) => `${n} ${color}`,
 			colors: { red: 'red', black: 'black', green: 'green' },
@@ -1891,7 +1898,7 @@ export const en = {
 			spots: { low: '1–18', high: '19–36', even: 'Even', odd: 'Odd', red: 'Red', black: 'Black', d1: '1st 12', d2: '2nd 12', d3: '3rd 12', c1: '2:1', c2: '2:1', c3: '2:1' },
 			spotLabel: (spot: string, stake: number) => `Bet on ${spot}${stake ? `, ${stake} on it` : ''}`,
 			colLabel: (c: number) => `column ${c}`,
-			how: 'European roulette: one zero, 37 pockets. Tap spots to put your chip on them, as many as you like, then spin. A number pays 35 to 1, a dozen or a column 2 to 1, red/black, odd/even, 1–18/19–36 pay 1 to 1. The zero loses every outside bet.',
+			how: 'European roulette: one zero, 37 pockets. Tap spots to put your chip on them, as many as you like, then spin. No table limit: bet as much as you have, pick a chip, type your own amount or go All in. A number pays 35 to 1, a dozen or a column 2 to 1, red/black, odd/even, 1–18/19–36 pay 1 to 1. The zero loses every outside bet.',
 			wheel: 'Roulette wheel'
 		},
 		blackjack: {

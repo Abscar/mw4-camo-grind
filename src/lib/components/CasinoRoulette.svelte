@@ -4,12 +4,15 @@
 	number. The table lies across on wide screens and stands up on phones (3 numbers per row, 44 px).
 	A spin is booked at once (squad.recordGame), then shown; `hidden` holds the chips on the table and,
 	while the wheel turns, the result, so the balance above never gives it away. Pretend burgers.
+	No table limit since 2026-11-21 (the user: "så att man kan lägga oändligt på roulettebordet"): only your own
+	burgers limit the chips; chips up to 1M, "All in" (puts all your free burgers on the spot) and an own amount.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { sound } from '#lib/sound.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
-	import { colorOf, rouletteNet, spinNumber, spotPays, CASINO_MAX_BET, WHEEL, type OutsideBet, type RouletteSpot } from '#lib/squad-casino.ts';
+	import { colorOf, rouletteNet, spinNumber, spotPays, WHEEL, type OutsideBet, type RouletteSpot } from '#lib/squad-casino.ts';
+	import { parseAmount } from '#lib/donations.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import { lucky } from '#lib/casino-rig.ts';
 
@@ -22,8 +25,25 @@
 	};
 	const reduce = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-	const CHIPS = [1, 5, 25, 100, 500];
+	const CHIPS = [1, 5, 25, 100, 500, 1_000, 10_000, 100_000, 1_000_000];
 	let chip = $state(5);
+	/** "All in": each tap puts all your free burgers on the spot. */
+	let allIn = $state(false);
+	let custom = $state('');
+	/** 1,500 → "1.5k", 2,000,000 → "2M" (chip faces and the stacks on the table). */
+	const short = (n: number) => {
+		const f = (x: number, u: string) => `${Number((n / x).toFixed(n / x < 10 ? 1 : 0))}${u}`;
+		return n >= 1e9 ? f(1e9, 'B') : n >= 1e6 ? f(1e6, 'M') : n >= 1e3 ? f(1e3, 'k') : String(n);
+	};
+	function useCustom() {
+		const n = parseAmount(custom);
+		if (n === null || n < 1) {
+			if (custom.trim()) toast.show(r.badAmount, undefined, 4000);
+			return;
+		}
+		chip = n;
+		allIn = false;
+	}
 	let bets = $state<Partial<Record<RouletteSpot, number>>>({});
 	let spinning = $state(false);
 	let result = $state<number | null>(null);
@@ -47,11 +67,12 @@
 
 	function place(spot: RouletteSpot) {
 		if (spinning) return;
-		if (chip > free || onTable + chip > CASINO_MAX_BET) {
+		const amount = allIn ? free : chip;
+		if (amount < 1 || amount > free) {
 			toast.show(t.casino.broke, undefined, 5000);
 			return;
 		}
-		bets = { ...bets, [spot]: (bets[spot] ?? 0) + chip };
+		bets = { ...bets, [spot]: (bets[spot] ?? 0) + amount };
 	}
 
 	const SEG = 360 / WHEEL.length;
@@ -103,7 +124,7 @@
 </script>
 
 {#snippet stake(spot: RouletteSpot)}
-	{#if bets[spot]}<span class="rl-chip num" aria-hidden="true">{bets[spot]}</span>{/if}
+	{#if bets[spot]}<span class="rl-chip num" aria-hidden="true">{short(bets[spot])}</span>{/if}
 {/snippet}
 
 <div class="rl">
@@ -152,9 +173,15 @@
 			<!-- chips -->
 			<div class="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={r.chip}>
 				{#each CHIPS as c (c)}
-					<button type="button" class="rl-pick num font-head" aria-pressed={chip === c} disabled={c > free && chip !== c} onclick={() => (chip = c)}>{c}</button>
+					<button type="button" class="rl-pick num font-head" aria-pressed={!allIn && chip === c} aria-label={c.toLocaleString('en-US')} disabled={c > free && (allIn || chip !== c)} onclick={() => ((chip = c), (allIn = false))}>{short(c)}</button>
 				{/each}
+				<button type="button" class="rl-pick rl-allin font-head" aria-pressed={allIn} disabled={free < 1 && !allIn} onclick={() => (allIn = true)}>{r.allIn}</button>
 			</div>
+			<form class="mt-2 flex items-center gap-1.5" onsubmit={(e) => (e.preventDefault(), useCustom())}>
+				<input class="field rl-amount num" type="text" inputmode="decimal" autocomplete="off" placeholder={r.amountHint} aria-label={r.amountLabel} bind:value={custom} />
+				<button type="submit" class="btn btn-sm">{r.amountUse}</button>
+			</form>
+			<p class="mt-1 text-xs text-muted">{allIn ? r.chipAllIn(free) : r.chipNow(chip, chip > free)}</p>
 			<p class="mt-2 text-xs text-muted">{r.onTable(onTable)}</p>
 			<div class="mt-2 flex flex-wrap gap-2">
 				<button type="button" class="btn" disabled={spinning || !onTable} onclick={() => (bets = {})}>{r.clear}</button>
@@ -281,6 +308,32 @@
 	}
 	.rl-pick:disabled {
 		opacity: 0.4;
+	}
+	/* big chips: blue / purple / black / gold like a real high-limit rack */
+	.rl-pick[aria-label='1,000'] {
+		background: radial-gradient(circle, #2a6ae0 55%, #0f2f7a);
+	}
+	.rl-pick[aria-label='10,000'] {
+		background: radial-gradient(circle, #8a3fd0 55%, #3d0f6e);
+	}
+	.rl-pick[aria-label='100,000'] {
+		background: radial-gradient(circle, #2b2b2b 55%, #050505);
+	}
+	.rl-pick[aria-label='1,000,000'] {
+		background: radial-gradient(circle, #ffd23a 55%, #a86d00);
+		color: #3a2200;
+	}
+	.rl-allin {
+		width: auto;
+		padding: 0 12px;
+		background: linear-gradient(180deg, #ffe066, #e09a00);
+		color: #3a2200;
+		border-color: #fff6c0;
+	}
+	.rl-amount {
+		width: 11rem;
+		max-width: 100%;
+		min-height: 44px;
 	}
 	/* the table: felt green, numbers standing up on phones */
 	.rl-board-wrap {
