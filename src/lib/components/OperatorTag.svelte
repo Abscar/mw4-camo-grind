@@ -29,6 +29,7 @@
 	import HideButton from './HideButton.svelte';
 	import DaJeevenEmblem from './DaJeevenEmblem.svelte';
 	import IngmanEmblem from './IngmanEmblem.svelte';
+	import JokerEmblem from './JokerEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
 	import { LADDER, MASTERY, MASTERY_TRACKS } from '#lib/data/camos.ts';
@@ -66,7 +67,9 @@
 		/** not told yet (2026-11-14): not started until the user says otherwise */
 		ingman: ['todo', 'todo', 'todo'],
 		/** not told yet (2026-11-20): not started until the user says otherwise */
-		aw: ['todo', 'todo', 'todo']
+		aw: ['todo', 'todo', 'todo'],
+		/** not told yet (2026-11-21): not started until the user says otherwise */
+		joker: ['todo', 'todo', 'todo']
 	} satisfies Record<SquadOp, Status[]>;
 
 	/** The squad member who is this operator (only when you're in a squad yourself). */
@@ -131,7 +134,7 @@
 	 * `data-fx-rest` on their tag, which app.html's frame cap reads. Someone playing an emote moves too. The five
 	 * emblems were about half of what the page still drew on a PC and three quarters on a phone.
 	 */
-	const TURN_ORDER: SquadOp[] = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw'];
+	const TURN_ORDER: SquadOp[] = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker'];
 	const TURN_MS = 6000;
 	let turn = $state(0);
 	$effect(() => {
@@ -157,8 +160,8 @@
 	 */
 	// Ingman (2026-11-14) is a "Pro player" by his own sign, so he's left out too: Abscar keeps the sticker.
 	// AW (2026-11-20) too, until the user says how far he is: with nothing typed in he'd share last place with
-	// Abscar and nobody would wear the sticker.
-	const SLACKER_EXEMPT: SquadOp[] = ['jeeven', 'ingman', 'aw'];
+	// Abscar and nobody would wear the sticker. TheJoker_BPL (2026-11-21) the same.
+	const SLACKER_EXEMPT: SquadOp[] = ['jeeven', 'ingman', 'aw', 'joker'];
 	const points = (list: Status[]) => list.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
 	const slacker = $derived.by(() => {
 		const scores = (Object.keys(statuses) as SquadOp[])
@@ -410,6 +413,20 @@
 			{@render high('aw')}
 			{@render mastery(t.operator.aw, statuses.aw, slacker === 'aw' || !!pr.aw.slacker, t.operator.awMotto, 'teal', 'aw')}
 		</div>
+
+		<!-- TheJoker_BPL (2026-11-17, the user's friend), drawn after the picture the user sent (JokerEmblem). Seventh,
+		     so he gets the last row to himself, in the middle (styles) -->
+		<div class="op-member op-last">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('joker') ? undefined : ''}>
+				<OpGear aura={gear.joker.aura?.id} effect={gear.joker.effect?.id} badge={gear.joker.badge?.id} pet={gear.joker.pet?.id} smoked={!!pr.joker['smoke-bomb']} extra={extras.joker}><JokerEmblem face={faceOf(gear.joker)} /></OpGear>
+				<!-- on two lines, "TheJoker_" / "BPL" (a zero-width space after the underscore), like Drängen's, so his
+				     long callsign doesn't widen the frame beside the TV -->
+				{@render callsign(t.operator.joker.replace('_', '_​'), 'joker', true)}
+			</div>
+			{@render stamp('joker', t.operator.joker)}
+			{@render high('joker')}
+			{@render mastery(t.operator.joker, statuses.joker, slacker === 'joker' || !!pr.joker.slacker, '', 'purple', 'joker')}
+		</div>
 	</div>
 </div>
 
@@ -432,11 +449,21 @@
 		}
 	}
 	/* five members (Ingman joined 2026-11-14): three in a row, then two, so the frame still fits beside the TV;
-	   six since AW (2026-11-20): two rows of three, so the frame keeps its height */
+	   six since AW (2026-11-20): two rows of three, so the frame keeps its height; seven since TheJoker_BPL
+	   (2026-11-21): he gets a third row to himself, in the middle (and across both columns two by two) */
+	@container squad (min-width: 470px) {
+		.op-last {
+			grid-column: 1 / -1;
+			justify-self: center;
+		}
+	}
 	@container squad (min-width: 700px) {
 		.squad-frame {
 			grid-template-columns: repeat(3, auto);
 			column-gap: 14px;
+		}
+		.op-last {
+			grid-column: 2;
 		}
 		.op-tag :global(.og-body > svg) {
 			width: 64px;

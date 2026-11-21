@@ -222,6 +222,7 @@ export const en = {
 			picWizard: 'Wizard picture',
 			picDoomsday: 'Doomsday squad picture',
 			picScooter: 'Scooter rider picture',
+			picJoker: 'Joker in flames picture',
 			tabRanked: 'Ranked tab',
 			tabCosmetics: 'Cosmetics tab',
 			tabExtras: 'Extra camos tab',
@@ -259,6 +260,8 @@ export const en = {
 		    described him (AwEmblem); his sign in the user's words (2026-11-21) */
 		aw: 'AW',
 		awMotto: 'Sleep is optional',
+		/** the seventh squad member (2026-11-17, the user's ask; his look from a picture the user sent, 2026-11-21) */
+		joker: 'TheJoker_BPL',
 		certified: 'Certified grinder',
 		recordTitle: 'BO6 + BO7',
 		record: ['Prestige Master', 'Max level', 'All calling cards'],
@@ -352,7 +355,7 @@ export const en = {
 		close: 'Close the terminal',
 		input: 'Command',
 		quick: 'Quick commands',
-		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke, Da Jeeven, Ingman, AW.', 'Type “help” for commands. “exit” or Esc closes.'],
+		boot: ['ABSCAR OS v4.20 // CAMO GRIND TERMINAL', 'Operator Abscar authenticated. Squad link: Phillestar, Drängen Lars Åke, Da Jeeven, Ingman, AW, TheJoker_BPL.', 'Type “help” for commands. “exit” or Esc closes.'],
 		help: [
 			'help              this list',
 			'status            your camo grind in numbers',
@@ -392,7 +395,8 @@ export const en = {
 			'DRÄNGEN LARS ÅKE .. ONLINE (drink: a big cold beer, goggles: lime)',
 			'DA JEEVEN ......... ONLINE (certified grinder: Prestige Master in BO6 + BO7, holk: lit)',
 			'INGMAN ............ ONLINE (class: wizard, pipe: lit, Jim and Pro player)',
-			'AW ................ ONLINE (new recruit, eyes: wide open, Sleep is optional)'
+			'AW ................ ONLINE (new recruit, eyes: wide open, Sleep is optional)',
+			'THEJOKER_BPL ...... ONLINE (new recruit, wild card, grin: permanent)'
 		],
 		/** `squad` while you're in a squad (2026-11-14): the real list, online first */
 		squadLive: (name: string, online: boolean, seen: string, hb: number, total: number) =>

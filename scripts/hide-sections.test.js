@@ -39,7 +39,7 @@ test('"Only camos & metas" hides everything but the camo and meta parts', () => 
 	assert.equal(hide.length + KEEP_CAMOS_META.length, HIDE_SECTIONS.length);
 	assert.ok(hide.includes('tv') && hide.includes('picNuke') && hide.includes('tabCasino') && hide.includes('news'));
 	assert.deepEqual(cleanHidden(hide), hide);
-	assert.equal(idsIn('pictures').length, 7);
+	assert.equal(idsIn('pictures').length, 8);
 	assert.equal(idsIn('tabs').length, 6);
 });
 

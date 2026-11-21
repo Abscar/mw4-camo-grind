@@ -37,6 +37,7 @@
 	import DoomsdayBanner from '#lib/components/DoomsdayBanner.svelte';
 	import WizardBanner from '#lib/components/WizardBanner.svelte';
 	import ScooterBanner from '#lib/components/ScooterBanner.svelte';
+	import JokerBanner from '#lib/components/JokerBanner.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -118,7 +119,8 @@
 		{ id: 'picCrown', C: CrownBanner },
 		{ id: 'picWizard', C: WizardBanner },
 		{ id: 'picDoomsday', C: DoomsdayBanner },
-		{ id: 'picScooter', C: ScooterBanner }
+		{ id: 'picScooter', C: ScooterBanner },
+		{ id: 'picJoker', C: JokerBanner }
 	] as const satisfies readonly { id: HideId; C: unknown }[];
 
 	let query = $state('');

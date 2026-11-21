@@ -37,6 +37,7 @@ export const HIDE_SECTIONS = [
 	{ id: 'picWizard', group: 'pictures', abscar: true },
 	{ id: 'picDoomsday', group: 'pictures', abscar: true },
 	{ id: 'picScooter', group: 'pictures', abscar: true },
+	{ id: 'picJoker', group: 'pictures', abscar: true },
 	// whole page tabs (Camo grind itself can't be hidden: it's where the page opens)
 	{ id: 'tabRanked', group: 'tabs' },
 	{ id: 'tabCosmetics', group: 'tabs' },
