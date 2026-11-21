@@ -36,7 +36,35 @@ import type { IconCamo } from './data/camos.ts';
 // back / emote (on the operator, OpGear), card / radio (Squad tab), table (blackjack), win (the slots'
 // big-win screens), maxfx (your weapon rows), buddy (the weed buddy): the ideas pack (2026-11-20)
 /** BurgiShop's own kinds (its kind buttons; every one has items in SHOP_ITEMS). */
-export const SLOTS = ['aura', 'effect', 'badge', 'mouth', 'eyes', 'hat', 'smoke', 'pet', 'back', 'emote', 'name', 'title', 'card', 'radio', 'table', 'win', 'maxfx', 'buddy'] as const;
+// entry / trail / sound / feed / shelf / throne: the 18-ideas pack (2026-11-21): an entrance in the header when
+// you come online, a trail after your pointer, your own tick sounds, your kill feed rows, a trophy shelf on
+// your squad card, and Abscar's throne behind your operator.
+export const SLOTS = [
+	'aura',
+	'effect',
+	'badge',
+	'mouth',
+	'eyes',
+	'hat',
+	'smoke',
+	'pet',
+	'back',
+	'emote',
+	'name',
+	'title',
+	'card',
+	'radio',
+	'table',
+	'win',
+	'maxfx',
+	'buddy',
+	'entry',
+	'trail',
+	'sound',
+	'feed',
+	'shelf',
+	'throne'
+] as const;
 /** Every slot something can be worn in: BurgiShop's, plus `hold` = the Camo Armory's gun in the operator's hands (armory.ts). */
 export const WEAR_SLOTS = [...SLOTS, 'hold'] as const;
 export type ShopSlot = (typeof WEAR_SLOTS)[number];
@@ -54,9 +82,17 @@ export interface ShopItem {
 	karma?: true;
 	/** The Camo Armory (armory.ts): which weapon in which camo. Bought in order (buyGun), not with buy(). */
 	gun?: { w: string; c: IconCamo };
+	/** Never sold: given for free when earned (grantRewards: the 420 collection, the throne's title). */
+	secret?: true;
+	/** Only in the shop around Christmas / New Year (windowOpen); whoever bought one keeps it. */
+	window?: ShopWindow;
+	/** Buying this also gives these (free). */
+	grants?: string[];
 }
+export type ShopWindow = 'xmas' | 'newyear';
 
 const item = (id: string, slot: ShopSlot, name: string, price: number, rarity: Rarity, text?: string): ShopItem => ({ id, slot, name, price, rarity, ...(text ? { text } : {}) });
+const extra = (base: ShopItem, more: Partial<ShopItem>): ShopItem => ({ ...base, ...more });
 
 /** The catalogue. Never reuse an id for something else: owned items are kept by id. */
 export const SHOP_ITEMS: ShopItem[] = [
@@ -179,8 +215,123 @@ export const SHOP_ITEMS: ShopItem[] = [
 	item('title-chemist', 'title', 'Ketchup Chemist', 2000, 'common', 'Ketchup Chemist'),
 	item('title-pranklord', 'title', 'Prank Lord', 5000, 'rare', 'Prank Lord'),
 	item('title-daddy', 'title', 'Divergence Daddy', 12000, 'epic', 'Divergence Daddy'),
-	item('title-house', 'title', 'House Always Wins', 15000, 'epic', 'House Always Wins')
+	item('title-house', 'title', 'House Always Wins', 15000, 'epic', 'House Always Wins'),
+	// the 18-ideas pack (2026-11-21, the user: "gör alla 18")
+	// an entrance in the header when you come online (everyone online sees it once)
+	item('entry-smoke', 'entry', 'Smoke Entrance', 8000, 'rare'),
+	item('entry-heli', 'entry', 'Chopper Drop', 24000, 'epic'),
+	item('entry-nuke', 'entry', 'Nuke Drop', 80000, 'legendary'),
+	// a trail after your mouse / finger (your own page)
+	item('trail-leaves', 'trail', 'Leaf Trail', 5000, 'rare'),
+	item('trail-burgers', 'trail', 'Burger Trail', 7000, 'rare'),
+	item('trail-smoke', 'trail', 'Smoke Trail', 16000, 'epic'),
+	item('trail-rainbow', 'trail', 'Rainbow Trail', 55000, 'legendary'),
+	// your tick sounds instead of the hitmarker (when sound is on)
+	item('sound-bong', 'sound', 'Bong Bubbles', 6500, 'rare'),
+	item('sound-horn', 'sound', 'Air Horn', 6500, 'rare'),
+	item('sound-chomp', 'sound', 'Burger Chomp', 6500, 'rare'),
+	// your rows in the kill feed
+	item('feed-gold', 'feed', 'Gold Feed', 7000, 'rare'),
+	item('feed-neon', 'feed', 'Neon Feed', 15000, 'epic'),
+	item('feed-fire', 'feed', 'Fire Feed', 48000, 'legendary'),
+	// a trophy shelf on your squad card (the trophies are earned, trophies())
+	item('shelf-oak', 'shelf', 'Oak Trophy Shelf', 10000, 'rare'),
+	item('shelf-gold', 'shelf', 'Gold Trophy Shelf', 60000, 'legendary'),
+	// the big one: a golden throne behind your operator, and its title
+	extra(item('throne-abscar', 'throne', 'Abscar’s Throne', 100_000_000, 'legendary'), { grants: ['title-throne'] }),
+	extra(item('title-throne', 'title', 'Throne Title', 0, 'legendary', 'On Abscar’s Throne'), { secret: true }),
+	// own every 420 item and these are yours (grantRewards)
+	extra(item('title-420legend', 'title', '420 Legend', 0, 'legendary', '420 Legend'), { secret: true }),
+	extra(item('aura-420legend', 'aura', 'Legend Haze', 0, 'legendary'), { secret: true }),
+	// only around the holidays
+	extra(item('hat-santa', 'hat', 'Santa Hat', 7000, 'rare'), { window: 'xmas' }),
+	extra(item('aura-snow', 'aura', 'Snowfall', 20000, 'epic'), { window: 'xmas' }),
+	extra(item('pet-ginger', 'pet', 'Gingerbread Burger', 20000, 'epic'), { window: 'xmas' }),
+	extra(item('fx-newyear', 'effect', 'New Year Fireworks', 21000, 'epic'), { window: 'newyear' })
 ];
+
+/** The 420 collection (the two 420 packs): own them all and the 420 Legend title + Legend Haze are yours. */
+export const COLLECTION_420: readonly string[] = [
+	'aura-kush',
+	'fx-leaves',
+	'fx-munchies',
+	'pin-brownie',
+	'pin-leaf',
+	'pin-grinder',
+	'pin-420',
+	'name-rasta',
+	'title-puff',
+	'title-couch',
+	'title-snack',
+	'title-stoner',
+	'title-baked',
+	'title-hotbox',
+	'title-blazed',
+	'title-holklord',
+	'mouth-blunt',
+	'mouth-pipe',
+	'mouth-double',
+	'mouth-bong',
+	'mouth-cloud9',
+	'eyes-shades',
+	'eyes-rasta',
+	'eyes-baked',
+	'eyes-laser',
+	'hat-bucket',
+	'hat-rasta',
+	'hat-propeller',
+	'hat-leafcrown',
+	'smoke-green',
+	'smoke-purple',
+	'smoke-rainbow',
+	'smoke-gold',
+	'pet-burger',
+	'pet-smokey',
+	'pet-bud'
+];
+const COLLECTION_REWARDS = ['title-420legend', 'aura-420legend'];
+
+/** Is a holiday window open on this day (the viewer's local date)? Christmas 1–26 Dec, New Year 27 Dec – 3 Jan. */
+export function windowOpen(w: ShopWindow, at: number): boolean {
+	const d = new Date(at);
+	const m = d.getMonth();
+	const day = d.getDate();
+	if (w === 'xmas') return m === 11 && day <= 26;
+	return (m === 11 && day >= 27) || (m === 0 && day <= 3);
+}
+
+/** Can this item be bought (or given, or come out of a box) right now? */
+export function buyable(it: ShopItem | undefined, at: number): it is ShopItem {
+	return !!it && !it.karma && !it.gun && !it.secret && (!it.window || windowOpen(it.window, at));
+}
+
+/** The viewer's local day, "2026-11-21" (the daily deal changes at midnight). */
+export function dayKey(at: number): string {
+	const d = new Date(at);
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function hash(text: string): number {
+	let h = 2166136261;
+	for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+	return h >>> 0;
+}
+
+/** The daily deal's pool: ordinary items up to 100,000 (no holiday, secret, throne or High Roller). */
+const DEAL_POOL = SHOP_ITEMS.filter((i) => !i.secret && !i.window && i.price <= 100_000);
+/** Today's deal: the same item and discount for the whole squad (30–50 % off), from the day alone. */
+export function dealOf(day: string): { id: string; off: number } {
+	const h = hash(`deal:${day}`);
+	return { id: DEAL_POOL[h % DEAL_POOL.length].id, off: 30 + ((h >>> 8) % 5) * 5 };
+}
+/** What an item costs right now (today's deal included). */
+export function priceOf(id: string, at: number): number {
+	const it = ITEM_BY_ID_LOCAL.get(id);
+	if (!it) return 0;
+	const deal = dealOf(dayKey(at));
+	return deal.id === id ? Math.round((it.price * (100 - deal.off)) / 100) : it.price;
+}
+const ITEM_BY_ID_LOCAL: ReadonlyMap<string, ShopItem> = new Map(SHOP_ITEMS.map((i) => [i.id, i]));
 
 /**
  * Pranks (the 420 pack): bought once per use and thrown at another squad member. A Smoke Bomb covers
@@ -195,7 +346,13 @@ export const PRANKS = [
 	{ id: 'too-high', name: 'TOO HIGH TO PLAY', price: 6000, hours: 24, self: false },
 	{ id: 'clown', name: 'Clown Nose', price: 4500, hours: 1, self: false },
 	{ id: 'slacker', name: 'Slacker Sticker', price: 7500, hours: 24, self: false },
-	{ id: 'mask', name: 'Gas Mask', price: 12000, hours: 24, self: true }
+	{ id: 'mask', name: 'Gas Mask', price: 12000, hours: 24, self: true },
+	// the 18-ideas pack (2026-11-21): their operator upside down / a burger for a head for an hour, their radio
+	// lines come out as "mmmph" for half an hour, and confetti bursts over their page the next time they open it
+	{ id: 'flip', name: 'Upside Down', price: 6000, hours: 1, self: false },
+	{ id: 'burgerhead', name: 'Burger Head', price: 6750, hours: 1, self: false },
+	{ id: 'mmmph', name: 'Mmmph', price: 5250, hours: 0.5, self: false },
+	{ id: 'confetti', name: 'Confetti Bomb', price: 3000, hours: 24, self: false }
 ] as const;
 export type PrankKind = (typeof PRANKS)[number]['id'];
 export const PRANK_BY_ID: ReadonlyMap<string, (typeof PRANKS)[number]> = new Map(PRANKS.map((p) => [p.id, p]));
@@ -227,7 +384,43 @@ export interface ShopState {
 	em?: { k: string; at: number };
 	/** Golden Statues put up: the latest time, how many, burgers paid for them all. */
 	statue?: { at: number; n: number; p: number };
+	/** Sold back (item id → when, burgers back so far, `own` total at that sale). Owned again once `bought` is later. */
+	sold?: Record<string, { at: number; back: number; paid: number }>;
+	/** When a sold item was bought (or given) again. */
+	bought?: Record<string, number>;
+	/** Items given to friends (gift id → item, to whom, when, burgers paid), the newest GIFT_KEEP. */
+	gifts?: Record<string, Gift>;
+	/** Burgers paid for gifts that dropped off the list. */
+	gOld?: number;
+	/** Gifts from friends already put in `own` (gift ids). */
+	rx?: string[];
+	/** Munchie Boxes opened: how many, burgers paid for them all (minus what duplicates gave back). */
+	boxes?: { n: number; p: number };
+	/** Your three saved outfits (a worn set each, or null), and when they last changed. */
+	fits?: { at: number; l: (Partial<Record<ShopSlot, string>> | null)[] };
+	/** Your latest ad on the tickers: its text, when, how many bought, burgers paid for them all. */
+	ad?: { t: string; at: number; n: number; p: number };
 }
+
+/** One item given to a friend. */
+export interface Gift {
+	i: string;
+	to: string;
+	at: number;
+	p: number;
+}
+export const GIFT_KEEP = 40;
+const RX_KEEP = 120;
+/** Munchie Box prices per rarity; a duplicate gives back half (BOX_BACK). */
+export const BOX_PRICE: Record<Rarity, number> = { common: 2500, rare: 7500, epic: 18000, legendary: 70000 };
+export const BOX_BACK = 0.5;
+/** Selling gives back half of what you paid. */
+export const SELL_BACK = 0.5;
+export const FIT_COUNT = 3;
+/** The ad space on the tickers: price, how long it runs, longest text. */
+export const AD_PRICE = 100_000;
+export const AD_HOURS = 24;
+export const AD_MAX = 60;
 
 /** The Golden Statue (2026-11-20): one stands in the Squad tab, whoever put theirs up last. */
 export const STATUE_PRICE = 250_000;
@@ -277,12 +470,32 @@ export function cleanShop(raw: unknown): ShopState | undefined {
 		st && typeof st.at === 'number' && Number.isFinite(st.at) && st.at > 0 && Number.isInteger(st.n) && (st.n as number) >= 1 && Number.isInteger(st.p) && (st.p as number) >= 0
 			? { at: Math.round(st.at), n: Math.min(st.n as number, 100_000), p: Math.min(st.p as number, PRICE_MAX * 100) }
 			: undefined;
-	if (!Object.keys(own).length && !Object.keys(pruned.pranks).length && !pruned.pOld && !statue) return undefined;
+	const sold: Record<string, { at: number; back: number; paid: number }> = {};
+	for (const [id, v] of Object.entries(isObject(raw.sold) ? raw.sold : {})) {
+		if (ID.test(id) && isObject(v) && isTime(v.at) && isAmount(v.back) && isAmount(v.paid)) sold[id] = { at: Math.round(v.at as number), back: v.back as number, paid: v.paid as number };
+	}
+	const bought: Record<string, number> = {};
+	for (const [id, v] of Object.entries(isObject(raw.bought) ? raw.bought : {})) if (ID.test(id) && isTime(v)) bought[id] = Math.round(v as number);
+	const gifts: Record<string, Gift> = {};
+	for (const [gid, g] of Object.entries(isObject(raw.gifts) ? raw.gifts : {})) {
+		if (PRANK_ID.test(gid) && isObject(g) && typeof g.i === 'string' && ID.test(g.i) && typeof g.to === 'string' && MEMBER_ID.test(g.to) && isTime(g.at) && isAmount(g.p)) {
+			gifts[gid] = { i: g.i, to: g.to, at: Math.round(g.at as number), p: g.p as number };
+		}
+	}
+	const gPruned = pruneGifts(gifts, isAmount(raw.gOld) ? (raw.gOld as number) : 0);
+	const rx = Array.isArray(raw.rx) ? raw.rx.filter((x): x is string => typeof x === 'string' && PRANK_ID.test(x)).slice(-RX_KEEP) : [];
+	const bx = isObject(raw.boxes) ? raw.boxes : null;
+	const boxes = bx && Number.isInteger(bx.n) && (bx.n as number) >= 1 && isAmount(bx.p) ? { n: Math.min(bx.n as number, 1_000_000), p: bx.p as number } : undefined;
+	const ad0 = isObject(raw.ad) ? raw.ad : null;
+	const adText = ad0 && typeof ad0.t === 'string' ? cleanAdText(ad0.t) : '';
+	const ad = ad0 && adText && isTime(ad0.at) && Number.isInteger(ad0.n) && (ad0.n as number) >= 1 && isAmount(ad0.p) ? { t: adText, at: Math.round(ad0.at as number), n: ad0.n as number, p: ad0.p as number } : undefined;
+	if (!Object.keys(own).length && !Object.keys(pruned.pranks).length && !pruned.pOld && !statue && !Object.keys(gPruned.gifts).length && !gPruned.gOld && !boxes && !ad) return undefined;
+	const base: ShopState = { own, eq: {}, at: 0, sold, bought };
 	const eq: Partial<Record<ShopSlot, string>> = {};
 	if (isObject(raw.eq)) {
 		for (const slot of WEAR_SLOTS) {
 			const id = raw.eq[slot];
-			if (typeof id === 'string' && own[id] !== undefined && ITEM_BY_ID.get(id)?.slot === slot) eq[slot] = id;
+			if (typeof id === 'string' && owns(base, id) && ITEM_BY_ID.get(id)?.slot === slot) eq[slot] = id;
 		}
 	}
 	const at = typeof raw.at === 'number' && Number.isFinite(raw.at) && raw.at > 0 ? Math.round(raw.at) : 0;
@@ -294,7 +507,53 @@ export function cleanShop(raw: unknown): ShopState | undefined {
 		out.em = { k: em.k, at: Math.round(em.at) };
 	}
 	if (statue) out.statue = statue;
+	if (Object.keys(sold).length) out.sold = sold;
+	if (Object.keys(bought).length) out.bought = bought;
+	if (Object.keys(gPruned.gifts).length) out.gifts = gPruned.gifts;
+	if (gPruned.gOld) out.gOld = gPruned.gOld;
+	if (rx.length) out.rx = rx;
+	if (boxes) out.boxes = boxes;
+	const fr = isObject(raw.fits) ? raw.fits : null;
+	if (fr && isTime(fr.at) && Array.isArray(fr.l)) {
+		const l = Array.from({ length: FIT_COUNT }, (_, i) => {
+			const f = (fr.l as unknown[])[i];
+			if (!isObject(f)) return null;
+			const set: Partial<Record<ShopSlot, string>> = {};
+			for (const slot of WEAR_SLOTS) if (typeof f[slot] === 'string' && ITEM_BY_ID.get(f[slot] as string)?.slot === slot) set[slot] = f[slot] as string;
+			return set;
+		});
+		if (l.some(Boolean)) out.fits = { at: Math.round(fr.at as number), l };
+	}
+	if (ad) out.ad = ad;
 	return out;
+}
+
+const isTime = (x: unknown): boolean => typeof x === 'number' && Number.isFinite(x) && x > 0;
+const isAmount = (x: unknown): boolean => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= PRICE_MAX * 100;
+
+function pruneGifts(gifts: Record<string, Gift>, gOld: number): { gifts: Record<string, Gift>; gOld: number } {
+	const list = Object.entries(gifts).sort(([, a], [, b]) => b.at - a.at);
+	const gone = list.slice(GIFT_KEEP).reduce((n, [, g]) => n + g.p, 0);
+	return { gifts: Object.fromEntries(list.slice(0, GIFT_KEEP)), gOld: gOld + gone };
+}
+
+/** An ad's text: one line, no control characters, at most AD_MAX characters. */
+export function cleanAdText(text: string): string {
+	// control characters, zero-width marks and line / direction separators become spaces
+	const plain = [...text]
+		.map((ch) => {
+			const c = ch.codePointAt(0) ?? 32;
+			return c < 32 || (c >= 127 && c < 160) || (c >= 0x200b && c <= 0x200f) || (c >= 0x2028 && c <= 0x202e) ? ' ' : ch;
+		})
+		.join('');
+	return plain.replace(/\s+/g, ' ').trim().slice(0, AD_MAX).trim();
+}
+
+/** Do you own this item now (bought or given, and not sold since)? */
+export function owns(s: ShopState | undefined, id: string): boolean {
+	if (!s || s.own[id] === undefined) return false;
+	const sd = s.sold?.[id];
+	return !sd || sd.at < (s.bought?.[id] ?? 0);
 }
 
 /** Burgers spent in the shop (items + pranks + statues). */
@@ -302,7 +561,12 @@ export const shopSpent = (s: ShopState | undefined) =>
 	Object.values(s?.own ?? {}).reduce((n, p) => n + p, 0) +
 	Object.values(s?.pranks ?? {}).reduce((n, p) => n + p.p, 0) +
 	(s?.pOld ?? 0) +
-	(s?.statue?.p ?? 0);
+	(s?.statue?.p ?? 0) +
+	Object.values(s?.gifts ?? {}).reduce((n, g) => n + g.p, 0) +
+	(s?.gOld ?? 0) +
+	(s?.boxes?.p ?? 0) +
+	(s?.ad?.p ?? 0) -
+	Object.values(s?.sold ?? {}).reduce((n, x) => n + x.back, 0);
 
 /** Put up a Golden Statue (it stands until someone else puts one up; you can put yours up again). */
 export function buyStatue(s: ShopState | undefined, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: 'broke' } {
@@ -324,7 +588,7 @@ export function statueOf(members: Record<string, { shop?: ShopState }>): { id: s
 /** Play the worn emote (null: no emote worn). */
 export function playEmote(s: ShopState | undefined, at: number): ShopState | null {
 	const k = s?.eq.emote;
-	if (!s || !k || s.own[k] === undefined) return null;
+	if (!s || !k || !owns(s, k)) return null;
 	return { ...s, em: { k, at } };
 }
 
@@ -376,23 +640,34 @@ export function pranksOn(target: string, members: Record<string, { shop?: ShopSt
 	return out.mask ? { mask: out.mask } : out;
 }
 
-export type BuyResult = 'ok' | 'owned' | 'broke' | 'unknown';
+export type BuyResult = 'ok' | 'owned' | 'broke' | 'unknown' | 'closed';
 
-/** Buy an item (it's worn at once): the new state, or why not. */
+/** Put an item in `own` (paid `price`), owned again if it was sold before. */
+function addOwned(s: ShopState, id: string, price: number, at: number): ShopState {
+	const out: ShopState = { ...s, own: { ...s.own, [id]: (s.own[id] ?? 0) + price } };
+	if (s.sold?.[id]) out.bought = { ...s.bought, [id]: Math.max(at, s.sold[id].at + 1) };
+	return out;
+}
+
+/** Buy an item at today's price (the daily deal included); it's worn at once, and what it grants comes with it. */
 export function buy(s: ShopState | undefined, id: string, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
 	const it = ITEM_BY_ID.get(id);
 	// hearts items have their own buy (karma-shop.ts), the armory's guns theirs (armory.ts buyGun: in order)
-	if (!it || it.karma || it.gun) return { result: 'unknown' };
-	if (s?.own[id] !== undefined) return { result: 'owned' };
-	if (balance < it.price) return { result: 'broke' };
+	if (!it || it.karma || it.gun || it.secret) return { result: 'unknown' };
+	if (owns(s, id)) return { result: 'owned' };
+	if (!buyable(it, at)) return { result: 'closed' };
+	const price = priceOf(id, at);
+	if (balance < price) return { result: 'broke' };
 	// `...s` keeps the pranks thrown (and `pOld`): without it a buy dropped them until the next merge
-	return { result: 'ok', state: { ...s, own: { ...s?.own, [id]: it.price }, eq: { ...s?.eq, [it.slot]: id }, at } };
+	let state = addOwned(s ?? { own: {}, eq: {}, at: 0 }, id, price, at);
+	for (const g of it.grants ?? []) if (!owns(state, g)) state = addOwned(state, g, 0, at);
+	return { result: 'ok', state: { ...state, eq: { ...state.eq, [it.slot]: id }, at } };
 }
 
 /** Wear an owned item in its slot, or take the slot off (id null). Unowned items are refused (null). */
 export function equip(s: ShopState | undefined, slot: ShopSlot, id: string | null, at: number): ShopState | null {
 	if (!s) return null;
-	if (id !== null && (s.own[id] === undefined || ITEM_BY_ID.get(id)?.slot !== slot)) return null;
+	if (id !== null && (!owns(s, id) || ITEM_BY_ID.get(id)?.slot !== slot)) return null;
 	const eq = { ...s.eq };
 	if (id === null) delete eq[slot];
 	else eq[slot] = id;
@@ -413,6 +688,27 @@ export function mergeShop(a: ShopState | undefined, b: ShopState | undefined): S
 	if (em) out.em = { ...em };
 	const st = !a.statue ? b.statue : !b.statue ? a.statue : b.statue.n > a.statue.n || (b.statue.n === a.statue.n && b.statue.at > a.statue.at) ? b.statue : a.statue;
 	if (st) out.statue = { ...st };
+	// the 18-ideas pack: sales (the later one per item), re-buys (the later), gifts (both lists), claimed
+	// gifts (both), boxes / ad (the one with more bought), outfits (the later change)
+	const sold = { ...a.sold };
+	for (const [id, x] of Object.entries(b.sold ?? {})) if (!sold[id] || x.at > sold[id].at) sold[id] = x;
+	if (Object.keys(sold).length) out.sold = sold;
+	const bought = { ...a.bought };
+	for (const [id, x] of Object.entries(b.bought ?? {})) bought[id] = Math.max(bought[id] ?? 0, x);
+	if (Object.keys(bought).length) out.bought = bought;
+	const gp = pruneGifts({ ...a.gifts, ...b.gifts }, Math.max(a.gOld ?? 0, b.gOld ?? 0));
+	if (Object.keys(gp.gifts).length) out.gifts = gp.gifts;
+	if (gp.gOld) out.gOld = gp.gOld;
+	const rx = [...new Set([...(a.rx ?? []), ...(b.rx ?? [])])].slice(-RX_KEEP);
+	if (rx.length) out.rx = rx;
+	const boxes = !a.boxes ? b.boxes : !b.boxes ? a.boxes : b.boxes.n > a.boxes.n ? b.boxes : a.boxes;
+	if (boxes) out.boxes = { ...boxes };
+	const ad = !a.ad ? b.ad : !b.ad ? a.ad : b.ad.n > a.ad.n || (b.ad.n === a.ad.n && b.ad.at > a.ad.at) ? b.ad : a.ad;
+	if (ad) out.ad = { ...ad };
+	const fits = !a.fits ? b.fits : !b.fits ? a.fits : b.fits.at > a.fits.at ? b.fits : a.fits;
+	if (fits) out.fits = { at: fits.at, l: fits.l.map((f) => (f ? { ...f } : null)) };
+	// an item worn on one copy but sold on the other is taken off
+	for (const [slot, id] of Object.entries(out.eq)) if (id && !owns(out, id)) delete out.eq[slot as ShopSlot];
 	return out;
 }
 
@@ -422,7 +718,168 @@ export function worn(s: ShopState | undefined): Partial<Record<ShopSlot, ShopIte
 	for (const slot of WEAR_SLOTS) {
 		const id = s?.eq[slot];
 		const it = id ? ITEM_BY_ID.get(id) : undefined;
-		if (it && s?.own[it.id] !== undefined) out[slot] = it;
+		if (it && owns(s, it.id)) out[slot] = it;
 	}
+	return out;
+}
+
+// ---------- the 18-ideas pack (2026-11-21) ----------
+
+/** What selling an item gives back now (0 = can't: gifts, rewards, KarmaShop items and guns can't be sold). */
+export function sellValue(s: ShopState | undefined, id: string): number {
+	const it = ITEM_BY_ID.get(id);
+	if (!s || !it || it.karma || it.gun || it.secret || !owns(s, id)) return 0;
+	return Math.floor((s.own[id] - (s.sold?.[id]?.paid ?? 0)) * SELL_BACK);
+}
+
+/** Sell an item back for half of what you paid (it's taken off; you can buy it again later). */
+export function sellItem(s: ShopState | undefined, id: string, at: number): { state: ShopState; back: number; result: 'ok' } | { result: 'no' } {
+	const back = sellValue(s, id);
+	if (!s || back <= 0) return { result: 'no' };
+	const prev = s.sold?.[id];
+	const t = Math.max(at, (s.bought?.[id] ?? 0) + 1);
+	const eq = { ...s.eq };
+	for (const [slot, x] of Object.entries(eq)) if (x === id) delete eq[slot as ShopSlot];
+	return { result: 'ok', back, state: { ...s, eq, at, sold: { ...s.sold, [id]: { at: t, back: (prev?.back ?? 0) + back, paid: s.own[id] } } } };
+}
+
+/** The boxes' pools: every ordinary item of that rarity (no holiday, secret, throne or High Roller). */
+export const boxPool = (r: Rarity): ShopItem[] => SHOP_ITEMS.filter((i) => i.rarity === r && !i.secret && !i.window && i.slot !== 'throne' && i.id !== 'title-roller');
+
+/** Open a Munchie Box: a random item of that rarity (`roll` 0–1), worn at once; one you own gives half the box back. */
+export function openBox(
+	s: ShopState | undefined,
+	rarity: Rarity,
+	balance: number,
+	at: number,
+	roll: number
+): { state: ShopState; id: string; dup: boolean; back: number; result: 'ok' } | { result: 'broke' } {
+	const price = BOX_PRICE[rarity];
+	if (balance < price) return { result: 'broke' };
+	const pool = boxPool(rarity);
+	const it = pool[Math.min(pool.length - 1, Math.floor(Math.max(0, Math.min(0.999999, roll)) * pool.length))];
+	const base: ShopState = s ?? { own: {}, eq: {}, at: 0 };
+	if (owns(base, it.id)) {
+		const back = Math.floor(price * BOX_BACK);
+		return { result: 'ok', id: it.id, dup: true, back, state: { ...base, boxes: { n: (base.boxes?.n ?? 0) + 1, p: (base.boxes?.p ?? 0) + price - back } } };
+	}
+	const state = addOwned(base, it.id, price, at);
+	return { result: 'ok', id: it.id, dup: false, back: 0, state: { ...state, eq: { ...state.eq, [it.slot]: it.id }, at, boxes: { n: (base.boxes?.n ?? 0) + 1, p: base.boxes?.p ?? 0 } } };
+}
+
+/** Give an item to a friend (paid at today's price): it lands in their shop the next time their page reads the squad. */
+export function giveItem(
+	s: ShopState | undefined,
+	id: string,
+	to: string,
+	theirs: ShopState | undefined,
+	balance: number,
+	at: number,
+	gid: string
+): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
+	const it = ITEM_BY_ID.get(id);
+	if (!it || it.karma || it.gun || it.secret || !MEMBER_ID.test(to) || !PRANK_ID.test(gid)) return { result: 'unknown' };
+	if (owns(theirs, id)) return { result: 'owned' };
+	if (!buyable(it, at)) return { result: 'closed' };
+	const price = priceOf(id, at);
+	if (balance < price) return { result: 'broke' };
+	const base: ShopState = s ?? { own: {}, eq: {}, at: 0 };
+	const gp = pruneGifts({ ...base.gifts, [gid]: { i: id, to, at, p: price } }, base.gOld ?? 0);
+	const state: ShopState = { ...base, gifts: gp.gifts };
+	if (gp.gOld) state.gOld = gp.gOld;
+	return { result: 'ok', state };
+}
+
+/** Gifts from friends to `me` not yet put in my shop: [gift id, giver's member id, the gift]. */
+export function giftsFor(me: string, mine: ShopState | undefined, members: Record<string, { shop?: ShopState }>): [string, string, Gift][] {
+	const seen = new Set(mine?.rx ?? []);
+	const out: [string, string, Gift][] = [];
+	for (const [by, m] of Object.entries(members)) {
+		if (by === me) continue;
+		for (const [gid, g] of Object.entries(m.shop?.gifts ?? {})) if (g.to === me && !seen.has(gid) && ITEM_BY_ID.has(g.i)) out.push([gid, by, g]);
+	}
+	return out.sort((x, y) => x[2].at - y[2].at);
+}
+
+/** Put gifts in my shop (free, not worn; one I already own just counts as claimed). */
+export function claimGifts(s: ShopState | undefined, gifts: [string, string, Gift][], at: number): ShopState | undefined {
+	if (!gifts.length) return s;
+	let state: ShopState = s ?? { own: {}, eq: {}, at: 0 };
+	for (const [, , g] of gifts) if (!owns(state, g.i)) state = addOwned(state, g.i, 0, at);
+	return { ...state, rx: [...(state.rx ?? []), ...gifts.map(([gid]) => gid)].slice(-RX_KEEP) };
+}
+
+/** Save what you wear now as outfit `i`. */
+export function saveFit(s: ShopState | undefined, i: number, at: number): ShopState | null {
+	if (!s || i < 0 || i >= FIT_COUNT) return null;
+	const l = Array.from({ length: FIT_COUNT }, (_, j) => (j === i ? { ...s.eq } : (s.fits?.l[j] ?? null)));
+	return { ...s, fits: { at, l } };
+}
+
+/** Wear outfit `i` (what you still own of it; the rest of the slots off). */
+export function wearFit(s: ShopState | undefined, i: number, at: number): ShopState | null {
+	const f = s?.fits?.l[i];
+	if (!s || !f) return null;
+	const eq: Partial<Record<ShopSlot, string>> = {};
+	for (const [slot, id] of Object.entries(f)) if (id && owns(s, id) && ITEM_BY_ID.get(id)?.slot === slot) eq[slot as ShopSlot] = id;
+	// the Camo Armory gun stays in your hands unless the outfit has one
+	if (!eq.hold && s.eq.hold) eq.hold = s.eq.hold;
+	return { ...s, eq, at };
+}
+
+/** Buy the ad space: your line runs on the shop's and the casino's tickers for AD_HOURS (the latest ad wins). */
+export function buyAd(s: ShopState | undefined, text: string, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: 'broke' | 'empty' } {
+	const t = cleanAdText(text);
+	if (!t) return { result: 'empty' };
+	if (balance < AD_PRICE) return { result: 'broke' };
+	const base: ShopState = s ?? { own: {}, eq: {}, at: 0 };
+	return { result: 'ok', state: { ...base, ad: { t, at, n: (base.ad?.n ?? 0) + 1, p: (base.ad?.p ?? 0) + AD_PRICE } } };
+}
+
+/** The ad running now: the latest one bought within AD_HOURS (null: none). */
+export function adOf(members: Record<string, { shop?: ShopState }>, now: number): { id: string; t: string; at: number } | null {
+	let best: { id: string; t: string; at: number } | null = null;
+	for (const [id, m] of Object.entries(members)) {
+		const ad = m.shop?.ad;
+		if (ad && now - ad.at < AD_HOURS * 3_600_000 && ad.at - now < 60_000 && (!best || ad.at > best.at)) best = { id, t: ad.t, at: ad.at };
+	}
+	return best;
+}
+
+/** Earned rewards not in the shop yet: the whole 420 collection → 420 Legend + Legend Haze; the throne → its title. */
+export function grantRewards(s: ShopState | undefined, at: number): ShopState | undefined {
+	if (!s) return s;
+	let state = s;
+	if (COLLECTION_420.every((id) => owns(s, id))) for (const id of COLLECTION_REWARDS) if (state.own[id] === undefined) state = addOwned(state, id, 0, at);
+	for (const it of SHOP_ITEMS) if (it.grants && owns(s, it.id)) for (const g of it.grants) if (state.own[g] === undefined) state = addOwned(state, g, 0, at);
+	return state;
+}
+
+/** The trophies on a shelf, earned from what you've done in the shop. */
+export const TROPHIES = ['spent1m', 'spent10m', 'own25', 'own50', 'c420', 'gifter', 'pranker', 'boxer', 'statue', 'throne'] as const;
+export type TrophyId = (typeof TROPHIES)[number];
+export function trophies(s: ShopState | undefined): Record<TrophyId, boolean> {
+	const spent = shopSpent(s);
+	const owned = s ? Object.keys(s.own).filter((id) => owns(s, id)).length : 0;
+	return {
+		spent1m: spent >= 1_000_000,
+		spent10m: spent >= 10_000_000,
+		own25: owned >= 25,
+		own50: owned >= 50,
+		c420: owns(s, 'title-420legend'),
+		gifter: Object.keys(s?.gifts ?? {}).length >= 5 || (s?.gOld ?? 0) > 0,
+		pranker: Object.keys(s?.pranks ?? {}).length >= 10 || (s?.pOld ?? 0) > 0,
+		boxer: (s?.boxes?.n ?? 0) >= 10,
+		statue: (s?.statue?.n ?? 0) >= 1,
+		throne: owns(s, 'throne-abscar')
+	};
+}
+
+/** When a prank of this kind was on a member (from–until, ms), every time: e.g. to mmmph their radio lines from back then. */
+export function prankTimes(target: string, kind: PrankKind, members: Record<string, { shop?: ShopState }>): [number, number][] {
+	const def = PRANK_BY_ID.get(kind);
+	if (!def) return [];
+	const out: [number, number][] = [];
+	for (const m of Object.values(members)) for (const p of Object.values(m.shop?.pranks ?? {})) if (p.to === target && p.k === kind) out.push([p.at, p.at + def.hours * 3_600_000]);
 	return out;
 }

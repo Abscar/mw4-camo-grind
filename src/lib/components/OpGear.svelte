@@ -28,7 +28,18 @@
 		/** your own emblem with an emote worn: a tap plays it */
 		ontap?: (() => void) | null;
 		tapLabel?: string;
+		/** Abscar's Throne: a big golden throne drawn behind the emblem */
+		throne?: boolean;
+		/** a friend's Upside Down prank: the emblem is shown on its head, wobbling */
+		flip?: boolean;
+		/** a friend's Burger Head prank: a big googly-eyed burger covers the head */
+		burgerHead?: boolean;
+		/** an entrance ({ item id, when }): plays once for ENTRY_MS each time `at` changes
+		    (entry-smoke / entry-heli / entry-nuke) */
+		entry?: { k: string; at: number } | null;
 	}
+	/** How long an entrance plays. */
+	export const ENTRY_MS = 3000;
 </script>
 
 <script lang="ts">
@@ -78,6 +89,50 @@
 	$effect(() => () => clearTimeout(stopTimer));
 	const shown = $derived(extra.loop ? (extra.emote ?? null) : playing);
 
+	/** The entrance playing right now: a new `at` starts it, ENTRY_MS later it's over (same pattern as emotes). */
+	let entering = $state<{ k: string; at: number } | null>(null);
+	let entrySeen = 0;
+	let entryTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const en = extra.entry;
+		if (!en || en.at === entrySeen) return;
+		entrySeen = en.at;
+		entering = en;
+		clearTimeout(entryTimer);
+		entryTimer = setTimeout(() => (entering = null), ENTRY_MS);
+	});
+	$effect(() => () => clearTimeout(entryTimer));
+
+	/** Snowfall's flakes: across the box, staggered (x / start y in %, size px, delay s). */
+	const FLAKES = [
+		{ x: 10, y: 6, s: 8, d: 0 },
+		{ x: 28, y: 0, s: 6, d: 1.6 },
+		{ x: 46, y: 10, s: 9, d: 0.8 },
+		{ x: 64, y: 2, s: 7, d: 2.4 },
+		{ x: 82, y: 8, s: 8, d: 1.2 },
+		{ x: 18, y: 30, s: 6, d: 3 },
+		{ x: 74, y: 26, s: 7, d: 0.4 },
+		{ x: 54, y: 34, s: 6, d: 2 }
+	];
+	/** New Year Fireworks: where and when each burst pops (%, s) and its colour. */
+	const BURSTS = [
+		{ x: 12, y: 14, d: 0, c: '#ff4f6a' },
+		{ x: 86, y: 10, d: 0.5, c: '#ffd23a' },
+		{ x: 92, y: 56, d: 1.1, c: '#5ce1ff' },
+		{ x: 6, y: 62, d: 1.6, c: '#9dff5c' },
+		{ x: 50, y: -2, d: 2, c: '#c47dff' }
+	];
+	/** Smoke Entrance: where each puff of the burst flies (% of the box). */
+	const ESMOKE = [
+		[-30, -20],
+		[30, -24],
+		[-36, 12],
+		[36, 14],
+		[0, -36],
+		[-14, 34],
+		[16, 34]
+	];
+
 	/** Particle places (% of the box) and delays, the same for every effect so they spread out. */
 	const PARTS = [
 		{ x: 8, y: 22, d: 0 },
@@ -91,10 +146,85 @@
 	];
 </script>
 
-<span class="og" data-aura={aura} data-effect={fx} data-emote={shown?.k}>
+<span
+	class="og"
+	data-aura={aura}
+	data-effect={fx}
+	data-emote={shown?.k}
+	data-entry={entering?.k}
+	data-flip={extra.flip ? '' : undefined}
+>
+	{#if extra.throne}
+		<!-- Abscar's Throne: carved gold back with a crowned skull crest, red velvet, armrests at the sides -->
+		<span class="og-throne" aria-hidden="true"
+			><svg viewBox="0 0 160 136" width="100%" height="100%">
+				<defs>
+					<linearGradient id="{uid}-tg" x1="0" y1="0" x2="1" y2="1"
+						><stop offset="0" stop-color="#fff2a8" /><stop offset="0.35" stop-color="#f0b62a" /><stop offset="0.7" stop-color="#a86a08" /><stop offset="1" stop-color="#ffd65a" /></linearGradient
+					>
+					<radialGradient id="{uid}-tv" cx="0.5" cy="0.35" r="0.8"><stop offset="0" stop-color="#e8384e" /><stop offset="0.6" stop-color="#a0142a" /><stop offset="1" stop-color="#560612" /></radialGradient>
+				</defs>
+				<g stroke="#5a3a04" stroke-linejoin="round">
+					<!-- armrests with scrolls and their supports -->
+					<rect x="8" y="110" width="8" height="22" rx="2" fill="url(#{uid}-tg)" stroke-width="1.2" />
+					<rect x="144" y="110" width="8" height="22" rx="2" fill="url(#{uid}-tg)" stroke-width="1.2" />
+					<path d="M4 98 C4 90 12 88 20 90 L36 94 L36 114 L10 114 C6 114 4 110 4 106 Z" fill="url(#{uid}-tg)" stroke-width="1.4" />
+					<path d="M156 98 C156 90 148 88 140 90 L124 94 L124 114 L150 114 C154 114 156 110 156 106 Z" fill="url(#{uid}-tg)" stroke-width="1.4" />
+					<circle cx="9.5" cy="98" r="4.5" fill="#c98a14" stroke-width="1" /><circle cx="150.5" cy="98" r="4.5" fill="#c98a14" stroke-width="1" />
+					<!-- the tall back + side posts with balls -->
+					<path d="M28 126 L28 34 C28 22 44 14 58 12 C66 6 74 2 80 2 C86 2 94 6 102 12 C116 14 132 22 132 34 L132 126 Z" fill="url(#{uid}-tg)" stroke-width="1.6" />
+					<rect x="22" y="30" width="12" height="96" rx="4" fill="url(#{uid}-tg)" stroke-width="1.3" />
+					<rect x="126" y="30" width="12" height="96" rx="4" fill="url(#{uid}-tg)" stroke-width="1.3" />
+					<circle cx="28" cy="26" r="6.5" fill="url(#{uid}-tg)" stroke-width="1.3" /><circle cx="132" cy="26" r="6.5" fill="url(#{uid}-tg)" stroke-width="1.3" />
+					<!-- red velvet panel, buttoned -->
+					<path d="M42 122 L42 42 C42 32 54 26 66 24 C72 20 76 18 80 18 C84 18 88 20 94 24 C106 26 118 32 118 42 L118 122 Z" fill="url(#{uid}-tv)" stroke-width="1.2" />
+				</g>
+				<g fill="#ffd65a" stroke="#6a4206" stroke-width="0.6">
+					{#each [[60, 46], [80, 40], [100, 46], [52, 66], [108, 66], [52, 88], [108, 88], [52, 110], [108, 110]] as [cx, cy] (cx * 1000 + cy)}<circle {cx} {cy} r="1.8" />{/each}
+				</g>
+				<path d="M46 50 L60 46 L80 40 L100 46 L114 50 M52 66 L46 74 M108 66 L114 74" fill="none" stroke="#3a0208" stroke-opacity="0.5" stroke-width="0.8" />
+				<!-- seat front and feet (mostly behind the emblem) -->
+				<rect x="22" y="118" width="116" height="10" rx="3" fill="url(#{uid}-tg)" stroke="#5a3a04" stroke-width="1.3" />
+				<path d="M26 128 h10 v6 h-10 z M124 128 h10 v6 h-10 z" fill="#c98a14" stroke="#5a3a04" stroke-width="1" />
+				<!-- the crest: a skull wearing a crown -->
+				<path d="M74.6 17 L74.6 21 L85.4 21 L85.4 17 Z" fill="#e8dcc0" stroke="#3a2a10" stroke-width="0.8" />
+				<circle cx="80" cy="13" r="6" fill="#f4ead0" stroke="#3a2a10" stroke-width="0.9" />
+				<circle cx="77.6" cy="13" r="1.7" fill="#2a1a0a" /><circle cx="82.4" cy="13" r="1.7" fill="#2a1a0a" />
+				<path d="M80 15.4 l-0.9 1.6 h1.8 z M77 18.6 v2 M80 18.6 v2 M83 18.6 v2" fill="#2a1a0a" stroke="#2a1a0a" stroke-width="0.6" />
+				<path d="M71 8 L72 -3 L76 1.5 L80 -6 L84 1.5 L88 -3 L89 8 Z" fill="url(#{uid}-tg)" stroke="#5a3a04" stroke-width="1" />
+				<circle cx="80" cy="3" r="1.6" fill="#e8343a" stroke="#5a0a0a" stroke-width="0.5" />
+				<circle cx="74.5" cy="5" r="1.1" fill="#2fd36a" /><circle cx="85.5" cy="5" r="1.1" fill="#3a8aff" />
+			</svg></span
+		>
+	{/if}
 	{#if aura}
 		<span class="og-aura" data-aura={aura} aria-hidden="true"
-			><i></i>{#if aura === 'aura-nuke'}
+			><i></i>{#if aura === 'aura-snow'}
+				<!-- Snowfall: flakes drifting down round the emblem (b, not i: the aura's i rules would stretch them) -->
+				<span class="og-snow">
+					{#each FLAKES as fl, i (i)}
+						<b style:left="{fl.x}%" style:top="{fl.y}%" style:animation-delay="-{fl.d}s"
+							><svg viewBox="-6 -6 12 12" width={fl.s} height={fl.s}
+								><path d="M0 -5 V5 M-4.33 -2.5 L4.33 2.5 M-4.33 2.5 L4.33 -2.5 M-1.4 -4.2 L0 -3 L1.4 -4.2 M-1.4 4.2 L0 3 L1.4 4.2" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" /></svg
+							></b
+						>
+					{/each}
+				</span>
+			{:else if aura === 'aura-420legend'}
+				<!-- Legend Haze: a slowly turning ring of gold leaves in the green-gold smoke -->
+				<span class="og-legend"
+					><svg viewBox="0 0 100 100" width="100%" height="100%">
+						<defs>
+							<linearGradient id="{uid}-lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4b0" /><stop offset="0.5" stop-color="#f0b62a" /><stop offset="1" stop-color="#8a5a08" /></linearGradient>
+						</defs>
+						{#each [0, 45, 90, 135, 180, 225, 270, 315] as a (a)}
+							<g transform="rotate({a} 50 50) translate(50 9) scale(0.46) translate(-12 -20)"
+								>{#each LEAF_PATHS as d, j (j)}<path {d} fill="url(#{uid}-lg)" stroke="#5a3a06" stroke-width="0.9" />{/each}<path d={LEAF_STEM} stroke="#5a3a06" stroke-width="1.4" /></g
+							>
+						{/each}
+					</svg></span
+				>
+			{:else if aura === 'aura-nuke'}
 				<!-- Nuke: a mushroom cloud grows up behind the emblem every 10 s -->
 				<span class="og-mush"
 					><svg viewBox="0 0 60 70" width="100%" height="100%">
@@ -121,6 +251,32 @@
 	{#if extra.hold}
 		<!-- a Camo Armory gun, held across the chest, muzzle up to the right -->
 		<span class="og-hold" aria-hidden="true"><HeldGun id={extra.hold} /></span>
+	{/if}
+	{#if extra.burgerHead}
+		<!-- a friend's Burger Head: a big burger where the head was, googly eyes on the bun -->
+		<span class="og-bhead" aria-hidden="true"
+			><svg viewBox="0 0 60 40" width="100%">
+				<defs>
+					<radialGradient id="{uid}-bh" cx="0.38" cy="0.3" r="0.85"><stop offset="0" stop-color="#ffd896" /><stop offset="0.45" stop-color="#f0a24a" /><stop offset="1" stop-color="#b0581b" /></radialGradient>
+				</defs>
+				<path d="M6 31 H54 Q54 38 46 38 H14 Q6 38 6 31 Z" fill="url(#{uid}-bh)" stroke="#5a3200" stroke-width="1.4" />
+				<rect x="4" y="25.5" width="52" height="6.4" rx="3" fill="#6b3a1c" stroke="#3a1a08" stroke-width="1" />
+				<path d="M4.5 24.5 H55.5 L54.5 26.6 H44 L41 30.4 L38 26.6 H20 L18 29 L16 26.6 H5 Z" fill="#ffc928" stroke="#a87a0c" stroke-width="0.7" stroke-linejoin="round" />
+				<path
+					d="M3 22.6 H57 L57.4 24.6 Q55 26.6 52.6 24.6 Q50.2 26.6 47.8 24.6 Q45.4 26.6 43 24.6 Q40.6 26.6 38.2 24.6 Q35.8 26.6 33.4 24.6 Q31 26.6 28.6 24.6 Q26.2 26.6 23.8 24.6 Q21.4 26.6 19 24.6 Q16.6 26.6 14.2 24.6 Q11.8 26.6 9.4 24.6 Q7 26.6 4.6 24.6 Z"
+					fill="#66c93c"
+					stroke="#24561a"
+					stroke-width="0.7"
+				/>
+				<path d="M4 23.2 C4 9 15 2 30 2 C45 2 56 9 56 23.2 Z" fill="url(#{uid}-bh)" stroke="#5a3200" stroke-width="1.4" />
+				<g fill="#fff4d6"
+					><ellipse cx="13" cy="10" rx="1.4" ry="0.7" transform="rotate(-25 13 10)" /><ellipse cx="47" cy="10" rx="1.4" ry="0.7" transform="rotate(25 47 10)" /><ellipse cx="30" cy="5.4" rx="1.4" ry="0.7" /><ellipse cx="10" cy="18" rx="1.3" ry="0.65" transform="rotate(-10 10 18)" /><ellipse cx="50" cy="18" rx="1.3" ry="0.65" transform="rotate(10 50 18)" /></g
+				>
+				<circle cx="22" cy="14" r="6.4" fill="#fff" stroke="#1a0e05" stroke-width="1.1" /><circle cx="38" cy="14" r="6.4" fill="#fff" stroke="#1a0e05" stroke-width="1.1" />
+				<circle class="og-googly" cx="23" cy="15.4" r="2.8" fill="#111" /><circle class="og-googly og-googly2" cx="36.6" cy="15" r="2.8" fill="#111" />
+				<path d="M24 20.4 Q30 23.6 36 20.4" fill="none" stroke="#3a1a08" stroke-width="1.2" stroke-linecap="round" />
+			</svg></span
+		>
 	{/if}
 	{#if fx === 'fx-burgers'}
 		<span class="og-orbit" aria-hidden="true">
@@ -184,6 +340,15 @@
 	{:else if fx === 'fx-glitch'}
 		<!-- Glitch: torn red / cyan bars flash across while the emblem itself jumps (CSS on .og-body) -->
 		<span class="og-glitch" aria-hidden="true"><i></i><i></i><i></i></span>
+	{:else if fx === 'fx-newyear'}
+		<!-- New Year Fireworks: colourful bursts popping round the emblem, one after another -->
+		<span class="og-fx og-fw" aria-hidden="true">
+			{#each BURSTS as b, i (i)}
+				<b style:left="{b.x}%" style:top="{b.y}%" style:--c={b.c} style:animation-delay="-{b.d}s"
+					>{#each [0, 45, 90, 135, 180, 225, 270, 315] as r (r)}<i style:--r="{r}deg"></i>{/each}<em></em></b
+				>
+			{/each}
+		</span>
 	{:else if fx}
 		<span class="og-fx" data-effect={fx} aria-hidden="true">
 			{#each PARTS as p, i (i)}<i style:left="{p.x}%" style:top="{p.y}%" style:animation-delay="-{p.d}s"></i>{/each}
@@ -240,6 +405,44 @@
 					</svg>
 					{#each [0, 1, 2, 3, 4] as c (c)}<i style:--c={c}></i>{/each}
 				</span>
+			{/if}
+		{/key}
+	{/if}
+	{#if entering}
+		{#key entering.at}
+			{#if entering.k === 'entry-smoke'}
+				<!-- Smoke Entrance: a big grey burst, the emblem appears out of it -->
+				<span class="og-entry og-esmoke" aria-hidden="true">
+					{#each ESMOKE as [dx, dy], i (i)}<i style:--dx="{dx}%" style:--dy="{dy}%" style:animation-delay="{i * 0.04}s"></i>{/each}
+				</span>
+			{:else if entering.k === 'entry-heli'}
+				<!-- Chopper Drop: a helicopter sweeps in overhead, the emblem slides down its rope -->
+				<span class="og-entry og-eheli" aria-hidden="true"
+					><i class="og-rope"></i><svg class="og-chopper" viewBox="0 0 60 26" width="100%">
+						<g fill="#1c2228" stroke="#0a0d10" stroke-width="0.8" stroke-linejoin="round">
+							<path d="M4 9 L22 11 L22 14 L5 12 Z" />
+							<path d="M2 6 L5 6 L7 12 L4 12 Z" />
+							<path d="M20 11 C20 6 28 5 36 5 C46 5 52 9 52 14 C52 18 46 20 36 20 C28 20 20 17 20 11 Z" />
+							<path d="M28 21 V23 M44 21 V23 M24 23.6 H50" fill="none" stroke="#1c2228" stroke-width="1.6" stroke-linecap="round" />
+							<rect x="35" y="2.4" width="2" height="3" />
+						</g>
+						<path d="M41 8.4 C45 8.4 49 10 50 13 L41 13 Z" fill="#7ac8e8" opacity="0.8" />
+						<ellipse class="og-rotor" cx="36" cy="2.4" rx="24" ry="1.1" fill="#3a444c" opacity="0.75" />
+					</svg></span
+				>
+			{:else if entering.k === 'entry-nuke'}
+				<!-- Nuke Drop: a mushroom cloud behind, a white flash, the emblem slams in -->
+				<span class="og-entry og-enuke" aria-hidden="true"
+					><svg viewBox="0 0 60 70" width="100%" height="100%">
+						<defs>
+							<radialGradient id="{uid}-ecap" cx="0.5" cy="0.65" r="0.6"><stop offset="0" stop-color="#fff6a0" /><stop offset="0.45" stop-color="#ffb02a" /><stop offset="1" stop-color="#c2341a" /></radialGradient>
+							<linearGradient id="{uid}-estem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf4a" /><stop offset="1" stop-color="#6a5a4a" stop-opacity="0.2" /></linearGradient>
+						</defs>
+						<path d="M25 70 C26 52 25 40 23 30 L37 30 C35 40 34 52 35 70 Z" fill="url(#{uid}-estem)" />
+						<path d="M8 30 C2 30 2 20 9 18 C8 9 18 4 24 9 C27 2 37 2 39 9 C46 5 55 11 51 19 C58 21 57 31 50 30 Z" fill="url(#{uid}-ecap)" stroke="#7a2410" stroke-width="1" />
+					</svg></span
+				>
+				<span class="og-entry og-eflash" aria-hidden="true"></span>
 			{/if}
 		{/key}
 	{/if}
@@ -1027,6 +1230,418 @@
 		z-index: 3;
 		pointer-events: none;
 	}
+	/* ---------- the winter + legend pack ---------- */
+	/* Abscar's Throne: behind everything, a faint gold glow */
+	.og-throne {
+		position: absolute;
+		z-index: 0;
+		left: -30%;
+		right: -30%;
+		top: -30%;
+		bottom: -6%;
+		pointer-events: none;
+	}
+	.og-throne svg {
+		display: block;
+		overflow: visible;
+		filter: drop-shadow(0 0 5px rgb(255 200 60 / 0.55)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.6));
+	}
+	/* Snowfall: an icy glow… */
+	.og-aura[data-aura='aura-snow'] i {
+		background: radial-gradient(circle, rgb(220 244 255 / 0.85) 0 26%, rgb(130 200 255 / 0.45) 50%, transparent 70%);
+		animation: og-breathe 3.4s ease-in-out infinite;
+	}
+	/* …with flakes drifting down */
+	.og-snow {
+		position: absolute;
+		inset: 0;
+	}
+	.og-snow b {
+		position: absolute;
+		display: block;
+		opacity: 0;
+		filter: drop-shadow(0 0 2px rgb(160 220 255 / 0.9));
+		animation: og-snow 4s linear infinite;
+	}
+	.og-snow b svg {
+		display: block;
+	}
+	@keyframes og-snow {
+		0% {
+			transform: translate(0, -8px) rotate(0deg);
+			opacity: 0;
+		}
+		15% {
+			opacity: 1;
+		}
+		50% {
+			transform: translate(5px, 16px) rotate(90deg);
+		}
+		100% {
+			transform: translate(-2px, 40px) rotate(180deg);
+			opacity: 0;
+		}
+	}
+	/* Legend Haze: green-gold smoke swirling round… */
+	.og-aura[data-aura='aura-420legend'] i {
+		background:
+			radial-gradient(circle, rgb(255 222 100 / 0.7) 0 20%, rgb(90 220 60 / 0.45) 42%, transparent 66%),
+			conic-gradient(from 0deg, rgb(70 210 50 / 0.75), rgb(255 206 60 / 0.75), rgb(40 160 40 / 0.6), rgb(255 230 120 / 0.8), rgb(70 210 50 / 0.75));
+		-webkit-mask: radial-gradient(circle, #000 38%, transparent 70%);
+		mask: radial-gradient(circle, #000 38%, transparent 70%);
+		filter: blur(3px);
+		animation: og-spin 9s linear infinite;
+	}
+	/* …and a ring of gold leaves turning slowly the other way */
+	.og-legend {
+		position: absolute;
+		inset: 3%;
+		animation: og-spin 24s linear infinite reverse;
+	}
+	.og-legend svg {
+		display: block;
+		overflow: visible;
+		filter: drop-shadow(0 0 3px rgb(255 210 70 / 0.85));
+	}
+	/* New Year Fireworks: each burst grows out from its middle and fades */
+	.og-fw b {
+		position: absolute;
+		display: block;
+		width: 0;
+		height: 0;
+		opacity: 0;
+		animation: og-fw 2.6s ease-out infinite;
+	}
+	.og-fw b i {
+		left: -1px;
+		top: -11px;
+		width: 2px;
+		height: 7px;
+		border-radius: 2px;
+		background: linear-gradient(to top, transparent, var(--c) 40%, #fff);
+		transform-origin: 1px 11px;
+		transform: rotate(var(--r));
+		box-shadow: 0 0 3px var(--c);
+	}
+	.og-fw b em {
+		position: absolute;
+		left: -3px;
+		top: -3px;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #fff;
+		box-shadow: 0 0 6px 2px var(--c);
+	}
+	@keyframes og-fw {
+		0% {
+			transform: scale(0.1);
+			opacity: 0;
+		}
+		8% {
+			opacity: 1;
+		}
+		45% {
+			transform: scale(1.25);
+			opacity: 0.9;
+		}
+		60%,
+		100% {
+			transform: scale(1.4) translateY(3px);
+			opacity: 0;
+		}
+	}
+	/* a friend's Upside Down: the emblem on its head, wobbling */
+	.og[data-flip] .og-body {
+		animation: og-flip 2.4s ease-in-out infinite;
+	}
+	@keyframes og-flip {
+		0%,
+		100% {
+			transform: rotate(174deg);
+		}
+		50% {
+			transform: rotate(186deg) translateY(3%);
+		}
+	}
+	/* a friend's Burger Head: over the upper part of the emblem, googly eyes rolling */
+	.og-bhead {
+		position: absolute;
+		z-index: 3;
+		left: 2%;
+		top: -10%;
+		width: 96%;
+		pointer-events: none;
+		animation: og-bhead 1.6s ease-in-out infinite;
+	}
+	.og-bhead svg {
+		display: block;
+		height: auto;
+		filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.6));
+	}
+	@keyframes og-bhead {
+		50% {
+			transform: translateY(-3%) rotate(-3deg);
+		}
+	}
+	.og-googly {
+		animation: og-googly 1.3s ease-in-out infinite;
+	}
+	.og-googly2 {
+		animation-delay: -0.5s;
+	}
+	@keyframes og-googly {
+		0%,
+		100% {
+			transform: translate(0, 0);
+		}
+		25% {
+			transform: translate(-2px, 1px);
+		}
+		55% {
+			transform: translate(1.5px, -1.5px);
+		}
+		80% {
+			transform: translate(-1px, -1px);
+		}
+	}
+	/* ---------- entrances: play once (ENTRY_MS) when `at` changes ---------- */
+	.og-entry {
+		position: absolute;
+		pointer-events: none;
+	}
+	/* Smoke Entrance */
+	.og[data-entry='entry-smoke'] .og-body {
+		animation: og-e-smoke 3s ease-out both;
+	}
+	@keyframes og-e-smoke {
+		0%,
+		30% {
+			transform: scale(0.5);
+			opacity: 0;
+		}
+		58% {
+			transform: scale(1.08);
+			opacity: 1;
+		}
+		72%,
+		100% {
+			transform: none;
+			opacity: 1;
+		}
+	}
+	.og-esmoke {
+		inset: 0;
+		z-index: 4;
+	}
+	.og-esmoke i {
+		position: absolute;
+		left: 20%;
+		top: 20%;
+		width: 60%;
+		height: 60%;
+		border-radius: 50%;
+		background: radial-gradient(circle at 40% 35%, rgb(240 242 240 / 0.97), rgb(170 176 172 / 0.9) 55%, rgb(120 126 122 / 0) 72%);
+		filter: blur(1.5px);
+		opacity: 0;
+		animation: og-e-puff 3s ease-out both;
+	}
+	@keyframes og-e-puff {
+		0% {
+			transform: scale(0.2);
+			opacity: 0;
+		}
+		12% {
+			transform: scale(1.1);
+			opacity: 1;
+		}
+		45% {
+			transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6)) scale(1.4);
+			opacity: 0.9;
+		}
+		85%,
+		100% {
+			transform: translate(var(--dx), var(--dy)) scale(1.8);
+			opacity: 0;
+		}
+	}
+	/* Chopper Drop */
+	.og[data-entry='entry-heli'] .og-body {
+		animation: og-e-drop 3s ease-in-out both;
+	}
+	@keyframes og-e-drop {
+		0%,
+		28% {
+			transform: translateY(-120%);
+			opacity: 0;
+		}
+		32% {
+			transform: translateY(-120%);
+			opacity: 1;
+		}
+		70% {
+			transform: translateY(0);
+		}
+		78% {
+			transform: translateY(-5%);
+		}
+		86%,
+		100% {
+			transform: none;
+			opacity: 1;
+		}
+	}
+	.og-eheli {
+		left: 15%;
+		right: 15%;
+		top: -48%;
+		z-index: 4;
+	}
+	.og-chopper {
+		position: relative;
+		display: block;
+		height: auto;
+		filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.5));
+		animation: og-e-heli 3s ease-in-out both;
+	}
+	@keyframes og-e-heli {
+		0% {
+			transform: translateX(-220%);
+			opacity: 0;
+		}
+		8% {
+			opacity: 1;
+		}
+		28%,
+		76% {
+			transform: translateX(0) translateY(0);
+		}
+		52% {
+			transform: translateY(-4%);
+		}
+		100% {
+			transform: translateX(240%) translateY(-20%);
+			opacity: 0;
+		}
+	}
+	.og-rotor {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: og-rotor 0.12s linear infinite alternate;
+	}
+	@keyframes og-rotor {
+		to {
+			transform: scaleX(0.35);
+		}
+	}
+	.og-rope {
+		position: absolute;
+		left: calc(50% + 4px);
+		top: 60%;
+		width: 2px;
+		height: 120%;
+		background: repeating-linear-gradient(to bottom, #c9a46a 0 3px, #7a5a2a 3px 5px);
+		transform-origin: 50% 0;
+		transform: scaleY(0);
+		animation: og-e-rope 3s ease-in-out both;
+	}
+	@keyframes og-e-rope {
+		0%,
+		24% {
+			transform: scaleY(0);
+			opacity: 1;
+		}
+		32%,
+		72% {
+			transform: scaleY(1);
+			opacity: 1;
+		}
+		82%,
+		100% {
+			transform: scaleY(0);
+			opacity: 0;
+		}
+	}
+	/* Nuke Drop */
+	.og[data-entry='entry-nuke'] .og-body {
+		animation: og-e-slam 3s ease-out both;
+	}
+	@keyframes og-e-slam {
+		0%,
+		26% {
+			transform: scale(1.8);
+			opacity: 0;
+		}
+		36% {
+			transform: scale(0.88, 0.92);
+			opacity: 1;
+		}
+		42% {
+			transform: scale(1.06) translateX(-3%);
+		}
+		48% {
+			transform: scale(1) translateX(3%);
+		}
+		54%,
+		100% {
+			transform: none;
+			opacity: 1;
+		}
+	}
+	.og-enuke {
+		left: 0;
+		right: 0;
+		bottom: 20%;
+		height: 120%;
+		z-index: 0;
+		transform-origin: 50% 100%;
+		animation: og-e-cloud 3s ease-out both;
+	}
+	.og-enuke svg {
+		display: block;
+		filter: drop-shadow(0 0 6px rgb(255 160 40 / 0.8));
+	}
+	@keyframes og-e-cloud {
+		0%,
+		8% {
+			transform: scale(0.15, 0.1);
+			opacity: 0;
+		}
+		14% {
+			opacity: 1;
+		}
+		40% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(1.15, 1.08) translateY(-8%);
+			opacity: 0;
+		}
+	}
+	.og-eflash {
+		inset: -40%;
+		z-index: 5;
+		border-radius: 50%;
+		background: radial-gradient(circle, #fff 0 30%, rgb(255 250 220 / 0.8) 50%, transparent 70%);
+		opacity: 0;
+		animation: og-e-flash 3s ease-out both;
+	}
+	@keyframes og-e-flash {
+		0% {
+			opacity: 0;
+			transform: scale(0.4);
+		}
+		10% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		40%,
+		100% {
+			opacity: 0;
+			transform: scale(1.2);
+		}
+	}
 	/* ---------- callsign styles + title plates (global: OperatorTag and the shop use them) ---------- */
 	/* the gradient styles paint the letters with their background, which a text-shadow would cover
 	   (shadows are drawn above the background): they get drop-shadow filters instead */
@@ -1133,8 +1748,33 @@
 		.og-b1,
 		.og-b2,
 		.og-nose,
+		.og-snow b,
+		.og-legend,
+		.og-fw b,
+		.og[data-flip] .og-body,
+		.og-bhead,
+		.og-googly,
+		.og[data-entry] .og-body,
+		.og-entry,
+		.og-entry i,
+		.og-chopper,
+		.og-rotor,
 		:global(.og-name[data-style='name-rainbow']) {
 			animation: none !important;
+		}
+		/* still pictures: flakes hang in the air, one burst stays open, the emblem stands on its head, no entrance */
+		.og-snow b {
+			opacity: 0.9;
+		}
+		.og-fw b:first-child {
+			opacity: 1;
+			transform: scale(1.1);
+		}
+		.og[data-flip] .og-body {
+			transform: rotate(180deg);
+		}
+		.og-entry {
+			display: none;
 		}
 		.og-fx i {
 			opacity: 0.8;

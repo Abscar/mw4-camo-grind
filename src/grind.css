@@ -491,6 +491,42 @@
 	font-weight: 600;
 	color: #d9c8bb;
 }
+/* BurgiShop kill feed styles (shop.ts slot `feed`, 2026-11-21); the shop's item cards show them too */
+.kill-row[data-feed='feed-gold'] {
+	border-right-color: #ffd23a;
+	background: linear-gradient(90deg, rgb(60 40 0 / 0.5), rgb(40 24 0 / 0.92) 30%);
+	box-shadow:
+		0 0 0 1px rgb(255 210 58 / 0.6),
+		0 0 12px rgb(255 190 40 / 0.45);
+}
+.kill-row[data-feed='feed-gold'] .kill-player {
+	color: #ffe27a;
+}
+.kill-row[data-feed='feed-neon'] {
+	border-right-color: #2be0ff;
+	background: linear-gradient(90deg, rgb(20 0 40 / 0.5), rgb(16 0 34 / 0.92) 30%);
+	box-shadow:
+		0 0 0 1px #ff4fd8,
+		0 0 14px rgb(255 79 216 / 0.55),
+		inset 0 0 10px rgb(43 224 255 / 0.25);
+}
+.kill-row[data-feed='feed-neon'] .kill-player {
+	color: #2be0ff;
+	text-shadow: 0 0 6px #2be0ff;
+}
+.kill-row[data-feed='feed-fire'] {
+	border-right-color: #ffb000;
+	background:
+		linear-gradient(0deg, rgb(255 80 20 / 0.55), transparent 70%),
+		linear-gradient(90deg, rgb(40 6 0 / 0.5), rgb(40 8 0 / 0.92) 30%);
+	box-shadow:
+		0 0 0 1px rgb(255 120 20 / 0.7),
+		0 -2px 16px rgb(255 90 20 / 0.6);
+}
+.kill-row[data-feed='feed-fire'] .kill-player {
+	color: #ffcf4a;
+	text-shadow: 0 0 6px #ff5a14;
+}
 @media (max-width: 639px) {
 	.kill-feed {
 		top: 8px;

@@ -45,6 +45,7 @@
 	import SeasonStrip from '#lib/components/SeasonStrip.svelte';
 	import WeaponSheet from '#lib/components/WeaponSheet.svelte';
 	import KillFeed from '#lib/components/KillFeed.svelte';
+	import ShopExtras from '#lib/components/ShopExtras.svelte';
 	import DivergenceUnlock from '#lib/components/DivergenceUnlock.svelte';
 	import BootSequence from '#lib/components/BootSequence.svelte';
 	import AbscarTerminal from '#lib/components/AbscarTerminal.svelte';
@@ -449,6 +450,7 @@
 
 <!-- Abscar extras: kill feed, the Divergence flash and the boot text (decoration, aria-hidden) -->
 <KillFeed />
+<ShopExtras />
 <DivergenceUnlock />
 <BootSequence />
 <!-- Abscar: the secret terminal (type "abscar", press §, or tap the red HUD box 5 times) -->

@@ -10,7 +10,7 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { agoParts } from '#lib/squad-codec.ts';
 	import { TEXT_MAX } from '#lib/squad-radio.ts';
-	import { worn } from '#lib/shop.ts';
+	import { prankTimes, worn } from '#lib/shop.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 
 	let { visible }: { visible: boolean } = $props();
@@ -22,6 +22,12 @@
 	const nameOf = (id: string, fallback: string) => squad.doc?.members[id]?.name ?? fallback;
 	/** The radio style each member wears from BurgiShop (shop.ts slot `radio`; 2026-11-20). */
 	const styles = $derived(Object.fromEntries(squad.entries.map((e) => [e.id, worn(e.member.shop).radio?.id])));
+	/** A friend's Mmmph prank (shop.ts PRANKS): what a member said while it was on comes out as "mmmph" (their own words, typed lines only). */
+	const gagged = $derived.by(() => {
+		const members = Object.fromEntries(squad.entries.map((e) => [e.id, e.member]));
+		return Object.fromEntries(squad.entries.map((e) => [e.id, prankTimes(e.id, 'mmmph', members)]));
+	});
+	const isGagged = (from: string, at: number) => (gagged[from] ?? []).some(([a, b]) => at >= a && at < b);
 
 	// reading it while the tab is shown counts as read; keep the newest line in view
 	$effect(() => {
@@ -60,7 +66,7 @@
 			<div class="radio-line" data-kind={m.kind} data-style={styles[m.from]} class:mine>
 				<span class="radio-time">{t.squad.ago(agoParts(m.at, squad.now))}</span>
 				<p class="radio-text">
-					<b class="radio-name">{nameOf(m.from, m.name)}</b>{m.kind === 'event' ? ' ' : ': '}{m.text}
+					<b class="radio-name">{nameOf(m.from, m.name)}</b>{m.kind === 'event' ? ' ' : ': '}{m.kind !== 'event' && isGagged(m.from, m.at) ? t.pranks.mmmph(m.text.length) : m.text}
 				</p>
 				{#if !mine || fire.length}
 					<button

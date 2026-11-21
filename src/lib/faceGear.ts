@@ -381,5 +381,27 @@ export function hatItem(u: string, id: string | null | undefined, h: Face['head'
 		${[-0.5, 0, 0.5].map((t) => `<circle cx="${f(x + t * hw)}" cy="${f(y + 0.115 * w + Math.abs(t) * 0.06 * w)}" r="${f(w * 0.028)}" fill="${t ? '#2fd36a' : '#e8343a'}" stroke="#5a3a06" stroke-width="${f(w * 0.01)}"/>`).join('')}
 		${tw(x + 0.08 * w, y - 0.2 * w, w * 0.05, 0)}${tw(x - 0.36 * w, y - 0.02 * w, w * 0.04, 1.1)}`;
 	}
+	if (id === 'hat-santa') {
+		// a floppy red Santa hat: the point droops over to the right, white fur band, a fluffy pom-pom at the tip
+		const P = (a: number, b: number) => `${f(x + a * hw)} ${f(y + b * w)}`;
+		const CROWN = `M${P(-0.95, 0.14)} C${P(-0.96, -0.3)} ${P(0.05, -0.5)} ${P(0.55, -0.4)} C${P(1.0, -0.3)} ${P(1.28, -0.08)} ${P(1.3, 0.12)} L${P(1.14, 0.1)} C${P(1.08, -0.06)} ${P(0.95, -0.13)} ${P(0.8, -0.12)} C${P(0.9, -0.02)} ${P(0.95, 0.06)} ${P(0.95, 0.14)} Z`;
+		// the band: a fat rounded strip with bumps along both edges, like fur
+		const bumps: string[] = [];
+		for (let i = 0; i <= 8; i++) {
+			const bx = -1.04 + (i * 2.08) / 8;
+			bumps.push(`<circle cx="${f(x + bx * hw)}" cy="${f(y + (i % 2 ? 0.075 : 0.095) * w)}" r="${f(w * 0.05)}"/>`);
+			bumps.push(`<circle cx="${f(x + bx * hw)}" cy="${f(y + (i % 2 ? 0.27 : 0.255) * w)}" r="${f(w * 0.045)}"/>`);
+		}
+		const pom = [x + 1.3 * hw, y + 0.17 * w];
+		return `<defs><linearGradient id="${v}-red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a5a"/><stop offset="0.5" stop-color="#d8192a"/><stop offset="1" stop-color="#8a0612"/></linearGradient>
+		<radialGradient id="${v}-fur" cx="0.38" cy="0.32" r="0.8"><stop offset="0" stop-color="#ffffff"/><stop offset="0.7" stop-color="#eef2f4"/><stop offset="1" stop-color="#b9c4cc"/></radialGradient></defs>
+		<path d="${CROWN}" fill="url(#${v}-red)" stroke="#4a0208" stroke-width="${sw}" stroke-linejoin="round"/>
+		<path d="M${P(0.55, -0.37)} C${P(0.9, -0.28)} ${P(1.1, -0.1)} ${P(1.18, 0.06)}" fill="none" stroke="#5a0410" stroke-opacity="0.45" stroke-width="${f(w * 0.02)}" stroke-linecap="round"/>
+		<path d="M${P(-0.62, -0.06)} C${P(-0.55, -0.26)} ${P(-0.2, -0.38)} ${P(0.15, -0.38)}" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="${f(w * 0.03)}" stroke-linecap="round"/>
+		<g fill="url(#${v}-fur)" stroke="#9aa6ae" stroke-width="${f(w * 0.012)}">${bumps.join('')}
+		<rect x="${f(x - 1.06 * hw)}" y="${f(y + 0.08 * w)}" width="${f(2.12 * hw)}" height="${f(0.18 * w)}" rx="${f(0.09 * w)}" stroke="none"/></g>
+		<circle cx="${f(pom[0])}" cy="${f(pom[1])}" r="${f(w * 0.11)}" fill="url(#${v}-fur)" stroke="#9aa6ae" stroke-width="${f(w * 0.014)}"/>
+		<circle cx="${f(pom[0] - w * 0.035)}" cy="${f(pom[1] - w * 0.035)}" r="${f(w * 0.03)}" fill="#ffffff"/>`;
+	}
 	return '';
 }

@@ -132,9 +132,79 @@ export function divergenceBoom(ctx: Ctx, out: AudioNode, t: number): void {
 	}
 }
 
-/** Schedule one sound at time `t` on any context (also an OfflineAudioContext, for tests). */
-export function schedule(kind: SoundKind, ctx: Ctx, out: AudioNode, t: number): void {
-	if (kind === 'divergence') divergenceBoom(ctx, out, t);
+// ---------- BurgiShop sound packs (shop.ts slot `sound`, 2026-11-21): your tick instead of the hitmarker ----------
+
+/** Bong Bubbles: a quick run of rising bubble blips with a low gurgle under them (~0.4 s). */
+export function bongBubbles(ctx: Ctx, out: AudioNode, t: number): void {
+	const steps = [0, 0.05, 0.09, 0.14, 0.2, 0.24];
+	steps.forEach((dt, i) => {
+		const osc = ctx.createOscillator();
+		osc.type = 'sine';
+		const f = 320 + ((i * 137) % 260);
+		osc.frequency.setValueAtTime(f, t + dt);
+		osc.frequency.exponentialRampToValueAtTime(f * 2.4, t + dt + 0.05);
+		osc.connect(envelope(ctx, t + dt, 0.004, 0.22, 0.06)).connect(out);
+		osc.start(t + dt);
+		osc.stop(t + dt + 0.09);
+	});
+	const src = ctx.createBufferSource();
+	src.buffer = noise(ctx);
+	const lp = ctx.createBiquadFilter();
+	lp.type = 'lowpass';
+	lp.frequency.value = 380;
+	src.connect(lp).connect(envelope(ctx, t, 0.02, 0.18, 0.32)).connect(out);
+	src.start(t, 0, 0.4);
+}
+
+/** Air Horn: a short brassy two-tone blast (~0.35 s). */
+export function airHorn(ctx: Ctx, out: AudioNode, t: number): void {
+	const lp = ctx.createBiquadFilter();
+	lp.type = 'lowpass';
+	lp.frequency.value = 2600;
+	lp.connect(out);
+	for (const [f, peak] of [
+		[466.16, 0.14],
+		[470, 0.1],
+		[587.33, 0.09]
+	] as const) {
+		tone(ctx, lp, 'sawtooth', f, t, 0.012, peak, 0.32);
+	}
+}
+
+/** Burger Chomp: two crunchy bites (filtered noise thumps) and a little gulp (~0.4 s). */
+export function burgerChomp(ctx: Ctx, out: AudioNode, t: number): void {
+	for (const dt of [0, 0.14]) {
+		const src = ctx.createBufferSource();
+		src.buffer = noise(ctx);
+		const bp = ctx.createBiquadFilter();
+		bp.type = 'bandpass';
+		bp.frequency.value = 900;
+		bp.Q.value = 0.9;
+		src.connect(bp).connect(envelope(ctx, t + dt, 0.003, 0.55, 0.08)).connect(out);
+		src.start(t + dt, 0, 0.1);
+	}
+	const gulp = ctx.createOscillator();
+	gulp.type = 'sine';
+	gulp.frequency.setValueAtTime(260, t + 0.28);
+	gulp.frequency.exponentialRampToValueAtTime(120, t + 0.38);
+	gulp.connect(envelope(ctx, t + 0.28, 0.01, 0.28, 0.1)).connect(out);
+	gulp.start(t + 0.28);
+	gulp.stop(t + 0.42);
+}
+
+const PACKS: Record<string, (ctx: Ctx, out: AudioNode, t: number) => void> = { 'sound-bong': bongBubbles, 'sound-horn': airHorn, 'sound-chomp': burgerChomp };
+
+/** Schedule one sound at time `t` on any context (also an OfflineAudioContext, for tests). A sound pack replaces the tick. */
+export function schedule(kind: SoundKind, ctx: Ctx, out: AudioNode, t: number, pack: string | null = null): void {
+	const tick = (pack && PACKS[pack]) || null;
+	if (tick && kind === 'camo') tick(ctx, out, t);
+	else if (tick) {
+		// a maxed weapon / Divergence: your pack's sound, then the chime / boom without its own tick
+		tick(ctx, out, t);
+		const later = t + 0.3;
+		if (kind === 'divergence') divergenceBoom(ctx, out, later);
+		else maxedChime(ctx, out, later);
+	} else if (kind === 'divergence') divergenceBoom(ctx, out, t);
 	else if (kind === 'maxed') maxedChime(ctx, out, t);
 	else hitmarker(ctx, out, t);
 }
@@ -142,6 +212,8 @@ export function schedule(kind: SoundKind, ctx: Ctx, out: AudioNode, t: number): 
 class Sound {
 	/** Sound effects on for this device. Read after the page has loaded (so prerendered HTML matches). */
 	on = $state(false);
+	/** The BurgiShop sound pack you wear (shop.ts slot `sound`), set by ShopPage; null = the hitmarker. */
+	pack: string | null = null;
 	#loaded = false;
 	#ctx: AudioContext | null = null;
 	#out: GainNode | null = null;
@@ -175,12 +247,17 @@ class Sound {
 		if (this.on) this.#play(kind);
 	}
 
-	#play(kind: SoundKind): void {
+	/** Hear a sound pack (the shop's item cards), whether sound is on or not: it's a tap. */
+	preview(pack: string): void {
+		this.#play('camo', pack);
+	}
+
+	#play(kind: SoundKind, pack: string | null = this.pack): void {
 		const ctx = this.#context();
 		if (!ctx || !this.#out) return;
 		if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 		try {
-			schedule(kind, ctx, this.#out, ctx.currentTime + 0.01);
+			schedule(kind, ctx, this.#out, ctx.currentTime + 0.01, pack);
 		} catch {
 			// never let a sound break a tick
 		}

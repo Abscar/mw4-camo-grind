@@ -20,6 +20,8 @@
 	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { camoLook } from '#lib/data/weaponLooks.ts';
+	import { owns } from '#lib/shop.ts';
+	import { sound } from '#lib/sound.svelte.ts';
 	import ArmorySection from './ArmorySection.svelte';
 	import CasinoTabArt from './CasinoTabArt.svelte';
 	import KarmaShopArt from './KarmaShopArt.svelte';
@@ -56,6 +58,13 @@
 		{ k: 'puff', x: 82, s: 64, d: -9, t: 22 },
 		{ k: 'leaf', x: 93, s: 18, d: -4, t: 20 }
 	];
+
+	// the sound pack you wear plays on your ticks (this page is always mounted, even while hidden)
+	$effect(() => {
+		sound.pack = squad.shop?.eq.sound && owns(squad.shop, squad.shop.eq.sound) ? squad.shop.eq.sound : null;
+	});
+	/** the ad running on the ticker (shop.ts adOf), shown first */
+	const ad = $derived(squad.on ? squad.ad : null);
 
 	onMount(() => {
 		try {
@@ -143,7 +152,9 @@
 	<div class="sp-ticker font-head" aria-hidden="true">
 		<div class="sp-tick-run">
 			{#each [0, 1] as copy (copy)}
-				<span class="sp-tick-set">{#each s.ticker as line (line)}<span class="sp-tick-item">{line}</span>{/each}</span>
+				<span class="sp-tick-set"
+					>{#if ad}<span class="sp-tick-item sp-tick-ad">{s.ad.tag(ad.name)} {ad.t}</span>{/if}{#each s.ticker as line (line)}<span class="sp-tick-item">{line}</span>{/each}</span
+				>
 			{/each}
 		</div>
 	</div>
@@ -468,6 +479,17 @@
 	.sp-tick-item:nth-child(3n) {
 		color: #ffe27a;
 		text-shadow: 0 0 6px rgb(255 201 40 / 0.6);
+	}
+	/* a squad member's paid ad: white on a magenta plate */
+	.sp-tick-item.sp-tick-ad {
+		margin: 3px 10px;
+		padding: 4px 14px;
+		border-radius: 999px;
+		background: linear-gradient(90deg, #ff2fb3, #b14dff);
+		color: #fff;
+		text-shadow: 0 1px 1px rgb(0 0 0 / 0.5);
+		text-transform: none;
+		letter-spacing: 0.04em;
 	}
 	@keyframes sp-tick {
 		to {

@@ -85,18 +85,39 @@
 	 * The ideas pack's extras per operator (2026-11-20, OpGear): the rifle on the back, a fresh emote (and,
 	 * on your own operator with an emote worn, a tap that plays it), a friend's Clown Nose, their Gas Mask.
 	 */
+	/**
+	 * Entrances (the 18-ideas pack, 2026-11-21, shop.ts slot `entry`): someone wearing one comes online while
+	 * your page is open → it plays once on their operator; your own plays once when your page opens.
+	 */
+	let entryAt = $state<Partial<Record<SquadOp, number>>>({});
+	const wasOnline = new Map<SquadOp, boolean>();
+	$effect(() => {
+		for (const op of SQUAD_OPS) {
+			const e = live(op);
+			if (!e) continue;
+			const before = wasOnline.get(op);
+			wasOnline.set(op, e.online);
+			if (!gear[op].entry || !e.online) continue;
+			if ((before === undefined && e.mine) || before === false) entryAt = { ...entryAt, [op]: Date.now() };
+		}
+	});
 	const extras = $derived(
 		Object.fromEntries(
 			SQUAD_OPS.map((op) => {
 				const e = live(op);
 				if (!e) return [op, {}];
 				const emote = gear[op].emote;
+				const ent = gear[op].entry;
 				const x: GearExtra = {
 					back: gear[op].back?.id,
 					hold: gear[op].hold?.id,
 					emote: freshEmote(e.member.shop, squad.serverNow()),
 					nose: pr[op].clown ? noseOf(op) : null,
 					masked: !!pr[op].mask,
+					throne: !!gear[op].throne,
+					flip: !!pr[op].flip,
+					burgerHead: !!pr[op].burgerhead,
+					entry: ent && entryAt[op] ? { k: ent.id, at: entryAt[op]! } : null,
 					ontap: e.mine && emote ? () => squad.playEmote() && toast.show(t.shop.emote.played(emote.name)) : null,
 					tapLabel: emote ? t.shop.emote.tap(emote.name) : undefined
 				};
@@ -117,7 +138,7 @@
 		const id = setInterval(() => (turn = (turn + 1) % TURN_ORDER.length), TURN_MS);
 		return () => clearInterval(id);
 	});
-	const awake = (op: SquadOp) => TURN_ORDER[turn] === op || !!extras[op]?.emote;
+	const awake = (op: SquadOp) => TURN_ORDER[turn] === op || !!extras[op]?.emote || (!!entryAt[op] && Date.now() - entryAt[op]! < 4000);
 	const statuses = $derived(
 		Object.fromEntries(
 			(Object.keys(SQUAD_MASTERY) as SquadOp[]).map((op) => [

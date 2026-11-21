@@ -15,11 +15,16 @@
 
 	const f = t.casino.floor;
 	const news = $derived(floorNews(squad.radio?.msgs, squad.now));
-	const items = $derived(
-		news.recent.length
-			? news.recent.map((w) => ({ key: w.id, who: w.name, text: w.text, when: f.ago(minutesAgo(w.at, squad.now)), game: w.game }))
-			: f.promo.map((p, i) => ({ key: `p${i}`, who: '', text: p, when: '', game: null as FloorGame | null }))
-	);
+	/** a squad member's ad from BurgiShop (shop.ts AD_*, 2026-11-21) flips by between the wins */
+	const ad = $derived(squad.on ? squad.ad : null);
+	const items = $derived.by(() => {
+		const list = news.recent.length
+			? news.recent.map((w) => ({ key: w.id, who: w.name, text: w.text, when: f.ago(minutesAgo(w.at, squad.now)), game: w.game as FloorGame | null }))
+			: f.promo.map((p, i) => ({ key: `p${i}`, who: '', text: p, when: '', game: null as FloorGame | null }));
+		if (!ad) return list;
+		const line = { key: `ad${ad.at}`, who: t.shop.ad.tag(ad.name), text: ad.t, when: '', game: null as FloorGame | null };
+		return [list[0], line, ...list.slice(1)].filter(Boolean);
+	});
 	const best = $derived(news.biggest);
 	let at = $state(0);
 	const shownIdx = $derived(items.length ? at % items.length : 0);

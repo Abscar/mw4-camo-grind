@@ -19,7 +19,8 @@
 	import SquadAvatar from './SquadAvatar.svelte';
 	import OpGear, { type GearExtra } from './OpGear.svelte';
 	import { faceOf, noseOf } from '#lib/faceGear.ts';
-	import { freshEmote, pranksOn, worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import { freshEmote, pranksOn, trophies, worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import ShopTrophies from './ShopTrophies.svelte';
 	import SquadStatue from './SquadStatue.svelte';
 	import SquadClasses from './SquadClasses.svelte';
 	import SquadCombat from './SquadCombat.svelte';
@@ -81,6 +82,9 @@
 			emote: freshEmote(e.member.shop, squad.serverNow()),
 			nose: pk.clown ? noseOf(e.member.op ?? 'initials') : null,
 			masked: !!pk.mask,
+			throne: !!look.throne,
+			flip: !!pk.flip,
+			burgerHead: !!pk.burgerhead,
 			ontap: e.mine && emote ? () => squad.playEmote() && toast.show(t.shop.emote.played(emote.name)) : null,
 			tapLabel: emote ? t.shop.emote.tap(emote.name) : undefined
 		};
@@ -343,9 +347,12 @@
 							{#if e.mine}<span class="sq-you font-head">{s.you}</span>{/if}
 							<span class="ml-auto flex-none">{@render presence(e.online, e.member.seen, e.mine)}</span>
 						</div>
-						{#if look.title || pk['too-high'] || pk.clown || pk.slacker || pk.mask}
+						{#if look.title || pk['too-high'] || pk.clown || pk.slacker || pk.mask || pk.flip || pk.burgerhead || pk.mmmph}
 							<p class="-mt-1 flex flex-wrap items-center gap-1.5">
 								{#if look.title}<span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span>{/if}
+								{#if pk.flip}<span class="sq-high sq-clown font-head" title={t.pranks.flipBy(byName(pk.flip.by))}>🙃 {t.pranks.names.flip}</span>{/if}
+								{#if pk.burgerhead}<span class="sq-high sq-clown font-head" title={t.pranks.burgerBy(byName(pk.burgerhead.by))}>🍔 {t.pranks.names.burgerhead}</span>{/if}
+								{#if pk.mmmph}<span class="sq-high sq-clown font-head" title={t.pranks.mmmphBy(byName(pk.mmmph.by))}>🤐 {t.pranks.names.mmmph}</span>{/if}
 								{#if pk['too-high']}<span class="sq-high font-head" title={t.pranks.highBy(byName(pk['too-high'].by))}>🍃 {t.pranks.stamp}</span>{/if}
 								{#if pk.clown}<span class="sq-high sq-clown font-head" title={t.pranks.clownBy(byName(pk.clown.by))}>🤡 {t.pranks.names.clown}</span>{/if}
 								{#if pk.slacker}<span class="sq-high sq-slack font-head" title={t.pranks.slackerBy(byName(pk.slacker.by))}>🐌 {t.operator.slacker}</span>{/if}
@@ -354,6 +361,10 @@
 						{/if}
 						{#if e.member.op && OP_NAMES[e.member.op] !== e.member.name}
 							<p class="-mt-1.5 text-xs text-muted">{s.asOp(OP_NAMES[e.member.op])}</p>
+						{/if}
+						{#if look.shelf}
+							<!-- their trophy shelf (BurgiShop): trophies earned in the shop -->
+							<div class="-mt-1"><ShopTrophies shelf={look.shelf.id} got={trophies(e.member.shop)} /></div>
 						{/if}
 						<!-- this week's camos, the MVP crown, the streak, stickers from lost duels -->
 						<div class="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">

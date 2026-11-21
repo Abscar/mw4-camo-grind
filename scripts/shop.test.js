@@ -31,18 +31,19 @@ const T = Date.UTC(2026, 10, 16, 20);
 test('the catalogue: unique ids, every slot stocked, sane prices, titles have words', () => {
 	assert.equal(new Set(SHOP_ITEMS.map((i) => i.id)).size, SHOP_ITEMS.length);
 	// every kind is stocked: the first ones with four or more (the sidekicks three), the ideas pack's at least one
-	const MIN = { pet: 3, back: 4, emote: 3, card: 4, radio: 2, table: 1, win: 1, maxfx: 3, buddy: 3 };
+	const MIN = { pet: 3, back: 4, emote: 3, card: 4, radio: 2, table: 1, win: 1, maxfx: 3, buddy: 3, entry: 3, sound: 3, feed: 3, shelf: 2, throne: 1 };
 	for (const slot of SLOTS) assert.ok(SHOP_ITEMS.filter((i) => i.slot === slot).length >= (MIN[slot] ?? 4), slot);
 	assert.equal(new Set(SHOP_ITEMS.map((i) => i.name)).size, SHOP_ITEMS.length, 'no two items share a name');
 	for (const i of SHOP_ITEMS) {
-		assert.ok(Number.isInteger(i.price) && i.price > 0, i.id);
+		// secret rewards are given, never sold (price 0)
+		assert.ok(Number.isInteger(i.price) && (i.secret ? i.price === 0 : i.price > 0), i.id);
 		assert.match(i.id, /^[a-z0-9-]{2,24}$/);
 		if (i.slot === 'title') assert.ok(i.text, i.id);
 	}
 	// rarer costs more within a slot
 	const rank = { common: 0, rare: 1, epic: 2, legendary: 3 };
 	for (const slot of SLOTS) {
-		const list = SHOP_ITEMS.filter((i) => i.slot === slot);
+		const list = SHOP_ITEMS.filter((i) => i.slot === slot && !i.secret);
 		for (const a of list) for (const b of list) if (rank[a.rarity] < rank[b.rarity]) assert.ok(a.price < b.price, `${a.id} < ${b.id}`);
 	}
 });
@@ -51,19 +52,20 @@ test('prices (2026-11-20, ×10–×20 by rarity): each rarity in its band, prank
 	// common ×10, rare ×13, epic ×16, legendary ×20 of the old prices (100–5,000), rounded
 	const band = { common: [1000, 3500], rare: [3900, 10500], epic: [9600, 32000], legendary: [48000, 100000] };
 	for (const i of SHOP_ITEMS) {
-		if (i.id === 'title-roller') continue; // the user's own pick, below
+		if (i.id === 'title-roller' || i.id === 'throne-abscar' || i.secret) continue; // the user's own picks, below; rewards are free
 		const [lo, hi] = band[i.rarity];
 		assert.ok(i.price >= lo && i.price <= hi, `${i.id} ${i.rarity} ${i.price} not in ${lo}–${hi}`);
 	}
 	assert.deepEqual(
 		PRANKS.map((p) => [p.id, p.price]),
-		[['smoke-bomb', 3750], ['too-high', 6000], ['clown', 4500], ['slacker', 7500], ['mask', 12000]]
+		[['smoke-bomb', 3750], ['too-high', 6000], ['clown', 4500], ['slacker', 7500], ['mask', 12000], ['flip', 6000], ['burgerhead', 6750], ['mmmph', 5250], ['confetti', 3000]]
 	);
 	// High Roller: 10 million (the user, 2026-11-20), legendary so the titles still go up by rarity
 	const roller = ITEM_BY_ID.get('title-roller');
 	assert.deepEqual({ price: roller.price, rarity: roller.rarity, text: roller.text }, { price: 10_000_000, rarity: 'legendary', text: 'High Roller' });
-	assert.equal(Math.max(...SHOP_ITEMS.map((i) => i.price)), 10_000_000, 'the dearest item');
-	assert.equal(Math.min(...SHOP_ITEMS.map((i) => i.price)), 1000, 'the cheapest (Burger Pin)');
+	assert.equal(Math.max(...SHOP_ITEMS.filter((i) => i.slot !== 'throne').map((i) => i.price)), 10_000_000, 'the dearest item but the throne');
+	assert.equal(ITEM_BY_ID.get('throne-abscar').price, 100_000_000, 'Abscar’s Throne (2026-11-21)');
+	assert.equal(Math.min(...SHOP_ITEMS.filter((i) => !i.secret).map((i) => i.price)), 1000, 'the cheapest (Burger Pin)');
 	// 10 million survives cleaning (the stored-price cap used to be 1 million) and the squad document
 	const rich = buy(undefined, 'title-roller', 10_000_000, T).state;
 	assert.equal(buy(undefined, 'title-roller', 9_999_999, T).result, 'broke');

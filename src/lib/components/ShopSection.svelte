@@ -10,8 +10,36 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { faceOf, noseOf } from '#lib/faceGear.ts';
-	import { pranksOn, shopSpent, statueOf, worn, PRANKS, SHOP_ITEMS, SLOTS, STATUE_PRICE, type ShopItem, type ShopSlot } from '#lib/shop.ts';
+	import {
+		boxPool,
+		buyable,
+		dayKey,
+		dealOf,
+		owns as ownsItem,
+		pranksOn,
+		sellValue,
+		shopSpent,
+		statueOf,
+		trophies,
+		worn,
+		AD_HOURS,
+		AD_MAX,
+		AD_PRICE,
+		BOX_PRICE,
+		COLLECTION_420,
+		FIT_COUNT,
+		ITEM_BY_ID,
+		PRANKS,
+		SHOP_ITEMS,
+		SLOTS,
+		STATUE_PRICE,
+		type Rarity,
+		type ShopItem,
+		type ShopSlot
+	} from '#lib/shop.ts';
+	import { sound } from '#lib/sound.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import ShopTrophies from './ShopTrophies.svelte';
 	import Dialog from './Dialog.svelte';
 	import MaxFx from './MaxFx.svelte';
 	import OpGear from './OpGear.svelte';
@@ -23,17 +51,18 @@
 	const s = t.shop;
 	const pr = t.pranks;
 	/** kinds drawn on the face (shown on a bigger operator on their item cards) */
-	const FACE_SLOTS: ShopSlot[] = ['mouth', 'eyes', 'hat', 'smoke', 'emote'];
+	const FACE_SLOTS: ShopSlot[] = ['mouth', 'eyes', 'hat', 'smoke', 'emote', 'entry'];
 	/** the newest kinds get a small NEW tag on their button (the ideas pack, 2026-11-20) */
-	const NEW_SLOTS: string[] = ['back', 'emote', 'card', 'radio', 'table', 'win', 'maxfx', 'buddy', 'statue'];
-	let slot = $state<ShopSlot | 'statue' | 'pranks'>('aura');
-	type Kind = ShopSlot | 'statue' | 'pranks';
-	/** The kinds in four groups (the makeover, 2026-11-20); a kind added later without a group lands with the first. */
+	const NEW_SLOTS: string[] = ['entry', 'trail', 'sound', 'feed', 'shelf', 'throne', 'box', 'ad'];
+	type Kind = ShopSlot | 'statue' | 'pranks' | 'box' | 'ad';
+	let slot = $state<Kind>('aura');
+	/** The kinds in groups (the makeover, 2026-11-20); a kind added later without a group lands with the first. */
 	const GROUPED: { key: keyof typeof s.groups; slots: Kind[] }[] = [
 		{ key: 'op', slots: ['aura', 'effect', 'badge', 'mouth', 'eyes', 'hat', 'smoke', 'pet', 'back', 'emote'] },
 		{ key: 'name', slots: ['name', 'title'] },
 		{ key: 'squad', slots: ['card', 'radio', 'table', 'win', 'maxfx', 'buddy'] },
-		{ key: 'special', slots: ['statue', 'pranks'] }
+		{ key: 'show', slots: ['entry', 'trail', 'sound', 'feed', 'shelf', 'throne'] },
+		{ key: 'special', slots: ['box', 'statue', 'ad', 'pranks'] }
 	];
 	const placed = new Set(GROUPED.flatMap((g) => g.slots));
 	const groups = GROUPED.map((g, i) => (i === 0 ? { ...g, slots: [...g.slots, ...SLOTS.filter((x) => !placed.has(x))] } : g));
@@ -89,14 +118,116 @@
 	const balance = $derived(squad.myBank?.balance ?? 0);
 	const mine = $derived(worn(squad.shop));
 	const look = $derived(trying ? { ...mine, [trying.slot]: trying } : mine);
-	const items = $derived(SHOP_ITEMS.filter((i) => i.slot === slot));
-	const owns = (id: string) => squad.shop?.own[id] !== undefined;
+	// secret rewards show only once owned (a locked card stands in for the 420 ones)
+	const items = $derived(SHOP_ITEMS.filter((i) => i.slot === slot && (!i.secret || owns(i.id))));
+	const owns = (id: string) => ownsItem(squad.shop, id);
 	const wearing = (it: ShopItem) => squad.shop?.eq[it.slot] === it.id;
 	const me = $derived(squad.me);
 	const sample = $derived((me?.name ?? 'Abscar').toUpperCase());
 
+	// ---------- the 18-ideas pack (2026-11-21) ----------
+	/** today's deal (the same for the whole squad, from the date) */
+	const deal = $derived(dealOf(dayKey(squad.now)));
+	const dealItem = $derived(ITEM_BY_ID.get(deal.id)!);
+	const priceNow = (it: ShopItem) => squad.priceOf(it.id);
+	const canBuy = (it: ShopItem) => buyable(it, squad.now);
+	/** the 420 collection's progress (the locked reward card) */
+	const have420 = $derived(COLLECTION_420.filter((id) => owns(id)).length);
+	const legend = $derived(owns('title-420legend'));
+	const myTrophies = $derived(trophies(squad.shop));
+	/** an entrance on its item card replays every few seconds */
+	let entryBeat = $state(1);
+	$effect(() => {
+		if (slot !== 'entry') return;
+		const timer = setInterval(() => (entryBeat += 1), 3600);
+		return () => clearInterval(timer);
+	});
+
+	// outfits
+	const fits = $derived(squad.shop?.fits?.l ?? []);
+	function saveFit(i: number) {
+		if (squad.saveFit(i)) toast.show(s.fits.saved(i + 1));
+	}
+	function wearFit(i: number) {
+		if (squad.wearFit(i)) toast.show(s.fits.worn(i + 1));
+	}
+
+	// selling
+	let selling = $state<ShopItem | null>(null);
+	let sellOpen = $state(false);
+	function askSell(it: ShopItem) {
+		selling = it;
+		sellOpen = true;
+	}
+	function confirmSell() {
+		const it = selling;
+		sellOpen = false;
+		selling = null;
+		if (!it) return;
+		const back = squad.sellItem(it.id);
+		if (back > 0) toast.show(s.sell.done(it.name, back));
+		else toast.show(s.sell.no);
+	}
+
+	// gifts
+	let gifting = $state<ShopItem | null>(null);
+	let giftOpen = $state(false);
+	const hasIt = (memberShop: unknown, id: string) => ownsItem(memberShop as Parameters<typeof ownsItem>[0], id);
+	function askGift(it: ShopItem) {
+		gifting = it;
+		giftOpen = true;
+	}
+	function sendGift(id: string, name: string) {
+		const it = gifting;
+		giftOpen = false;
+		gifting = null;
+		if (!it) return;
+		const r = squad.giveItem(it.id, id, name);
+		if (r === 'ok') toast.show(s.gift.sent(it.name, name));
+		else if (r === 'broke') toast.show(s.broke(priceNow(it), balance), undefined, 5000);
+		else if (r === 'owned') toast.show(s.gift.has);
+	}
+
+	// Munchie Boxes
+	const RARITIES: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
+	let boxOpen = $state(false);
+	let boxRarity = $state<Rarity>('common');
+	let boxResult = $state<{ id: string; dup: boolean; back: number } | null>(null);
+	let boxRevealed = $state(false);
+	let boxTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => () => clearTimeout(boxTimer));
+	function openBox(r: Rarity) {
+		const res = squad.openBox(r);
+		if (res === 'broke') {
+			toast.show(s.broke(BOX_PRICE[r], balance), undefined, 5000);
+			return;
+		}
+		if (res === 'off') return;
+		boxRarity = r;
+		boxResult = res;
+		boxRevealed = false;
+		boxOpen = true;
+		clearTimeout(boxTimer);
+		const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+		boxTimer = setTimeout(() => (boxRevealed = true), reduce ? 50 : 1400);
+	}
+	const boxItem = $derived(boxResult ? ITEM_BY_ID.get(boxResult.id) : undefined);
+
+	// the ad space
+	let adText = $state('');
+	const adNow = $derived(squad.ad);
+	function runAd() {
+		const r = squad.buyAd(adText);
+		if (r === 'ok') {
+			adText = '';
+			toast.show(s.ad.bought);
+		} else if (r === 'empty') toast.show(s.ad.empty);
+		else if (r === 'broke') toast.show(s.broke(AD_PRICE, balance), undefined, 5000);
+	}
+
 	function tryOn(it: ShopItem) {
 		trying = trying?.id === it.id ? null : it;
+		if (it.slot === 'sound') sound.preview(it.id);
 	}
 
 	function buyIt(it: ShopItem) {
@@ -104,7 +235,8 @@
 		if (r === 'ok') {
 			trying = null;
 			toast.show(s.bought(it.name));
-		} else if (r === 'broke') toast.show(s.broke(it.price, balance), undefined, 5000);
+		} else if (r === 'broke') toast.show(s.broke(priceNow(it), balance), undefined, 5000);
+		else if (r === 'closed') toast.show(s.closed);
 	}
 
 	function wearIt(it: ShopItem) {
@@ -119,15 +251,34 @@
 	}
 
 	function stateText(it: ShopItem): string {
-		return wearing(it) ? s.wearing : owns(it.id) ? s.owned : s.buy(it.price);
+		return wearing(it) ? s.wearing : owns(it.id) ? s.owned : s.buy(priceNow(it));
 	}
 </script>
 
 {#snippet face(l: Partial<Record<ShopSlot, ShopItem>>, size: number, pin: number, play = false)}
-	<!-- `play`: an emote in `l` plays over and over (item cards, or the preview while trying one on) -->
-	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} pet={l.pet?.id} {pin} extra={{ back: l.back?.id, hold: l.hold?.id, emote: play && l.emote ? { k: l.emote.id, at: 1 } : null, loop: true }}>
+	<!-- `play`: an emote in `l` plays over and over (item cards, or the preview while trying one on); an entrance replays every few seconds -->
+	<OpGear
+		aura={l.aura?.id}
+		effect={l.effect?.id}
+		badge={l.badge?.id}
+		pet={l.pet?.id}
+		{pin}
+		extra={{
+			back: l.back?.id,
+			hold: l.hold?.id,
+			emote: play && l.emote ? { k: l.emote.id, at: 1 } : null,
+			loop: true,
+			throne: !!l.throne,
+			entry: play && l.entry ? { k: l.entry.id, at: entryBeat } : null
+		}}
+	>
 		<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} face={faceOf(l)} />
 	</OpGear>
+{/snippet}
+
+{#snippet price(it: ShopItem)}
+	{@const now = priceNow(it)}
+	{s.buy(now)}{#if now < it.price}<s class="shop-was">{it.price.toLocaleString('en-US')}</s>{/if}
 {/snippet}
 
 <div class="shop">
@@ -148,7 +299,46 @@
 			{#if look.title}<span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span>{/if}
 			<p class="mt-2 text-[11px] text-muted">{s.spent(shopSpent(squad.shop))} · {s.toHouse}</p>
 		</div>
+		<!-- three saved outfits -->
+		<div class="shop-fits relative w-full">
+			<p class="sk-head font-head">{s.fits.heading}</p>
+			<div class="fit-row">
+				{#each Array.from({ length: FIT_COUNT }, (_, i) => i) as i (i)}
+					{@const f = fits[i]}
+					<div class="shop-fit" data-fit={i + 1}>
+						<span class="font-head text-[12px] font-bold">{s.fits.slot(i + 1)}</span>
+						<button type="button" class="btn btn-sm" disabled={!f} onclick={() => wearFit(i)}>{f ? s.fits.wear : s.fits.empty}</button>
+						<button type="button" class="btn btn-sm" onclick={() => saveFit(i)}>{f ? s.fits.saveOver : s.fits.save}</button>
+					</div>
+				{/each}
+			</div>
+		</div>
 	</div>
+
+	<!-- today's deal: one item a day for the whole squad -->
+	{#if dealItem}
+		{@const dOwned = owns(dealItem.id)}
+		<div class="shop-deal mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card p-3" data-rarity={dealItem.rarity}>
+			<span class="deal-badge font-head" aria-hidden="true">{s.deal.off(deal.off)}</span>
+			<div class="min-w-[11rem] flex-1">
+				<p class="deal-head font-head">🏷️ {s.deal.heading}</p>
+				<p class="flex flex-wrap items-baseline gap-x-2">
+					<b class="font-head text-[17px] font-bold">{dealItem.name}</b>
+					<span class="text-[12px] text-muted">{s.slots[dealItem.slot]} · {s.rarity[dealItem.rarity]}</span>
+				</p>
+				<p class="text-[11px] text-muted">{s.deal.was(dealItem.price)} · {s.deal.ends}</p>
+			</div>
+			<div class="flex flex-wrap gap-1.5">
+				<button type="button" class="btn btn-sm" onclick={() => ((slot = dealItem.slot), (trying = dealItem))}>{s.deal.tryOn}</button>
+				{#if dOwned}
+					<span class="shop-owned self-center text-[12px] text-muted">✔ {s.owned}</span>
+				{:else}
+					<button type="button" class="btn btn-sm btn-primary" disabled={balance < priceNow(dealItem)} onclick={() => buyIt(dealItem)}>{@render price(dealItem)}</button>
+				{/if}
+				{#if others.length}<button type="button" class="btn btn-sm" onclick={() => askGift(dealItem)}>{s.gift.button}</button>{/if}
+			</div>
+		</div>
+	{/if}
 
 	<!-- the kinds, in four groups (icons come from CSS so the buttons' words stay just the kind) -->
 	<div class="shop-kinds mt-4 grid gap-3" role="group" aria-label={s.slotsLabel}>
@@ -185,6 +375,34 @@
 				>
 			</div>
 		</div>
+	{:else if slot === 'box'}
+		<!-- Munchie Boxes: a random item of the box's rarity -->
+		<p class="mt-3 text-[13px] text-muted">{s.box.intro}</p>
+		<ul class="mt-2 grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-2">
+			{#each RARITIES as r (r)}
+				<li class="shop-box rounded-card border border-line bg-panel-2 p-3" data-rarity={r}>
+					<span class="box-pic" aria-hidden="true"><span class="box-lid"></span><span class="box-body"><span class="box-q font-head">?</span></span></span>
+					<p class="mt-2 font-head text-[14px] font-bold">{s.box.name(s.rarity[r])}</p>
+					<p class="text-[11px] text-muted">{boxPool(r).length} items</p>
+					<button type="button" class="btn btn-sm btn-primary mt-2" disabled={balance < BOX_PRICE[r]} onclick={() => openBox(r)}>{s.box.open(BOX_PRICE[r])}</button>
+				</li>
+			{/each}
+		</ul>
+		{#if squad.shop?.boxes}<p class="mt-2 text-[11px] text-muted">{s.box.opened(squad.shop.boxes.n)}</p>{/if}
+	{:else if slot === 'ad'}
+		<!-- the ad space on the tickers -->
+		<div class="shop-ad mt-3 grid gap-2 rounded-card border border-line bg-panel-2 p-3">
+			<p class="text-[13px] text-muted">{s.ad.intro(AD_HOURS)}</p>
+			{#if adNow}
+				<p class="text-[13px]">{s.ad.now(adNow.name)} <b class="ad-now font-head">{adNow.t}</b></p>
+			{:else}
+				<p class="text-[13px] text-muted">{s.ad.none}</p>
+			{/if}
+			<div class="flex flex-wrap gap-2">
+				<input class="field min-w-0 flex-1" type="text" maxlength={AD_MAX} bind:value={adText} placeholder={s.ad.placeholder} aria-label={s.ad.label} />
+				<button type="button" class="btn btn-primary" disabled={balance < AD_PRICE || !adText.trim()} onclick={runAd}>{s.ad.buy(AD_PRICE)}</button>
+			</div>
+		</div>
 	{:else if slot === 'pranks'}
 		<!-- pranks: bought per throw, aimed at a friend (the Gas Mask goes on yourself) -->
 		<p class="mt-3 text-[13px] text-muted">{pr.intro}</p>
@@ -200,6 +418,16 @@
 							<span class="shop-slackdemo font-head">{t.operator.slacker}</span>
 						{:else if p.id === 'mask'}
 							<OpGear extra={{ masked: true }} pin={22}><SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} size={46} /></OpGear>
+						{:else if p.id === 'flip'}
+							<OpGear extra={{ flip: true }}><SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} size={46} /></OpGear>
+						{:else if p.id === 'burgerhead'}
+							<OpGear extra={{ burgerHead: true }}><SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} size={46} /></OpGear>
+						{:else if p.id === 'mmmph'}
+							<span class="shop-radiodemo font-hud"
+								><span class="radio-line"><span class="radio-text"><span class="radio-name font-bold">{others[0]?.member.name ?? 'Ingman'}</span>: {pr.mmmph(30)}</span></span></span
+							>
+						{:else if p.id === 'confetti'}
+							<span class="shop-confdemo">{#each Array.from({ length: 14 }, (_, i) => i) as i (i)}<i style:--i={i}></i>{/each}</span>
 						{:else}
 							<span class="shop-highdemo font-head">{pr.stamp}</span>
 						{/if}
@@ -219,10 +447,25 @@
 	{#if s.slotHint[slot]}<p class="shop-hint mt-3 text-[13px] text-muted">{s.slotHint[slot]}</p>{/if}
 	<!-- the items -->
 	<ul class="mt-3 grid grid-cols-[repeat(auto-fill,minmax(min(100%,190px),1fr))] gap-2">
+		{#if (slot === 'title' || slot === 'aura') && !legend}
+			<!-- the secret 420 reward, locked until the whole collection is owned -->
+			<li class="shop-item shop-locked rounded-card border border-line bg-panel-2 p-2.5" data-rarity="legendary">
+				<span class="shop-try locked-pic font-head" aria-hidden="true"><span>🔒</span> ???</span>
+				<p class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+					<span class="min-w-0 font-head text-[14px] font-bold">{s.collector.locked}</span>
+					<span class="shop-rarity font-head">{s.rarity.legendary}</span>
+				</p>
+				<p class="mt-1 text-[11px] text-muted">{s.collector.how(have420, COLLECTION_420.length)}</p>
+				<span class="locked-bar mt-1.5" aria-hidden="true"><i style:width="{(have420 / COLLECTION_420.length) * 100}%"></i></span>
+			</li>
+		{/if}
 		{#each items as it (it.id)}
 			{@const owned = owns(it.id)}
 			{@const on = wearing(it)}
-			<li class="shop-item rounded-card border border-line bg-panel-2 p-2.5" data-rarity={it.rarity} class:on>
+			{@const isDeal = it.id === deal.id}
+			{@const open = canBuy(it)}
+			{@const back = owned ? sellValue(squad.shop, it.id) : 0}
+			<li class="shop-item rounded-card border border-line bg-panel-2 p-2.5" data-rarity={it.rarity} class:on class:deal={isDeal}>
 				<button
 					type="button"
 					class="shop-try"
@@ -259,6 +502,19 @@
 						<span class="shop-maxdemo font-head">{s.maxSample} <span class="text-hb-ink">◆</span><MaxFx kind={it.id} loop /></span>
 					{:else if it.slot === 'buddy'}
 						<WeedCreature class="block size-20 overflow-visible" outfit={it.id} />
+					{:else if it.slot === 'trail'}
+						<!-- a little trail drifting after a pointer -->
+						<span class="shop-traildemo" data-trail={it.id}>{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<i style:--i={i}></i>{/each}<span class="td-ptr"></span></span>
+					{:else if it.slot === 'sound'}
+						<span class="shop-sounddemo font-head"><span class="sd-spk"></span>{trying?.id === it.id ? '♪ ♫ ♪' : `▶ ${s.soundSample}`}</span>
+					{:else if it.slot === 'feed'}
+						<span class="shop-feeddemo kill-row" data-feed={it.id} data-camo="gold"
+							><span class="kill-player">{sample}</span><span class="kill-camo">{s.feedSample}</span><span class="kill-weapon">{s.maxSample}</span></span
+						>
+					{:else if it.slot === 'shelf'}
+						<ShopTrophies shelf={it.id} got={myTrophies} sample />
+					{:else if it.slot === 'throne'}
+						{@render face({ throne: it }, 52, 18)}
 					{:else if FACE_SLOTS.includes(it.slot)}
 						<!-- bigger, so the thing on the face reads (emotes play over and over) -->
 						{@render face({ [it.slot]: it }, 64, 18, true)}
@@ -269,10 +525,21 @@
 				<p class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1">
 					<b class="min-w-0 font-head text-[14px] font-bold">{it.name}</b>
 					<span class="shop-rarity font-head">{s.rarity[it.rarity]}</span>
+					{#if isDeal && !owned}<span class="shop-dealtag font-head">{s.deal.badge} {s.deal.off(deal.off)}</span>{/if}
+					{#if it.window}<span class="shop-season font-head">{s.holiday[it.window]}</span>{/if}
+					{#if it.secret}<span class="shop-season font-head">{s.collector.reward}</span>{/if}
 				</p>
+				{#if it.grants?.length}<p class="mt-1 text-[11px] text-muted">{s.grants(ITEM_BY_ID.get(it.grants[0])?.text ?? '')}</p>{/if}
 				<div class="mt-2 flex flex-wrap gap-1.5">
 					{#if !owned}
-						<button type="button" class="btn btn-sm btn-primary" disabled={balance < it.price} title={balance < it.price ? s.broke(it.price, balance) : undefined} onclick={() => buyIt(it)}>{s.buy(it.price)}</button>
+						{#if open}
+							<button type="button" class="btn btn-sm btn-primary" disabled={balance < priceNow(it)} title={balance < priceNow(it) ? s.broke(priceNow(it), balance) : undefined} onclick={() => buyIt(it)}
+								>{@render price(it)}</button
+							>
+							{#if others.length}<button type="button" class="btn btn-sm" onclick={() => askGift(it)}>{s.gift.button}</button>{/if}
+						{:else if it.window}
+							<span class="shop-owned text-[11px] text-muted">{s.holiday.soon[it.window]}</span>
+						{/if}
 					{:else if on}
 						<span class="shop-on font-head">✔ {s.wearing}</span>
 						<button type="button" class="btn btn-sm" onclick={() => takeOff(it)}>{s.takeOff}</button>
@@ -280,6 +547,8 @@
 						<button type="button" class="btn btn-sm btn-primary" onclick={() => wearIt(it)}>{s.wear}</button>
 						<span class="shop-owned text-[11px] text-muted">{s.owned}</span>
 					{/if}
+					{#if owned && back > 0}<button type="button" class="btn btn-sm shop-sell" onclick={() => askSell(it)}>{s.sell.button(back)}</button>{/if}
+					{#if owned && open && others.length}<button type="button" class="btn btn-sm" onclick={() => askGift(it)}>{s.gift.button}</button>{/if}
 				</div>
 			</li>
 		{/each}
@@ -308,6 +577,67 @@
 	</ul>
 	{#snippet actions()}
 		<button type="button" class="btn" onclick={() => ((pickOpen = false), (aiming = null))}>{t.squad.cancel}</button>
+	{/snippet}
+</Dialog>
+
+<!-- selling back -->
+<Dialog bind:open={sellOpen} title={selling?.name ?? ''}>
+	<p class="text-sm">{selling ? s.sell.ask(selling.name, sellValue(squad.shop, selling.id)) : ''}</p>
+	{#snippet actions()}
+		<button type="button" class="btn" onclick={() => ((sellOpen = false), (selling = null))}>{t.squad.cancel}</button>
+		<button type="button" class="btn btn-primary" onclick={confirmSell}>{s.sell.yes}</button>
+	{/snippet}
+</Dialog>
+
+<!-- giving an item to a friend -->
+<Dialog bind:open={giftOpen} title={gifting ? `${gifting.name} · ${s.gift.pick}` : s.gift.pick}>
+	<ul class="grid gap-1.5">
+		{#each others as e (e.id)}
+			{@const has = !!gifting && hasIt(e.member.shop, gifting.id)}
+			<li>
+				<button
+					type="button"
+					class="shop-target flex w-full items-center gap-2.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-left"
+					disabled={has || !gifting || balance < priceNow(gifting)}
+					onclick={() => sendGift(e.id, e.member.name)}
+				>
+					<SquadAvatar name={e.member.name} op={e.member.op} size={34} />
+					<b class="min-w-0 flex-1 truncate font-head text-[15px]">{e.member.name}</b>
+					<span class="text-xs text-muted">{has ? `✔ ${s.gift.has}` : gifting ? s.gift.send(priceNow(gifting)) : ''}</span>
+				</button>
+			</li>
+		{/each}
+	</ul>
+	{#snippet actions()}
+		<button type="button" class="btn" onclick={() => ((giftOpen = false), (gifting = null))}>{t.squad.cancel}</button>
+	{/snippet}
+</Dialog>
+
+<!-- a Munchie Box opening -->
+<Dialog bind:open={boxOpen} title={s.box.name(s.rarity[boxRarity])}>
+	<div class="box-reveal grid place-items-center gap-2 py-2" data-rarity={boxRarity}>
+		{#if !boxRevealed || !boxItem}
+			<span class="box-pic big shaking" aria-hidden="true"><span class="box-lid"></span><span class="box-body"><span class="box-q font-head">?</span></span></span>
+			<p class="font-head text-sm">{s.box.opening}</p>
+		{:else}
+			<span class="box-prize" aria-hidden="true">
+				{#if boxItem.slot === 'title'}
+					<span class="og-title" data-rarity={boxItem.rarity}>{boxItem.text}</span>
+				{:else if boxItem.slot === 'name'}
+					<span class="og-name font-head text-[20px] font-bold tracking-[0.16em]" data-style={boxItem.id}>{sample}</span>
+				{:else if boxItem.slot === 'badge'}
+					<ShopPin id={boxItem.id} size={56} />
+				{:else}
+					{@render face({ [boxItem.slot]: boxItem }, 72, 22, true)}
+				{/if}
+			</span>
+			<p class="font-head text-lg font-bold" role="status">{boxResult?.dup ? s.box.dup(boxItem.name, boxResult.back) : s.box.got(boxItem.name)}</p>
+			<span class="shop-rarity font-head">{s.rarity[boxItem.rarity]}</span>
+		{/if}
+	</div>
+	{#snippet actions()}
+		<button type="button" class="btn" disabled={!boxRevealed || balance < BOX_PRICE[boxRarity]} onclick={() => openBox(boxRarity)}>{s.box.again}</button>
+		<button type="button" class="btn btn-primary" onclick={() => (boxOpen = false)}>{s.box.close}</button>
 	{/snippet}
 </Dialog>
 
@@ -533,6 +863,24 @@
 	}
 	.sk-chip[data-slot='buddy']::before {
 		content: '🌱' / '';
+	}
+	.sk-chip[data-slot='entry']::before {
+		content: '🚁' / '';
+	}
+	.sk-chip[data-slot='trail']::before {
+		content: '🍃' / '';
+	}
+	.sk-chip[data-slot='sound']::before {
+		content: '🔊' / '';
+	}
+	.sk-chip[data-slot='feed']::before {
+		content: '💀' / '';
+	}
+	.sk-chip[data-slot='shelf']::before {
+		content: '🏆' / '';
+	}
+	.sk-chip[data-slot='throne']::before {
+		content: '👑' / '';
 	}
 	/* the item cards: dark glass, a glow in the rarity's colour, a lift on hover, a holo sheen on legendaries */
 	.shop-item {
@@ -862,5 +1210,334 @@
 	}
 	.shop-target:hover {
 		border-color: var(--t-accent);
+	}
+	/* ---------- the 18-ideas pack (2026-11-21) ---------- */
+	/* outfits, under the fitting room */
+	.shop-fits {
+		display: grid;
+		gap: 6px;
+	}
+	.fit-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.shop-fit {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 6px 4px 10px;
+		border-radius: 10px;
+		background: rgb(0 0 0 / 0.3);
+		box-shadow: inset 0 0 0 1px rgb(196 150 255 / 0.3);
+	}
+	/* phones: three narrow columns, the name over its two buttons */
+	@media (max-width: 639px) {
+		.fit-row {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+		.shop-fit {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 4px;
+			padding: 6px;
+			text-align: center;
+		}
+		.shop-fit .btn {
+			padding-inline: 4px;
+			font-size: 12px;
+		}
+	}
+	/* today's deal: a yellow price-tag strip */
+	.shop-deal {
+		position: relative;
+		background:
+			repeating-linear-gradient(-45deg, rgb(255 210 58 / 0.08) 0 12px, transparent 12px 24px),
+			linear-gradient(120deg, rgb(70 30 10 / 0.9), rgb(30 10 40 / 0.9));
+		box-shadow:
+			inset 0 0 0 2px #ffd23a,
+			0 0 18px rgb(255 210 58 / 0.25);
+	}
+	.deal-badge {
+		display: grid;
+		place-items: center;
+		min-width: 64px;
+		height: 64px;
+		padding: 0 6px;
+		border-radius: 50%;
+		background: radial-gradient(circle at 35% 30%, #fff36a, #ffb000 60%, #c46a00);
+		color: #3a1500;
+		font-size: 20px;
+		font-weight: 900;
+		box-shadow: 0 0 14px rgb(255 190 40 / 0.6);
+		transform: rotate(-12deg);
+		animation: deal-wob 2.4s ease-in-out infinite;
+	}
+	@keyframes deal-wob {
+		50% {
+			transform: rotate(-4deg) scale(1.06);
+		}
+	}
+	.deal-head {
+		color: #ffd23a;
+		font-size: 12px;
+		font-weight: 800;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+	}
+	.shop-was {
+		margin-left: 6px;
+		opacity: 0.6;
+		font-size: 0.85em;
+	}
+	.shop-item.deal {
+		box-shadow:
+			0 0 0 2px #ffd23a,
+			0 0 14px rgb(255 210 58 / 0.35);
+	}
+	.shop-dealtag,
+	.shop-season {
+		padding: 1px 6px;
+		border-radius: 4px;
+		background: #ffd23a;
+		color: #2a1200;
+		font-size: 9.5px;
+		font-weight: 900;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	.shop-season {
+		background: #c9f0ff;
+		color: #0a2a3a;
+	}
+	.shop-sell {
+		border-color: rgb(255 120 120 / 0.5);
+	}
+	/* the secret 420 reward, locked */
+	.locked-pic {
+		display: grid;
+		place-items: center;
+		min-height: 64px;
+		color: #ffd23a;
+		font-size: 18px;
+		font-weight: 900;
+		letter-spacing: 0.14em;
+		text-shadow: 0 0 10px rgb(255 210 58 / 0.6);
+	}
+	.locked-bar {
+		display: block;
+		height: 6px;
+		overflow: hidden;
+		border-radius: 999px;
+		background: rgb(255 255 255 / 0.1);
+	}
+	.locked-bar i {
+		display: block;
+		height: 100%;
+		background: linear-gradient(90deg, #4dff8f, #ffd23a);
+	}
+	/* Munchie Boxes: a gift box per rarity */
+	.box-pic {
+		position: relative;
+		display: block;
+		width: 64px;
+		height: 60px;
+		margin: 4px auto 0;
+		--box: #9aa3ad;
+	}
+	.shop-box[data-rarity='rare'] .box-pic,
+	.box-reveal[data-rarity='rare'] .box-pic {
+		--box: #4f9bff;
+	}
+	.shop-box[data-rarity='epic'] .box-pic,
+	.box-reveal[data-rarity='epic'] .box-pic {
+		--box: #b265ff;
+	}
+	.shop-box[data-rarity='legendary'] .box-pic,
+	.box-reveal[data-rarity='legendary'] .box-pic {
+		--box: #ffc928;
+	}
+	.box-body {
+		position: absolute;
+		left: 6px;
+		right: 6px;
+		bottom: 0;
+		height: 40px;
+		display: grid;
+		place-items: center;
+		border-radius: 4px;
+		background:
+			linear-gradient(90deg, transparent 44%, #ff4fd8 44% 56%, transparent 56%),
+			linear-gradient(180deg, color-mix(in srgb, var(--box) 85%, #fff), color-mix(in srgb, var(--box) 70%, #000));
+		box-shadow: 0 3px 8px rgb(0 0 0 / 0.5);
+	}
+	.box-lid {
+		position: absolute;
+		left: 2px;
+		right: 2px;
+		top: 6px;
+		height: 14px;
+		border-radius: 4px;
+		background:
+			linear-gradient(90deg, transparent 44%, #ff4fd8 44% 56%, transparent 56%),
+			color-mix(in srgb, var(--box) 90%, #fff);
+		box-shadow: 0 2px 4px rgb(0 0 0 / 0.4);
+		z-index: 1;
+	}
+	.box-q {
+		color: #fff;
+		font-size: 20px;
+		font-weight: 900;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+	}
+	.box-pic.big {
+		width: 110px;
+		height: 104px;
+	}
+	.box-pic.big .box-body {
+		height: 70px;
+	}
+	.box-pic.big .box-lid {
+		height: 24px;
+		top: 8px;
+	}
+	.shaking {
+		animation: box-shake 0.45s ease-in-out infinite;
+	}
+	.shaking .box-lid {
+		animation: box-lid 0.45s ease-in-out infinite;
+	}
+	@keyframes box-shake {
+		25% {
+			transform: rotate(-6deg);
+		}
+		75% {
+			transform: rotate(6deg);
+		}
+	}
+	@keyframes box-lid {
+		50% {
+			transform: translateY(-6px) rotate(4deg);
+		}
+	}
+	.box-prize {
+		display: grid;
+		place-items: center;
+		min-height: 110px;
+		animation: box-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+	}
+	@keyframes box-pop {
+		from {
+			transform: scale(0.2);
+			opacity: 0;
+		}
+	}
+	.ad-now {
+		color: #ffb3ec;
+	}
+	/* item card samples: trail, sound, kill feed */
+	.shop-traildemo {
+		position: relative;
+		display: block;
+		width: 150px;
+		height: 56px;
+	}
+	.shop-traildemo i {
+		position: absolute;
+		top: calc(20px + sin(var(--i) * 50deg) * 12px);
+		left: calc(var(--i) * 16px + 6px);
+		width: calc(6px + var(--i) * 1.5px);
+		aspect-ratio: 1;
+		border-radius: 50%;
+		opacity: calc(0.25 + var(--i) * 0.1);
+		background: #5fe06a;
+	}
+	.shop-traildemo[data-trail='trail-burgers'] i {
+		background: radial-gradient(circle at 50% 30%, #e0a040 0 40%, #6b3a1c 41% 60%, #e0a040 61%);
+	}
+	.shop-traildemo[data-trail='trail-smoke'] i {
+		width: calc(10px + var(--i) * 2px);
+		background: radial-gradient(circle, rgb(230 230 240 / 0.8), transparent 70%);
+	}
+	.shop-traildemo[data-trail='trail-rainbow'] i {
+		background: hsl(calc(var(--i) * 50deg) 95% 60%);
+		box-shadow: 0 0 6px hsl(calc(var(--i) * 50deg) 95% 60%);
+	}
+	.td-ptr {
+		position: absolute;
+		right: 2px;
+		top: 26px;
+		width: 0;
+		height: 0;
+		border-left: 7px solid transparent;
+		border-right: 7px solid transparent;
+		border-bottom: 16px solid #fff;
+		transform: rotate(-30deg);
+		filter: drop-shadow(0 1px 1px #000);
+	}
+	.shop-sounddemo {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 48px;
+		padding: 4px 12px;
+		border-radius: 999px;
+		background: rgb(0 0 0 / 0.35);
+		font-size: 14px;
+		font-weight: 800;
+		color: #7dffa4;
+	}
+	.sd-spk {
+		width: 18px;
+		height: 18px;
+		background: currentColor;
+		clip-path: polygon(0 32%, 32% 32%, 70% 0, 70% 100%, 32% 68%, 0 68%);
+	}
+	.shop-feeddemo {
+		animation: none !important;
+		opacity: 1 !important;
+		font-size: 12px;
+	}
+	/* Confetti Bomb sample: confetti bursting from the middle */
+	.shop-confdemo {
+		position: relative;
+		display: block;
+		width: 80px;
+		height: 60px;
+	}
+	.shop-confdemo i {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 6px;
+		height: 9px;
+		background: hsl(calc(var(--i) * 47deg) 90% 60%);
+		transform: rotate(calc(var(--i) * 26deg)) translateY(calc(-14px - mod(var(--i) * 3px, 16px)));
+		animation: conf-pop 1.8s ease-out infinite;
+		animation-delay: calc(var(--i) * -0.07s);
+	}
+	@keyframes conf-pop {
+		0% {
+			opacity: 0;
+			translate: 0 0;
+		}
+		20% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			translate: 0 14px;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.deal-badge,
+		.shaking,
+		.shaking .box-lid,
+		.box-prize,
+		.shop-confdemo i {
+			animation: none;
+		}
 	}
 </style>

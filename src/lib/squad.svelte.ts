@@ -77,17 +77,31 @@ import { withBan, BAN_OWNER, KD_LIMIT } from './squad-bans.ts';
 import { cleanCasino, cleanOnline, count420, countDay, mergeCasino, mergeOnline, seedOnline, withGame, HOUSE_OP, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { toast } from './toast.svelte.ts';
 import {
+	adOf,
 	buy as shopBuy,
+	buyAd as shopAd,
 	buyStatue as shopStatue,
+	claimGifts,
 	cleanShop,
 	equip as shopEquip,
+	giftsFor,
+	giveItem as shopGive,
+	grantRewards,
 	mergeShop,
+	openBox as shopBox,
 	playEmote as shopEmote,
 	pranksOn,
+	priceOf,
+	saveFit as shopSaveFit,
+	sellItem as shopSell,
 	throwPrank as shopThrow,
+	wearFit as shopWearFit,
+	AD_PRICE,
+	BOX_PRICE,
 	ITEM_BY_ID,
 	PRANK_BY_ID,
 	type BuyResult,
+	type Rarity,
 	type ShopSlot,
 	type ShopState
 } from './shop.ts';
@@ -1087,6 +1101,85 @@ class Squad {
 		return 'ok';
 	}
 
+	// ----- the 18-ideas pack (shop.ts, 2026-11-21) -----
+
+	#saveShop(next: ShopState): void {
+		this.shop = next;
+		writeJson(SHOP_KEY, next);
+		this.#schedulePublish();
+	}
+
+	/** Sell an item back for half of what you paid (the burgers come back from the house). */
+	sellItem(id: string): number {
+		if (!this.me) return 0;
+		const r = shopSell(this.shop, id, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return 0;
+		this.#saveShop(r.state);
+		return r.back;
+	}
+
+	/** Open a Munchie Box: a random item of that rarity (a duplicate gives half the box back). */
+	openBox(rarity: Rarity): { id: string; dup: boolean; back: number } | 'broke' | 'off' {
+		const bank = this.myBank;
+		if (!this.me || !bank) return 'off';
+		const r = shopBox(this.shop, rarity, bank.balance, Math.round(this.serverNow()), Math.random());
+		if (r.result !== 'ok') return r.result;
+		this.#saveShop(r.state);
+		const it = ITEM_BY_ID.get(r.id);
+		if (it && !r.dup && it.rarity === 'legendary') void this.#event(t.shop.box.event(it.name, BOX_PRICE[rarity]));
+		return { id: r.id, dup: r.dup, back: r.back };
+	}
+
+	/** Give an item to a friend (paid at today's price): it shows up in their shop the next time their page reads. */
+	giveItem(id: string, to: string, name: string): BuyResult | 'off' {
+		const bank = this.myBank;
+		if (!this.me || !bank || to === this.me.id) return 'off';
+		const theirs = this.entries.find((e) => e.id === to)?.member.shop;
+		const r = shopGive(this.shop, id, to, theirs, bank.balance, Math.round(this.serverNow()), makeMemberId().slice(0, 12));
+		if (r.result !== 'ok') return r.result;
+		this.#saveShop(r.state);
+		const it = ITEM_BY_ID.get(id);
+		if (it) void this.#event(t.shop.gift.event(it.name, name));
+		return 'ok';
+	}
+
+	/** Save what you wear now as outfit i / wear outfit i. */
+	saveFit(i: number): boolean {
+		const next = shopSaveFit(this.shop, i, Math.round(this.serverNow()));
+		if (!next) return false;
+		this.#saveShop(next);
+		return true;
+	}
+	wearFit(i: number): boolean {
+		const next = shopWearFit(this.shop, i, Math.round(this.serverNow()));
+		if (!next) return false;
+		this.#saveShop(next);
+		return true;
+	}
+
+	/** Buy the ad space on the shop's and casino's tickers for a day. */
+	buyAd(text: string): 'ok' | 'broke' | 'empty' | 'off' {
+		const bank = this.myBank;
+		if (!this.me || !bank) return 'off';
+		const r = shopAd(this.shop, text, bank.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.#saveShop(r.state);
+		void this.#event(t.shop.ad.event(AD_PRICE));
+		return 'ok';
+	}
+
+	/** The ad running on the tickers now (null: none). */
+	get ad(): { id: string; t: string; at: number; name: string } | null {
+		const members = Object.fromEntries(this.entries.map((e) => [e.id, e.member]));
+		const a = adOf(members, this.now);
+		return a ? { ...a, name: members[a.id]?.name ?? '?' } : null;
+	}
+
+	/** What an item costs right now (today's deal included). */
+	priceOf(id: string): number {
+		return priceOf(id, this.now);
+	}
+
 	/** Wear an item you own in its slot, or take the slot off (null). */
 	equipItem(slot: ShopSlot, id: string | null): boolean {
 		const next = shopEquip(this.shop, slot, id, Math.round(this.serverNow()));
@@ -1305,6 +1398,21 @@ class Squad {
 		if (owned !== this.shop) {
 			this.shop = owned;
 			writeJson(SHOP_KEY, owned ?? null);
+		}
+		// gifts from friends land in your shop (a toast each), and earned rewards (the 420 collection, the throne's title)
+		const everyone = this.#squad.doc?.members ?? {};
+		const gifts = giftsFor(me.id, this.shop, everyone);
+		const nowAt = Math.round(this.serverNow());
+		const withGifts = grantRewards(claimGifts(this.shop, gifts, nowAt), nowAt);
+		if (withGifts !== this.shop) {
+			const hadLegend = this.shop?.own['title-420legend'] !== undefined;
+			this.shop = withGifts;
+			writeJson(SHOP_KEY, withGifts ?? null);
+			for (const [, by, g] of gifts) {
+				const it = ITEM_BY_ID.get(g.i);
+				if (it) setTimeout(() => toast.show(t.shop.gift.got(everyone[by]?.name ?? '?', it.name), undefined, 7000), 2500);
+			}
+			if (!hadLegend && withGifts?.own['title-420legend'] !== undefined) setTimeout(() => toast.show(t.shop.collector.got, undefined, 8000), 3000);
 		}
 		if (!away) this.#countToday();
 		const entry = memberEntry(me, this.#progressNow(), this.serverNow(), away, {

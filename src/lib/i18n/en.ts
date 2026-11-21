@@ -1153,14 +1153,35 @@ export const en = {
 	pranks: {
 		heading: 'Pranks',
 		intro: 'Bought once per use. Pick who gets it.',
-		names: { 'smoke-bomb': 'Smoke Bomb', 'too-high': 'TOO HIGH TO PLAY', clown: 'Clown Nose', slacker: 'Slacker Sticker', mask: 'Gas Mask' },
+		names: {
+			'smoke-bomb': 'Smoke Bomb',
+			'too-high': 'TOO HIGH TO PLAY',
+			clown: 'Clown Nose',
+			slacker: 'Slacker Sticker',
+			mask: 'Gas Mask',
+			flip: 'Upside Down',
+			burgerhead: 'Burger Head',
+			mmmph: 'Mmmph',
+			confetti: 'Confetti Bomb'
+		},
 		what: {
 			'smoke-bomb': 'Their operator disappears in thick smoke for an hour.',
 			'too-high': 'A big green TOO HIGH TO PLAY stamp on their operator for a day.',
 			clown: 'A big red clown nose on their operator for an hour. Honk.',
 			slacker: 'The red Slacker sticker on their operator for a day.',
-			mask: 'Put it on yourself: for a day no prank sticks to you, and nobody can throw one at you.'
+			mask: 'Put it on yourself: for a day no prank sticks to you, and nobody can throw one at you.',
+			flip: 'Their operator stands on its head for an hour.',
+			burgerhead: 'Their operator’s head turns into a burger with googly eyes for an hour.',
+			mmmph: 'For half an hour everything they say on the squad radio comes out as “mmmph mmph”.',
+			confetti: 'Confetti explodes all over their page the next time they open it.'
 		},
+		flipBy: (name: string) => `Turned upside down by ${name}`,
+		burgerBy: (name: string) => `Burger-headed by ${name}`,
+		mmmphBy: (name: string) => `Gagged by ${name}`,
+		/** the radio line shown instead of a gagged member's words */
+		mmmph: (n: number) => Array.from({ length: Math.max(2, Math.min(8, Math.round(n / 6))) }, (_, i) => (i % 3 === 1 ? 'mmph' : i % 3 === 2 ? 'mmmmph' : 'mmmph')).join(' ') + '…',
+		/** a Confetti Bomb going off on your page */
+		confettiGot: (name: string) => `🎉 ${name} confetti-bombed you!`,
 		pick: 'Who gets it?',
 		throw: (price: number) => `Throw · ${price.toLocaleString('en-US')} 🍔`,
 		/** the Gas Mask's button (you put it on yourself) */
@@ -1183,7 +1204,11 @@ export const en = {
 			'too-high': (name: string) => `stamped ${name} TOO HIGH TO PLAY 🍃`,
 			clown: (name: string) => `put a clown nose on ${name} 🤡`,
 			slacker: (name: string) => `slapped a SLACKER sticker on ${name} 🐌`,
-			mask: (_name: string) => `put on a gas mask: no pranks for a day 🛡️`
+			mask: (_name: string) => `put on a gas mask: no pranks for a day 🛡️`,
+			flip: (name: string) => `turned ${name} UPSIDE DOWN 🙃`,
+			burgerhead: (name: string) => `gave ${name} a BURGER HEAD 🍔`,
+			mmmph: (name: string) => `taped ${name}’s mouth shut: mmmph 🤐`,
+			confetti: (name: string) => `planted a CONFETTI BOMB on ${name}’s page 🎉`
 		}
 	},
 	/** BurgiShop (2026-11-16): cosmetics bought with burgers and worn on your header operator (shop.ts). */
@@ -1194,6 +1219,9 @@ export const en = {
 		/** the makeover (2026-11-20): the line under the neon sign, the ticker, the kind groups */
 		vibe: 'Munchie dispensary · open 24/7 · 420 friendly',
 		ticker: [
+			'🏷️ A new deal every day',
+			'🎁 Munchie Boxes: what will you pull?',
+			'👑 Abscar’s Throne: 100,000,000 🍔',
 			'🔥 New: Nuke aura',
 			'🗿 Golden Statue: one stands at a time',
 			'💪 Emotes the whole squad sees',
@@ -1204,7 +1232,7 @@ export const en = {
 			'🌿 Puff puff pass',
 			'🎰 Win big, dress bigger'
 		],
-		groups: { op: 'On your operator', name: 'Name & title', squad: 'Around the squad', special: 'Specials' },
+		groups: { op: 'On your operator', name: 'Name & title', squad: 'Around the squad', show: 'Show-off', special: 'Specials' },
 		fittingRoom: 'Fitting room',
 		notIn: 'BurgiShop sells with the squad’s burger bank. Join or create a squad in the Squad tab first.',
 		intro:'Buy cosmetics with your burgers and wear them on your operator at the top of the page: the whole squad sees them. What you buy is yours to keep; tap an item you own to wear it or take it off.',
@@ -1230,10 +1258,18 @@ export const en = {
 			win: 'Win pose',
 			maxfx: 'Max effect',
 			buddy: 'Buddy',
+			entry: 'Entrance',
+			trail: 'Trail',
+			sound: 'Sounds',
+			feed: 'Kill feed',
+			shelf: 'Trophy shelf',
+			throne: 'Throne',
 			/** the Camo Armory's gun in the hands (armory.ts); bought on its own door, not a kind button */
 			hold: 'Held gun',
 			statue: '🗿 Statue',
-			pranks: '😈 Pranks'
+			pranks: '😈 Pranks',
+			box: '🎁 Munchie Box',
+			ad: '📣 Ad space'
 		},
 		slotsLabel: 'Kind',
 		/** on the 420 pack 2's kinds (eyes, hats, smoke, sidekicks) */
@@ -1252,8 +1288,117 @@ export const en = {
 			table: 'Your chips and cards at the blackjack table: everyone at the table sees them.',
 			win: 'Your operator dances on the BIG / MEGA WIN screens of both slots.',
 			maxfx: 'Plays over a weapon when your tick maxes it (on your page, every theme).',
-			buddy: 'Dresses the weed buddy at the top of your page (Abscar theme).'
+			buddy: 'Dresses the weed buddy at the top of your page (Abscar theme).',
+			entry: 'Your operator makes an entrance at the top of the page when you come online: everyone online sees it.',
+			trail: 'Follows your mouse (or finger) around the page. Only on your own page.',
+			sound: 'Plays instead of the hitmarker when you tick a camo (turn sound on next to the theme picker).',
+			feed: 'Your rows in the kill feed at the top right.',
+			shelf: 'A shelf on your squad card with the trophies you’ve earned in the shop.',
+			throne: 'The ultimate flex: a golden throne behind your operator, and the title that comes with it.'
 		} as Partial<Record<string, string>>,
+		/** today's deal (2026-11-21): one item a day, the same for the whole squad */
+		deal: {
+			heading: 'Today’s deal',
+			off: (n: number) => `−${n} %`,
+			was: (price: number) => `was ${price.toLocaleString('en-US')}`,
+			ends: 'New deal at midnight',
+			tryOn: 'Try on',
+			badge: 'DEAL'
+		},
+		/** Munchie Boxes: a random item of a rarity */
+		box: {
+			intro: 'A random item of the box’s rarity, worn at once. Got it already? Half the box comes back.',
+			open: (price: number) => `Open · ${price.toLocaleString('en-US')} 🍔`,
+			name: (rarity: string) => `${rarity} box`,
+			opening: 'Opening…',
+			got: (name: string) => `You got ${name}!`,
+			dup: (name: string, back: number) => `${name} again: ${back.toLocaleString('en-US')} 🍔 back.`,
+			again: 'Open another',
+			close: 'Nice',
+			opened: (n: number) => `${n.toLocaleString('en-US')} boxes opened`,
+			event: (name: string, price: number) => `pulled ${name} out of a ${price.toLocaleString('en-US')} 🍔 Munchie Box 🎁`
+		},
+		/** gifts to friends */
+		gift: {
+			button: '🎁 Gift',
+			pick: 'Give it to who?',
+			has: 'Has it',
+			send: (price: number) => `Give · ${price.toLocaleString('en-US')} 🍔`,
+			sent: (item: string, name: string) => `${item} is on its way to ${name} 🎁`,
+			got: (from: string, item: string) => `🎁 ${from} gave you ${item}! It’s in your shop.`,
+			event: (item: string, name: string) => `gave ${name} ${item} 🎁`,
+			nobody: 'Everyone in the squad has it already.'
+		},
+		/** selling back */
+		sell: {
+			button: (back: number) => `Sell · +${back.toLocaleString('en-US')} 🍔`,
+			ask: (name: string, back: number) => `Sell ${name} for ${back.toLocaleString('en-US')} 🍔? You can buy it again later at the full price.`,
+			yes: 'Sell it',
+			done: (name: string, back: number) => `${name} sold: +${back.toLocaleString('en-US')} 🍔`,
+			no: 'Gifts and rewards can’t be sold.'
+		},
+		/** three saved outfits */
+		fits: {
+			heading: 'Outfits',
+			slot: (n: number) => `Outfit ${n}`,
+			wear: 'Wear',
+			save: 'Save',
+			saveOver: 'Save over',
+			empty: 'Empty',
+			saved: (n: number) => `Outfit ${n} saved: what you wear now`,
+			worn: (n: number) => `Wearing outfit ${n}`
+		},
+		/** the ad space on the tickers */
+		ad: {
+			heading: 'Ad space',
+			intro: (hours: number) => `Your own line on the BurgiShop and BurgiCasino tickers for ${hours} hours, for the whole squad to see. The latest ad bought takes the spot.`,
+			placeholder: 'Your line (60 characters)',
+			buy: (price: number) => `Run it · ${price.toLocaleString('en-US')} 🍔`,
+			bought: 'Your ad is running 📣',
+			now: (name: string) => `Running now, from ${name}:`,
+			none: 'No ad running right now.',
+			empty: 'Write something first.',
+			label: 'Ad text',
+			event: (price: number) => `bought the ad space on the tickers (${price.toLocaleString('en-US')} 🍔) 📣`,
+			tag: (name: string) => `📣 ${name}:`
+		},
+		/** the secret 420 collection reward */
+		collector: {
+			locked: 'Secret',
+			how: (have: number, all: number) => `Own every 420 item to unlock it (${have} of ${all}).`,
+			got: '🌿 You own the whole 420 collection: the 420 Legend title and Legend Haze aura are yours!',
+			reward: 'Reward'
+		},
+		/** holiday items */
+		holiday: {
+			xmas: 'Christmas only',
+			newyear: 'New Year only',
+			soon: { xmas: 'In the shop 1–26 Dec', newyear: 'In the shop 27 Dec – 3 Jan' } as Record<string, string>
+		},
+		/** the throne comes with a title */
+		grants: (name: string) => `Comes with the “${name}” title.`,
+		closed: 'Not in the shop right now.',
+		/** the trophy shelf on the squad card */
+		trophies: {
+			heading: 'Trophies',
+			names: {
+				spent1m: 'Golden Burger: 1,000,000 🍔 spent',
+				spent10m: 'Diamond Burger: 10,000,000 🍔 spent',
+				own25: 'Crystal Holk: 25 items owned',
+				own50: 'Platinum Holk: 50 items owned',
+				c420: '420 Legend: the whole 420 collection',
+				gifter: 'Santa Burger: 5 gifts given',
+				pranker: 'Prank Master: 10 pranks thrown',
+				boxer: 'Box Addict: 10 Munchie Boxes opened',
+				statue: 'Statue Builder: put up a Golden Statue',
+				throne: 'King of the Hill: Abscar’s Throne'
+			} as Record<string, string>,
+			none: 'No trophies yet',
+			sample: 'Your trophies show up here as you earn them.'
+		},
+		trailSample: 'Move your mouse here',
+		soundSample: 'Play',
+		feedSample: 'GOLD',
 		/** item card samples for the kinds that aren't drawn on the operator */
 		radioSample: 'GG, next round on me 🍔',
 		maxSample: 'M4',

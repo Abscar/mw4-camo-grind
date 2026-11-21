@@ -4,7 +4,8 @@
 	it on its item card. Our own little cartoons in a 32×32 box, each bobbing / waving (frozen by reduced
 	motion). Decoration only: the shop says in words what's worn.
 	  pet-burger = Burger Buddy (a burger with a face, waving), pet-smokey = Smokey (a sleepy smoke cloud
-	  with a mini holk), pet-bud = Lil' Bud (a small weed-leaf creature with a holk, in a green glow).
+	  with a mini holk), pet-bud = Lil' Bud (a small weed-leaf creature with a holk, in a green glow),
+	  pet-ginger = Gingerbread Burger (a gingerbread cookie with icing and a little burger for a belt, waving).
 -->
 <script lang="ts">
 	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
@@ -21,6 +22,11 @@
 		<radialGradient id={g('cloud')} cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#ffffff" /><stop offset=".7" stop-color="#dfe6e1" /><stop offset="1" stop-color="#aeb9b2" /></radialGradient>
 		<radialGradient id={g('em')}><stop offset="0" stop-color="#ff8a1a" stop-opacity=".95" /><stop offset="1" stop-color="#ff5a00" stop-opacity="0" /></radialGradient>
 		<radialGradient id={g('glow')}><stop offset="0" stop-color="#7dff5a" stop-opacity=".55" /><stop offset="1" stop-color="#2aff1a" stop-opacity="0" /></radialGradient>
+		{#if id === 'pet-ginger'}
+			<!-- Gingerbread Burger: baked-cookie brown, and the body's shape for its burger belt -->
+			<linearGradient id={g('gb')} gradientUnits="userSpaceOnUse" x1="8" y1="3" x2="24" y2="29"><stop offset="0" stop-color="#e09a52" /><stop offset=".55" stop-color="#b8692c" /><stop offset="1" stop-color="#8a4818" /></linearGradient>
+			<clipPath id={g('gbody')}><ellipse cx="16" cy="18.4" rx="5.4" ry="5.6" /></clipPath>
+		{/if}
 	</defs>
 
 	{#if id === 'pet-burger'}
@@ -91,6 +97,48 @@
 			<circle cx="29.7" cy="18.4" r=".8" fill="#ff8a1a" />
 			<circle class="pet-puff" cx="29.6" cy="15" r="1.3" fill="#e8ede9" opacity=".8" />
 			<circle cx="23.8" cy="22.2" r="1.1" fill="#4fc23a" stroke="#14501a" stroke-width=".5" />
+		</g>
+	{:else if id === 'pet-ginger'}
+		<g class="pet-bob">
+			<!-- the waving arm behind the body: a dark outline pass, then the cookie -->
+			<g class="pet-wave">
+				<path d="M20.6 14.6 L26.6 10.6" stroke="#4a2408" stroke-width="5.4" stroke-linecap="round" />
+				<path d="M20.6 14.6 L26.6 10.6" stroke={`url(#${g('gb')})`} stroke-width="4" stroke-linecap="round" />
+				<path d="M25 10.2 l.8 1.1 l.8 -1.1 l.8 1.1" fill="none" stroke="#fff" stroke-width=".7" stroke-linecap="round" stroke-linejoin="round" />
+			</g>
+			<!-- outline pass: legs, the other arm, body, head -->
+			<g stroke="#4a2408" fill="#4a2408">
+				<path d="M13.6 22 L11.6 28.6 M18.4 22 L20.4 28.6 M11.4 15 L5.8 18.4" stroke-width="5.4" stroke-linecap="round" fill="none" />
+				<ellipse cx="16" cy="18.4" rx="6.1" ry="6.3" stroke="none" />
+				<circle cx="16" cy="8.4" r="5.9" stroke="none" />
+			</g>
+			<!-- the cookie -->
+			<g stroke={`url(#${g('gb')})`} fill={`url(#${g('gb')})`}>
+				<path d="M13.6 22 L11.6 28.6 M18.4 22 L20.4 28.6 M11.4 15 L5.8 18.4" stroke-width="4" stroke-linecap="round" fill="none" />
+				<ellipse cx="16" cy="18.4" rx="5.4" ry="5.6" stroke="none" />
+				<circle cx="16" cy="8.4" r="5.2" stroke="none" />
+			</g>
+			<!-- a little burger for a belt: lettuce, cheese, patty across the middle -->
+			<g clip-path={`url(#${g('gbody')})`}>
+				<path d="M9 16.4 H23 V17.6 Q22 18.6 21 17.6 Q20 18.6 19 17.6 Q18 18.6 17 17.6 Q16 18.6 15 17.6 Q14 18.6 13 17.6 Q12 18.6 11 17.6 Q10 18.6 9 17.6 Z" fill="#66c93c" stroke="#24561a" stroke-width=".35" />
+				<path d="M9 17.8 H23 V18.6 H19.6 L18.8 19.8 L18 18.6 H13 L12.4 19.4 L11.8 18.6 H9 Z" fill="#ffc928" stroke="#a87a0c" stroke-width=".3" stroke-linejoin="round" />
+				<rect x="9" y="18.6" width="14" height="2.4" fill="#5a2e14" stroke="#2a1006" stroke-width=".35" />
+			</g>
+			<!-- white icing: zigzag cuffs, buttons over and under the burger, eyes and a smile -->
+			<path
+				d="M10 27 l.8 -.9 l.8 .9 l.8 -.9 M19.4 26.1 l.8 .9 l.8 -.9 l.8 .9 M6 16.8 l.4 1.1 l.7 -.9 l.4 1.1"
+				fill="none"
+				stroke="#fff"
+				stroke-width=".7"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			/>
+			<circle cx="16" cy="14.6" r=".8" fill="#ff4f6a" stroke="#fff" stroke-width=".4" /><circle cx="16" cy="22.6" r=".8" fill="#3fb34a" stroke="#fff" stroke-width=".4" />
+			<circle cx="14.1" cy="7.6" r="1" fill="#2a1006" /><circle cx="17.9" cy="7.6" r="1" fill="#2a1006" />
+			<circle cx="14.4" cy="7.3" r=".3" fill="#fff" /><circle cx="18.2" cy="7.3" r=".3" fill="#fff" />
+			<path d="M13.6 9.8 Q16 12.2 18.4 9.8" fill="none" stroke="#fff" stroke-width=".8" stroke-linecap="round" />
+			<ellipse cx="12.6" cy="9.8" rx=".9" ry=".5" fill="#ff8a8a" opacity=".7" /><ellipse cx="19.4" cy="9.8" rx=".9" ry=".5" fill="#ff8a8a" opacity=".7" />
+			<path d="M12.2 5.4 l.9 -.8 l.9 .8 l.9 -.8 l.9 .8 l.9 -.8 l.9 .8 l.9 -.8" fill="none" stroke="#fff" stroke-width=".55" stroke-linecap="round" stroke-linejoin="round" opacity=".9" />
 		</g>
 	{:else if id.startsWith('k-')}
 		<!-- KarmaShop's sidekicks (karmaShopArt.ts) -->

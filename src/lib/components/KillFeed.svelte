@@ -10,6 +10,14 @@
 	import { feed } from '#lib/feed.svelte.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import WeaponIcon from './WeaponIcon.svelte';
+	import { squad } from '#lib/squad.svelte.ts';
+	import { worn } from '#lib/shop.ts';
+
+	/** Kill feed styles from BurgiShop (shop.ts slot `feed`, 2026-11-21): yours on your rows, a friend's on theirs (by name). */
+	const feedOf = (who: string | undefined): string | undefined => {
+		const e = who ? squad.entries.find((x) => x.member.name === who) : squad.entries.find((x) => x.mine);
+		return e ? worn(e.member.shop).feed?.id : undefined;
+	};
 </script>
 
 <div class="abscar-only" aria-hidden="true">
@@ -21,7 +29,7 @@
 			{@const camo = row.prestige ? PRESTIGE[row.prestige - 1] : ladder}
 			{@const look = WEAPON_LOOKS[row.weaponId]}
 			{#if weapon && camo}
-				<div class="kill-row" data-camo={camo.id} data-squad={row.who ? true : undefined}>
+				<div class="kill-row" data-camo={camo.id} data-squad={row.who ? true : undefined} data-feed={feedOf(row.who)}>
 					<span class="kill-player">{row.who ?? t.operator.callsign}</span>
 					{#if look}<span class="kill-gun"><WeaponIcon {look} camo={ladder?.id ?? null} /></span>{/if}
 					<span class="kill-camo">{camo.name}{#if !row.prestige && row.level >= MAX_LEVEL}&nbsp;◆{/if}</span>
