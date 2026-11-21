@@ -67,6 +67,40 @@
 						<rect x="2.4" width="0.7" height="9" fill="#ff3b5c" />
 						<rect x="5.8" width="0.45" height="9" fill="#e8203f" opacity="0.85" />
 					</pattern>
+				{:else if worn === 'mercurialDrift'}
+					<!-- Mercurial Drift (the Camo Armory's guns only): glossy hot pink ↔ rose gold with lilac drifts -->
+					<linearGradient id={pid} gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="16" y2="11" spreadMethod="reflect">
+						<stop offset="0" stop-color="#ff3d96" />
+						<stop offset="0.22" stop-color="#ffc0d8" />
+						<stop offset="0.42" stop-color="#e09a84" />
+						<stop offset="0.6" stop-color="#c79bff" />
+						<stop offset="0.78" stop-color="#fff0f7" />
+						<stop offset="1" stop-color="#ff5aa8" />
+					</linearGradient>
+				{:else if worn === 'polyatomicReforged'}
+					<!-- Polyatomic Reforged: blue / violet / lilac crystal shards -->
+					<pattern id={pid} patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(18)">
+						<rect width="10" height="10" fill="#2a1e78" />
+						<path d="M0 0 L6 0 L2 5 Z" fill="#5866ff" />
+						<path d="M6 0 L10 0 L10 6 L4 4 Z" fill="#9b6bff" />
+						<path d="M0 5 L4 4 L10 6 L6 10 L0 10 Z" fill="#3a2ea6" />
+						<path d="M6 10 L10 6 L10 10 Z" fill="#d6c6ff" />
+						<path d="M2 5 L4 4 L6 0 M4 4 L10 6" stroke="#e6ddff" stroke-width="0.35" fill="none" opacity="0.8" />
+					</pattern>
+				{:else if worn === 'orionReforged'}
+					<!-- Orion Reforged: black space, purple and crimson nebulae, stars -->
+					<radialGradient id="{pid}-n1"><stop offset="0" stop-color="#b43cff" stop-opacity="0.95" /><stop offset="1" stop-color="#b43cff" stop-opacity="0" /></radialGradient>
+					<radialGradient id="{pid}-n2"><stop offset="0" stop-color="#e0284c" stop-opacity="0.85" /><stop offset="1" stop-color="#e0284c" stop-opacity="0" /></radialGradient>
+					<pattern id={pid} patternUnits="userSpaceOnUse" width="16" height="12">
+						<rect width="16" height="12" fill="#07030f" />
+						<ellipse cx="5" cy="4" rx="6" ry="3.6" fill="url(#{pid}-n1)" />
+						<ellipse cx="12" cy="9" rx="5" ry="3.2" fill="url(#{pid}-n2)" />
+						<circle cx="2" cy="9.5" r="0.45" fill="#fff" />
+						<circle cx="9" cy="2" r="0.4" fill="#fff" />
+						<circle cx="13.5" cy="4.5" r="0.3" fill="#e8dcff" />
+						<circle cx="7" cy="7.5" r="0.35" fill="#fff" />
+						<circle cx="15" cy="11" r="0.3" fill="#ffd6e4" />
+					</pattern>
 				{:else}
 					<!-- Divergence: chrome with a rainbow oil-slick sheen -->
 					<linearGradient id={pid} gradientUnits="userSpaceOnUse" x1="0" y1="1" x2="19" y2="13" spreadMethod="reflect">
@@ -291,5 +325,14 @@
 	}
 	:global([data-theme='blackout']) .weapon-icon[data-camo='divergence'] {
 		filter: drop-shadow(0 0 3px rgb(200 170 255 / 0.55));
+	}
+	:global([data-theme='blackout']) .weapon-icon[data-camo='mercurialDrift'] {
+		filter: drop-shadow(0 0 3px rgb(255 90 170 / 0.55));
+	}
+	:global([data-theme='blackout']) .weapon-icon[data-camo='polyatomicReforged'] {
+		filter: drop-shadow(0 0 3px rgb(120 110 255 / 0.6));
+	}
+	:global([data-theme='blackout']) .weapon-icon[data-camo='orionReforged'] {
+		filter: drop-shadow(0 0 3px rgb(190 70 255 / 0.6));
 	}
 </style>

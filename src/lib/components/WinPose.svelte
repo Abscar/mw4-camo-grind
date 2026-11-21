@@ -20,7 +20,7 @@
 	<span class="win-pose" style:--s="{size}px" aria-hidden="true">
 		<span class="wp-light"></span>
 		<span class="wp-dancer">
-			<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pet={look.pet?.id} pin={Math.round(size / 4)} extra={{ back: look.back?.id }}>
+			<OpGear aura={look.aura?.id} effect={look.effect?.id} badge={look.badge?.id} pet={look.pet?.id} pin={Math.round(size / 4)} extra={{ back: look.back?.id, hold: look.hold?.id }}>
 				<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} face={faceOf(look)} />
 			</OpGear>
 		</span>

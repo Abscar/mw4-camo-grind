@@ -1215,6 +1215,8 @@ export const en = {
 			win: 'Win pose',
 			maxfx: 'Max effect',
 			buddy: 'Buddy',
+			/** the Camo Armory's gun in the hands (armory.ts); bought on its own door, not a kind button */
+			hold: 'Held gun',
 			statue: '🗿 Statue',
 			pranks: '😈 Pranks'
 		},
@@ -1273,6 +1275,57 @@ export const en = {
 		toHouse: 'Burgers spent here go to the house (Abscar), like casino losses.',
 		itemLabel: (name: string, kind: string, rarity: string, state: string) => `${name}, ${kind}, ${rarity}: ${state}`,
 		event: (name: string, rarity: string) => `bought ${name} (${rarity}) in BurgiShop 🛍️`
+	},
+	/** The Camo Armory (2026-11-20, armory.ts): weapons in camo, bought in the game's order, held by your operator. */
+	armory: {
+		heading: 'Camo Armory',
+		/** the line under the page heading and on its door */
+		sub: 'Camo guns your operator holds',
+		door: 'Gold to Orion guns 🍔',
+		intro: 'Buy a weapon in a camo and your operator holds it at the top of the page and on your squad card, for the whole squad to see. Very expensive, and only in the game’s order.',
+		rulesTitle: 'How it unlocks',
+		rules: [
+			'Gold: any weapon, any time.',
+			'Every camo after that needs the one before it on every weapon in the class: Platinum on an SMG opens once you own Gold on all the SMGs, and so on.',
+			'Divergence works like in the game: own Harmonic Break on 33 weapons anywhere, then buy it on any weapon that has Harmonic Break.',
+			'Then the Mastery camos: Mercurial Drift, Polyatomic Reforged, Orion Reforged, the same way as Platinum.'
+		],
+		camosLabel: 'Camo',
+		/** the camo buttons */
+		/** a camo button: its price short ("2.5M 🍔"), and in words for screen readers */
+		short: (n: number) => `${n >= 1_000_000 ? `${n / 1_000_000}M` : n.toLocaleString('en-US')} 🍔`,
+		camoLabel: (name: string, price: number, open: boolean, have: number, total: number) =>
+			`${name}, ${price.toLocaleString('en-US')} burgers each${open ? '' : ', not open yet'}, ${have} of ${total} owned`,
+		preview: 'Your operator',
+		trying: (name: string) => `Trying: ${name}`,
+		holding: (name: string) => `Holding: ${name}`,
+		nothing: 'Holds nothing yet. Tap a gun’s picture to try it.',
+		putDown: 'Put it down',
+		spent: (n: number) => `${n.toLocaleString('en-US')} 🍔 spent in the Camo Armory · it goes to the house (Abscar)`,
+		/** a class heading: how many of its weapons you own in the camo shown */
+		classCount: (camo: string, have: number, total: number) => `${camo} ${have} / ${total}`,
+		/** why a camo isn't open yet */
+		needClass: (next: string, camo: string, total: number, cls: string, left: number) => `${next} opens here when all ${total} ${cls} have ${camo}: ${left} to go.`,
+		needClassShort: (camo: string, left: number) => `🔒 ${camo} on ${left} more`,
+		needCount: (left: number, need: number) => `🔒 Harmonic Break on ${left} more weapon${left === 1 ? '' : 's'} (${need} needed)`,
+		needWeapon: (camo: string) => `🔒 ${camo} on this one first`,
+		divNote: (have: number, need: number) => `Harmonic Break on ${have} of the ${need} weapons Divergence needs.`,
+		divOpen: 'Divergence is open: buy it on any weapon that has Harmonic Break.',
+		buy: (n: number) => `Buy · ${n.toLocaleString('en-US')} 🍔`,
+		confirm: (name: string, n: number) => `Buy ${name} for ${n.toLocaleString('en-US')} 🍔?`,
+		yes: 'Buy it',
+		cancel: 'Cancel',
+		hold: 'Hold it',
+		held: 'Holding',
+		owned: 'Owned',
+		bought: (name: string) => `${name} is yours and in your operator’s hands 🔫`,
+		heldNow: (name: string) => `Your operator holds the ${name}`,
+		down: 'Gun put down',
+		broke: (price: number, have: number) => `${price.toLocaleString('en-US')} 🍔 needed, you have ${have.toLocaleString('en-US')}.`,
+		locked: 'Not open yet: buy the camo before it first.',
+		cardLabel: (name: string, state: string) => `${name}: ${state}`,
+		event: (name: string, price: number) => `bought a ${name} for ${price.toLocaleString('en-US')} 🍔 in the Camo Armory 🔫`,
+		eventClass: (camo: string, cls: string) => `owns all the ${cls} in ${camo} now 🔫✨`
 	},
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {

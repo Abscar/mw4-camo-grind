@@ -20,8 +20,11 @@ export const LADDER = [
 
 export type LadderCamoId = (typeof LADDER)[number]['id'];
 export type LadderCamo = (typeof LADDER)[number];
-/** What a weapon's mini picture can wear (WeaponIcon): a ladder camo, or Divergence. */
-export type IconCamo = LadderCamoId | 'divergence';
+/**
+ * What a weapon's mini picture can wear (WeaponIcon): a ladder camo, or Divergence. Since 2026-11-20 also
+ * the Multiplayer Mastery camos, which only the BurgiShop Camo Armory's guns wear (armory.ts).
+ */
+export type IconCamo = LadderCamoId | 'divergence' | 'mercurialDrift' | 'polyatomicReforged' | 'orionReforged';
 
 /** Highest per-weapon level (= every ladder camo done). */
 export const MAX_LEVEL = LADDER.length;

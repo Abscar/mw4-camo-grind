@@ -115,7 +115,7 @@
 
 {#snippet face(l: Partial<Record<ShopSlot, ShopItem>>, size: number, pin: number, play = false)}
 	<!-- `play`: an emote in `l` plays over and over (item cards, or the preview while trying one on) -->
-	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} pet={l.pet?.id} {pin} extra={{ back: l.back?.id, emote: play && l.emote ? { k: l.emote.id, at: 1 } : null, loop: true }}>
+	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} pet={l.pet?.id} {pin} extra={{ back: l.back?.id, hold: l.hold?.id, emote: play && l.emote ? { k: l.emote.id, at: 1 } : null, loop: true }}>
 		<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} face={faceOf(l)} />
 	</OpGear>
 {/snippet}

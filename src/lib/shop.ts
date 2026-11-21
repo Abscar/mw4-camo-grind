@@ -28,13 +28,18 @@
  * squad-codec.ts (which imports this file).
  */
 import { KARMA_ITEMS } from './karma-shop.ts';
+import { GUN_ITEMS } from './armory.ts';
+import type { IconCamo } from './data/camos.ts';
 
 // eyes / hat / smoke / pet: the 420 pack 2 (2026-11-16); eyes + hat are drawn by the emblems (faceGear.ts),
 // smoke tints whatever smokes on them, the pet sits on the shoulder (OpGear + ShopPet).
 // back / emote (on the operator, OpGear), card / radio (Squad tab), table (blackjack), win (the slots'
 // big-win screens), maxfx (your weapon rows), buddy (the weed buddy): the ideas pack (2026-11-20)
+/** BurgiShop's own kinds (its kind buttons; every one has items in SHOP_ITEMS). */
 export const SLOTS = ['aura', 'effect', 'badge', 'mouth', 'eyes', 'hat', 'smoke', 'pet', 'back', 'emote', 'name', 'title', 'card', 'radio', 'table', 'win', 'maxfx', 'buddy'] as const;
-export type ShopSlot = (typeof SLOTS)[number];
+/** Every slot something can be worn in: BurgiShop's, plus `hold` = the Camo Armory's gun in the operator's hands (armory.ts). */
+export const WEAR_SLOTS = [...SLOTS, 'hold'] as const;
+export type ShopSlot = (typeof WEAR_SLOTS)[number];
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
 export interface ShopItem {
@@ -47,6 +52,8 @@ export interface ShopItem {
 	text?: string;
 	/** KarmaShop (karma-shop.ts): paid with hearts, never burgers. */
 	karma?: true;
+	/** The Camo Armory (armory.ts): which weapon in which camo. Bought in order (buyGun), not with buy(). */
+	gun?: { w: string; c: IconCamo };
 }
 
 const item = (id: string, slot: ShopSlot, name: string, price: number, rarity: Rarity, text?: string): ShopItem => ({ id, slot, name, price, rarity, ...(text ? { text } : {}) });
@@ -201,8 +208,9 @@ export interface Prank {
 }
 /** Pranks kept in the list (the newest); older ones only count as burgers spent (`pOld`). */
 export const PRANK_KEEP = 30;
-// KarmaShop's items too (karma-shop.ts): worn and drawn like these, but bought with hearts (buyKarmaItem), not here
-export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS].map((i) => [i.id, i]));
+// KarmaShop's items too (karma-shop.ts): worn and drawn like these, but bought with hearts (buyKarmaItem), not here;
+// and the Camo Armory's guns (armory.ts), bought in the game's order with buyGun
+export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS, ...GUN_ITEMS].map((i) => [i.id, i]));
 
 export interface ShopState {
 	/** Item id → burgers paid. */
@@ -272,7 +280,7 @@ export function cleanShop(raw: unknown): ShopState | undefined {
 	if (!Object.keys(own).length && !Object.keys(pruned.pranks).length && !pruned.pOld && !statue) return undefined;
 	const eq: Partial<Record<ShopSlot, string>> = {};
 	if (isObject(raw.eq)) {
-		for (const slot of SLOTS) {
+		for (const slot of WEAR_SLOTS) {
 			const id = raw.eq[slot];
 			if (typeof id === 'string' && own[id] !== undefined && ITEM_BY_ID.get(id)?.slot === slot) eq[slot] = id;
 		}
@@ -373,7 +381,8 @@ export type BuyResult = 'ok' | 'owned' | 'broke' | 'unknown';
 /** Buy an item (it's worn at once): the new state, or why not. */
 export function buy(s: ShopState | undefined, id: string, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
 	const it = ITEM_BY_ID.get(id);
-	if (!it || it.karma) return { result: 'unknown' };
+	// hearts items have their own buy (karma-shop.ts), the armory's guns theirs (armory.ts buyGun: in order)
+	if (!it || it.karma || it.gun) return { result: 'unknown' };
 	if (s?.own[id] !== undefined) return { result: 'owned' };
 	if (balance < it.price) return { result: 'broke' };
 	// `...s` keeps the pranks thrown (and `pOld`): without it a buy dropped them until the next merge
@@ -410,7 +419,7 @@ export function mergeShop(a: ShopState | undefined, b: ShopState | undefined): S
 /** What a member wears, as items (only known, owned ones). */
 export function worn(s: ShopState | undefined): Partial<Record<ShopSlot, ShopItem>> {
 	const out: Partial<Record<ShopSlot, ShopItem>> = {};
-	for (const slot of SLOTS) {
+	for (const slot of WEAR_SLOTS) {
 		const id = s?.eq[slot];
 		const it = id ? ITEM_BY_ID.get(id) : undefined;
 		if (it && s?.own[it.id] !== undefined) out[slot] = it;

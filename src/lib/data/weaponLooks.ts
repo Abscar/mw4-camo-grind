@@ -110,3 +110,25 @@ export const WEAPON_LOOKS: Record<string, GunLook> = {
 	'fss-carbon-edge-1095': { kind: 'cs2', model: 'karambit', skin: 'fade' },
 	'zlr-talonhawk': { kind: 'melee', style: 'axe', body: BLACK, handle: OD }
 };
+
+/**
+ * The CS2 easter-egg guns as plain cartoons of the same real gun, for where the camo has to show: the
+ * BurgiShop Camo Armory (2026-11-20) sells them in Gold, Platinum… and a CS2 skin can't wear a camo.
+ */
+const PLAIN_LOOKS: Record<Cs2Model, Exclude<GunLook, Cs2Look>> = {
+	ak47: rifle({ stock: 'wood', mag: 'curved', optic: 'irons', guard: 'wood', muzzle: 'brake', barrel: 1, body: BLACK, furniture: WOOD }),
+	m4a4: rifle({ stock: 'fixed', mag: 'straight', optic: 'red', guard: 'rail', muzzle: 'brake', barrel: 1, body: BLACK, furniture: BLACK }),
+	mp7: rifle({ stock: 'folded', mag: 'grip', optic: 'red', guard: 'slim', muzzle: 'plain', barrel: 0.35, body: BLACK, furniture: BLACK }),
+	xm1014: rifle({ stock: 'fixed', mag: 'tube', optic: 'irons', guard: 'slim', muzzle: 'plain', barrel: 1, body: BLACK, furniture: BLACK }),
+	awp: rifle({ stock: 'fixed', mag: 'straight', optic: 'big', guard: 'slim', muzzle: 'brake', barrel: 1.4, bolt: true, body: OD, furniture: BLACK }),
+	usps: { kind: 'pistol', style: 'auto', body: BLACK, grip: BLACK },
+	deagle: { kind: 'pistol', style: 'deagle', body: GUNMETAL, grip: BLACK },
+	r8: { kind: 'pistol', style: 'revolver', body: GUNMETAL, grip: BLACK },
+	karambit: { kind: 'melee', style: 'knife', body: GREY, handle: BLACK }
+};
+
+/** A weapon's cartoon that can wear a camo: its own, or the plain one for a CS2-skinned gun. */
+export function camoLook(weaponId: string): Exclude<GunLook, Cs2Look> | undefined {
+	const look = WEAPON_LOOKS[weaponId];
+	return look?.kind === 'cs2' ? PLAIN_LOOKS[look.model] : look;
+}

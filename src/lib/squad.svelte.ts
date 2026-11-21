@@ -94,6 +94,7 @@ import {
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
 import { cleanDonations, giveTo, goalPassed, karmaBalance, loveFor, mergeDonations, squadGiving, withLove, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
 import { buyKarmaItem, cleanKarmaShop, heartsOf, mergeKarmaShop, ownKarmaItems, KARMA_BY_ID, type Hearts, type KarmaBuyResult, type KarmaShopState } from './karma-shop.ts';
+import { buyGun as armoryBuy, camoIndex, ownedCount, ARMORY_CAMOS, ARMORY_CLASSES, GUN_BY_ID, type GunBuyResult } from './armory.ts';
 import { is420 } from './four20.ts';
 import { cleanTune, forcedFor, karmaLuck, luckFor, withUsed, type CasinoTune, type ForceKind, type KarmaLuck, type RigGame } from './casino-rig.ts';
 
@@ -1059,6 +1060,30 @@ class Squad {
 		this.#schedulePublish();
 		const it = ITEM_BY_ID.get(id);
 		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.shop.event(it.name, t.shop.rarity[it.rarity]));
+		return 'ok';
+	}
+
+	/**
+	 * Buy a weapon in a camo in the Camo Armory (armory.ts: only in the game's order); your operator holds it
+	 * at once. On the radio: finishing a camo on a whole class, and every Harmonic Break or higher.
+	 */
+	buyGun(id: string): GunBuyResult | 'off' {
+		const me = this.me;
+		const bank = this.myBank;
+		if (!me || !bank) return 'off';
+		const r = armoryBuy(this.shop, id, bank.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.shop = r.state;
+		writeJson(SHOP_KEY, r.state);
+		this.#schedulePublish();
+		const it = GUN_BY_ID.get(id);
+		if (it) {
+			const ci = camoIndex(it.gun.c);
+			const cls = ARMORY_CLASSES.find((c) => c.weapons.some((w) => w.id === it.gun.w));
+			const done = cls ? ownedCount(r.state.own, ci, cls.id) : null;
+			if (cls && done && done.total > 1 && done.have === done.total) void this.#event(t.armory.eventClass(ARMORY_CAMOS[ci].name, cls.name));
+			else if (ci >= camoIndex('harmonicBreak')) void this.#event(t.armory.event(it.name, it.price));
+		}
 		return 'ok';
 	}
 

@@ -15,6 +15,8 @@
 	export interface GearExtra {
 		/** a `back` item: a rifle in camo behind the shoulder */
 		back?: string | null;
+		/** a Camo Armory gun (armory.ts, slot `hold`): held across the chest in two fists (HeldGun) */
+		hold?: string | null;
 		/** the emote to play ({ item id, when played }); a new `at` plays it again (EMOTE_PLAY long) */
 		emote?: { k: string; at: number } | null;
 		/** play the emote over and over (the shop's item cards) */
@@ -35,6 +37,7 @@
 	import { EMOTE_PLAY } from '#lib/shop.ts';
 	import ShopPet from './ShopPet.svelte';
 	import ShopPin from './ShopPin.svelte';
+	import HeldGun from './HeldGun.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	let {
@@ -115,6 +118,10 @@
 	<span class="og-body"
 		>{@render children()}{#if extra.nose}<span class="og-nose" style:left="{(extra.nose[0] / 64) * 100}%" style:top="{(extra.nose[1] / 64) * 100}%" aria-hidden="true"></span>{/if}</span
 	>
+	{#if extra.hold}
+		<!-- a Camo Armory gun, held across the chest, muzzle up to the right -->
+		<span class="og-hold" aria-hidden="true"><HeldGun id={extra.hold} /></span>
+	{/if}
 	{#if fx === 'fx-burgers'}
 		<span class="og-orbit" aria-hidden="true">
 			{#each [0, 120, 240] as a (a)}
@@ -669,6 +676,30 @@
 	}
 	.og-back[data-back='back-div'] :global(.weapon-icon) {
 		filter: drop-shadow(0 0 4px rgb(200 170 255 / 0.8)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.7));
+	}
+	/* the Camo Armory gun in the hands: across the lower chest, in front of the emblem, muzzle up-right */
+	.og-hold {
+		position: absolute;
+		z-index: 2;
+		left: -10%;
+		bottom: -3%;
+		width: 112%;
+		transform: rotate(-16deg);
+		transform-origin: 40% 70%;
+		pointer-events: none;
+	}
+	.og-hold :global(.held) {
+		filter: drop-shadow(0 1.5px 1px rgb(0 0 0 / 0.75));
+	}
+	/* the higher camos shine a little */
+	.og-hold :global(.held[data-camo='divergence']),
+	.og-hold :global(.held[data-camo='mercurialDrift']),
+	.og-hold :global(.held[data-camo='polyatomicReforged']),
+	.og-hold :global(.held[data-camo='orionReforged']) {
+		filter: drop-shadow(0 0 3px rgb(210 170 255 / 0.85)) drop-shadow(0 1.5px 1px rgb(0 0 0 / 0.75));
+	}
+	.og-hold :global(.held[data-camo='gold']) {
+		filter: drop-shadow(0 0 2.5px rgb(255 200 60 / 0.7)) drop-shadow(0 1.5px 1px rgb(0 0 0 / 0.75));
 	}
 	/* Glitch: the emblem jumps and splits red / cyan for a moment every few seconds… */
 	.og[data-effect='fx-glitch'] .og-body {

@@ -7,33 +7,43 @@
 	kunna köpa saker med hjärtan"): a switch at the top picks BurgiShop (burgers) or KarmaShop (hearts from
 	BurgiGives, KarmaShopSection.svelte). A switch here instead of an eighth page tab keeps the page tabs on one
 	row on phones. The pick is remembered per device (`mw4-camo-grind:shop-tab`).
+	A third door since 2026-11-20: the Camo Armory (ArmorySection.svelte, armory.ts), weapons in camo for
+	burgers that your operator holds (the user: "skapa en flik i burgishoppen där man kan köpa guld, plat,
+	divergence osv skins till vapen").
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
+	import { camoLook } from '#lib/data/weaponLooks.ts';
+	import ArmorySection from './ArmorySection.svelte';
 	import CasinoTabArt from './CasinoTabArt.svelte';
 	import KarmaShopArt from './KarmaShopArt.svelte';
 	import KarmaShopSection from './KarmaShopSection.svelte';
 	import ShopSection from './ShopSection.svelte';
+	import WeaponIcon from './WeaponIcon.svelte';
 
 	let { onSquad }: { onSquad?: () => void } = $props();
 	const s = t.shop;
 	const k = t.karmaShop;
+	const ar = t.armory;
 	const TAB_KEY = 'mw4-camo-grind:shop-tab';
 	const balance = $derived(squad.myBank?.balance ?? 0);
 	const hearts = $derived(squad.myHearts.balance);
-	let shop = $state<'burgi' | 'karma'>('burgi');
+	/** the armory door's picture: a gold rifle */
+	const DOOR_GUN = camoLook('patriot-xmr');
+	let shop = $state<'burgi' | 'armory' | 'karma'>('burgi');
 
 	onMount(() => {
 		try {
-			if (localStorage.getItem(TAB_KEY) === 'karma') shop = 'karma';
+			const saved = localStorage.getItem(TAB_KEY);
+			if (saved === 'karma' || saved === 'armory') shop = saved;
 		} catch {
 			/* private mode: start on BurgiShop */
 		}
 	});
 
-	function pick(which: 'burgi' | 'karma') {
+	function pick(which: 'burgi' | 'armory' | 'karma') {
 		shop = which;
 		try {
 			localStorage.setItem(TAB_KEY, which);
@@ -52,13 +62,17 @@
 	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-4 pb-3 sm:px-5">
 		{#if shop === 'karma'}
 			<span class="shop-bag" aria-hidden="true"><KarmaShopArt size={56} /></span>
+		{:else if shop === 'armory' && DOOR_GUN}
+			<span class="shop-bag shop-gun" aria-hidden="true"><WeaponIcon look={DOOR_GUN} camo="gold" /></span>
 		{:else}
 			<span class="shop-bag" aria-hidden="true"><CasinoTabArt kind="shop" size={56} /></span>
 		{/if}
 		<!-- at least 12rem, so on a phone the burgers pill goes to its own line instead of squeezing the name -->
 		<div class="flex min-w-[12rem] flex-1 flex-col gap-0.5">
-			<h2 id="shop-h" class="shop-title font-head text-xl font-black tracking-wide uppercase" class:karma-title={shop === 'karma'}>{shop === 'karma' ? k.heading : s.heading}</h2>
-			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{shop === 'karma' ? k.sub : s.sub}</span>
+			<h2 id="shop-h" class="shop-title font-head text-xl font-black tracking-wide uppercase" class:karma-title={shop === 'karma'} class:armory-title={shop === 'armory'}>
+				{shop === 'karma' ? k.heading : shop === 'armory' ? ar.heading : s.heading}
+			</h2>
+			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{shop === 'karma' ? k.sub : shop === 'armory' ? ar.sub : s.sub}</span>
 		</div>
 		{#if squad.on}
 			{#if shop === 'karma'}
@@ -73,11 +87,15 @@
 		<div class="shop-switch" role="group" aria-label={k.switchLabel}>
 			<button type="button" class="shop-door" data-shop="burgi" aria-pressed={shop === 'burgi'} onclick={() => pick('burgi')}>
 				<span class="shop-door-art" aria-hidden="true"><CasinoTabArt kind="shop" size={40} /></span>
-				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{s.heading}</b><span class="block text-[11px] leading-tight">{k.burgiTile}</span></span>
+				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{s.heading}</b><span class="door-sub block text-[11px] leading-tight">{k.burgiTile}</span></span>
+			</button>
+			<button type="button" class="shop-door" data-shop="armory" aria-pressed={shop === 'armory'} onclick={() => pick('armory')}>
+				<span class="shop-door-art shop-door-gun" aria-hidden="true">{#if DOOR_GUN}<WeaponIcon look={DOOR_GUN} camo="gold" />{/if}</span>
+				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{ar.heading}</b><span class="door-sub block text-[11px] leading-tight">{ar.door}</span></span>
 			</button>
 			<button type="button" class="shop-door" data-shop="karma" aria-pressed={shop === 'karma'} onclick={() => pick('karma')}>
 				<span class="shop-door-art" aria-hidden="true"><KarmaShopArt size={40} alive={shop === 'karma'} /></span>
-				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{k.heading}</b><span class="block text-[11px] leading-tight">{k.karmaTile}</span></span>
+				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{k.heading}</b><span class="door-sub block text-[11px] leading-tight">{k.karmaTile}</span></span>
 			</button>
 		</div>
 		{#if !squad.on}
@@ -85,6 +103,8 @@
 			<div><button type="button" class="btn btn-primary" onclick={() => onSquad?.()}>{t.casino.toSquad}</button></div>
 		{:else if shop === 'karma'}
 			<KarmaShopSection />
+		{:else if shop === 'armory'}
+			<ArmorySection />
 		{:else}
 			<ShopSection />
 		{/if}
@@ -106,6 +126,18 @@
 		background-clip: text;
 		color: transparent;
 		filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.7)) drop-shadow(0 0 8px rgb(178 101 255 / 0.45));
+	}
+	.shop-title.armory-title {
+		background: linear-gradient(180deg, #ffffff, #fff1b0 40%, #ffc928 70%, #c47a00);
+		-webkit-background-clip: text;
+		background-clip: text;
+		filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.75)) drop-shadow(0 0 8px rgb(255 190 40 / 0.5));
+	}
+	.shop-gun :global(.weapon-icon) {
+		width: 64px;
+		height: auto;
+		transform: rotate(-14deg);
+		filter: drop-shadow(0 0 4px rgb(255 196 60 / 0.6)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.7));
 	}
 	.shop-title.karma-title {
 		background: linear-gradient(180deg, #ffffff, #ffd6e8 40%, #ff7ab4 70%, #ffd23a);
@@ -137,12 +169,12 @@
 		font-weight: 900;
 		color: var(--t-fg);
 	}
-	/* the switch: two shop fronts with their own colours in every theme */
+	/* the switch: three shop fronts with their own colours in every theme */
 	.shop-switch {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 8px;
-		max-width: 560px;
+		max-width: 820px;
 	}
 	.shop-door {
 		display: flex;
@@ -166,6 +198,17 @@
 	.shop-door[data-shop='burgi'] {
 		background: linear-gradient(160deg, #4a1c7a, #1e0a34);
 	}
+	.shop-door[data-shop='armory'] {
+		background:
+			radial-gradient(80% 120% at 20% 40%, rgb(255 201 40 / 0.28), transparent 65%),
+			linear-gradient(160deg, #4a3a14, #1a1408);
+	}
+	.shop-door-gun :global(.weapon-icon) {
+		width: 46px;
+		height: auto;
+		transform: rotate(-14deg);
+		filter: drop-shadow(0 0 3px rgb(255 196 60 / 0.55));
+	}
 	.shop-door[data-shop='karma'] {
 		background:
 			radial-gradient(80% 120% at 20% 40%, rgb(255 140 190 / 0.35), transparent 65%),
@@ -188,22 +231,33 @@
 		width: 44px;
 		height: 40px;
 	}
-	/* phones: a smaller picture and tighter letters, so "KARMASHOP" fits even in the wider theme fonts */
-	@media (max-width: 400px) {
+	/* narrower: three doors side by side, each with its picture above the name (no small line), so
+	   "KARMASHOP" and "CAMO ARMORY" fit even in the wider theme fonts */
+	@media (max-width: 639px) {
 		.shop-door {
-			gap: 5px;
-			padding-inline: 5px 6px;
+			flex-direction: column;
+			justify-content: center;
+			gap: 2px;
+			padding: 6px 4px;
+			text-align: center;
+		}
+		.shop-door .door-sub {
+			display: none;
 		}
 		.shop-door-art {
-			width: 30px;
+			width: 44px;
+			height: 34px;
 		}
 		.shop-door-art :global(svg) {
-			width: 30px;
+			max-width: 40px;
 			height: auto;
 		}
+		.shop-door-gun :global(.weapon-icon) {
+			width: 42px;
+		}
 		.shop-door b {
-			font-size: 13px;
-			letter-spacing: 0;
+			font-size: 12px;
+			letter-spacing: 0.02em;
 		}
 	}
 </style>

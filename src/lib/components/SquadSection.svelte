@@ -77,6 +77,7 @@
 		const emote = look.emote;
 		return {
 			back: look.back?.id,
+			hold: look.hold?.id,
 			emote: freshEmote(e.member.shop, squad.serverNow()),
 			nose: pk.clown ? noseOf(e.member.op ?? 'initials') : null,
 			masked: !!pk.mask,
