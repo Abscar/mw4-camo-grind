@@ -1,0 +1,28 @@
+/** Quickscope Duel's words (BurgiArcade). Shown in the hall, on the cabinet and in the game. */
+export default {
+	name: 'Quickscope Duel',
+	tagline: 'Hold… hold… DRAW. Fastest trigger wins.',
+	how: 'Five rounds through a sniper scope: wait for the enemy sniper to pop up, then fire as fast as you can. Firing early or hitting a friendly (a burger, a pigeon, a buddy with a white flag) is a foul.',
+	controls: 'Click / tap anywhere, or press Space',
+	aria: 'Quickscope Duel: a reaction duel through a sniper scope. When the enemy appears, click, tap or press Space.',
+	round: (n: number, of: number) => `ROUND ${n}/${of}`,
+	hold: 'HOLD…',
+	draw: 'DRAW!',
+	ms: (ms: number) => `${ms} ms`,
+	tooEarly: 'TOO EARLY',
+	tooSlow: 'TOO SLOW',
+	friendlyFire: 'FRIENDLY FIRE',
+	insane: 'INSANE!',
+	quick: 'QUICK!',
+	clean: 'CLEAN HIT',
+	foul: 'FOUL',
+	early: 'EARLY',
+	slow: 'SLOW',
+	ff: 'FRIENDLY',
+	hint: 'Shoot the sniper, never the friendlies',
+	total: 'TOTAL',
+	points: (n: number) => `+${n}`,
+	paused: 'PAUSED',
+	tapToContinue: 'Tap to continue · the round starts over',
+	sign: 'BURGI'
+};

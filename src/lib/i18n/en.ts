@@ -230,7 +230,8 @@ export const en = {
 			tabExtras: 'Extra camos tab',
 			tabSquad: 'Squad tab',
 			tabCasino: 'BurgiCasino tab',
-			tabShop: 'BurgiShop tab'
+			tabShop: 'BurgiShop tab',
+			tabArcade: 'BurgiArcade tab'
 		},
 		/** small notes in the list for parts that keep working while hidden */
 		notes: {
@@ -883,6 +884,8 @@ export const en = {
 		/** BurgiShop's own tab (2026-11-16, the user: "BurgiShop can have a tab of its own instead of being among
 		    the casino games"); a soft hyphen like BurgiCasino's */
 		shop: 'Burgi­Shop',
+		/** BurgiArcade (2026-11-22): ten games, high scores, tickets, a prize counter */
+		arcade: 'Burgi­Arcade',
 		/** a soft hyphen so it can break on a phone ("Burgi-/Casino") */
 		casino: 'Burgi­Casino'
 	},
@@ -1342,6 +1345,9 @@ export const en = {
 			neck: 'Chain',
 			kicks: 'Kicks',
 			shoulders: 'Pauldrons',
+			/** BurgiArcade's prize counter (arcade-prizes.ts), worn like these */
+			plush: 'Plushies',
+			mount: 'Mounts',
 			statue: '🗿 Statue',
 			pranks: '😈 Pranks',
 			box: '🎁 Munchie Box',
@@ -2817,6 +2823,125 @@ export const en = {
 		snapshot: (sources: string, date: string) => `Checked ${date}. Sources: ${sources}.`
 	},
 	/** KarmaShop (2026-11-20; karma-shop.ts): the second shop in the BurgiShop tab, paid with hearts from BurgiGives. */
+	/** BurgiArcade (2026-11-22): ten games for the squad, high scores, a daily challenge, duels, tickets, a prize counter.
+	    Each game's own words are in i18n/arcade/<game>.ts. */
+	arcade: {
+		heading: 'BurgiArcade',
+		sub: 'Ten games · beat the squad’s high scores · win tickets',
+		tickets: (n: number) => `${n.toLocaleString('en-US')} 🎟️`,
+		ticketsLabel: 'Your tickets',
+		ticketsTitle: (n: number) => `You have ${n.toLocaleString('en-US')} tickets`,
+		champ: 'Arcade champ this week',
+		champNone: 'No champ yet this week',
+		champPts: (n: number) => `${n} pts`,
+		doors: { label: 'Arcade', games: 'Games', prizes: 'Prize counter' },
+		gamesLabel: 'Pick a game',
+		cabinet: (game: string) => `Play ${game}`,
+		yourBest: (n: number) => `Best ${n.toLocaleString('en-US')}`,
+		noBest: 'Not played',
+		topIs: (name: string, n: number) => `Top: ${name} · ${n.toLocaleString('en-US')}`,
+		insertCoin: 'Insert coin',
+		play: 'Play',
+		daily: 'Daily challenge',
+		dailyHint: 'Today’s level: the same for the whole squad',
+		dailyDone: (n: number) => `Today’s best: ${n.toLocaleString('en-US')}`,
+		close: 'Back to all games',
+		quit: 'Quit game',
+		howHeading: 'How to play',
+		ready: 'Get ready',
+		go: 'GO!',
+		result: {
+			heading: 'Game over',
+			score: 'Score',
+			newBest: 'New personal best!',
+			record: 'New squad record!',
+			prev: (n: number) => `Your best: ${n.toLocaleString('en-US')}`,
+			won: (n: number) => `+${n.toLocaleString('en-US')} 🎟️`,
+			parts: { base: 'Score', pb: 'Personal best', record: 'Squad record', daily: 'Daily challenge' },
+			place: (n: number, of: number) => `#${n} of ${of} in the squad`,
+			again: 'Play again',
+			dailyAgain: 'Daily again'
+		},
+		hall: {
+			heading: 'High scores',
+			label: 'Which board',
+			all: 'All time',
+			week: 'This week',
+			day: 'Today',
+			empty: 'No scores here yet. Be the first.',
+			you: 'You',
+			outside: 'Join a squad to see the others’ scores here.'
+		},
+		race: {
+			heading: 'Champ race',
+			how: 'This week’s boards over all ten games: 1st = 5 points, 2nd = 3, 3rd = 1. Most points = the champ.',
+			firsts: (n: number) => `${n} × #1`,
+			empty: 'Nobody has played this week yet.'
+		},
+		rematch: {
+			heading: 'Rematch',
+			line: (who: string, game: string, score: number, mine: number) => `${who} beat your ${game} best: ${score.toLocaleString('en-US')} vs your ${mine.toLocaleString('en-US')}`,
+			go: 'Rematch'
+		},
+		duel: {
+			heading: 'Quickscope duels',
+			hint: 'Five rounds through the scope, the same waits for you both. The faster shot takes the round. It works even if they play later.',
+			pick: 'Challenge',
+			challengeLabel: (name: string) => `Challenge ${name} to a Quickscope duel`,
+			none: 'Nobody else in the squad yet.',
+			incoming: (name: string) => `${name} challenged you`,
+			sent: (name: string) => `You challenged ${name}`,
+			accept: 'Play it',
+			playMine: 'Play your rounds',
+			waiting: (name: string) => `Waiting for ${name}`,
+			won: (name: string, a: number, b: number) => `You beat ${name} ${a}–${b}`,
+			lost: (name: string, a: number, b: number) => `${name} beat you ${b}–${a}`,
+			draw: (name: string, a: number, b: number) => `Draw with ${name}, ${a}–${b}`,
+			you: 'You',
+			foul: 'Foul',
+			slow: 'Slow',
+			ms: (n: number) => `${n} ms`,
+			playing: (name: string) => `Duel vs ${name}`,
+			wonEvent: (name: string, a: number, b: number) => `won a Quickscope duel against ${name}, ${a}–${b} 🎯`,
+			lostEvent: (name: string, a: number, b: number) => `lost a Quickscope duel to ${name}, ${b}–${a} 🎯`,
+			drawEvent: (name: string, a: number, b: number) => `drew a Quickscope duel with ${name}, ${a}–${b} 🎯`,
+			done: 'Your rounds are in.'
+		},
+		outside: 'The games and your own best scores work here. Join a squad (the Squad tab) to battle the others for high scores, duel them and trade tickets for prizes.',
+		toSquad: 'Go to Squad',
+		recordEvent: (game: string, score: number) => `set a new ${game} record: ${score.toLocaleString('en-US')} 🕹️`,
+		prizeEvent: (name: string, rarity: string) => `won a ${rarity.toLowerCase()} ${name} at the arcade’s prize counter 🎟️`,
+		ticketsHow: 'How tickets work',
+		ticketRules: (pb: number, record: number, daily: number) => [
+			'Every play wins tickets: the better the score, the more (up to 120).',
+			`A new personal best: +${pb}.`,
+			`Taking the squad’s #1 spot in a game: +${record}.`,
+			`Your first daily-challenge play of the day in a game: +${daily}.`,
+			'Tickets are pretend, like the burgers. They only buy prizes at the prize counter.'
+		],
+		prizes: {
+			heading: 'Prize counter',
+			sub: 'Trade tickets for pets, plushies and mounts',
+			kindsLabel: 'Which prizes',
+			kinds: { pet: 'Pets', plush: 'Plushies', mount: 'Mounts' },
+			kindOne: { pet: 'Pet', plush: 'Plushie', mount: 'Mount' },
+			where: { pet: 'Sits on your operator’s shoulder', plush: 'Hugged in front of your operator', mount: 'Your operator rides it' },
+			buy: (n: number) => `Trade ${n.toLocaleString('en-US')} 🎟️`,
+			owned: 'Yours',
+			wear: 'Wear',
+			wearing: 'Wearing',
+			takeOff: 'Take off',
+			bought: (name: string) => `${name} is yours and on your operator 🎟️`,
+			broke: (price: number, have: number) => `${price.toLocaleString('en-US')} 🎟️ needed, you have ${have.toLocaleString('en-US')}.`,
+			notIn: 'Join a squad to collect prizes: they’re worn on your operator in the header and on your squad card.',
+			tryOn: 'Tap a picture to try it on',
+			preview: 'Your operator',
+			confirm: (name: string, n: number) => `Trade ${n.toLocaleString('en-US')} 🎟️ for ${name}?`,
+			yes: 'Trade',
+			cancel: 'Cancel',
+			itemLabel: (name: string, kind: string, rarity: string, state: string) => `${name}, ${kind}, ${rarity}: ${state}`
+		}
+	},
 	karmaShop: {
 		heading: 'KarmaShop',
 		sub: 'Good-karma cosmetics, paid with hearts',

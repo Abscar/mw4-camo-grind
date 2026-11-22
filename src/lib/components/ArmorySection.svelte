@@ -119,7 +119,7 @@
 	<!-- your operator, holding your gun (or the one you're trying) -->
 	<div class="arm-stage mt-3 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-card px-4 py-4">
 		<div class="arm-face">
-			<OpGear aura={mine.aura?.id} effect={mine.effect?.id} badge={mine.badge?.id} pet={mine.pet?.id} pin={30} extra={{ back: mine.back?.id, hold: shown }}>
+			<OpGear aura={mine.aura?.id} effect={mine.effect?.id} badge={mine.badge?.id} pet={mine.pet?.id} pin={30} extra={{ back: mine.back?.id, hold: shown, mount: mine.mount?.id, plush: mine.plush?.id }}>
 				<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} size={96} face={faceOf(mine)} />
 			</OpGear>
 		</div>

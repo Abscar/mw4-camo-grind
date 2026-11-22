@@ -37,6 +37,9 @@
 		/** an entrance ({ item id, when }): plays once for ENTRY_MS each time `at` changes
 		    (entry-smoke / entry-heli / entry-nuke) */
 		entry?: { k: string; at: number } | null;
+		/** BurgiArcade's prize counter (arcade-prizes.ts): a mount ridden under the emblem, a plushie hugged in front */
+		mount?: string | null;
+		plush?: string | null;
 	}
 	/** How long an entrance plays. */
 	export const ENTRY_MS = 3000;
@@ -50,6 +53,7 @@
 	import ShopPin from './ShopPin.svelte';
 	import HeldGun from './HeldGun.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
+	import ArcadePrize from './arcade/ArcadePrize.svelte';
 
 	let {
 		aura = null,
@@ -245,12 +249,20 @@
 		<!-- a rifle on the back, in its ladder camo, behind the right shoulder -->
 		<span class="og-back" data-back={extra.back} aria-hidden="true"><WeaponIcon look={BACK_LOOK} camo={BACK_CAMO[extra.back] ?? null} /></span>
 	{/if}
+	{#if extra.mount}
+		<!-- an arcade mount, ridden: drawn behind the emblem, its head out on the right, its rear on the left -->
+		<span class="og-mount" aria-hidden="true"><ArcadePrize id={extra.mount} size={64} /></span>
+	{/if}
 	<span class="og-body"
 		>{@render children()}{#if extra.nose}<span class="og-nose" style:left="{(extra.nose[0] / 64) * 100}%" style:top="{(extra.nose[1] / 64) * 100}%" aria-hidden="true"></span>{/if}</span
 	>
 	{#if extra.hold}
 		<!-- a Camo Armory gun, held across the chest, muzzle up to the right -->
 		<span class="og-hold" aria-hidden="true"><HeldGun id={extra.hold} /></span>
+	{/if}
+	{#if extra.plush}
+		<!-- an arcade plushie, hugged in front of the chest -->
+		<span class="og-plush" aria-hidden="true"><ArcadePrize id={extra.plush} size={Math.round(pin * 1.5)} /></span>
 	{/if}
 	{#if extra.burgerHead}
 		<!-- a friend's Burger Head: a big burger where the head was, googly eyes on the bun -->
@@ -447,7 +459,7 @@
 		{/key}
 	{/if}
 	{#if badge}<span class="og-pin" aria-hidden="true"><ShopPin id={badge} size={pin} /></span>{/if}
-	{#if pet}<span class="og-pet" aria-hidden="true"><ShopPet id={pet} size={Math.round(pin * 1.6)} /></span>{/if}
+	{#if pet}<span class="og-pet" aria-hidden="true">{#if pet.startsWith('a-')}<ArcadePrize id={pet} size={Math.round(pin * 1.6)} />{:else}<ShopPet id={pet} size={Math.round(pin * 1.6)} />{/if}</span>{/if}
 	{#if extra.masked}
 		<!-- their own Gas Mask: no pranks stick to them for a day -->
 		<span class="og-mask" aria-hidden="true"
@@ -1225,6 +1237,32 @@
 		bottom: -4%;
 		z-index: 3;
 		pointer-events: none;
+	}
+	/* ---------- BurgiArcade's prizes (2026-11-22): a mount under the emblem, a plushie in its arms ---------- */
+	/* the mount's drawing is 96 × 64 with the rider's bottom at y 52: 1.5 × the emblem's width, centred, its top
+	   18.75 % down the emblem, so it sticks out sideways and a little below */
+	.og-mount {
+		position: absolute;
+		z-index: 0;
+		left: -25%;
+		width: 150%;
+		top: 18.75%;
+		pointer-events: none;
+		filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.55));
+	}
+	.og-mount :global(svg) {
+		display: block;
+		width: 100%;
+		height: auto;
+		overflow: visible;
+	}
+	.og-plush {
+		position: absolute;
+		z-index: 4;
+		left: 38%;
+		bottom: -8%;
+		pointer-events: none;
+		filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.55));
 	}
 	/* ---------- the sidekick, sitting on the left shoulder ---------- */
 	.og-pet {

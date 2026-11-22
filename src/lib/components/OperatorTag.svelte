@@ -114,6 +114,8 @@
 				const x: GearExtra = {
 					back: gear[op].back?.id,
 					hold: gear[op].hold?.id,
+					mount: gear[op].mount?.id,
+					plush: gear[op].plush?.id,
 					emote: freshEmote(e.member.shop, squad.serverNow()),
 					nose: pr[op].clown ? noseOf(op) : null,
 					masked: !!pr[op].mask,

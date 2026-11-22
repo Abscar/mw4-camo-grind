@@ -46,7 +46,8 @@ export const HIDE_SECTIONS = [
 	{ id: 'tabExtras', group: 'tabs' },
 	{ id: 'tabSquad', group: 'tabs' },
 	{ id: 'tabCasino', group: 'tabs' },
-	{ id: 'tabShop', group: 'tabs' }
+	{ id: 'tabShop', group: 'tabs' },
+	{ id: 'tabArcade', group: 'tabs' }
 ] as const satisfies readonly { id: string; group: HideGroup; abscar?: boolean; parent?: string }[];
 
 /** A part that lives inside another one (listed under it; hiding the outer one hides it too). */

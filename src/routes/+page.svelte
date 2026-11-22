@@ -57,6 +57,7 @@
 	import SquadSection from '#lib/components/SquadSection.svelte';
 	import CasinoSection from '#lib/components/CasinoSection.svelte';
 	import ShopPage from '#lib/components/ShopPage.svelte';
+	import ArcadePage from '#lib/components/arcade/ArcadePage.svelte';
 	import ReadyBanner from '#lib/components/ReadyBanner.svelte';
 	import SquadUpBanner from '#lib/components/SquadUpBanner.svelte';
 	import Four20Banner from '#lib/components/Four20Banner.svelte';
@@ -71,7 +72,7 @@
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
 	    moved up here from its own switch inside Camo grind, second place, 2026-11-20). All stay mounted; the
 	    others are only hidden. Like the rest, the page always opens on Camo grind. */
-	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'extras', 'squad', 'casino', 'shop'] as const;
+	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'extras', 'squad', 'casino', 'shop', 'arcade'] as const;
 	type PageTab = (typeof PAGE_TABS)[number];
 	let view = $state<PageTab>('grind');
 
@@ -84,7 +85,8 @@
 		extras: '#1fcfc2',
 		squad: '#43d35e', // the radio's green
 		casino: '#ff4a3d',
-		shop: '#a560ff' // BurgiShop's purple bag
+		shop: '#a560ff', // BurgiShop's purple bag
+		arcade: '#ff8a2a' // BurgiArcade's neon orange
 	};
 
 	/** Every tab but Camo grind can be hidden (2026-11-20, the "Hide" buttons): its tab button goes, the panel
@@ -95,7 +97,8 @@
 		extras: 'tabExtras',
 		squad: 'tabSquad',
 		casino: 'tabCasino',
-		shop: 'tabShop'
+		shop: 'tabShop',
+		arcade: 'tabArcade'
 	};
 	const tabShown = (tab: PageTab) => tab === 'grind' || !hidden.is(TAB_HIDE[tab]);
 	const shownTabs = $derived(PAGE_TABS.filter(tabShown));
@@ -390,6 +393,11 @@
 			<div class="mt-2"><ShopPage onSquad={goSquad} /></div>
 		</div>
 
+		<div id="panel-arcade" role="tabpanel" aria-labelledby="tab-arcade" hidden={view !== 'arcade'}>
+			{@render tabHide('arcade')}
+			<div class="mt-2"><ArcadePage onSquad={goSquad} /></div>
+		</div>
+
 		<!-- Every box here has its own "Hide" (an edge tab on its top-right corner, HideButton; 2026-11-20). A hidden
 		     box is only `hidden`, never removed: SyncPanel and the rest start in onMount and keep running. -->
 		<div id="panel-grind" role="tabpanel" aria-labelledby="tab-grind" hidden={view !== 'grind'}>
@@ -618,7 +626,9 @@
 	   their pictures they need ≈ 1045 px, so this starts below 1060 px of row (a 1024 px window has 969). A tab is
 	   never narrower than its longest word ("RANKED" broke as "RANKE / D" in an equal seventh at 375 px), so a few
 	   px go from the others to it; break-word, not anywhere, or that minimum would count every letter as a break */
-	@container pagetabs (max-width: 1059px) {
+	/* (2026-11-22: BurgiArcade made it eight tabs, ≈ 1215 px side by side: more than the row ever gets, so the
+	   row is always this way now; on phones the eight go in two rows of four, below) */
+	@container pagetabs (max-width: 1239px) {
 		.page-tab {
 			flex: 1 1 0;
 			flex-direction: column;
@@ -659,11 +669,14 @@
 	@media (max-width: 639px) {
 		.page-tabs {
 			gap: 3px;
+			flex-wrap: wrap;
 		}
 	}
 	@container pagetabs (max-width: 607px) {
 		.page-tab {
-			padding: 5px 1px 4px; /* seven tabs on a phone: every px goes to the names */
+			/* eight tabs on a phone: two rows of four (2026-11-22), so the names stay readable */
+			flex: 1 1 calc(25% - 3px);
+			padding: 5px 1px 4px;
 			border-radius: 8px 8px 0 0;
 			font-size: 10.5px;
 			letter-spacing: 0.01em;

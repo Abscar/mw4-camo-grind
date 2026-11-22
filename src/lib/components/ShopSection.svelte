@@ -266,6 +266,8 @@
 		extra={{
 			back: l.back?.id,
 			hold: l.hold?.id,
+			mount: l.mount?.id,
+			plush: l.plush?.id,
 			emote: play && l.emote ? { k: l.emote.id, at: 1 } : null,
 			loop: true,
 			throne: !!l.throne,

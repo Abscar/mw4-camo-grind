@@ -70,7 +70,7 @@
 </script>
 
 {#snippet face(l: Partial<Record<ShopSlot, ShopItem>>, size: number, pin: number)}
-	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} pet={l.pet?.id} {pin}>
+	<OpGear aura={l.aura?.id} effect={l.effect?.id} badge={l.badge?.id} pet={l.pet?.id} {pin} extra={{ mount: l.mount?.id, plush: l.plush?.id }}>
 		<SquadAvatar name={me?.name ?? '?'} op={me?.op ?? undefined} {size} face={faceOf(l)} />
 	</OpGear>
 {/snippet}

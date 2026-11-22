@@ -30,6 +30,7 @@
 import { KARMA_ITEMS } from './karma-shop.ts';
 import { CS2_ITEMS, GUN_ITEMS } from './armory.ts';
 import { DRIP_ITEMS, DRIP_SLOTS, dripDealOf } from './drip.ts';
+import { ARCADE_ITEMS } from './arcade-prizes.ts';
 import type { IconCamo } from './data/camos.ts';
 
 // eyes / hat / smoke / pet: the 420 pack 2 (2026-11-16); eyes + hat are drawn by the emblems (faceGear.ts),
@@ -67,8 +68,9 @@ export const SLOTS = [
 	'throne'
 ] as const;
 /** Every slot something can be worn in: BurgiShop's, plus `hold` = the Camo Armory's gun in the operator's hands (armory.ts),
-    plus BurgiDrip's clothes (drip.ts: top, neck, kicks, shoulders; its hats go in `hat`). */
-export const WEAR_SLOTS = [...SLOTS, 'hold', ...DRIP_SLOTS] as const;
+    BurgiDrip's clothes (drip.ts: top, neck, kicks, shoulders; its hats go in `hat`), and BurgiArcade's prize counter's
+    `plush` (hugged in front of the chest) + `mount` (ridden; arcade-prizes.ts). */
+export const WEAR_SLOTS = [...SLOTS, 'hold', ...DRIP_SLOTS, 'plush', 'mount'] as const;
 export type ShopSlot = (typeof WEAR_SLOTS)[number];
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -82,6 +84,8 @@ export interface ShopItem {
 	text?: string;
 	/** KarmaShop (karma-shop.ts): paid with hearts, never burgers. */
 	karma?: true;
+	/** BurgiArcade's prize counter (arcade-prizes.ts): paid with arcade tickets, never burgers. */
+	tickets?: true;
 	/** The Camo Armory (armory.ts): which weapon in which camo. Bought in order (buyGun), not with buy(). */
 	gun?: { w: string; c: IconCamo };
 	/** BurgiDrip (drip.ts): clothes, bought with buy() on the store's own door, drawn by dripArt.ts. */
@@ -373,7 +377,7 @@ export interface Prank {
 export const PRANK_KEEP = 30;
 // KarmaShop's items too (karma-shop.ts): worn and drawn like these, but bought with hearts (buyKarmaItem), not here;
 // and the Camo Armory's guns (armory.ts), bought in the game's order with buyGun, and its CS2 skins (buyCs2)
-export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS, ...GUN_ITEMS, ...CS2_ITEMS, ...DRIP_ITEMS].map((i) => [i.id, i]));
+export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS, ...GUN_ITEMS, ...CS2_ITEMS, ...DRIP_ITEMS, ...ARCADE_ITEMS].map((i) => [i.id, i]));
 
 export interface ShopState {
 	/** Item id → burgers paid. */
@@ -660,7 +664,7 @@ function addOwned(s: ShopState, id: string, price: number, at: number): ShopStat
 export function buy(s: ShopState | undefined, id: string, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
 	const it = ITEM_BY_ID.get(id);
 	// hearts items have their own buy (karma-shop.ts), the armory's guns theirs (armory.ts buyGun: in order)
-	if (!it || it.karma || it.gun || it.cs2 || it.secret) return { result: 'unknown' };
+	if (!it || it.karma || it.tickets || it.gun || it.cs2 || it.secret) return { result: 'unknown' };
 	if (owns(s, id)) return { result: 'owned' };
 	if (!buyable(it, at)) return { result: 'closed' };
 	const price = priceOf(id, at);
@@ -735,7 +739,7 @@ export function worn(s: ShopState | undefined): Partial<Record<ShopSlot, ShopIte
 /** What selling an item gives back now (0 = can't: gifts, rewards, KarmaShop items and guns can't be sold). */
 export function sellValue(s: ShopState | undefined, id: string): number {
 	const it = ITEM_BY_ID.get(id);
-	if (!s || !it || it.karma || it.gun || it.cs2 || it.secret || !owns(s, id)) return 0;
+	if (!s || !it || it.karma || it.tickets || it.gun || it.cs2 || it.secret || !owns(s, id)) return 0;
 	return Math.floor((s.own[id] - (s.sold?.[id]?.paid ?? 0)) * SELL_BACK);
 }
 
@@ -785,7 +789,7 @@ export function giveItem(
 	gid: string
 ): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
 	const it = ITEM_BY_ID.get(id);
-	if (!it || it.karma || it.gun || it.cs2 || it.secret || !MEMBER_ID.test(to) || !PRANK_ID.test(gid)) return { result: 'unknown' };
+	if (!it || it.karma || it.tickets || it.gun || it.cs2 || it.secret || !MEMBER_ID.test(to) || !PRANK_ID.test(gid)) return { result: 'unknown' };
 	if (owns(theirs, id)) return { result: 'owned' };
 	if (!buyable(it, at)) return { result: 'closed' };
 	const price = priceOf(id, at);

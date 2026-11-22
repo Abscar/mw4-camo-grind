@@ -111,6 +111,9 @@ import { buyKarmaItem, cleanKarmaShop, heartsOf, mergeKarmaShop, ownKarmaItems, 
 import { buyCs2, buyGun as armoryBuy, camoIndex, ownedCount, ARMORY_CAMOS, ARMORY_CLASSES, CS2_BY_ID, GUN_BY_ID, type GunBuyResult } from './armory.ts';
 import { cs2Name } from './data/cs2Skins.ts';
 import { is420 } from './four20.ts';
+import { addDuel, bestOfOthers, cleanArcade, mergeArcade, playDuel, recordPlay, ticketsOf, duelsFor, duelOutcome, type ArcadeGame, type ArcadeState, type PlayResult, type Tickets } from './arcade.ts';
+import { buyPrize as arcadeBuy, ownPrizes, PRIZE_BY_ID, type PrizeBuyResult } from './arcade-prizes.ts';
+import { GAME_WORDS } from './i18n/arcade/index.ts';
 import { cleanTune, forcedFor, karmaLuck, luckFor, withUsed, type CasinoTune, type ForceKind, type KarmaLuck, type RigGame } from './casino-rig.ts';
 
 const KEY = 'mw4-camo-grind:squad';
@@ -135,6 +138,8 @@ const DONATIONS_KEY = 'mw4-camo-grind:donations';
 const KARMA_SEEN_KEY = 'mw4-camo-grind:karma-seen';
 /** KarmaShop: hearts paid per item (karma-shop.ts), kept on this device too. */
 const KARMA_SHOP_KEY = 'mw4-camo-grind:karma-shop';
+/** BurgiArcade: high scores, tickets, prizes, duels (arcade.ts), kept on this device too (works outside a squad). */
+const ARCADE_KEY = 'mw4-camo-grind:arcade';
 /** Next-only casino settings this device already took (casino-rig.ts), newest last. */
 const RIG_USED_KEY = 'mw4-camo-grind:casino-taken';
 const RIG_USED_MAX = 30;
@@ -389,6 +394,8 @@ class Squad {
 	donations = $state<DonationBook | undefined>(undefined);
 	/** KarmaShop: hearts paid per item, merged with your other device's. */
 	karmaShop = $state<KarmaShopState | undefined>(undefined);
+	/** BurgiArcade: your high scores, tickets, prizes and duels, merged with your other device's. */
+	arcade = $state<ArcadeState | undefined>(undefined);
 	/** Today's daily bonus when this page counted it (for the casino tab's welcome line). */
 	bonusToday = $state<{ amount: number; n: number } | null>(null);
 	#device = '';
@@ -448,7 +455,8 @@ class Squad {
 			shop: this.shop,
 			loans: this.loans,
 			donations: this.donations,
-			karmaShop: this.karmaShop
+			karmaShop: this.karmaShop,
+			arcade: this.arcade
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -495,6 +503,7 @@ class Squad {
 		this.loans = cleanLoans(readJson(LOANS_KEY));
 		this.donations = cleanDonations(readJson(DONATIONS_KEY));
 		this.karmaShop = cleanKarmaShop(readJson(KARMA_SHOP_KEY));
+		this.arcade = cleanArcade(readJson(ARCADE_KEY));
 		const taken = readJson(RIG_USED_KEY);
 		this.#rigUsed = Array.isArray(taken) ? taken.filter((x): x is string => typeof x === 'string').slice(-RIG_USED_MAX) : [];
 		const device = readJson(DEVICE_KEY);
@@ -931,6 +940,91 @@ class Squad {
 		const it = KARMA_BY_ID.get(id);
 		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.karmaShop.event(it.name, t.shop.rarity[it.rarity]));
 		return 'ok';
+	}
+
+	// ----- BurgiArcade (arcade.ts, arcade-prizes.ts) -----
+
+	/** Your arcade tickets: won in the games, spent at the prize counter. */
+	get myTickets(): Tickets {
+		return ticketsOf(this.arcade);
+	}
+
+	/** Everyone's arcade data by member id (you with your latest), for the halls of fame. */
+	get arcadeMembers(): Record<string, { name: string; op?: SquadOp; arcade?: ArcadeState }> {
+		return Object.fromEntries(this.entries.map((e) => [e.id, { name: e.member.name, op: e.member.op, arcade: e.member.arcade }]));
+	}
+
+	/**
+	 * Book a finished arcade play (works outside a squad too: kept on this device). Taking the squad's #1 spot
+	 * goes on the radio.
+	 */
+	recordArcade(game: ArcadeGame, score: number, daily: boolean): PlayResult {
+		const me = this.me;
+		const at = Math.round(this.on ? this.serverNow() : Date.now());
+		const squadBest = this.on && me ? bestOfOthers(this.arcadeMembers, game, me.id) : null;
+		const r = recordPlay(this.arcade, game, score, { at, device: this.#device || 'local-device', daily, squadBest });
+		this.arcade = r.state;
+		writeJson(ARCADE_KEY, r.state);
+		this.#schedulePublish();
+		if (this.on && r.record) void this.#event(t.arcade.recordEvent(GAME_WORDS[game].name, Math.floor(score)));
+		return r;
+	}
+
+	/** Buy a prize with tickets (worn at once); epic and legendary ones go on the radio. */
+	buyPrize(id: string): PrizeBuyResult | 'off' {
+		if (!this.me) return 'off';
+		const r = arcadeBuy(this.arcade, this.shop, id, this.myTickets.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.arcade = r.arcade;
+		this.shop = r.shop;
+		writeJson(ARCADE_KEY, r.arcade);
+		writeJson(SHOP_KEY, r.shop);
+		this.#schedulePublish();
+		const it = PRIZE_BY_ID.get(id);
+		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.arcade.prizeEvent(it.name, t.shop.rarity[it.rarity]));
+		return 'ok';
+	}
+
+	/** Your Quickscope duels (made, answered, waiting) with the squad's answers. */
+	get duels() {
+		const me = this.me;
+		return me ? duelsFor(this.arcadeMembers, me.id, this.now) : [];
+	}
+
+	/** Challenge someone to a Quickscope duel: returns the duel (you play it next). */
+	challenge(opponent: string): { id: string; seed: number } | null {
+		const me = this.me;
+		if (!this.on || !me || opponent === me.id) return null;
+		const id = makeMemberId().slice(0, 12);
+		const seed = Math.floor(Math.random() * 4294967296) >>> 0;
+		this.arcade = addDuel(this.arcade, id, opponent, seed, Math.round(this.serverNow()), false);
+		writeJson(ARCADE_KEY, this.arcade);
+		this.#schedulePublish();
+		return { id, seed };
+	}
+
+	/** Take up a challenge that names you (so your answer is in your own entry). */
+	acceptDuel(id: string, from: string, seed: number, at: number): void {
+		if (this.arcade?.du?.[id]) return;
+		this.arcade = addDuel(this.arcade, id, from, seed, at, true);
+		writeJson(ARCADE_KEY, this.arcade);
+	}
+
+	/** Your rounds in a duel; when the other side is already in, the result goes on the radio. */
+	finishDuel(id: string, rounds: number[]): void {
+		const me = this.me;
+		const next = playDuel(this.arcade, id, rounds, Math.round(this.serverNow()));
+		if (!next || !me) return;
+		this.arcade = next;
+		writeJson(ARCADE_KEY, next);
+		this.#schedulePublish();
+		const d = next.du?.[id];
+		const theirs = d ? this.doc?.members[d.o]?.arcade?.du?.[id] : undefined;
+		if (d && theirs?.r) {
+			const o = duelOutcome(rounds, theirs.r);
+			const other = this.doc?.members[d.o]?.name ?? '?';
+			void this.#event(o.winner === 'draw' ? t.arcade.duel.drawEvent(other, o.you, o.them) : o.winner === 'you' ? t.arcade.duel.wonEvent(other, o.you, o.them) : t.arcade.duel.lostEvent(other, o.you, o.them));
+		}
 	}
 
 	// ----- Abscar's admin menu -----
@@ -1433,8 +1527,15 @@ class Squad {
 				writeJson(KARMA_SHOP_KEY, merged ?? null);
 			}
 		}
-		// a KarmaShop item bought but missing from the shop (a copy that lost it) is owned again
-		const owned = ownKarmaItems(this.shop, this.karmaShop);
+		if (mine?.arcade) {
+			const merged = mergeArcade(this.arcade, mine.arcade);
+			if (JSON.stringify(merged) !== JSON.stringify(this.arcade)) {
+				this.arcade = merged;
+				writeJson(ARCADE_KEY, merged ?? null);
+			}
+		}
+		// a KarmaShop item or arcade prize bought but missing from the shop (a copy that lost it) is owned again
+		const owned = ownPrizes(ownKarmaItems(this.shop, this.karmaShop), this.arcade);
 		if (owned !== this.shop) {
 			this.shop = owned;
 			writeJson(SHOP_KEY, owned ?? null);
@@ -1467,7 +1568,8 @@ class Squad {
 			shop: this.shop,
 			loans: this.loans,
 			donations: this.donations,
-			karmaShop: this.karmaShop
+			karmaShop: this.karmaShop,
+			arcade: this.arcade
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;

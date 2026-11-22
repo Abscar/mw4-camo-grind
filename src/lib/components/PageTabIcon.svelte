@@ -4,7 +4,7 @@
 	--tc), a dark outline so they read on the light themes too. Decoration only: the tab's name is the label.
 -->
 <script lang="ts">
-	type Kind = 'grind' | 'ranked' | 'cosmetics' | 'extras' | 'squad' | 'casino' | 'shop';
+	type Kind = 'grind' | 'ranked' | 'cosmetics' | 'extras' | 'squad' | 'casino' | 'shop' | 'arcade';
 	let { kind }: { kind: Kind } = $props();
 
 	const INK = '#1b1124';
@@ -106,6 +106,16 @@
 			<rect x="8.4" y="12.1" width="7.2" height="1.4" rx="0.6" fill="#7a3f1d" />
 			<path d="M8.7 13.9h6.6a1 1 0 0 1-1 1.3h-4.6a1 1 0 0 1-1-1.3Z" fill="#ffb347" />
 		</g>
+	{:else if kind === 'arcade'}
+		<!-- an arcade joystick: a deck in the tab's colour, a chrome stick, a red ball, two buttons -->
+		<path d="M2.4 16.2 4.6 11.6h14.8l2.2 4.6v2.6a1.8 1.8 0 0 1-1.8 1.8H4.2a1.8 1.8 0 0 1-1.8-1.8Z" fill="currentColor" stroke={INK} stroke-width="1.6" stroke-linejoin="round" />
+		<path d="M2.6 16.4h18.8" stroke={INK} stroke-opacity="0.35" stroke-width="1.1" />
+		<path d="M8.2 13.6 8 5.8h1.9l-.2 7.8Z" fill="#e8e8f0" stroke={INK} stroke-width="1.1" stroke-linejoin="round" />
+		<ellipse cx="8.9" cy="13.6" rx="2.9" ry="1.2" fill={INK} />
+		<circle cx="9" cy="5" r="3.4" fill="#ff3b5a" stroke={INK} stroke-width="1.4" />
+		<path d="M7.6 3.7c.4-.4.9-.6 1.4-.6" stroke="#fff" stroke-opacity="0.9" stroke-width="1.1" stroke-linecap="round" />
+		<ellipse cx="15.2" cy="13.8" rx="1.9" ry="1.1" fill="#ffc93c" stroke={INK} stroke-width="1" />
+		<ellipse cx="18.4" cy="14.6" rx="1.5" ry="0.9" fill="#45e6ff" stroke={INK} stroke-width="1" />
 	{:else}
 		<!-- a shopping bag with a burger coin on it -->
 		<path d="M8.4 8.4V6.6a3.6 3.6 0 0 1 7.2 0v1.8" fill="none" stroke={INK} stroke-width="2.1" stroke-linecap="round" />
