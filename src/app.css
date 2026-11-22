@@ -1491,26 +1491,37 @@ main > footer {
 	border: 0;
 	border-radius: 10px;
 	background: var(--blunt) center / 100% auto no-repeat;
-	color: #8dff5a;
+	/* glowing orange text (2026-11-22, the user's ask "make the text glow", then "glowing orange!"):
+	   a warm light core, a thin dark edge so the letters stay crisp, then orange halos on the wrap */
+	color: #ffc74a;
 	font-size: 13px;
 	font-weight: 800;
 	letter-spacing: 0.04em;
 	text-shadow:
-		0 0 2px #000,
-		0 1px 1px #000,
-		0 0 3px #000,
-		0 0 9px rgb(90 255 60 / 0.55);
-	filter: brightness(0.85) saturate(0.9);
+		0 0 1px #1a0500,
+		0 0 2px #1a0500,
+		0 0 5px #ff9d1a,
+		0 0 10px #ff8000,
+		0 0 18px rgb(255 110 0 / 0.95),
+		0 0 30px rgb(255 80 0 / 0.75);
+	filter: brightness(0.9) saturate(0.95);
 	transition:
 		filter 0.15s,
 		transform 0.15s;
 }
 [data-theme='blackout'] .class-chip:hover {
-	color: #b6ff8f;
+	color: #ffd870;
 	filter: none;
 }
 [data-theme='blackout'] .class-chip[aria-pressed='true'] {
-	color: #c4ff9f;
+	color: #ffe48a;
+	text-shadow:
+		0 0 1px #1a0500,
+		0 0 2px #1a0500,
+		0 0 5px #ffb030,
+		0 0 11px #ff8000,
+		0 0 20px rgb(255 110 0 / 1),
+		0 0 34px rgb(255 80 0 / 0.85);
 	filter: drop-shadow(0 0 2px rgb(255 196 60 / 0.95)) drop-shadow(0 0 9px rgb(255 90 20 / 0.65));
 	transform: scale(1.06);
 }
