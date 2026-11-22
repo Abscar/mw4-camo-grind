@@ -297,7 +297,7 @@
 		color: var(--t-muted);
 		white-space: nowrap;
 	}
-	/* a one-colour silhouette: light on the dark themes, dark on the light ones */
+	/* a light one-colour silhouette (every theme is dark) */
 	.mb-ghost {
 		position: absolute;
 		right: -18px;
@@ -307,11 +307,6 @@
 		filter: brightness(0) invert(1);
 		transform: rotate(-9deg);
 		pointer-events: none;
-	}
-	:global([data-theme='field']) .mb-ghost,
-	:global([data-theme='command']) .mb-ghost {
-		opacity: 0.06;
-		filter: brightness(0);
 	}
 	.mb-ghost :global(.weapon-icon) {
 		width: 168px;

@@ -723,7 +723,7 @@
 		border-radius: 999px;
 		background: #7c818a;
 	}
-	/* the theme's own green (readable on the light Field Manual paper too) */
+	/* the theme's own green */
 	.sq-presence[data-online='true'] {
 		color: var(--t-buff, #3ee06a);
 	}
