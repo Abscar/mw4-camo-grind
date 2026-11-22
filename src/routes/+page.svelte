@@ -784,4 +784,35 @@
 			margin-top: -8px;
 		}
 	}
+	/* a bigger TV + PS3 corner on PC (the user picked "between C and D" of four drafts, 2026-11-22): it
+	   grows with the screen, and the header may use more width on big screens so the squad frame keeps
+	   its room. The left column is taller than the TV, so the header never gets taller. zoom scales the
+	   whole TV (the YouTube player too); its Hide pill is zoomed back to its normal size. */
+	@media (min-width: 1140px) {
+		:global([data-theme='blackout']) .hdr-tv {
+			--tvz: 1.2;
+			zoom: var(--tvz);
+		}
+		:global([data-theme='blackout']) .hdr-tv :global(.hide-btn) {
+			zoom: calc(1 / var(--tvz));
+		}
+		:global([data-theme='blackout']) .abscar-header {
+			max-width: 1600px;
+		}
+	}
+	@media (min-width: 1240px) {
+		:global([data-theme='blackout']) .hdr-tv {
+			--tvz: 1.4;
+		}
+	}
+	@media (min-width: 1400px) {
+		:global([data-theme='blackout']) .hdr-tv {
+			--tvz: 1.65;
+		}
+	}
+	@media (min-width: 1700px) {
+		:global([data-theme='blackout']) .hdr-tv {
+			--tvz: 1.9;
+		}
+	}
 </style>
