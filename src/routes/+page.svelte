@@ -41,6 +41,15 @@
 	import WizardBanner from '#lib/components/WizardBanner.svelte';
 	import ScooterBanner from '#lib/components/ScooterBanner.svelte';
 	import JokerBanner from '#lib/components/JokerBanner.svelte';
+	import NukeBannerPic from '#lib/assets/nuke-banner.webp';
+	import LarsAkeBannerPic from '#lib/assets/lars-ake-banner.webp';
+	import CyborgBannerPic from '#lib/assets/cyborg-banner.webp';
+	import CrownBannerPic from '#lib/assets/crown-banner.webp';
+	import DoomsdayBannerPic from '#lib/assets/doomsday-banner.webp';
+	import WizardBannerPic from '#lib/assets/wizard-banner.webp';
+	import ScooterBannerPic from '#lib/assets/scooter-banner.webp';
+	import JokerBannerPic from '#lib/assets/joker-banner.webp';
+	import PhotoGallery from '#lib/components/PhotoGallery.svelte';
 	import SyncPanel from '#lib/components/SyncPanel.svelte';
 	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import Toast from '#lib/components/Toast.svelte';
@@ -132,15 +141,15 @@
 
 	/** The user's own pictures under Meta top 5 (Abscar only), each with its own "Hide" */
 	const BANNERS = [
-		{ id: 'picNuke', C: NukeBanner },
-		{ id: 'picLars', C: LarsAkeBanner },
-		{ id: 'picCyborg', C: CyborgBanner },
-		{ id: 'picCrown', C: CrownBanner },
-		{ id: 'picWizard', C: WizardBanner },
-		{ id: 'picDoomsday', C: DoomsdayBanner },
-		{ id: 'picScooter', C: ScooterBanner },
-		{ id: 'picJoker', C: JokerBanner }
-	] as const satisfies readonly { id: HideId; C: unknown }[];
+		{ id: 'picNuke', C: NukeBanner, src: NukeBannerPic },
+		{ id: 'picLars', C: LarsAkeBanner, src: LarsAkeBannerPic },
+		{ id: 'picCyborg', C: CyborgBanner, src: CyborgBannerPic },
+		{ id: 'picCrown', C: CrownBanner, src: CrownBannerPic },
+		{ id: 'picWizard', C: WizardBanner, src: WizardBannerPic },
+		{ id: 'picDoomsday', C: DoomsdayBanner, src: DoomsdayBannerPic },
+		{ id: 'picScooter', C: ScooterBanner, src: ScooterBannerPic },
+		{ id: 'picJoker', C: JokerBanner, src: JokerBannerPic }
+	] as const satisfies readonly { id: HideId; C: unknown; src: string }[];
 
 	let query = $state('');
 	const needle = $derived(query.trim().toLowerCase());
@@ -459,14 +468,7 @@
 		<!-- the banners share one height (the user's ask: "same size so they look in proportion"); each one
 		     can be hidden on its own, all of them hidden = no gap left here -->
 		<div class="abscar-only compact-hide mt-7" hidden={BANNERS.every((b) => hidden.is(b.id))}>
-			<div class="flex flex-col gap-4">
-				{#each BANNERS as b (b.id)}
-					<div class="relative" hidden={hidden.is(b.id)}>
-						<div class="h-[clamp(190px,38vw,470px)] overflow-hidden rounded-card shadow-card"><b.C /></div>
-						<HideButton id={b.id} />
-					</div>
-				{/each}
-			</div>
+			<PhotoGallery pics={BANNERS} />
 		</div>
 
 		<div class="relative mt-7" hidden={hidden.is('sync')}><SyncPanel /><HideButton id="sync" /></div>
