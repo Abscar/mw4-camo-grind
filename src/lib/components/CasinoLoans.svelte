@@ -1,7 +1,8 @@
 <!--
 	BurgiBank (loans.ts; 2026-11-16, the user's ask: "let players take a loan from the house (not Abscar)
 	with a week to pay back with interest; the interest goes to Abscar"). A box in BurgiCasino: borrow
-	1,000–100,000 burgers (100–1,000 until 2026-11-20; one loan at a time), see what you owe and when, pay it back early. If you don't,
+	1,000–100,000,000 burgers (100–1,000 until 2026-11-20, up to 100,000 until 2026-11-22; buttons say "Borrow 100M", the
+	full number is their name; one loan at a time), see what you owe and when, pay it back early. If you don't,
 	the bank takes it back by itself on the due date. Pretend burgers, never money.
 -->
 <script lang="ts">
@@ -51,7 +52,7 @@
 	{:else}
 		<div class="flex flex-wrap gap-1.5">
 			{#each LOAN_SIZES as p (p)}
-				<button type="button" class="btn btn-sm" onclick={() => borrow(p)}>{l.take(p)}</button>
+				<button type="button" class="btn btn-sm" aria-label={l.takeFull(p)} title={l.takeFull(p)} onclick={() => borrow(p)}>{l.take(p)}</button>
 			{/each}
 		</div>
 	{/if}

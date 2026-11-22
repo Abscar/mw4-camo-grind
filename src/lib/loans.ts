@@ -2,8 +2,9 @@
  * BurgiBank loans (2026-11-16, the user's ask: "let players take a loan from the house (not Abscar) with
  * a week to pay it back with interest; the interest goes to Abscar"). Pretend burgers, never money.
  *
- * The bank (not Abscar's account) lends 1,000–100,000 burgers (100–1,000 until 2026-11-20, the user: "höj
- * lånen i banken till 100k max", the same day the daily bonus went ×100); you get them at once. Within LOAN_DAYS you pay
+ * The bank (not Abscar's account) lends 1,000–100,000,000 burgers (100–1,000 until 2026-11-20, the user: "höj
+ * lånen i banken till 100k max", the same day the daily bonus went ×100; 1,000–100,000 until 2026-11-22, the user:
+ * "höj lånen … till typ 100 miljoner som högsta"); you get them at once. Within LOAN_DAYS you pay
  * back the loan + LOAN_RATE interest (you can pay early, the interest is the same). If you don't, the bank
  * takes it back by itself on the due date, even if that leaves you with nothing. Only the interest goes
  * to the house (Abscar, squad-casino.ts HOUSE_OP); the loan itself goes back to the bank. One open loan
@@ -15,9 +16,12 @@
  * No browser APIs and no runes, so Node tests it directly (scripts/loans.test.js).
  */
 
-export const LOAN_SIZES = [1_000, 5_000, 10_000, 25_000, 50_000, 100_000];
-/** Sizes lent before 2026-11-20: loans taken then still read back (and keep their interest). */
-const OLD_SIZES = [100, 250, 500];
+export const LOAN_SIZES = [1_000, 10_000, 100_000, 1_000_000, 5_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000];
+/**
+ * Sizes no longer offered: loans taken then still read back (and keep their interest). 100–500 were lent until
+ * 2026-11-20, 5,000 / 25,000 / 50,000 until 2026-11-22.
+ */
+const OLD_SIZES = [100, 250, 500, 5_000, 25_000, 50_000];
 const KNOWN_SIZES = new Set([...LOAN_SIZES, ...OLD_SIZES]);
 /** Interest for the week (10 %), rounded up to whole burgers. */
 export const LOAN_RATE = 0.1;

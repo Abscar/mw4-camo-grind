@@ -898,7 +898,9 @@ export const en = {
 		heading: 'Loans',
 		intro: (rate: number, days: number) =>
 			`Borrow burgers from the bank (not from Abscar). Pay back within ${days} days with ${rate}% interest; the interest goes to Abscar. If you don’t, the bank takes it back by itself on the due date.`,
-		take: (n: number) => `Borrow ${n.toLocaleString('en-US')}`,
+		/** the button's face (short: "Borrow 100M") and its full name for screen readers */
+		take: (n: number) => `Borrow ${n >= 1e6 ? `${n / 1e6}M` : n >= 1e3 ? `${n / 1e3}k` : n}`,
+		takeFull: (n: number) => `Borrow ${n.toLocaleString('en-US')} burgers`,
 		open: (owed: number, due: string, left: string) => `You owe ${owed.toLocaleString('en-US')} 🍔 (loan + interest), due ${due} · ${left}`,
 		left: (days: number, hours: number) => (days >= 1 ? `${days} day${days === 1 ? '' : 's'} left` : `${hours} h left`),
 		repay: (n: number) => `Pay back ${n.toLocaleString('en-US')} 🍔`,
