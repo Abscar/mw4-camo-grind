@@ -64,17 +64,26 @@
 </script>
 
 <section class="class-card meta-list sights overflow-hidden rounded-card bg-panel shadow-card" style:--worn-at="-520px -260px" aria-labelledby="sights-heading">
-	<header class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-4 pb-3 sm:px-5">
-		<div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
-			<h2 id="sights-heading" class="font-head text-base font-bold tracking-wide uppercase">{t.sights.heading}</h2>
-			<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{t.sights.sub}</span>
+	<!-- the same header as Meta top 5 (2026-11-22 tidy-up): a mark, the title + date pill, a two-part switch -->
+	<header class="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 pt-4 pb-3.5 sm:px-5">
+		<div class="flex min-w-0 flex-1 items-center gap-3">
+			<span class="sg-mark" aria-hidden="true">
+				<svg viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="3" /><circle cx="12" cy="12" r="3.6" /><circle cx="12" cy="12" r="1.2" class="dot" /></svg>
+			</span>
+			<div class="min-w-0">
+				<h2 id="sights-heading" class="font-head text-lg leading-tight font-bold tracking-wide uppercase">{t.sights.heading}</h2>
+				<p class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+					<span class="font-head text-[11px] font-semibold tracking-widest text-muted uppercase">{t.sights.sub}</span>
+					<span class="sg-date font-head"><span class="sg-dot" aria-hidden="true"></span>{t.metaList.updated(shortDate(SIGHTS_DATE))}</span>
+				</p>
+			</div>
 		</div>
-		<!-- phones: the switch gets its own row, two equal halves -->
-		<div class="flex gap-1.5 max-sm:w-full" role="group" aria-label={t.sights.tabsLabel}>
+		<!-- one two-part switch; phones: its own row, two equal halves -->
+		<div class="sg-switch flex max-sm:w-full" role="group" aria-label={t.sights.tabsLabel}>
 			{#each TABS as x (x)}
 				<button
 					type="button"
-					class="meta-mode font-head min-h-11 rounded-full border px-4 text-[13px] font-semibold max-sm:flex-1"
+					class="meta-mode font-head inline-flex min-h-11 items-center justify-center rounded-full px-4 text-[13px] font-semibold max-sm:flex-1"
 					aria-pressed={tab === x}
 					aria-controls="sights-panel"
 					onclick={() => choose(x)}>{t.sights.tabs[x]}</button
@@ -129,7 +138,7 @@
 					{@const headingId = `sights-${cls.id}`}
 					<section class="meta-card mb-3 min-w-0 break-inside-avoid rounded-card border border-line bg-panel-2 px-2 pt-2.5 pb-2" aria-labelledby={headingId}>
 						<h3 id={headingId} class="font-head px-1.5 text-[12px] font-bold tracking-[0.14em] text-fg uppercase">{cls.name}</h3>
-						<ul class="mt-1 grid">
+						<ul class="sg-rows mt-1 grid">
 							{#each cls.guns as gun (gun.id)}
 								{@const look = WEAPON_LOOKS[gun.id]}
 								{@const picks = picksFor(gun.id)}
@@ -186,6 +195,79 @@
 </section>
 
 <style>
+	/* header pieces, as in MetaSection */
+	.sg-mark {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 2.6rem;
+		height: 2.6rem;
+		border: 1.5px solid color-mix(in srgb, var(--t-accent) 70%, transparent);
+		border-radius: 12px;
+		background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--t-accent) 26%, transparent), transparent 72%), var(--t-panel-2);
+		box-shadow: 0 0 14px color-mix(in srgb, var(--t-accent) 30%, transparent);
+	}
+	.sg-mark svg {
+		width: 1.6rem;
+		height: 1.6rem;
+		fill: none;
+		stroke: var(--t-accent);
+		stroke-width: 1.8;
+	}
+	.sg-mark .dot {
+		fill: var(--t-accent);
+		stroke: none;
+	}
+	.sg-date {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.15rem 0.55rem;
+		border: 1px solid var(--t-line);
+		border-radius: 999px;
+		background: var(--t-panel-2);
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		color: var(--t-fg);
+		white-space: nowrap;
+	}
+	.sg-dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--t-ok, #3ecf6a);
+		box-shadow: 0 0 6px var(--t-ok, #3ecf6a);
+	}
+	.sg-switch {
+		gap: 3px;
+		padding: 3px;
+		border: 1px solid var(--t-line);
+		border-radius: 999px;
+		background: var(--t-panel-2);
+	}
+	.sg-switch .meta-mode {
+		border: 0;
+		background: transparent;
+		color: var(--t-muted);
+		transition:
+			background-color 0.15s,
+			color 0.15s,
+			box-shadow 0.15s;
+	}
+	.sg-switch .meta-mode:hover {
+		color: var(--t-fg);
+		background: color-mix(in srgb, var(--t-fg) 7%, transparent);
+	}
+	.sg-switch .meta-mode[aria-pressed='true'] {
+		background: var(--t-accent);
+		color: var(--t-on-accent);
+		box-shadow: 0 2px 10px color-mix(in srgb, var(--t-accent) 40%, transparent);
+	}
+	/* a thin line between the guns, like the meta lists' rows */
+	.sg-rows > li + li {
+		border-top: 1px solid color-mix(in srgb, var(--t-line) 75%, transparent);
+	}
 	.sight-name {
 		border: 1px solid var(--t-line);
 		background: var(--t-panel);
