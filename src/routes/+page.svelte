@@ -63,6 +63,7 @@
 	import { headerAreas, type HideId } from '#lib/hideSections.ts';
 	import HideButton from '#lib/components/HideButton.svelte';
 	import HiddenBar from '#lib/components/HiddenBar.svelte';
+	import PageTabIcon from '#lib/components/PageTabIcon.svelte';
 
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
 	    moved up here from its own switch inside Camo grind, second place, 2026-11-20). All stay mounted; the
@@ -70,6 +71,18 @@
 	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'extras', 'squad', 'casino', 'shop'] as const;
 	type PageTab = (typeof PAGE_TABS)[number];
 	let view = $state<PageTab>('grind');
+
+	/** Each tab's own colour (2026-11-21, the user: "gör dom tydligt vilken som är vilken"): its picture, top edge
+	    and tint, and the line under the row takes the open tab's colour. The same in every theme. */
+	const TAB_COLOR: Record<PageTab, string> = {
+		grind: '#f2b81f', // camo gold
+		ranked: '#4d8dff',
+		cosmetics: '#ff5cb8',
+		extras: '#1fcfc2',
+		squad: '#43d35e', // the radio's green
+		casino: '#ff4a3d',
+		shop: '#a560ff' // BurgiShop's purple bag
+	};
 
 	/** Every tab but Camo grind can be hidden (2026-11-20, the "Hide" buttons): its tab button goes, the panel
 	    stays mounted (so the squad, sync etc. keep running). */
@@ -310,18 +323,29 @@
 
 		<!-- page tabs: the tracker, Ranked prep, the Cosmetics list, Extra camos, the Squad, BurgiCasino, BurgiShop -->
 		<!-- every other tab hidden: no row for Camo grind alone (it stays in the page for the panel's label) -->
-		<div class="page-tabs mt-4 flex gap-2" role="tablist" aria-label={t.pageTabs.label} hidden={shownTabs.length === 1}>
+		<div
+			class="page-tabs mt-4 flex gap-2"
+			role="tablist"
+			aria-label={t.pageTabs.label}
+			hidden={shownTabs.length === 1}
+			style:--sel={TAB_COLOR[view]}
+		>
 			{#each shownTabs as tab (tab)}
 				<button
 					type="button"
 					id="tab-{tab}"
 					role="tab"
 					class="page-tab font-head"
+					data-tab={tab}
+					style:--tc={TAB_COLOR[tab]}
 					aria-selected={view === tab}
 					aria-controls="panel-{tab}"
 					tabindex={view === tab ? 0 : -1}
 					onclick={() => (view = tab)}
-					onkeydown={tabKey}>{t.pageTabs[tab]}{#if tab === 'squad' && squad.unread > 0 && view !== 'squad'}<span class="tab-badge num">{squad.unread}<span class="sr-only"> ({t.squad.radio.unread(squad.unread)})</span></span>{/if}</button
+					onkeydown={tabKey}
+					><PageTabIcon kind={tab} /><span class="pt-name">{t.pageTabs[tab]}</span>{#if tab === 'squad' && squad.unread > 0 && view !== 'squad'}<span
+							class="tab-badge num">{squad.unread}<span class="sr-only"> ({t.squad.radio.unread(squad.unread)})</span></span
+						>{/if}</button
 				>
 			{/each}
 		</div>
@@ -474,74 +498,170 @@
 		--hb-right: 72px;
 	}
 
-	/* the two page tabs under the header */
+	/*
+	 * The page tabs under the header. Since 2026-11-21 (the user: "snygga till flikarna … gör dom tydligt vilken
+	 * som är vilken") each has its own picture (PageTabIcon) and colour (--tc, TAB_COLOR): a coloured top edge and
+	 * a faint tint on every tab; the open one stands taller, filled with its colour and glowing, and the line under
+	 * the row (--sel) takes its colour, so it reads as one folder with the page under it.
+	 */
 	.page-tabs {
-		border-bottom: 2px solid var(--t-line);
+		container: pagetabs / inline-size;
+		align-items: flex-end;
+		border-bottom: 3px solid var(--sel, var(--t-accent));
 	}
 	.page-tab {
+		position: relative;
+		display: inline-flex;
+		flex: 1 1 auto; /* side by side they share the row's spare width, so the row reaches the right edge */
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		white-space: nowrap;
 		min-height: 2.75rem;
-		margin-bottom: -2px;
-		padding: 0 1.1rem;
-		border: 2px solid transparent;
-		border-bottom-color: var(--t-line);
+		padding: 0 1rem 0 0.75rem;
+		border: 1.5px solid color-mix(in srgb, var(--tc) 40%, var(--t-line));
+		border-bottom: 0;
 		border-radius: 10px 10px 0 0;
+		background: color-mix(in srgb, var(--tc) 8%, var(--t-panel));
+		box-shadow: inset 0 3px 0 color-mix(in srgb, var(--tc) 75%, transparent);
 		color: var(--t-muted);
 		font-size: 14px;
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
+		transition:
+			background-color 0.15s,
+			color 0.15s;
 	}
-	/* new radio messages on the Squad tab */
+	.page-tab :global(.pt-icon) {
+		color: var(--tc);
+		opacity: 0.8;
+		transition:
+			transform 0.15s,
+			opacity 0.15s;
+	}
+	.page-tab:hover {
+		background: color-mix(in srgb, var(--tc) 16%, var(--t-panel));
+		color: var(--t-fg);
+	}
+	.page-tab:hover :global(.pt-icon) {
+		opacity: 1;
+		transform: translateY(-1px) rotate(-6deg);
+	}
+	.page-tab[aria-selected='true'] {
+		min-height: 3.125rem; /* the open tab stands taller than the rest */
+		border: 2px solid var(--tc);
+		border-bottom: 0;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--tc) 34%, var(--t-panel)),
+			color-mix(in srgb, var(--tc) 12%, var(--t-panel))
+		);
+		box-shadow:
+			inset 0 4px 0 var(--tc),
+			0 -3px 18px -4px color-mix(in srgb, var(--tc) 70%, transparent);
+		color: var(--t-fg);
+	}
+	.page-tab[aria-selected='true'] :global(.pt-icon) {
+		opacity: 1;
+		transform: scale(1.14);
+		filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tc) 75%, transparent));
+		animation: pt-pop 0.35s ease-out;
+	}
+	@keyframes pt-pop {
+		0% {
+			transform: scale(0.85);
+		}
+		60% {
+			transform: scale(1.3) rotate(-8deg);
+		}
+		100% {
+			transform: scale(1.14);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.page-tab,
+		.page-tab :global(.pt-icon) {
+			transition: none;
+		}
+		.page-tab[aria-selected='true'] :global(.pt-icon) {
+			animation: none;
+		}
+	}
+	/* new radio messages on the Squad tab (red: the Squad tab itself is green now) */
 	.tab-badge {
 		display: inline-grid;
 		place-items: center;
 		min-width: 1.25rem;
 		height: 1.25rem;
-		margin-left: 0.35rem;
+		margin-left: -0.15rem;
 		padding: 0 4px;
+		border: 1.5px solid #1b1124;
 		border-radius: 999px;
-		background: #3ee06a;
-		color: #062010;
+		background: #ff3d5a;
+		color: #fff;
 		font-size: 11px;
 		letter-spacing: 0;
-		vertical-align: 1px;
 	}
-	.page-tab:hover {
-		color: var(--t-fg);
-	}
-	/* narrower screens: the seven tabs share the row equally; a long name wraps onto two lines (BurgiCasino /
-	   BurgiShop at their soft hyphens). Their natural widths add up to ≈ 900 px, so this starts below 1024 px
-	   (was 900 with six tabs). A tab is never narrower than its longest word ("RANKED" broke as "RANKE / D"
-	   in an equal seventh at 375 px), so a few px go from the others to it; break-word, not anywhere, or that
-	   minimum would count every letter as a break */
-	@media (max-width: 1023px) {
-		.page-tabs {
-			gap: 4px;
-		}
+	/* a narrower row (container query on the row itself): the seven tabs share it equally, picture on top of the
+	   name; a long name wraps onto two lines (BurgiCasino / BurgiShop at their soft hyphens). Side by side with
+	   their pictures they need ≈ 1045 px, so this starts below 1060 px of row (a 1024 px window has 969). A tab is
+	   never narrower than its longest word ("RANKED" broke as "RANKE / D" in an equal seventh at 375 px), so a few
+	   px go from the others to it; break-word, not anywhere, or that minimum would count every letter as a break */
+	@container pagetabs (max-width: 1059px) {
 		.page-tab {
 			flex: 1 1 0;
+			flex-direction: column;
+			gap: 3px;
 			min-width: min-content;
-			padding: 0 0.3rem;
+			min-height: 3.5rem;
+			padding: 6px 0.3rem 5px;
 			font-size: 12.5px;
 			line-height: 1.1;
 			letter-spacing: 0.04em;
+			white-space: normal;
 			hyphens: auto;
 			overflow-wrap: break-word;
 		}
+		.page-tab[aria-selected='true'] {
+			min-height: 3.875rem;
+		}
+		.page-tab :global(.pt-icon) {
+			width: 21px;
+			height: 21px;
+		}
+		.tab-badge {
+			position: absolute;
+			top: 2px;
+			right: 2px;
+			min-width: 1.1rem;
+			height: 1.1rem;
+			margin: 0;
+			font-size: 10px;
+		}
+	}
+	/* the gap between tabs: a container can't style itself from its own query */
+	@media (max-width: 1114px) {
+		.page-tabs {
+			gap: 4px;
+		}
 	}
 	@media (max-width: 639px) {
+		.page-tabs {
+			gap: 3px;
+		}
+	}
+	@container pagetabs (max-width: 607px) {
 		.page-tab {
-			padding: 0 1px; /* seven tabs on a phone: every px goes to the names */
+			padding: 5px 1px 4px; /* seven tabs on a phone: every px goes to the names */
+			border-radius: 8px 8px 0 0;
 			font-size: 10.5px;
 			letter-spacing: 0.01em;
 		}
-	}
-	.page-tab[aria-selected='true'] {
-		border-color: var(--t-accent);
-		border-bottom-color: var(--t-bg);
-		background: var(--t-panel);
-		color: var(--t-fg);
-		box-shadow: inset 0 3px 0 var(--t-accent);
+		.page-tab :global(.pt-icon) {
+			width: 19px;
+			height: 19px;
+		}
 	}
 
 	/*
