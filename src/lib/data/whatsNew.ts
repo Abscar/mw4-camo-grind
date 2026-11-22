@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'drip-abscar-drop',
+		date: '2026-11-23',
+		kind: 'new',
+		title: 'BurgiDrip: the Abscar drop',
+		text: '38 new pieces: cyborg skull chain, Divergence diamond, nuke pendant, chain on fire, Abscar hoodies and kicks.',
+		tab: 'shop'
+	},
+	{
 		id: 'whats-new',
 		date: '2026-11-23',
 		kind: 'new',
