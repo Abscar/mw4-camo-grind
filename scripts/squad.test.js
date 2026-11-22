@@ -13,7 +13,9 @@ import {
 	cleanName,
 	emptySquad,
 	fromSquadWire,
+	guessOps,
 	headerStatuses,
+	opFromName,
 	isMemberId,
 	isOnline,
 	makeMemberId,
@@ -85,7 +87,7 @@ test('an entry keeps only real weapons, levels 1–3 and real Mastery camos', ()
 
 test('the stored document reads back, and junk is dropped', () => {
 	const id = makeMemberId();
-	const doc = withMember(emptySquad(), id, entry('Phillestar', { [WEAPONS[2].id]: 2 }));
+	const doc = withMember(emptySquad(), id, entry('Phillestar', { [WEAPONS[2].id]: 2 }, {}, { op: 'phillestar' }));
 	const back = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire(doc))));
 	assert.deepEqual(back, doc);
 
@@ -115,6 +117,55 @@ test('fields from a newer page survive this page reading and writing the documen
 	assert.equal(back.app, 'mw4-camo-grind');
 	assert.equal(back.members[id].weapons[WEAPONS[0].id], 1);
 	assert.deepEqual(toSquadWire(withoutMember(doc, id)).radio, [{ from: other, text: 'GG' }]);
+});
+
+test('a member named after an operator who never picked it gets that operator (TheJoker_BPL, 2026-11-22)', () => {
+	assert.equal(opFromName('TheJoker_BPL'), 'joker');
+	assert.equal(opFromName(' the joker '), 'joker');
+	assert.equal(opFromName('Drängen Lars Åke'), 'lars');
+	assert.equal(opFromName('AW'), 'aw');
+	assert.equal(opFromName('Robin'), null);
+	assert.equal(opFromName('Jokerman'), null);
+
+	const joker = makeMemberId();
+	const ingman = makeMemberId();
+	const plain = makeMemberId();
+	const wire = toSquadWire(
+		withMember(withMember(withMember(emptySquad(), joker, entry('TheJoker_BPL')), ingman, entry('Ingman', {}, {}, { op: 'ingman' })), plain, entry('Robin'))
+	);
+	const doc = fromSquadWire(JSON.parse(JSON.stringify(wire)));
+	assert.equal(doc.members[joker].op, 'joker');
+	assert.equal(doc.members[ingman].op, 'ingman');
+	assert.equal(doc.members[plain].op, undefined);
+	// written back with it, so the stored document heals
+	assert.equal(toSquadWire(doc).members[joker].op, 'joker');
+
+	// someone else already is that operator: the namesake stays on initials
+	const copy = makeMemberId();
+	const taken = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire(withMember(doc, copy, entry('Joker'))))));
+	assert.equal(taken.members[joker].op, 'joker');
+	assert.equal(taken.members[copy].op, undefined);
+
+	// guessOps on its own: one member per operator
+	const members = { a: { ...entry('joker') }, b: { ...entry('TheJoker') } };
+	guessOps(members);
+	assert.deepEqual([members.a.op, members.b.op], ['joker', undefined]);
+});
+
+test('an operator from a newer page is kept and written back, never turned into initials', () => {
+	const id = makeMemberId();
+	const wire = toSquadWire(withMember(emptySquad(), id, entry('Newbie')));
+	wire.members[id].op = 'newguy';
+	const doc = fromSquadWire(JSON.parse(JSON.stringify(wire)));
+	assert.equal(doc.members[id].op, undefined);
+	assert.equal(toSquadWire(doc).members[id].op, 'newguy');
+	// and a newer page's operator wins over guessing from the name
+	wire.members[id].name = 'TheJoker_BPL';
+	assert.equal(fromSquadWire(JSON.parse(JSON.stringify(wire))).members[id].op, undefined);
+	// junk isn't kept
+	wire.members[id].name = 'Newbie';
+	wire.members[id].op = '<script>';
+	assert.equal(toSquadWire(fromSquadWire(JSON.parse(JSON.stringify(wire)))).members[id].op, undefined);
 });
 
 test('a sync document is not a squad (never written over by mistake)', () => {

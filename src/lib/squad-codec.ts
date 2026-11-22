@@ -51,6 +51,53 @@ export const ONLINE_MS = 5 * 60_000;
 export const SQUAD_OPS = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker'] as const;
 export type SquadOp = (typeof SQUAD_OPS)[number];
 
+/**
+ * A member whose name is an operator's callsign but who never picked that operator gets it anyway (2026-11-22: the
+ * user saw TheJoker_BPL with initials instead of his emblem in the Squad tab; he most likely joined before his
+ * operator was in the list, or on an old copy of the page). Names are compared without case, accents, spaces or
+ * punctuation ("TheJoker_BPL" = "thejokerbpl"). Only callsigns, never real first names.
+ */
+const OP_CALLSIGNS: Record<SquadOp, readonly string[]> = {
+	abscar: ['abscar'],
+	phillestar: ['phillestar', 'philestar'],
+	lars: ['drangenlarsake', 'drangen', 'larsake'],
+	jeeven: ['dajeeven', 'jeeven'],
+	ingman: ['ingman'],
+	aw: ['aw'],
+	joker: ['thejokerbpl', 'thejoker', 'jokerbpl', 'joker']
+};
+const callsignKey = (name: string) =>
+	name
+		.normalize('NFD')
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, '');
+
+/** The operator whose callsign this name is, if any. */
+export function opFromName(name: string): SquadOp | null {
+	const key = callsignKey(name);
+	return key ? (SQUAD_OPS.find((op) => OP_CALLSIGNS[op].includes(key)) ?? null) : null;
+}
+
+/** An operator id from a newer page (one this page doesn't know yet): kept and written back untouched. */
+const FUTURE_OP = /^[a-z][a-z0-9]{0,15}$/;
+
+/**
+ * Members without an operator whose name is a callsign get that operator, unless someone else already is it (or
+ * their entry carries a newer page's operator). Changes `members` in place.
+ */
+export function guessOps(members: Record<string, SquadMember>): void {
+	const taken = new Set(Object.values(members).flatMap((m) => (m.op ? [m.op] : [])));
+	for (const id of Object.keys(members).sort()) {
+		const m = members[id];
+		if (m.op || m.more?.op !== undefined) continue;
+		const op = opFromName(m.name);
+		if (op && !taken.has(op)) {
+			m.op = op;
+			taken.add(op);
+		}
+	}
+}
+
 export interface SquadMember {
 	name: string;
 	op?: SquadOp;
@@ -305,7 +352,11 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (donations) member.donations = donations;
 	const karmaShop = cleanKarmaShop(raw.karmaShop);
 	if (karmaShop) member.karmaShop = karmaShop;
-	const more = unknownKeys(raw, MEMBER_KEYS);
+	let more = unknownKeys(raw, MEMBER_KEYS);
+	// an operator added after this page was built: keep it (in `more`, written back as `op`), so this page's next
+	// write doesn't turn the newer page's operator back into initials (what a page from before TheJoker_BPL does
+	// to his entry until it's reloaded)
+	if (!member.op && typeof raw.op === 'string' && FUTURE_OP.test(raw.op)) more = { ...more, op: raw.op };
 	if (more) member.more = more;
 	return member;
 }
@@ -425,6 +476,7 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 		const member = isMemberId(id) ? cleanMember(m) : null;
 		if (member) members[id] = member;
 	}
+	guessOps(members);
 	const doc: SquadDoc = { members };
 	const duels = cleanDuels(raw.duels);
 	if (duels.length) doc.duels = duels;

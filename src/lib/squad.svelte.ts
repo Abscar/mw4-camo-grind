@@ -1284,6 +1284,14 @@ class Squad {
 		const me = this.me;
 		if (!me || !this.code) return;
 		this.updatedAt = Date.now();
+		// no operator picked on this device, but the squad has one for you (your name is its callsign, or your other
+		// device picked it): take it, so your own card, the header and the shop show your emblem too
+		const op = doc.members[me.id]?.op;
+		if (!me.op && op) {
+			this.me = { ...me, op };
+			this.#persist();
+			this.#schedulePublish();
+		}
 		const saved = readJson(SEEN_KEY) as { code?: string; seen?: SeenSnapshot } | null;
 		const before = saved?.code === this.code && saved.seen ? saved.seen : null;
 		const { gains, nukes, next } = squadGains(before, doc, me.id);
