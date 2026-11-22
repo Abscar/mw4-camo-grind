@@ -34,10 +34,13 @@ export interface BodyAt {
 	by: number;
 	/** how far below the collar line a chain's lowest point hangs */
 	drop: number;
+	/** the clothes are drawn after this emblem's head (Abscar: over his ghillie poncho), so nothing may reach up
+	    past the collar line: no hood behind the neck (it covered his face) */
+	overHead?: boolean;
 }
 /** Read off each emblem's own torso path (they share one dome; Phillestar's is narrower and sits lower). */
 export const BODY_AT: Record<BodyKey, BodyAt> = {
-	abscar: { cx: 32, ty: 47, hw: 31.5, by: 64.5, drop: 9 },
+	abscar: { cx: 32, ty: 47, hw: 31.5, by: 64.5, drop: 9, overHead: true },
 	phillestar: { cx: 30, ty: 50, hw: 25, by: 64.5, drop: 8 },
 	lars: { cx: 32, ty: 46.8, hw: 30.5, by: 64.5, drop: 9 },
 	jeeven: { cx: 32, ty: 46.5, hw: 31, by: 64.5, drop: 9.5 },
@@ -356,7 +359,7 @@ export function topMarkup(u: string, L: TopLook, B: BodyAt): string {
 	const inTorso = (s: string, id: string) => `<clipPath id="${v}-${id}"><path d="${D}"/></clipPath><g clip-path="url(#${v}-${id})">${s}</g>`;
 
 	// behind the neck: a hood (hoodies, the raid harness)
-	if (L.kind === 'hoodie' || L.kind === 'zip' || L.kind === 'harness') {
+	if (!B.overHead && (L.kind === 'hoodie' || L.kind === 'zip' || L.kind === 'harness')) {
 		const hood = `M${X(-13)} ${f(t + 2.5)} C${X(-15.6)} ${Y(-4.6)} ${X(-8.6)} ${Y(-8.2)} ${f(c)} ${Y(-8.2)} C${X(8.6)} ${Y(-8.2)} ${X(15.6)} ${Y(-4.6)} ${X(13)} ${f(t + 2.5)} Z`;
 		const hp = paint(`${v}-h`, L.body, bb);
 		out.push(filled(hood, hp, `${v}-hc`), `<path d="${hood}" fill="#000" opacity="0.28"/>`, `<path d="M${X(-9)} ${f(t + 1)} C${X(-10)} ${Y(-3.6)} ${X(-5)} ${Y(-5.6)} ${f(c)} ${Y(-5.6)} C${X(5)} ${Y(-5.6)} ${X(10)} ${Y(-3.6)} ${X(9)} ${f(t + 1)} Z" fill="#000" opacity="0.35"/>`, line(hood, O, 0.8));
