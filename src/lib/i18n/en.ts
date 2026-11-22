@@ -1337,6 +1337,11 @@ export const en = {
 			throne: 'Throne',
 			/** the Camo Armory's gun in the hands (armory.ts); bought on its own door, not a kind button */
 			hold: 'Held gun',
+			/** BurgiDrip's clothes (drip.ts); bought on its own door */
+			top: 'Top',
+			neck: 'Chain',
+			kicks: 'Kicks',
+			shoulders: 'Pauldrons',
 			statue: '🗿 Statue',
 			pranks: '😈 Pranks',
 			box: '🎁 Munchie Box',
@@ -1557,6 +1562,57 @@ export const en = {
 		cardLabel: (name: string, state: string) => `${name}: ${state}`,
 		event: (name: string, price: number) => `bought a ${name} for ${price.toLocaleString('en-US')} 🍔 in the Camo Armory 🔫`,
 		eventClass: (camo: string, cls: string) => `owns all the ${cls} in ${camo} now 🔫✨`
+	},
+	/** BurgiDrip (2026-11-22, drip.ts): the clothing store, the fourth door in the BurgiShop tab. */
+	drip: {
+		heading: 'BurgiDrip',
+		/** the line under the page heading and on its door */
+		sub: 'Hype clothes and raid gear for your operator',
+		door: 'Clothes, kicks & raid gear',
+		intro: 'Clothes for your operator, paid with burgers: hoodies, puffers, chains, kicks and whole sets of raid armour. What you wear shows on your operator at the top of the page and on your squad card, for the whole squad to see. Tap a picture to try it on first.',
+		racksLabel: 'Rack',
+		racks: { tops: 'Tops', neck: 'Chains', kicks: 'Kicks', hats: 'Hats', raid: 'Raid gear' } as Record<string, string>,
+		rackHint: {
+			tops: 'Hoodies, tees, puffers, jackets and shirts, worn over whatever your operator has on.',
+			neck: 'Round your operator’s neck, over the top.',
+			kicks: 'Tied together by the laces and hung round your operator’s neck, sneakerhead style.',
+			hats: 'One hat at a time: a hat from here takes the place of a BurgiShop hat, and the other way round.',
+			raid: 'Epic armour for a fantasy hero. Wear the chest, pauldrons and helm of one set for its set bonus: the armour glows and sparks.'
+		} as Record<string, string>,
+		/** the pieces of a raid set, and how many are on */
+		piece: { top: 'Chest', shoulders: 'Pauldrons', hat: 'Helm' } as Record<string, string>,
+		setLine: (name: string, n: number) => `${name} set ${n}/3`,
+		setBonus: (name: string) => `${name} set bonus! ✨`,
+		oddOnes: 'Odd pauldrons',
+		/** today's drop: one piece off for the whole squad */
+		drop: {
+			heading: 'Today’s drop',
+			off: (n: number) => `−${n} %`,
+			was: (price: number) => `was ${price.toLocaleString('en-US')}`,
+			ends: 'New drop at midnight',
+			badge: 'DROP'
+		},
+		preview: 'Your operator',
+		trying: (name: string) => `Trying on: ${name}`,
+		wearingNow: 'Wearing from BurgiDrip',
+		nothing: 'Nothing from BurgiDrip on yet. Tap a picture to try it on.',
+		undress: 'Take it all off',
+		undressed: 'BurgiDrip clothes taken off',
+		buy: (price: number) => `Cop · ${price.toLocaleString('en-US')} 🍔`,
+		confirm: (name: string, price: number) => `Cop ${name} for ${price.toLocaleString('en-US')} 🍔?`,
+		yes: 'Cop it',
+		cancel: 'Cancel',
+		bought: (name: string) => `${name} copped and on your operator 🔥`,
+		broke: (price: number, have: number) => `${price.toLocaleString('en-US')} 🍔 needed, you have ${have.toLocaleString('en-US')}.`,
+		closed: 'Not in the store right now.',
+		sell: (back: number) => `Sell · +${back.toLocaleString('en-US')}`,
+		sellAsk: (name: string, back: number) => `Sell ${name} for ${back.toLocaleString('en-US')} 🍔?`,
+		sold: (name: string, back: number) => `${name} sold: +${back.toLocaleString('en-US')} 🍔`,
+		owned: (have: number, all: number) => `${have} of ${all} owned`,
+		spent: (n: number) => `${n.toLocaleString('en-US')} 🍔 spent in BurgiDrip · it goes to the house (Abscar)`,
+		cardLabel: (name: string, kind: string, rarity: string, state: string) => `${name}, ${kind}, ${rarity}: ${state}. Tap to try it on.`,
+		kind: { top: 'Top', neck: 'Chain', kicks: 'Kicks', hat: 'Hat', shoulders: 'Pauldrons' } as Record<string, string>,
+		event: (name: string, price: number) => `copped ${name} for ${price.toLocaleString('en-US')} 🍔 in BurgiDrip 🔥`
 	},
 	/** BurgiCasino (2026-11-16): the daily burger bonus, Abscar's Fortune (the Burger Bandit slot), roulette, blackjack. */
 	casino: {

@@ -535,6 +535,8 @@ export interface OperatorWear {
 	/** where the smoke rises from instead of the holk's end, and how much bigger it is */
 	smokeAt?: [number, number];
 	smokeBoost?: number;
+	/** BurgiDrip's clothes (dripArt.ts dripUnder + dripOver): drawn over the figure (the ghillie too), just before his holk */
+	body?: string;
 }
 
 /**
@@ -548,8 +550,12 @@ export function operatorMarkup(variant: OperatorVariant, uid: string, smokeScale
 	const w: OperatorWear = typeof wear === 'boolean' ? { holk: wear ? 'gold' : 'white' } : wear;
 	let body = BODIES[variant](u, w.holk === 'gold');
 	// no holk: drop the one between his teeth (the last thing every figure draws; the lighter's flame and fist
-	// come after it there, so cut exactly that holk's markup out)
-	if (w.holk === 'none') body = body.replace(holk(u, ...MOUTH, 57.4, 34, 2.2, 7, variant === 'lighter' ? 9 : undefined), '');
+	// come after it there, so cut exactly that holk's markup out). BurgiDrip's clothes go right before it, so
+	// they cover the poncho's shoulders but never the holk.
+	if (w.holk === 'none' || w.body) {
+		const own = holk(u, ...MOUTH, 57.4, 34, 2.2, 7, variant === 'lighter' ? 9 : undefined, w.holk === 'gold');
+		body = body.replace(own, (w.body ?? '') + (w.holk === 'none' ? '' : own));
+	}
 	const [sx, sy] = w.smokeAt ?? SMOKE_AT[variant];
 	return `${defs(u, variant)}<g clip-path="url(#${u}-box)">${body}</g>${w.extra ?? ''}${smoke(u, sx, sy, smokeScale * (w.smokeBoost ?? 1))}`;
 }

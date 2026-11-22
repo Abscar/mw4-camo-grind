@@ -15,6 +15,8 @@
 import { LEAF_PATHS, LEAF_STEM } from './leaf.ts';
 // KarmaShop's eyes and hats ("k-" ids, 2026-11-20) are drawn there, at the same anchors
 import { karmaEyes, karmaHat } from './karmaShopArt.ts';
+// BurgiDrip's hats ("d-" ids, 2026-11-22); its clothes are drawn by each emblem with dripArt's dripUnder / dripOver
+import { dripHat } from './dripArt.ts';
 
 type P = [number, number];
 const f = (n: number, d = 2) => +n.toFixed(d);
@@ -25,11 +27,25 @@ export interface FaceWear {
 	eyes?: string | null;
 	hat?: string | null;
 	smoke?: string | null;
+	/** BurgiDrip's clothes (drip.ts), drawn by each emblem on its own body (dripArt.ts dripUnder / dripOver) */
+	top?: string | null;
+	neck?: string | null;
+	kicks?: string | null;
+	shoulders?: string | null;
 }
 
-/** A member's worn items (shop.ts `worn`) → the face slots an emblem draws. */
+/** A member's worn items (shop.ts `worn`) → the face slots (and BurgiDrip's clothes) an emblem draws. */
 export function faceOf(w: Partial<Record<string, { id: string } | undefined>> | undefined): FaceWear {
-	return { mouth: w?.mouth?.id ?? null, eyes: w?.eyes?.id ?? null, hat: w?.hat?.id ?? null, smoke: w?.smoke?.id ?? null };
+	return {
+		mouth: w?.mouth?.id ?? null,
+		eyes: w?.eyes?.id ?? null,
+		hat: w?.hat?.id ?? null,
+		smoke: w?.smoke?.id ?? null,
+		top: w?.top?.id ?? null,
+		neck: w?.neck?.id ?? null,
+		kicks: w?.kicks?.id ?? null,
+		shoulders: w?.shoulders?.id ?? null
+	};
 }
 
 export interface Mouth {
@@ -312,6 +328,7 @@ export function eyesItem(u: string, id: string | null | undefined, e: Face['eyes
 export function hatItem(u: string, id: string | null | undefined, h: Face['head']): string {
 	if (!id) return '';
 	if (id.startsWith('k-')) return karmaHat(u, id, h);
+	if (id.startsWith('d-')) return dripHat(u, id, h);
 	const v = `${u}-fgh`;
 	const { x, y, w } = h;
 	const hw = w / 2;

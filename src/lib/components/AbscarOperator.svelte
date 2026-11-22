@@ -10,6 +10,7 @@
 <script lang="ts">
 	import { operatorMarkup, type OperatorVariant } from '#lib/abscarOperator.ts';
 	import { eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
+	import { dripOver, dripUnder } from '#lib/dripArt.ts';
 
 	let {
 		variant,
@@ -31,11 +32,14 @@
 		const u = `aop-${uid}`;
 		const m = mouthItem(u, face?.mouth, F.mouth);
 		const extra = (m?.markup ?? '') + eyesItem(u, face?.eyes, F.eyes) + hatItem(u, face?.hat, F.head);
+		// BurgiDrip's clothes (dripArt.ts): over the poncho, before his holk
+		const body = dripUnder(u, face, 'abscar') + dripOver(u, face, 'abscar');
 		return operatorMarkup(variant, uid, smoke, {
 			holk: m ? 'none' : face?.mouth === 'mouth-goldholk' ? 'gold' : 'white',
 			extra,
 			smokeAt: m?.end,
-			smokeBoost: m?.boost
+			smokeBoost: m?.boost,
+			...(body ? { body } : {})
 		});
 	});
 </script>

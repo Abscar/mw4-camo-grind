@@ -17,6 +17,7 @@
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
 	import { EXHALE_K, exhaleAt, eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
+	import { dripOver, dripUnder } from '#lib/dripArt.ts';
 
 	let { face = null }: { face?: FaceWear | null } = $props();
 	const mouth = $derived(face?.mouth ?? null);
@@ -89,6 +90,10 @@
 	<path d="M12.2 56.4 l2.4 -2.8 l2.2 2.6 Z" fill={TEAL} stroke="#0b4a44" stroke-width=".4" stroke-linejoin="round" />
 	<path d="M27.4 48.2 Q32 55.6 36.6 48.2" fill="none" stroke="url(#{u('gold')})" stroke-width="1.15" stroke-dasharray="1 .45" stroke-linecap="round" />
 	<circle cx="32" cy="54.6" r="1.4" fill="url(#{u('gold')})" stroke="#6a4206" stroke-width=".35" />
+
+	<!-- BurgiDrip: clothes over the suit, pauldrons on the shoulders (dripArt.ts; outside the twitching head) -->
+	{@html dripUnder(uid, face, 'aw')}
+	{@html dripOver(uid, face, 'aw')}
 
 	<!-- pale neck -->
 	<path d="M26.4 39.6 L25.8 47.8 L38.2 47.8 L37.6 39.6 Z" fill="#d9d1ca" stroke={O} stroke-width=".6" />

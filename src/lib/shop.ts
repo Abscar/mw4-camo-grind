@@ -29,6 +29,7 @@
  */
 import { KARMA_ITEMS } from './karma-shop.ts';
 import { GUN_ITEMS } from './armory.ts';
+import { DRIP_ITEMS, DRIP_SLOTS, dripDealOf } from './drip.ts';
 import type { IconCamo } from './data/camos.ts';
 
 // eyes / hat / smoke / pet: the 420 pack 2 (2026-11-16); eyes + hat are drawn by the emblems (faceGear.ts),
@@ -65,8 +66,9 @@ export const SLOTS = [
 	'shelf',
 	'throne'
 ] as const;
-/** Every slot something can be worn in: BurgiShop's, plus `hold` = the Camo Armory's gun in the operator's hands (armory.ts). */
-export const WEAR_SLOTS = [...SLOTS, 'hold'] as const;
+/** Every slot something can be worn in: BurgiShop's, plus `hold` = the Camo Armory's gun in the operator's hands (armory.ts),
+    plus BurgiDrip's clothes (drip.ts: top, neck, kicks, shoulders; its hats go in `hat`). */
+export const WEAR_SLOTS = [...SLOTS, 'hold', ...DRIP_SLOTS] as const;
 export type ShopSlot = (typeof WEAR_SLOTS)[number];
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -82,6 +84,8 @@ export interface ShopItem {
 	karma?: true;
 	/** The Camo Armory (armory.ts): which weapon in which camo. Bought in order (buyGun), not with buy(). */
 	gun?: { w: string; c: IconCamo };
+	/** BurgiDrip (drip.ts): clothes, bought with buy() on the store's own door, drawn by dripArt.ts. */
+	drip?: true;
 	/** Never sold: given for free when earned (grantRewards: the 420 collection, the throne's title). */
 	secret?: true;
 	/** Only in the shop around Christmas / New Year (windowOpen); whoever bought one keeps it. */
@@ -324,14 +328,14 @@ export function dealOf(day: string): { id: string; off: number } {
 	const h = hash(`deal:${day}`);
 	return { id: DEAL_POOL[h % DEAL_POOL.length].id, off: 30 + ((h >>> 8) % 5) * 5 };
 }
-/** What an item costs right now (today's deal included). */
+/** What an item costs right now (today's deal, or BurgiDrip's daily drop, included). */
 export function priceOf(id: string, at: number): number {
 	const it = ITEM_BY_ID_LOCAL.get(id);
 	if (!it) return 0;
-	const deal = dealOf(dayKey(at));
+	const deal = it.drip ? dripDealOf(dayKey(at)) : dealOf(dayKey(at));
 	return deal.id === id ? Math.round((it.price * (100 - deal.off)) / 100) : it.price;
 }
-const ITEM_BY_ID_LOCAL: ReadonlyMap<string, ShopItem> = new Map(SHOP_ITEMS.map((i) => [i.id, i]));
+const ITEM_BY_ID_LOCAL: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...DRIP_ITEMS].map((i) => [i.id, i]));
 
 /**
  * Pranks (the 420 pack): bought once per use and thrown at another squad member. A Smoke Bomb covers
@@ -367,7 +371,7 @@ export interface Prank {
 export const PRANK_KEEP = 30;
 // KarmaShop's items too (karma-shop.ts): worn and drawn like these, but bought with hearts (buyKarmaItem), not here;
 // and the Camo Armory's guns (armory.ts), bought in the game's order with buyGun
-export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS, ...GUN_ITEMS].map((i) => [i.id, i]));
+export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS, ...GUN_ITEMS, ...DRIP_ITEMS].map((i) => [i.id, i]));
 
 export interface ShopState {
 	/** Item id → burgers paid. */

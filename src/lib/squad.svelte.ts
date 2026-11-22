@@ -1082,6 +1082,21 @@ class Squad {
 		return 'ok';
 	}
 
+	/** Buy a piece of clothing in BurgiDrip (drip.ts; worn at once); epic and legendary pieces go on the radio. */
+	buyDrip(id: string): BuyResult | 'off' {
+		const me = this.me;
+		const bank = this.myBank;
+		const it = ITEM_BY_ID.get(id);
+		if (!me || !bank) return 'off';
+		if (!it?.drip) return 'unknown';
+		const price = priceOf(id, this.now);
+		const r = shopBuy(this.shop, id, bank.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.#saveShop(r.state);
+		if (it.rarity === 'epic' || it.rarity === 'legendary') void this.#event(t.drip.event(it.name, price));
+		return 'ok';
+	}
+
 	/**
 	 * Buy a weapon in a camo in the Camo Armory (armory.ts: only in the game's order); your operator holds it
 	 * at once. On the radio: finishing a camo on a whole class, and every Harmonic Break or higher.

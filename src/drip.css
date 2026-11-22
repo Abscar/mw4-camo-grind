@@ -1,0 +1,115 @@
+/*
+ * BurgiDrip (2026-11-22; src/lib/drip.ts + dripArt.ts): what moves on the clothes. The drawings are SVG strings
+ * inside the emblems; these classes make the raid gear's runes glow, its flames flicker, the arcane orb bob,
+ * the wolf's lightning crackle, ice glint, and the set bonus sparkle. Only transform / opacity (cheap to draw);
+ * the page's frame cap steps them like every endless animation, and reduced motion stops them where they rest.
+ * Imported in +layout.svelte after karma-shop.css.
+ */
+.dr-glow {
+	animation: dr-glow 2.6s ease-in-out infinite;
+}
+@keyframes dr-glow {
+	0%,
+	100% {
+		opacity: 0.55;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+.dr-flicker {
+	transform-box: fill-box;
+	transform-origin: 50% 100%;
+	animation: dr-flicker 0.9s ease-in-out infinite alternate;
+}
+@keyframes dr-flicker {
+	from {
+		transform: scale(0.92, 0.88);
+		opacity: 0.85;
+	}
+	to {
+		transform: scale(1.04, 1.1);
+		opacity: 1;
+	}
+}
+.dr-bob {
+	animation: dr-bob 2.8s ease-in-out infinite;
+}
+@keyframes dr-bob {
+	50% {
+		transform: translateY(-2px);
+	}
+}
+.dr-zap {
+	animation: dr-zap 2.2s steps(1) infinite;
+}
+@keyframes dr-zap {
+	0%,
+	60%,
+	100% {
+		opacity: 0;
+	}
+	62%,
+	70%,
+	78% {
+		opacity: 1;
+	}
+	66%,
+	74% {
+		opacity: 0.2;
+	}
+}
+.dr-twinkle,
+.dr-spark {
+	transform-box: fill-box;
+	transform-origin: 50% 50%;
+}
+.dr-twinkle {
+	animation: dr-twinkle 2.4s ease-in-out infinite;
+}
+@keyframes dr-twinkle {
+	0%,
+	100% {
+		opacity: 0.2;
+		transform: scale(0.5);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.1);
+	}
+}
+/* the set bonus: the pauldrons glow in the set's colour and sparks rise round them */
+.dr-setglow {
+	filter: drop-shadow(0 0 1.2px var(--g)) drop-shadow(0 0 2.6px var(--g));
+}
+.dr-spark {
+	animation: dr-spark 2.2s ease-out infinite;
+}
+@keyframes dr-spark {
+	0% {
+		opacity: 0;
+		transform: translateY(2px) scale(0.4);
+	}
+	30% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-6px) scale(1);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.dr-glow,
+	.dr-flicker,
+	.dr-bob,
+	.dr-zap,
+	.dr-twinkle,
+	.dr-spark {
+		animation: none;
+	}
+	.dr-glow,
+	.dr-twinkle,
+	.dr-spark {
+		opacity: 0.9;
+	}
+}

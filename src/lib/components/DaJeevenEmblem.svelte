@@ -15,6 +15,7 @@
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
 	import { eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
+	import { dripOver, dripUnder } from '#lib/dripArt.ts';
 
 	/** BurgiShop's face slots (faceGear.ts `faceOf`): the Golden Holk turns his holk gold; the 420 pack 2
 	    puts something else in his teeth, glasses / eyes on the mask, a hat on the hood, a smoke colour */
@@ -90,6 +91,9 @@
 		</g>
 	{/each}
 
+	<!-- BurgiDrip: clothes over the cape and vest (dripArt.ts) -->
+	{@html dripUnder(u, face, 'jeeven')}
+
 	<!-- dark hood with a strap across the top, the headset's band and ear cups -->
 	<path d="M14.5 33 C13 16 21 5.5 32 5.5 C43 5.5 51 16 49.5 33 L47 42 L17 42 Z" fill="url(#{id('hood')})" stroke={O} stroke-width="1" stroke-linejoin="round" />
 	<path d="M24 6.9 Q32 4.9 40 6.9 L39.4 9.7 Q32 8.1 24.6 9.7 Z" fill="#45484c" stroke={O} stroke-width=".5" />
@@ -132,6 +136,7 @@
 
 	<!-- BurgiShop's eyes over the mask (the 420 pack 2) -->
 	{@html eyesItem(u, face?.eyes, F.eyes)}
+	{@html dripOver(u, face, 'jeeven')}
 
 	<!-- the big holk in his teeth, smoke rising from its end (like Abscar's); or the shop's mouth item -->
 	{#if ITEM}

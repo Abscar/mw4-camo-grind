@@ -24,6 +24,8 @@
 	import { sound } from '#lib/sound.svelte.ts';
 	import ArmorySection from './ArmorySection.svelte';
 	import CasinoTabArt from './CasinoTabArt.svelte';
+	import DripDoorArt from './DripDoorArt.svelte';
+	import DripSection from './DripSection.svelte';
 	import KarmaShopArt from './KarmaShopArt.svelte';
 	import KarmaShopSection from './KarmaShopSection.svelte';
 	import ShopSection from './ShopSection.svelte';
@@ -33,18 +35,20 @@
 	const s = t.shop;
 	const k = t.karmaShop;
 	const ar = t.armory;
+	const dr = t.drip;
 	const TAB_KEY = 'mw4-camo-grind:shop-tab';
 	const balance = $derived(squad.myBank?.balance ?? 0);
 	const hearts = $derived(squad.myHearts.balance);
 	/** the armory door's picture: a gold rifle */
 	const DOOR_GUN = camoLook('patriot-xmr');
-	let shop = $state<'burgi' | 'armory' | 'karma'>('burgi');
+	type Door = 'burgi' | 'armory' | 'karma' | 'drip';
+	let shop = $state<Door>('burgi');
 
-	const heading = $derived(shop === 'karma' ? k.heading : shop === 'armory' ? ar.heading : s.heading);
+	const heading = $derived(shop === 'karma' ? k.heading : shop === 'armory' ? ar.heading : shop === 'drip' ? dr.heading : s.heading);
 	/** the sign's letters: the second word (SHOP / ARMORY) in the second neon colour, one letter flickers */
 	const sign = $derived.by(() => {
 		// the letters keep their spelling (the page text says "KarmaShop"); CSS shows them in capitals
-		const at = heading.includes(' ') ? heading.indexOf(' ') : heading.lastIndexOf('Shop');
+		const at = heading.includes(' ') ? heading.indexOf(' ') : heading.includes('Drip') ? heading.lastIndexOf('Drip') : heading.lastIndexOf('Shop');
 		return [...heading].map((ch, i) => ({ ch, two: at > 0 && i >= at, gap: ch === ' ' }));
 	});
 	const FLICKER = 6;
@@ -69,13 +73,13 @@
 	onMount(() => {
 		try {
 			const saved = localStorage.getItem(TAB_KEY);
-			if (saved === 'karma' || saved === 'armory') shop = saved;
+			if (saved === 'karma' || saved === 'armory' || saved === 'drip') shop = saved;
 		} catch {
 			/* private mode: start on BurgiShop */
 		}
 	});
 
-	function pick(which: 'burgi' | 'armory' | 'karma') {
+	function pick(which: Door) {
 		shop = which;
 		try {
 			localStorage.setItem(TAB_KEY, which);
@@ -89,7 +93,7 @@
 	class="class-card shop-page relative overflow-hidden rounded-card shadow-card"
 	class:karma-page={shop === 'karma'}
 	data-shop={shop}
-	style:--c={shop === 'karma' ? '#ff6aa8' : '#b265ff'}
+	style:--c={shop === 'karma' ? '#ff6aa8' : shop === 'drip' ? '#ff2a3a' : '#b265ff'}
 	aria-labelledby="shop-h"
 >
 	<!-- the backdrop: a turning rainbow swirl, a faint leaf pattern, drifting leaves and smoke -->
@@ -112,17 +116,19 @@
 			<span class="shop-bag" aria-hidden="true"><KarmaShopArt size={58} /></span>
 		{:else if shop === 'armory' && DOOR_GUN}
 			<span class="shop-bag shop-gun" aria-hidden="true"><WeaponIcon look={DOOR_GUN} camo="gold" /></span>
+		{:else if shop === 'drip'}
+			<span class="shop-bag shop-drip" aria-hidden="true"><DripDoorArt size={58} /></span>
 		{:else}
 			<span class="shop-bag" aria-hidden="true"><CasinoTabArt kind="shop" size={58} /></span>
 		{/if}
 		<!-- at least 13rem, so on a phone the wallet goes to its own line instead of squeezing the sign -->
 		<div class="flex min-w-[13rem] flex-1 flex-col gap-1">
-			<h2 id="shop-h" class="sp-sign shop-title font-head" class:karma-title={shop === 'karma'} class:armory-title={shop === 'armory'} data-shop={shop} aria-label={heading}>
+			<h2 id="shop-h" class="sp-sign shop-title font-head" class:karma-title={shop === 'karma'} class:armory-title={shop === 'armory'} class:drip-title={shop === 'drip'} data-shop={shop} aria-label={heading}>
 				{#each sign as l, i (i)}<span class="sp-l" class:sp-two={l.two} class:sp-gap={l.gap} class:sp-flicker={i === FLICKER} aria-hidden="true"
 						>{l.gap ? ' ' : l.ch}</span
 					>{/each}
 			</h2>
-			<span class="sp-sub font-head">{shop === 'karma' ? k.sub : shop === 'armory' ? ar.sub : s.sub}</span>
+			<span class="sp-sub font-head">{shop === 'karma' ? k.sub : shop === 'armory' ? ar.sub : shop === 'drip' ? dr.sub : s.sub}</span>
 			{#if shop === 'burgi'}<span class="sp-sub sp-vibe font-head">{s.vibe}</span>{/if}
 		</div>
 		{#if squad.on}
@@ -174,6 +180,10 @@
 				<span class="shop-door-art" aria-hidden="true"><KarmaShopArt size={40} alive={shop === 'karma'} /></span>
 				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{k.heading}</b><span class="door-sub block text-[11px] leading-tight">{k.karmaTile}</span></span>
 			</button>
+			<button type="button" class="shop-door" data-shop="drip" aria-pressed={shop === 'drip'} onclick={() => pick('drip')}>
+				<span class="shop-door-art" aria-hidden="true"><DripDoorArt size={40} /></span>
+				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{dr.heading}</b><span class="door-sub block text-[11px] leading-tight">{dr.door}</span></span>
+			</button>
 		</div>
 		{#if !squad.on}
 			<p class="max-w-3xl text-sm text-fg">{s.notIn}</p>
@@ -182,6 +192,8 @@
 			<KarmaShopSection />
 		{:else if shop === 'armory'}
 			<ArmorySection />
+		{:else if shop === 'drip'}
+			<DripSection />
 		{:else}
 			<ShopSection />
 		{/if}
@@ -223,6 +235,12 @@
 			0 0 0 2px rgb(255 201 40 / 0.55),
 			0 0 22px rgb(255 190 40 / 0.35),
 			0 0 50px rgb(77 255 143 / 0.12);
+	}
+	.shop-page[data-shop='drip'] {
+		box-shadow:
+			0 0 0 2px rgb(255 42 58 / 0.6),
+			0 0 22px rgb(255 42 58 / 0.35),
+			0 0 50px rgb(255 255 255 / 0.08);
 	}
 	/* ---------- the backdrop ---------- */
 	.sp-trip {
@@ -353,6 +371,23 @@
 			0 0 10px #ffd23a,
 			0 0 22px #ffb000,
 			0 0 40px #ff8a00;
+	}
+	/* BurgiDrip: hype red + a white-hot DRIP */
+	.sp-sign[data-shop='drip'] .sp-l:not(.sp-two) {
+		color: #fff0f0;
+		text-shadow:
+			0 0 4px #fff,
+			0 0 10px #ff3a4a,
+			0 0 22px #ff1a2a,
+			0 0 40px #b80010;
+	}
+	.sp-sign[data-shop='drip'] .sp-two {
+		color: #ffffff;
+		text-shadow:
+			0 0 4px #fff,
+			0 0 10px #ffffff,
+			0 0 22px #9aa4ff,
+			0 0 40px #5a64ff;
 	}
 	.sp-sign[data-shop='armory'] .sp-l:not(.sp-two) {
 		color: #fffbe8;
@@ -499,9 +534,9 @@
 	/* ---------- the switch: three shop fronts with their own colours ---------- */
 	.shop-switch {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 8px;
-		max-width: 820px;
+		max-width: 1060px;
 	}
 	.shop-door {
 		display: flex;
@@ -541,6 +576,12 @@
 			radial-gradient(80% 120% at 20% 40%, rgb(255 140 190 / 0.35), transparent 65%),
 			linear-gradient(160deg, #8e2160, #3a0a2c);
 	}
+	.shop-door[data-shop='drip'] {
+		background:
+			radial-gradient(80% 120% at 20% 40%, rgb(255 42 58 / 0.32), transparent 65%),
+			repeating-linear-gradient(135deg, rgb(255 255 255 / 0.04) 0 5px, transparent 5px 10px),
+			linear-gradient(160deg, #2a2a30, #0c0c0e);
+	}
 	.shop-door:hover {
 		opacity: 1;
 	}
@@ -558,7 +599,14 @@
 		width: 44px;
 		height: 40px;
 	}
-	/* narrower: three doors side by side, each with its picture above the name (no small line), so
+	/* four doors: two by two until there's room for all four with their small lines */
+	@media (max-width: 899px) {
+		.shop-switch {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			max-width: 640px;
+		}
+	}
+	/* narrower: the doors two by two, each with its picture above the name (no small line), so
 	   "KARMASHOP" and "CAMO ARMORY" fit even in the wider theme fonts */
 	@media (max-width: 639px) {
 		.shop-door {

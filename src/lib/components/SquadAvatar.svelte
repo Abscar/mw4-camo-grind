@@ -8,6 +8,7 @@
 <script lang="ts">
 	import { holk, smoke as smokeAt } from '#lib/abscarOperator.ts';
 	import { EXHALE_K, exhaleAt, eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
+	import { dripOver, dripUnder } from '#lib/dripArt.ts';
 	import type { SquadOp } from '#lib/squad-codec.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
 	import AwEmblem from './AwEmblem.svelte';
@@ -49,14 +50,17 @@
 
 	/** on the initials: glasses, hat, the thing in the mouth (or the Golden Holk) and its smoke, or a puff of colour */
 	const overInitials = $derived.by(() => {
-		if (!face || (!face.mouth && !face.hat && !face.smoke && !face.eyes)) return '';
+		if (!face || (!face.mouth && !face.hat && !face.smoke && !face.eyes && !face.top && !face.neck && !face.kicks && !face.shoulders)) return '';
+		// BurgiDrip's clothes (dripArt.ts): a small torso low in the badge, under the letters' face items
+		const under = dripUnder(U, face, 'initials');
+		const over = dripOver(U, face, 'initials');
 		const item = mouthItem(U, face.mouth, F.mouth);
 		const gold = !item && face.mouth === 'mouth-goldholk';
 		const ember = gold ? `<defs><radialGradient id="${U}-ember"><stop offset="0" stop-color="#ff8a1a" stop-opacity="0.95"/><stop offset="1" stop-color="#ff5a00" stop-opacity="0"/></radialGradient></defs>` : '';
 		const filters = `<defs><filter id="${U}-puff-blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.4"/></filter><filter id="${U}-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5"/></filter></defs>`;
 		const at = item ? item.end : gold ? ([62.6, 52.2] as [number, number]) : exhaleAt(F);
 		const puff = face.smoke || item ? smokeAt(U, at[0], at[1], item ? 0.55 * item.boost : gold ? 0.45 : EXHALE_K) : '';
-		return `${ember}${filters}${eyesItem(U, face.eyes, F.eyes)}${hatItem(U, face.hat, F.head)}${item ? item.markup : gold ? holk(U, 40, 45, 62, 52, 3, 9, undefined, true) : ''}${puff}`;
+		return `${ember}${filters}${under}${eyesItem(U, face.eyes, F.eyes)}${hatItem(U, face.hat, F.head)}${over}${item ? item.markup : gold ? holk(U, 40, 45, 62, 52, 3, 9, undefined, true) : ''}${puff}`;
 	});
 </script>
 

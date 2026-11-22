@@ -89,10 +89,13 @@ test('hats sit on the head and eyes on the eyes (anchors inside the box, lenses 
 	}
 });
 
-test('faceOf: a member’s worn items → the face slots', () => {
-	assert.deepEqual(faceOf(undefined), { mouth: null, eyes: null, hat: null, smoke: null });
+test('faceOf: a member’s worn items → the face slots (and BurgiDrip’s clothes)', () => {
+	const none = { top: null, neck: null, kicks: null, shoulders: null };
+	assert.deepEqual(faceOf(undefined), { mouth: null, eyes: null, hat: null, smoke: null, ...none });
 	const w = { mouth: ITEM_BY_ID.get('mouth-bong'), hat: ITEM_BY_ID.get('hat-rasta'), aura: ITEM_BY_ID.get('aura-gold') };
-	assert.deepEqual(faceOf(w), { mouth: 'mouth-bong', eyes: null, hat: 'hat-rasta', smoke: null });
+	assert.deepEqual(faceOf(w), { mouth: 'mouth-bong', eyes: null, hat: 'hat-rasta', smoke: null, ...none });
+	const d = { top: ITEM_BY_ID.get('d-hd-box'), kicks: ITEM_BY_ID.get('d-kk-redhi'), hat: ITEM_BY_ID.get('d-rd-frost-h') };
+	assert.deepEqual(faceOf(d), { mouth: null, eyes: null, hat: 'd-rd-frost-h', smoke: null, top: 'd-hd-box', neck: null, kicks: 'd-kk-redhi', shoulders: null });
 });
 
 test('Abscar wearing the pack: no holk in his teeth, the item instead, smoke from its end, eyes + hat on top', () => {

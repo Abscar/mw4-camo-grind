@@ -9,6 +9,7 @@
 <script lang="ts">
 	import { holk, smoke } from '#lib/abscarOperator.ts';
 	import { EXHALE_K, exhaleAt, eyesItem, FACES, hatItem, mouthItem, type FaceWear } from '#lib/faceGear.ts';
+	import { dripOver, dripUnder } from '#lib/dripArt.ts';
 
 	/** BurgiShop's face slots (faceGear.ts `faceOf`): the Golden Holk = a gold holk in the left corner of his
 	    mouth; the 420 pack 2 = another thing there, glasses / eyes, a hat on the helmet, a smoke colour */
@@ -90,6 +91,8 @@
 	<circle cx="30" cy="57.9" r="1.5" fill="#d8322b" />
 	<rect x="29" y="58.9" width="2" height="1.3" rx=".3" fill="#d8322b" />
 	<path d="M18.5 49 Q30 54.5 41.5 49 L40.6 52.8 Q30 57.4 19.4 52.8 Z" fill="#b8c63c" stroke={O} stroke-width=".8" stroke-linejoin="round" />
+	<!-- BurgiDrip: clothes over the vest (dripArt.ts) -->
+	{@html dripUnder(uid, face, 'phillestar')}
 
 	<!-- the helmet: black shell, chrome skull face, cyan neon arcs, yellow ear cup, antenna (NukeOperator's head) -->
 	<g transform="translate(2 0) scale(.5) translate(-44 -20)">
@@ -120,6 +123,7 @@
 	<!-- BurgiShop: eyes over the skull face, a hat on the helmet (the 420 pack 2) -->
 	{@html eyesItem(uid, face?.eyes, F.eyes)}
 	{@html hatItem(uid, face?.hat, F.head)}
+	{@html dripOver(uid, face, 'phillestar')}
 
 	{#if ITEM}
 		<!-- BurgiShop's 420 pack 2: something in the left corner of his mouth -->
