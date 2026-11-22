@@ -17,6 +17,6 @@ export interface ArcadeDetail {
 	rounds?: number[];
 }
 
-/** The ten games, in the hall's order. Never change an id: high scores are kept by it. */
-export const ARCADE_GAMES = ['hitmarker', 'quickscope', 'nukerun', 'stack', 'grinder', 'zombies', 'grenade', 'recall', 'snake', 'typer'] as const;
+/** The games, in the hall's order. Never change an id: high scores are kept by it. */
+export const ARCADE_GAMES = ['hitmarker', 'quickscope', 'nukerun', 'stack', 'grinder', 'zombies', 'grenade', 'recall', 'snake', 'typer', 'pinball'] as const;
 export type ArcadeGame = (typeof ARCADE_GAMES)[number];

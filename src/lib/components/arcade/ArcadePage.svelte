@@ -420,6 +420,17 @@
 		.arc-cabs {
 			grid-template-columns: repeat(5, minmax(0, 1fr));
 		}
+		/* a lone cabinet on the last row (11 games) sits in the middle */
+		.arc-cabs > :global(.cab:last-child:nth-child(5n + 1)) {
+			grid-column: 3;
+		}
+	}
+	@media (max-width: 559px) {
+		.arc-cabs > :global(.cab:last-child:nth-child(odd)) {
+			grid-column: 1 / -1;
+			justify-self: center;
+			width: calc(50% - 5px);
+		}
 	}
 	.arc-two {
 		display: grid;

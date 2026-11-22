@@ -50,7 +50,8 @@ export const GAME_LOOKS: Record<ArcadeGame, GameLook> = {
 	grenade: { c1: '#4a5214', c2: '#141804', glow: '#ffb02a', top: 'GRENADE', big: 'TOSS', style: 'chunky', topFaces: [OLIVE], bigFaces: [ORANGE, GOLD], ink: '#121404', rim: '#f4f0d0', fig: 'right' },
 	recall: { c1: '#0e5a3a', c2: '#031a10', glow: '#3dff9a', top: 'KILLSTREAK', big: 'RECALL', style: 'neon', topFaces: [neon('#ffd23a', '#fff6d0')], bigFaces: [neon('#3dff9a', '#e0ffef')], ink: '#000', rim: '#fff', fig: 'left' },
 	snake: { c1: '#4a1a86', c2: '#14062a', glow: '#a8f03a', top: 'MUNCHIE', big: 'SNAKE', style: 'chunky', topFaces: [PINK], bigFaces: [LIME, { ...LIME, mid: '#c8ff4a' }], ink: '#12041e', rim: '#f4ffe0', fig: 'right' },
-	typer: { c1: '#16306e', c2: '#060c24', glow: '#5c9dff', top: 'CALLOUT', big: 'TYPER', style: 'neon', topFaces: [neon('#ff5cb8', '#ffe0f2')], bigFaces: [neon('#5c9dff', '#e4eeff')], ink: '#000', rim: '#fff', fig: 'right' }
+	typer: { c1: '#16306e', c2: '#060c24', glow: '#5c9dff', top: 'CALLOUT', big: 'TYPER', style: 'neon', topFaces: [neon('#ff5cb8', '#ffe0f2')], bigFaces: [neon('#5c9dff', '#e4eeff')], ink: '#000', rim: '#fff', fig: 'right' },
+	pinball: { c1: '#7a1a10', c2: '#1e0604', glow: '#ffb02a', top: "ABSCAR'S", big: 'PINBALL', style: 'chunky', topFaces: [RED], bigFaces: [CHROME, GOLD, CHROME, GOLD, CHROME, GOLD, CHROME], ink: '#1a0604', rim: '#fff4dc', fig: 'right' }
 };
 
 /** BurgiArcade's own sign: BURGI in gold over ARCADE in the ten games' colours. */

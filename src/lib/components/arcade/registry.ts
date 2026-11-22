@@ -23,6 +23,8 @@ import MunchieSnake from './games/MunchieSnake.svelte';
 import MunchieSnakeArt from './art/MunchieSnakeArt.svelte';
 import CalloutTyper from './games/CalloutTyper.svelte';
 import CalloutTyperArt from './art/CalloutTyperArt.svelte';
+import AbscarPinball from './games/AbscarPinball.svelte';
+import AbscarPinballArt from './art/AbscarPinballArt.svelte';
 
 export const GAME_VIEWS: Record<ArcadeGame, Component<ArcadeGameProps>> = {
 	hitmarker: HitmarkerRush,
@@ -34,7 +36,8 @@ export const GAME_VIEWS: Record<ArcadeGame, Component<ArcadeGameProps>> = {
 	grenade: GrenadeToss,
 	recall: KillstreakRecall,
 	snake: MunchieSnake,
-	typer: CalloutTyper
+	typer: CalloutTyper,
+	pinball: AbscarPinball
 };
 
 export const GAME_ART: Record<ArcadeGame, Component<{ size?: number }>> = {
@@ -47,5 +50,6 @@ export const GAME_ART: Record<ArcadeGame, Component<{ size?: number }>> = {
 	grenade: GrenadeTossArt,
 	recall: KillstreakRecallArt,
 	snake: MunchieSnakeArt,
-	typer: CalloutTyperArt
+	typer: CalloutTyperArt,
+	pinball: AbscarPinballArt
 };

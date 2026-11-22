@@ -37,7 +37,8 @@ export const GAME_META: Record<ArcadeGame, { per: number; max: number }> = {
 	grenade: { per: 100, max: 120 },
 	recall: { per: 20, max: 120 },
 	snake: { per: 6, max: 120 },
-	typer: { per: 40, max: 120 }
+	typer: { per: 40, max: 120 },
+	pinball: { per: 12_000, max: 120 }
 };
 /** Every play wins at least this many (for showing up). */
 export const TICKETS_MIN = 2;

@@ -10,7 +10,8 @@ import grenade from './grenade.ts';
 import recall from './recall.ts';
 import snake from './snake.ts';
 import typer from './typer.ts';
+import pinball from './pinball.ts';
 
 export type GameWords = { name: string; tagline: string; how: string; controls: string } & Record<string, unknown>;
 
-export const GAME_WORDS: Record<ArcadeGame, GameWords> = { hitmarker, quickscope, nukerun, stack, grinder, zombies, grenade, recall, snake, typer };
+export const GAME_WORDS: Record<ArcadeGame, GameWords> = { hitmarker, quickscope, nukerun, stack, grinder, zombies, grenade, recall, snake, typer, pinball };
