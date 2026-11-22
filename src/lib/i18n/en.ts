@@ -1626,6 +1626,8 @@ export const en = {
 	/** BurgiDrip (2026-11-22, drip.ts): the clothing store, the fourth door in the BurgiShop tab. */
 	drip: {
 		heading: 'BurgiDrip',
+		/** BurgiDrip's own top rarity, above Legendary (the Kush Crown) */
+		ultimate: 'Ultimate',
 		/** the line under the page heading and on its door */
 		sub: 'Hype clothes and raid gear for your operator',
 		door: 'Clothes, kicks & raid gear',

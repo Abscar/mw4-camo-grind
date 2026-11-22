@@ -12,13 +12,15 @@
 	import { squad } from '#lib/squad.svelte.ts';
 	import { faceOf } from '#lib/faceGear.ts';
 	import { dayKey, owns, sellValue, worn, ITEM_BY_ID, type ShopItem, type ShopSlot } from '#lib/shop.ts';
-	import { dripDealOf, setBonus, setCount, DRIP_BY_ID, DRIP_DEFS, DRIP_RACKS, RAID_SETS, type DripDef, type DripRack, type RaidSet } from '#lib/drip.ts';
+	import { dripDealOf, dripRarity, setBonus, setCount, DRIP_BY_ID, DRIP_DEFS, DRIP_RACKS, RAID_SETS, type DripDef, type DripRack, type RaidSet } from '#lib/drip.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import DripPic from './DripPic.svelte';
 	import OpGear from './OpGear.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	const d = t.drip;
+	/** a piece's rarity name: BurgiShop's four, plus BurgiDrip's own Ultimate */
+	const rarityName = (r: DripDef['rarity']) => (r === 'ultimate' ? d.ultimate : t.shop.rarity[r]);
 	const s = t.shop;
 	/** Asks first above this price (like the Camo Armory). */
 	const ASK_FROM = 1_000_000;
@@ -133,7 +135,7 @@
 			class="drip-try"
 			data-slot={def.draw.slot}
 			aria-pressed={trying?.id === def.id}
-			aria-label={d.cardLabel(def.name, d.kind[def.draw.slot], s.rarity[def.rarity], stateText(def))}
+			aria-label={d.cardLabel(def.name, d.kind[def.draw.slot], rarityName(def.rarity), stateText(def))}
 			onclick={() => tryOn(def)}
 		>
 			<DripPic id={def.id} />
@@ -141,7 +143,7 @@
 		</button>
 		<p class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1">
 			<b class="drip-name min-w-0 font-head text-[14px] font-bold" data-rarity={def.rarity}>{def.name}</b>
-			<span class="drip-rarity font-head">{s.rarity[def.rarity]}</span>
+			<span class="drip-rarity font-head">{rarityName(def.rarity)}</span>
 		</p>
 		{#if def.set}<p class="drip-set font-head" style:--g={RAID_SETS[def.set].glow}>{RAID_SETS[def.set].name} · {d.piece[def.draw.slot]}</p>{/if}
 		<div class="mt-2 flex flex-wrap items-center gap-1.5">
@@ -179,7 +181,7 @@
 				<p class="font-hud text-[11px] tracking-[0.22em] uppercase drip-dim">{trying ? d.trying(trying.name) : d.wearingNow}</p>
 				{#if wornDrip.length}
 					<ul class="mt-1 flex flex-wrap gap-1">
-						{#each wornDrip as it (it.id)}<li class="drip-chip font-head" data-rarity={it.rarity}>{it.name}</li>{/each}
+						{#each wornDrip as it (it.id)}<li class="drip-chip font-head" data-rarity={dripRarity(it.id) ?? it.rarity}>{it.name}</li>{/each}
 					</ul>
 				{:else}
 					<p class="mt-1 text-[12.5px] drip-dim">{d.nothing}</p>
@@ -194,7 +196,7 @@
 		{#if dropDef}
 			<div class="drip-dropbox rounded-card px-3 py-3">
 				<p class="flex items-center justify-between gap-2 font-head text-[13px] font-black tracking-wide uppercase"><span>🔥 {d.drop.heading}</span><span class="drip-off">{d.drop.off(drop.off)}</span></p>
-				<button type="button" class="drip-try drip-try-big mt-2" aria-pressed={trying?.id === dropDef.id} aria-label={d.cardLabel(dropDef.name, d.kind[dropDef.draw.slot], s.rarity[dropDef.rarity], stateText(dropDef))} onclick={() => tryOn(dropDef)}>
+				<button type="button" class="drip-try drip-try-big mt-2" aria-pressed={trying?.id === dropDef.id} aria-label={d.cardLabel(dropDef.name, d.kind[dropDef.draw.slot], rarityName(dropDef.rarity), stateText(dropDef))} onclick={() => tryOn(dropDef)}>
 					<DripPic id={dropDef.id} />
 				</button>
 				<p class="mt-2"><b class="drip-name font-head text-[15px]" data-rarity={dropDef.rarity}>{dropDef.name}</b></p>
@@ -246,6 +248,7 @@
 		--q-rare: #4aa8ff;
 		--q-epic: #c47dff;
 		--q-legendary: #ffa02a;
+		--q-ultimate: #7dff3a;
 	}
 	.drip-row {
 		grid-template-columns: minmax(0, 1fr);
@@ -305,6 +308,15 @@
 	}
 	.drip-name {
 		text-shadow: 0 1px 0 rgb(0 0 0 / 0.8);
+	}
+	/* Ultimate (the Kush Crown): glowing neon green, above Legendary */
+	.drip-chip[data-rarity='ultimate'],
+	.drip-name[data-rarity='ultimate'] {
+		color: var(--q-ultimate);
+		text-shadow:
+			0 1px 0 rgb(0 0 0 / 0.8),
+			0 0 6px rgb(125 255 58 / 0.85),
+			0 0 14px rgb(125 255 58 / 0.5);
 	}
 	.drip-setline {
 		color: var(--g);
@@ -380,6 +392,38 @@
 	.drip-item[data-rarity='legendary'] {
 		--r: var(--q-legendary);
 		box-shadow: 0 0 12px rgb(255 160 42 / 0.22);
+	}
+	.drip-item[data-rarity='ultimate'] {
+		--r: var(--q-ultimate);
+		border-width: 2px;
+		background:
+			radial-gradient(120% 70% at 50% 0%, rgb(125 255 58 / 0.2), transparent 70%),
+			linear-gradient(180deg, rgb(18 34 16 / 0.97), rgb(6 12 6 / 0.98));
+		animation: drip-ultimate 2.6s ease-in-out infinite;
+	}
+	.drip-item[data-rarity='ultimate'] .drip-rarity {
+		background: linear-gradient(90deg, #2fd36a, #d8ff6a, #2fd36a);
+		color: #0a2a0a;
+		font-weight: 900;
+	}
+	@keyframes drip-ultimate {
+		0%,
+		100% {
+			box-shadow:
+				0 0 10px rgb(125 255 58 / 0.35),
+				inset 0 0 8px rgb(125 255 58 / 0.15);
+		}
+		50% {
+			box-shadow:
+				0 0 22px rgb(125 255 58 / 0.7),
+				inset 0 0 14px rgb(125 255 58 / 0.3);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.drip-item[data-rarity='ultimate'] {
+			animation: none;
+			box-shadow: 0 0 16px rgb(125 255 58 / 0.55);
+		}
 	}
 	.drip-item.on {
 		box-shadow: 0 0 0 2px var(--d-red);

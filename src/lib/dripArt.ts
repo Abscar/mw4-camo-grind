@@ -1157,6 +1157,37 @@ function hatMarkup(v: string, L: HatLook, h: Face['head']): string {
 			const D = `M${P(-0.92, 0.22)} L${P(-1.02, -0.3)} L${P(-0.5, -0.06)} L${P(0, -0.46)} L${P(0.5, -0.06)} L${P(1.02, -0.3)} L${P(0.92, 0.22)} Z`;
 			return `${body.defs}<path d="${D}" fill="${body.fill}" stroke="#5a3a04" stroke-width="${sw}" stroke-linejoin="round"/><rect x="${f(x - 0.94 * hw)}" y="${f(y + 0.06 * w)}" width="${f(1.88 * hw)}" height="${f(0.16 * w)}" rx="${f(0.03 * w)}" fill="${body.fill}" stroke="#5a3a04" stroke-width="${sw}"/>${[[-1.02, -0.3], [0, -0.46], [1.02, -0.3]].map(([a, b]) => `<circle cx="${f(x + a * hw)}" cy="${f(y + b * w)}" r="${f(0.045 * w)}" fill="#fff4b0" stroke="#5a3a04" stroke-width="${f(w * 0.008)}"/>`).join('')}${[[-0.55, '#2a8aff'], [0, A], [0.55, '#2fd36a']].map(([a, col]) => `<circle cx="${f(x + (a as number) * hw)}" cy="${f(y + 0.14 * w)}" r="${f(0.05 * w)}" fill="${col}" stroke="#5a3a04" stroke-width="${f(w * 0.008)}"/>`).join('')}<path class="dr-twinkle" d="${star4(x + 0.3 * hw, y - 0.18 * w, 0.06 * w)}" fill="#fffbe6"/><path class="dr-twinkle" style="animation-delay:-1.2s" d="${star4(x - 0.7 * hw, y + 0.02 * w, 0.045 * w)}" fill="#fffbe6"/>`;
 		}
+		case 'kush-crown': {
+			// the Kush Crown (ultimate, 100M): five big weed leaves fanned up from a gold band set with emeralds,
+			// in a breathing green aura, gold veins, smoke curling off the top and sparkles
+			const lg = `${v}-kl`;
+			const au = `${v}-ka`;
+			const leaves = [
+				[-50, 0.034, -0.78],
+				[-25, 0.042, -0.42],
+				[0, 0.052, 0],
+				[25, 0.042, 0.42],
+				[50, 0.034, 0.78]
+			]
+				.map(([a, s, dx]) => `<g transform="translate(${f(x + dx * hw)} ${f(y + 0.09 * w)}) rotate(${a}) scale(${f(s * w, 3)}) translate(-12 -20)">${LEAF_PATHS.map((d) => `<path d="${d}" fill="url(#${lg})" stroke="#0a3a10" stroke-width="0.9" stroke-linejoin="round"/>`).join('')}<path d="M12 19 L12 8.5" stroke="#ffd84a" stroke-width="0.55" opacity="0.85"/></g>`)
+				.join('');
+			const band = `<path d="M${P(-0.96, 0.06)} Q${P(0, -0.02)} ${P(0.96, 0.06)} L${P(0.94, 0.24)} Q${P(0, 0.17)} ${P(-0.94, 0.24)} Z" fill="${body.fill}" stroke="#5a3a04" stroke-width="${sw}" stroke-linejoin="round"/>`;
+			const gems = [-0.66, -0.33, 0, 0.33, 0.66]
+				.map((a, i) => (i % 2 ? `<circle cx="${f(x + a * hw)}" cy="${f(y + 0.145 * w)}" r="${f(0.032 * w)}" fill="#fff4b0" stroke="#5a3a04" stroke-width="${f(w * 0.007)}"/>` : `<path d="M${f(x + a * hw)} ${f(y + 0.085 * w)} L${f(x + a * hw + 0.05 * w)} ${f(y + 0.145 * w)} L${f(x + a * hw)} ${f(y + 0.205 * w)} L${f(x + a * hw - 0.05 * w)} ${f(y + 0.145 * w)} Z" fill="${A}" stroke="#0a3a10" stroke-width="${f(w * 0.008)}"/><circle class="dr-glow" style="animation-delay:-${i * 0.4}s" cx="${f(x + a * hw - 0.012 * w)}" cy="${f(y + 0.13 * w)}" r="${f(0.014 * w)}" fill="#eaffd0"/>`))
+				.join('');
+			const smoke = [0, 1, 2, 3]
+				.map((i) => `<circle class="dr-spark" style="animation-delay:-${f(i * 0.55, 2)}s" cx="${f(x + (i % 2 ? 0.16 : -0.12) * hw)}" cy="${f(y - (0.62 + i * 0.05) * w)}" r="${f((0.05 + i * 0.012) * w)}" fill="#d8f0d0" opacity="0.6"/>`)
+				.join('');
+			const sparkles = [
+				[-0.9, -0.42, 0.07, 0],
+				[0.86, -0.5, 0.06, 0.8],
+				[0.25, -0.7, 0.05, 1.6],
+				[-0.4, 0.2, 0.04, 2.1]
+			]
+				.map(([a, b, r, dl]) => `<path class="dr-twinkle" style="animation-delay:-${dl}s" d="${star4(x + a * hw, y + b * w, r * w)}" fill="#f4ffd8"/>`)
+				.join('');
+			return `${body.defs}<defs><linearGradient id="${lg}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8ff6a"/><stop offset="0.45" stop-color="#4ad84a"/><stop offset="1" stop-color="#127a2a"/></linearGradient><radialGradient id="${au}"><stop offset="0" stop-color="${G}" stop-opacity="0.75"/><stop offset="0.55" stop-color="${G}" stop-opacity="0.25"/><stop offset="1" stop-color="${G}" stop-opacity="0"/></radialGradient></defs><ellipse class="dr-glow" cx="${f(x)}" cy="${f(y - 0.22 * w)}" rx="${f(1.15 * w)}" ry="${f(0.75 * w)}" fill="url(#${au})"/>${smoke}<g class="dr-kush" style="--g:${G}">${leaves}${band}</g>${gems}${sparkles}`;
+		}
 		case 'helm-judge': {
 			const D = dome(1.02, -0.4);
 			const wing = `M${P(-0.95, 0.06)} C${P(-1.4, -0.1)} ${P(-1.7, -0.5)} ${P(-1.6, -0.86)} C${P(-1.4, -0.6)} ${P(-1.2, -0.5)} ${P(-1.06, -0.48)} C${P(-1.3, -0.62)} ${P(-1.3, -0.8)} ${P(-1.16, -1)} C${P(-1.02, -0.72)} ${P(-0.86, -0.6)} ${P(-0.76, -0.56)} Q${P(-0.8, -0.2)} ${P(-0.95, 0.06)} Z`;

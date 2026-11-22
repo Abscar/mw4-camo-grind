@@ -31,6 +31,12 @@ export type DripSlot = (typeof DRIP_SLOTS)[number] | 'hat';
 /** The store's racks, in the order its buttons show them. */
 export const DRIP_RACKS = ['tops', 'neck', 'kicks', 'hats', 'raid'] as const;
 export type DripRack = (typeof DRIP_RACKS)[number];
+/**
+ * BurgiDrip's rarities: BurgiShop's four plus **ultimate**, above legendary (2026-11-23, the user: the Kush Crown
+ * "ultimate rare, högsta rarity på sidan, den ska kosta 100 miljoner"). Only BurgiDrip knows it: as a shop item an
+ * ultimate piece counts as legendary (radio line, boxes, cleanShop never see a fifth rarity).
+ */
+export type DripRarity = Rarity | 'ultimate';
 
 /* ---------- what the drawings need (dripArt.ts) ---------- */
 
@@ -165,6 +171,7 @@ export type HatKind =
 	| 'durag'
 	| 'ushanka'
 	| 'crown'
+	| 'kush-crown'
 	| 'helm-judge'
 	| 'helm-frost'
 	| 'helm-fel'
@@ -213,7 +220,7 @@ export interface DripDef {
 	id: string;
 	name: string;
 	price: number;
-	rarity: Rarity;
+	rarity: DripRarity;
 	rack: DripRack;
 	set?: RaidSet;
 	draw: DripLook;
@@ -221,7 +228,7 @@ export interface DripDef {
 
 /* ---------- the catalogue ---------- */
 
-const top = (id: string, name: string, price: number, rarity: Rarity, look: TopLook, rack: DripRack = 'tops', set?: RaidSet): DripDef => ({
+const top = (id: string, name: string, price: number, rarity: DripRarity, look: TopLook, rack: DripRack = 'tops', set?: RaidSet): DripDef => ({
 	id,
 	name,
 	price,
@@ -230,9 +237,9 @@ const top = (id: string, name: string, price: number, rarity: Rarity, look: TopL
 	...(set ? { set } : {}),
 	draw: { slot: 'top', look }
 });
-const neck = (id: string, name: string, price: number, rarity: Rarity, look: NeckLook): DripDef => ({ id, name, price, rarity, rack: 'neck', draw: { slot: 'neck', look } });
-const kick = (id: string, name: string, price: number, rarity: Rarity, look: KickLook): DripDef => ({ id, name, price, rarity, rack: 'kicks', draw: { slot: 'kicks', look } });
-const hat = (id: string, name: string, price: number, rarity: Rarity, look: HatLook, rack: DripRack = 'hats', set?: RaidSet): DripDef => ({
+const neck = (id: string, name: string, price: number, rarity: DripRarity, look: NeckLook): DripDef => ({ id, name, price, rarity, rack: 'neck', draw: { slot: 'neck', look } });
+const kick = (id: string, name: string, price: number, rarity: DripRarity, look: KickLook): DripDef => ({ id, name, price, rarity, rack: 'kicks', draw: { slot: 'kicks', look } });
+const hat = (id: string, name: string, price: number, rarity: DripRarity, look: HatLook, rack: DripRack = 'hats', set?: RaidSet): DripDef => ({
 	id,
 	name,
 	price,
@@ -241,7 +248,7 @@ const hat = (id: string, name: string, price: number, rarity: Rarity, look: HatL
 	...(set ? { set } : {}),
 	draw: { slot: 'hat', look }
 });
-const pauld = (id: string, name: string, price: number, rarity: Rarity, look: ShoulderLook, set?: RaidSet): DripDef => ({
+const pauld = (id: string, name: string, price: number, rarity: DripRarity, look: ShoulderLook, set?: RaidSet): DripDef => ({
 	id,
 	name,
 	price,
@@ -426,11 +433,23 @@ export const DRIP_DEFS: DripDef[] = [
 	kick('d-kk-ghillie', 'Ghillie Runners', 60_000, 'rare', { kind: 'knit', upper: { p: 'camo', c: ['#4f7a2a', '#2a4a14', '#8ab84a', '#1a2a0a'] }, accent: '#c8ff5a', sole: '#2a2a20' }),
 	hat('d-hat-iri', 'Iridescent Bucket Hat', 140_000, 'epic', { kind: 'bucket', body: { p: 'iri', c: ['#ff7ad8', '#7af0ff', '#b48aff', '#fff0a0'] }, accent: '#5a2a98' }),
 	hat('d-hat-flame', 'Flame Durag', 45_000, 'rare', { kind: 'durag', body: { p: 'flames', c: ['#c8180e', '#ff6a1a', '#ffd23a', '#fff2a0'] }, accent: '#5a0604' }),
-	hat('d-hat-abscar', 'Abscar Snapback', 16_000, 'common', { kind: 'cap', body: '#16171a', accent: '#ff2a1a', t: 'A' })
+	hat('d-hat-abscar', 'Abscar Snapback', 16_000, 'common', { kind: 'cap', body: '#16171a', accent: '#ff2a1a', t: 'A' }),
+
+	// ----- the one and only ultimate piece (2026-11-23): a crown of weed leaves on a gold band, glowing -----
+	hat('d-hat-kushcrown', 'Kush Crown', 100_000_000, 'ultimate', { kind: 'kush-crown', body: { p: 'gold', c: ['#fff4b0', '#e0a520', '#7a5208'] }, accent: '#2fd36a', glow: '#7dff3a' })
 ];
 
+/** How the rest of the shop sees a BurgiDrip rarity: ultimate counts as legendary. */
+export function shopRarity(r: DripRarity): Rarity {
+	return r === 'ultimate' ? 'legendary' : r;
+}
+/** A piece's BurgiDrip rarity by id (ultimate included), for the store's colours and labels. */
+export function dripRarity(id: string): DripRarity | null {
+	return DRIP_BY_ID.get(id)?.rarity ?? null;
+}
+
 /** The catalogue as shop items (shop.ts ITEM_BY_ID): bought, worn and drawn like BurgiShop's. */
-export const DRIP_ITEMS: ShopItem[] = DRIP_DEFS.map((d) => ({ id: d.id, slot: d.draw.slot, name: d.name, price: d.price, rarity: d.rarity, drip: true as const }));
+export const DRIP_ITEMS: ShopItem[] = DRIP_DEFS.map((d) => ({ id: d.id, slot: d.draw.slot, name: d.name, price: d.price, rarity: shopRarity(d.rarity), drip: true as const }));
 export const DRIP_BY_ID: ReadonlyMap<string, DripDef> = new Map(DRIP_DEFS.map((d) => [d.id, d]));
 
 /** The raid set a member has all three pieces of on (null: none), from what's worn (slot → item id). */

@@ -90,6 +90,10 @@
 		filter: hue-rotate(360deg);
 	}
 }
+/* the Kush Crown (ultimate): its leaves and band glow green and the glow breathes (2026-11-23) */
+.dr-kush {
+	filter: drop-shadow(0 0 0.8px var(--g)) drop-shadow(0 0 2.4px var(--g));
+}
 /* the set bonus: the pauldrons glow in the set's colour and sparks rise round them */
 .dr-setglow {
 	filter: drop-shadow(0 0 1.2px var(--g)) drop-shadow(0 0 2.6px var(--g));

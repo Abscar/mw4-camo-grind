@@ -45,7 +45,7 @@ test('the catalogue: about a hundred pieces, ids scoped and never shared with an
 });
 
 test('prices: rarer costs more, in bands', () => {
-	const band = { common: [1, 20_000], rare: [20_000, 100_000], epic: [100_000, 500_000], legendary: [500_000, 10_000_000] };
+	const band = { common: [1, 20_000], rare: [20_000, 100_000], epic: [100_000, 500_000], legendary: [500_000, 10_000_000], ultimate: [10_000_000, 1_000_000_000] };
 	for (const d of DRIP_DEFS) {
 		const [lo, hi] = band[d.rarity];
 		assert.ok(Number.isInteger(d.price) && d.price >= lo && d.price < hi, `${d.id}: ${d.price} is ${d.rarity}`);
@@ -162,12 +162,27 @@ test('the store’s pictures: one per piece, a viewBox, sound markup', () => {
 	assert.ok(MANNEQUIN_HEAD.w > 0);
 });
 
+test('the Kush Crown: the one ultimate piece, a hat for 100,000,000, never the daily drop', () => {
+	const ult = DRIP_DEFS.filter((d) => d.rarity === 'ultimate');
+	assert.deepEqual(ult.map((d) => d.id), ['d-hat-kushcrown']);
+	const c = DRIP_BY_ID.get('d-hat-kushcrown');
+	assert.equal(c.price, 100_000_000);
+	assert.equal(c.draw.slot, 'hat');
+	assert.ok(DRIP_DEFS.every((d) => d === c || d.price < c.price), 'the dearest piece in the store');
+	for (let i = 1; i <= 400; i++) assert.notEqual(dripDealOf(`2027-${i}`).id, c.id);
+	const r = buy(undefined, c.id, 100_000_000, AT);
+	assert.equal(r.result, 'ok');
+	assert.equal(r.state.own[c.id], 100_000_000);
+	assert.equal(cleanShop(JSON.parse(JSON.stringify(r.state))).own[c.id], 100_000_000, 'a 100M purchase survives cleaning');
+	for (const key of KEYS) assert.match(hatItem(`kc-${key}`, c.id, FACES[key].head), /dr-glow/, `${key}: it glows`);
+});
+
 test('DRIP_ITEMS mirror the catalogue', () => {
 	assert.equal(DRIP_ITEMS.length, DRIP_DEFS.length);
 	for (const it of DRIP_ITEMS) {
 		const d = DRIP_BY_ID.get(it.id);
 		assert.equal(it.slot, d.draw.slot);
 		assert.equal(it.price, d.price);
-		assert.equal(it.rarity, d.rarity);
+		assert.equal(it.rarity, d.rarity === 'ultimate' ? 'legendary' : d.rarity, `${it.id}: ultimate counts as legendary in the shop`);
 	}
 });
