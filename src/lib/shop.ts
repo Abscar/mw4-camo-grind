@@ -831,11 +831,31 @@ export function saveFit(s: ShopState | undefined, i: number, at: number): ShopSt
 export function wearFit(s: ShopState | undefined, i: number, at: number): ShopState | null {
 	const f = s?.fits?.l[i];
 	if (!s || !f) return null;
-	const eq: Partial<Record<ShopSlot, string>> = {};
-	for (const [slot, id] of Object.entries(f)) if (id && owns(s, id) && ITEM_BY_ID.get(id)?.slot === slot) eq[slot as ShopSlot] = id;
+	const eq = ownedSet(s, f);
 	// the Camo Armory gun stays in your hands unless the outfit has one
 	if (!eq.hold && s.eq.hold) eq.hold = s.eq.hold;
 	return { ...s, eq, at };
+}
+
+/** What of a worn set you still own, each item in its own slot. */
+function ownedSet(s: ShopState, set: Partial<Record<string, string | null>>): Partial<Record<ShopSlot, string>> {
+	const eq: Partial<Record<ShopSlot, string>> = {};
+	for (const [slot, id] of Object.entries(set)) if (id && owns(s, id) && ITEM_BY_ID.get(id)?.slot === slot) eq[slot as ShopSlot] = id;
+	return eq;
+}
+
+/** Take everything off at once, every shop's things and the Camo Armory gun too (2026-11-22, the user:
+ *  "unequip everything … to make a new outfit"). Null when nothing is worn. */
+export function unequipAll(s: ShopState | undefined, at: number): ShopState | null {
+	if (!s || !Object.keys(worn(s)).length) return null;
+	return { ...s, eq: {}, at };
+}
+
+/** Put a worn set back on (Undo after unequipAll): only what you still own, each in its own slot. */
+export function wearSet(s: ShopState | undefined, set: Partial<Record<ShopSlot, string>>, at: number): ShopState | null {
+	if (!s) return null;
+	const eq = ownedSet(s, set);
+	return Object.keys(eq).length ? { ...s, eq, at } : null;
 }
 
 /** Buy the ad space: your line runs on the shop's and the casino's tickers for AD_HOURS (the latest ad wins). */

@@ -96,6 +96,8 @@ import {
 	sellItem as shopSell,
 	throwPrank as shopThrow,
 	wearFit as shopWearFit,
+	wearSet as shopWearSet,
+	unequipAll as shopUnequipAll,
 	AD_PRICE,
 	BOX_PRICE,
 	ITEM_BY_ID,
@@ -1278,6 +1280,23 @@ class Squad {
 	}
 	wearFit(i: number): boolean {
 		const next = shopWearFit(this.shop, i, Math.round(this.serverNow()));
+		if (!next) return false;
+		this.#saveShop(next);
+		return true;
+	}
+
+	/** Take everything off at once (every shop's things + the Armory gun). Gives back what was worn, for
+	 *  Undo; null when nothing was on. */
+	unequipAll(): Partial<Record<ShopSlot, string>> | null {
+		const before = this.shop ? { ...this.shop.eq } : null;
+		const next = shopUnequipAll(this.shop, Math.round(this.serverNow()));
+		if (!next || !before) return null;
+		this.#saveShop(next);
+		return before;
+	}
+	/** Put a worn set back on (Undo after unequipAll; what you still own). */
+	wearSet(set: Partial<Record<ShopSlot, string>>): boolean {
+		const next = shopWearSet(this.shop, set, Math.round(this.serverNow()));
 		if (!next) return false;
 		this.#saveShop(next);
 		return true;

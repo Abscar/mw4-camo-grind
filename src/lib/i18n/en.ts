@@ -1430,6 +1430,16 @@ export const en = {
 			saved: (n: number) => `Outfit ${n} saved: what you wear now`,
 			worn: (n: number) => `Wearing outfit ${n}`
 		},
+		/** the row under the shop doors: take everything off at once (every shop + the Armory gun) */
+		strip: {
+			label: 'On your operator',
+			count: (n: number) => (n === 1 ? '1 thing' : `${n.toLocaleString('en-US')} things`),
+			none: 'Nothing',
+			button: 'Take everything off',
+			title: 'Takes off everything from all four shops and the gun in your hands. Nothing is sold or lost.',
+			done: (n: number) => `Took off ${n === 1 ? '1 thing' : `${n.toLocaleString('en-US')} things`}: ready for a new outfit`,
+			back: 'Back on, as before'
+		},
 		/** the ad space on the tickers */
 		ad: {
 			heading: 'Ad space',

@@ -20,8 +20,9 @@
 	import { LEAF_PATHS, LEAF_STEM } from '#lib/leaf.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { camoLook } from '#lib/data/weaponLooks.ts';
-	import { owns } from '#lib/shop.ts';
+	import { owns, worn } from '#lib/shop.ts';
 	import { sound } from '#lib/sound.svelte.ts';
+	import { toast } from '#lib/toast.svelte.ts';
 	import ArmorySection from './ArmorySection.svelte';
 	import CasinoTabArt from './CasinoTabArt.svelte';
 	import DripDoorArt from './DripDoorArt.svelte';
@@ -78,6 +79,19 @@
 			/* private mode: start on BurgiShop */
 		}
 	});
+
+	// "Take everything off" (2026-11-22, the user: "an unequip everything button in the shop, to take all
+	// cosmetics off quickly and smoothly, e.g. to make a new outfit"): one row under the doors, the same on all
+	// four, one tap takes off every shop's things and the Armory gun; Undo in the toast puts them back.
+	const w = s.strip;
+	const wornCount = $derived(Object.keys(worn(squad.shop)).length);
+	function takeAllOff() {
+		const n = wornCount;
+		const before = squad.unequipAll();
+		if (!before) return;
+		// the toast closes itself right after Undo runs, so the "back on" line comes a moment later
+		toast.show(w.done(n), { label: t.toast.undo, run: () => squad.wearSet(before) && setTimeout(() => toast.show(w.back)) });
+	}
 
 	function pick(which: Door) {
 		shop = which;
@@ -185,6 +199,26 @@
 				<span class="min-w-0"><b class="block font-head text-[15px] leading-tight font-black tracking-wide uppercase">{dr.heading}</b><span class="door-sub block text-[11px] leading-tight">{dr.door}</span></span>
 			</button>
 		</div>
+		{#if squad.on}
+			<!-- what you have on, and one tap to take it all off (every shop) -->
+			<div class="sp-wear" class:sp-wear-none={!wornCount}>
+				<span class="sp-hanger" aria-hidden="true"
+					><svg viewBox="0 0 32 24" width="30" height="22"
+						><path d="M16 9.5V8a2.6 2.6 0 1 0-2.6-2.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path
+							d="M16 9.5 3.2 18.4c-1.1.8-.6 2.4.8 2.4h24c1.4 0 1.9-1.6.8-2.4z"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linejoin="round"
+						/></svg
+					></span
+				>
+				<p class="sp-wear-text font-head"><span class="sp-wear-label">{w.label}:</span> <b>{wornCount ? w.count(wornCount) : w.none}</b></p>
+				<button type="button" class="sp-wear-btn font-head" disabled={!wornCount} title={w.title} onclick={takeAllOff}>
+					<span aria-hidden="true">✕</span>{w.button}
+				</button>
+			</div>
+		{/if}
 		{#if !squad.on}
 			<p class="max-w-3xl text-sm text-fg">{s.notIn}</p>
 			<div><button type="button" class="btn btn-primary" onclick={() => onSquad?.()}>{t.casino.toSquad}</button></div>
@@ -598,6 +632,85 @@
 		place-items: center;
 		width: 44px;
 		height: 40px;
+	}
+	/* "Take everything off": a slim row under the doors in the open shop's colour (--c) */
+	.sp-wear {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px 12px;
+		max-width: 1060px;
+		padding: 4px 4px 4px 12px;
+		border-radius: 12px;
+		background: rgb(0 0 0 / 0.32);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent);
+	}
+	.sp-hanger {
+		display: grid;
+		flex: none;
+		place-items: center;
+		color: var(--c);
+		filter: drop-shadow(0 0 4px color-mix(in srgb, var(--c) 60%, transparent));
+	}
+	.sp-wear-text {
+		flex: 1 1 10rem;
+		min-width: 0;
+		font-size: 13px;
+		letter-spacing: 0.04em;
+	}
+	.sp-wear-label {
+		color: var(--t-muted);
+		text-transform: uppercase;
+		font-size: 11.5px;
+		letter-spacing: 0.14em;
+	}
+	.sp-wear-text b {
+		color: #fff;
+	}
+	.sp-wear-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		min-height: 44px;
+		padding: 0 16px;
+		border: 2px solid var(--c);
+		border-radius: 10px;
+		color: #fff;
+		font-size: 13.5px;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		background: color-mix(in srgb, var(--c) 22%, rgb(10 4 20 / 0.9));
+		box-shadow: 0 0 12px color-mix(in srgb, var(--c) 35%, transparent);
+		transition:
+			background 0.15s,
+			box-shadow 0.15s;
+	}
+	.sp-wear-btn span {
+		font-size: 12px;
+		opacity: 0.85;
+	}
+	.sp-wear-btn:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--c) 40%, rgb(10 4 20 / 0.9));
+		box-shadow: 0 0 18px color-mix(in srgb, var(--c) 55%, transparent);
+	}
+	.sp-wear-btn:focus-visible {
+		outline: 2px solid #ffd23a;
+		outline-offset: 2px;
+	}
+	.sp-wear-btn:disabled {
+		border-color: rgb(255 255 255 / 0.18);
+		background: rgb(255 255 255 / 0.05);
+		box-shadow: none;
+		color: rgb(255 255 255 / 0.45);
+		cursor: default;
+	}
+	/* phones: the button gets the whole row under the count */
+	@media (max-width: 479px) {
+		.sp-wear-btn {
+			flex: 1 1 100%;
+		}
 	}
 	/* four doors: two by two until there's room for all four with their small lines */
 	@media (max-width: 899px) {
