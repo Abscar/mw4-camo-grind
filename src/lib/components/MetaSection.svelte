@@ -2,7 +2,8 @@
 	"Meta top 5" (the user's ask, 2026-11-10): the best guns per weapon class right now plus an
 	overall top 5, for Multiplayer or Warzone (a switch, remembered on this device). Data: the dated
 	snapshot in data/metaRanks.ts. Tapping a gun opens its meta class (the same popup as the
-	crosshair button on each weapon, LoadoutDialog).
+	crosshair button on each weapon, LoadoutDialog). The switch is shared with "Absolute meta"
+	(MetaPodium, right above) through metaMode.svelte.ts.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -11,35 +12,21 @@
 	import { WEAPON_LOOKS } from '#lib/data/weaponLooks.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { loadoutView } from '#lib/loadoutView.svelte.ts';
+	import { metaMode } from '#lib/metaMode.svelte.ts';
 	import { shortDate } from '#lib/ui.ts';
 	import AbscarOperator from './AbscarOperator.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
-	const STORE_KEY = 'mw4-camo-grind:meta';
 	const MODES: LoadoutMode[] = ['mp', 'wz'];
 
-	// Multiplayer in the prerendered page; the saved choice is read after load
-	let mode = $state<LoadoutMode>('mp');
+	// one switch for both meta boxes (Absolute meta above shares it), remembered per device
+	const mode = $derived(metaMode.mode);
 	const board = $derived(META_RANKS[mode]);
 	const lists = $derived(metaLists(mode));
 
-	onMount(() => {
-		try {
-			const saved = localStorage.getItem(STORE_KEY);
-			if (saved === 'mp' || saved === 'wz') mode = saved;
-		} catch {
-			// storage blocked: start on Multiplayer every time
-		}
-	});
+	onMount(() => metaMode.load());
 
-	function choose(m: LoadoutMode) {
-		mode = m;
-		try {
-			localStorage.setItem(STORE_KEY, m);
-		} catch {
-			// not remembered, still switches
-		}
-	}
+	const choose = (m: LoadoutMode) => metaMode.set(m);
 </script>
 
 <section

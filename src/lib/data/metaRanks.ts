@@ -43,6 +43,9 @@ export interface MetaBoard {
 /** How many guns each list shows. */
 export const META_TOP = 5;
 
+/** How many of the overall list "Absolute meta" (MetaPodium) shows, with their meta classes. */
+export const META_PODIUM = 3;
+
 type Extras = { role?: string; note?: string; verified?: boolean };
 
 const p = (id: string, tier: MetaTier, extras: Extras = {}): MetaPick => {
@@ -61,15 +64,21 @@ export const META_RANKS: Record<LoadoutMode, MetaBoard> = {
 	// (6 Nov) and metaradar.gg (10 Nov). Scored S/META 3, A 2, B 1 per site; pick rate breaks ties.
 	// Re-checked 2026-11-12 (codmunity 11 Nov, wzstats 12 Nov, Dexerto 9 Nov): every tier and class
 	// rank the same; no weapon patch since Season 1.
+	// Overall re-weighed 2026-11-22 (after the 13 Nov buffs; for "Absolute meta", MetaPodium, which
+	// shows the first three): codmunity 21 Nov (S: VEL 46, Hyeon, Osprey, KG-7, M4; ISO down to A),
+	// wzstats 22 Nov (META: Osprey, Axion, Hyeon, ISO, M4, Mosin, KG-7), Dexerto 9 Nov (S: Axion, Osprey,
+	// Hyeon, ISO, M4, Mosin; KG-7 + VEL A). Osprey, Hyeon and M4 are top tier on all three (9 points),
+	// in pick-rate order (codmunity 8.1 %, 6.7 %, M4 below); KG-7 (codmunity S) and ISO follow on 8.
+	// Every class's leader was checked against the same pages; the ranks below the leader are from 12 Nov.
 	mp: {
-		date: '2026-11-12',
+		date: '2026-11-22',
 		sources: 'codmunity.gg, wzstats.gg and Dexerto',
 		overall: [
 			p('cronen-osprey', 'S'),
-			p('iso-nightshade', 'S'),
 			p('hyeon-burst', 'S'),
 			p('m4', 'S'),
-			p('kg-7-vulcan', 'S')
+			p('kg-7-vulcan', 'S'),
+			p('iso-nightshade', 'S')
 		],
 		classes: {
 			'assault-rifles': [
@@ -119,12 +128,18 @@ export const META_RANKS: Record<LoadoutMode, MetaBoard> = {
 	// Re-checked 2026-11-12 (wzstats 12 Nov: unchanged; wzhub 8 Nov; codmunity 11 Nov moved four):
 	// ISO S → A on codmunity, so VEL (S on all three) now ranks above ISO; Striga A → S (still #3 SMG,
 	// #6 overall on pick rate); FiNN D → B (sites now within one tier); Squall C → B (passes Patriot).
+	// Overall + SMGs re-weighed 2026-11-22: codmunity 21 Nov (S: Osprey, Striga 20.2 % pick rate, KG-7;
+	// A: VEL, ISO, Mosin, Han 86, M4), wzstats 22 Nov (META: Osprey, ISO, Han 86, Striga, Mosin; VEL and
+	// KG-7 A), wzhub still 8 Nov (Absolute: Osprey, ISO, VEL, Astaroth; Meta: Squall, Striga, Han, M4,
+	// KG-7, X-58). Osprey 9 points; Striga and ISO 8 (Striga first: top tier on both fresh sites, most
+	// picked); Han 86, KG-7 and VEL 7 (VEL's top mark is only wzhub's old one, so it drops to A).
+	// Every class's leader was checked against the same pages; the ranks below the leader are from 12 Nov.
 	wz: {
-		date: '2026-11-12',
+		date: '2026-11-22',
 		sources: 'wzstats.gg, codmunity.gg and wzhub.gg',
 		overall: [
 			p('cronen-osprey', 'S', LR),
-			p('vel-46', 'S', CR),
+			p('wz-55-striga', 'S', CR),
 			p('iso-nightshade', 'S', CR),
 			p('han-86', 'A', LR),
 			p('kg-7-vulcan', 'A', SN)
@@ -142,9 +157,9 @@ export const META_RANKS: Record<LoadoutMode, MetaBoard> = {
 				p('oden', 'C', LR)
 			],
 			smgs: [
-				p('vel-46', 'S', CR),
+				p('wz-55-striga', 'S', CR),
 				p('iso-nightshade', 'S', CR),
-				p('wz-55-striga', 'A', CR),
+				p('vel-46', 'A', CR),
 				p('x-58-nyx', 'A', CR),
 				p('csg-35', 'B', CR),
 				p('ppsh-41', 'B', CR)

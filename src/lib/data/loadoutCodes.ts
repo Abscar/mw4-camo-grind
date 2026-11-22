@@ -3,7 +3,7 @@
  * (WeaponCode.svelte; 2026-11-12, the user's ask: "a little button on the guns where you tick your
  * camos, tap it and the meta code is copied").
  *
- * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-14: for each gun
+ * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-22: for each gun
  * the best-ranked Multiplayer build that has a code and no Apex part (the user asked for "no Apex").
  * Nine guns (Hyeon Burst, Patriot XMR, VEL 46, Rezi 12, Warlord, MAR-9, KG-7 Vulcan, SANG 9mm,
  * Krait P68) have only Apex builds in Multiplayer there: they get the best-ranked one WITH the Apex
@@ -32,19 +32,19 @@ export interface LoadoutCode {
 }
 
 export const CODES_SOURCE = 'codmunity.gg';
-export const CODES_READ = '2026-11-14';
+export const CODES_READ = '2026-11-22';
 
 export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'han-86': {
-		code: 'A03-43QM8-AWAMA-2S11',
-		role: 'Versatile',
-		date: '2026-11-06',
+		code: 'A03-AXK52-FBT31-1',
+		role: 'Close range',
+		date: '2026-11-07',
 		attachments: [
-			{ slot: 'Barrel', name: 'HAN 86 Silenced 413mm' },
+			{ slot: 'Muzzle', name: 'XRK Mil-Tac Suppressor' },
+			{ slot: 'Laser', name: 'Schlager Visiv-5' },
 			{ slot: 'Optic', name: 'ZLR Type C' },
 			{ slot: 'Rear Grip', name: 'FTAC Griplord 80' },
-			{ slot: 'Ammunition', name: '5.56 NATO Overpressured' },
-			{ slot: 'Underbarrel', name: 'FSS Tac90 Grip' }
+			{ slot: 'Magazine', name: '45 Round Mag' }
 		]
 	},
 	m4: {
@@ -76,7 +76,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'patriot-xmr': {
 		code: 'B04-43QCD-CXHTK-HW11',
 		role: 'Versatile',
-		date: '2026-11-06',
+		date: '2026-11-20',
 		attachments: [
 			{ slot: 'Muzzle', name: 'EXP Undertow Gen. 2' },
 			{ slot: 'Rear Grip', name: 'EXP TR-Wrap' },
@@ -176,7 +176,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'wz-55-striga': {
 		code: 'S04-3KA8Z-I5DIH-LH11',
 		role: 'Versatile',
-		date: '2026-11-13',
+		date: '2026-11-20',
 		attachments: [
 			{ slot: 'Muzzle', name: 'FTAC Silent Recon' },
 			{ slot: 'Optic', name: 'ZLR Type C' },
@@ -212,7 +212,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'csg-35': {
 		code: 'S01-3K9Y5-NZF8J-NL11',
 		role: 'Versatile',
-		date: '2026-11-14',
+		date: '2026-11-22',
 		dated: false,
 		attachments: [
 			{ slot: 'Muzzle', name: 'EXP Forage-Tac' },
@@ -253,7 +253,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'finn-lmg': {
 		code: 'L03-3RHVB-TA311',
 		role: 'Versatile',
-		date: '2026-11-06',
+		date: '2026-11-21',
 		attachments: [
 			{ slot: 'Muzzle', name: 'EXP V-TAC Suppressor' },
 			{ slot: 'Laser', name: 'SZ Gen.6 PEQ' },
@@ -263,16 +263,18 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 		]
 	},
 	'type-73': {
-		code: 'L04-AXPGR-ABBD1-1',
+		code: 'L04-KSMFT-I99S1-1',
 		role: 'Versatile',
-		date: '2026-11-06',
+		date: '2026-11-21',
 		attachments: [
-			{ slot: 'Muzzle', name: 'Ivanov QR600' },
+			{ slot: 'Muzzle', name: 'Gauge-12 Mono' },
 			{ slot: 'Laser', name: 'Schlager Visiv-5' },
-			{ slot: 'Optic', name: 'ZLR Type C' },
+			{ slot: 'Optic', name: 'SZ SRE-7' },
 			{ slot: 'Rear Grip', name: 'Assault-L9 Wood Grip' },
-			{ slot: 'Underbarrel', name: 'Bruen Renegade Grip' }
-		]
+			{ slot: 'Underbarrel', name: 'Bruen Renegade Grip' },
+			{ slot: 'Apex', name: 'Type 73 Assault' }
+		],
+		note: 'All its Multiplayer builds use the Apex, so this one has the Type 73 Assault (it unlocks at the gun’s max level; swap it out in the gunsmith if you don’t have it yet).'
 	},
 	'apoc-338': {
 		code: 'L02-AV4VW-E7BL1-1',
@@ -315,7 +317,7 @@ export const LOADOUT_CODES: Record<string, LoadoutCode> = {
 	'mosin-nagant': {
 		code: 'M03-26ES6-3P15Q-11',
 		role: 'Versatile',
-		date: '2026-11-13',
+		date: '2026-11-20',
 		attachments: [
 			{ slot: 'Muzzle', name: '330TC2 Gridlock' },
 			{ slot: 'Barrel', name: 'Mosin S762 Barrel' },

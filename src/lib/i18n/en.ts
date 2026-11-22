@@ -212,6 +212,7 @@ export const en = {
 			masteryMp: 'Multiplayer Mastery',
 			masteryWz: 'Warzone Mastery',
 			masteryDmz: 'DMZ Mastery',
+			metaTop: 'Absolute meta (top 3 with classes)',
 			meta: 'Meta top 5',
 			sync: 'Backup & sync',
 			help: 'Help text at the bottom',
@@ -767,6 +768,21 @@ export const en = {
 		openHint: 'open its meta class',
 		snapshot: (sources: string, date: string) =>
 			`A snapshot of ${sources} on ${date}. The meta moves with every balance patch. Tap a gun for its meta class.`
+	},
+
+	/** "Absolute meta" above Meta top 5 (MetaPodium, 2026-11-22): the 3 best guns with their meta class. */
+	podium: {
+		heading: 'Absolute meta',
+		sub: 'The 3 best guns right now, ready to build',
+		place: (n: number) => ['1st', '2nd', '3rd'][n - 1] ?? `#${n}`,
+		/** Screen readers: "1st place: Cronen Osprey, S tier". */
+		placeLabel: (place: string, name: string, tier: string) => `${place} place: ${name}, ${tier} tier`,
+		build: (mode: string) => `Meta class (${mode})`,
+		allBuilds: 'All builds',
+		allBuildsLabel: (name: string) => `All builds for the ${name}`,
+		noBuild: 'No meta class for this gun yet.',
+		snapshot: (sources: string, date: string) =>
+			`Our weighing of ${sources} on ${date}. Copy a class, or open all builds for Hardcore, other ranges and the Apex.`
 	},
 
 	/** The picked class's meta top 5 above its weapons (ClassMeta). */

@@ -21,6 +21,10 @@
  * (21 Aug) and were never updated, so their MP builds were swapped for Season 1 ones (MAR-9 wzstats,
  * Oris codmunity). Mosin-Nagant MP + all three WZ builds are still what wzstats / codmunity list.
  *
+ * The guns in "Absolute meta" (MetaPodium) re-checked 2026-11-22: MP Cronen Osprey, Hyeon Burst, M4,
+ * WZ Cronen Osprey, ISO Nightshade unchanged (Osprey + Hyeon no longer unconfirmed: all three sites rate
+ * them top tier now); WZ Wz.55 Striga switched to codmunity's #1 Close range build.
+ *
  * `verified: false` = the build is built around something that was nerfed after it was
  * published, or the sites disagree about whether the gun is any good. The `note` says why, and
  * the popup shows it as text. A build from a single site is normal and is not flagged.
@@ -164,10 +168,8 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				Underbarrel: 'FSS Tac90 Grip',
 				Apex: 'Hyeon Hyperburst'
 			},
-			{
-				verified: false,
-				note: 'Uses the Hyeon Hyperburst, which was nerfed hard in Season 1. codmunity still rates it top tier, but nobody has re-tested it yet.'
-			}
+			// 2026-11-22: still codmunity's #1 build; it, wzstats and Dexerto all rate the gun top tier after the nerf
+			{ note: 'Built around the Hyeon Hyperburst, its Apex attachment (unlocks at the gun’s max level).' }
 		),
 		wz: build(
 			'Long range',
@@ -276,13 +278,11 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 				Underbarrel: 'FSS Tac90 Grip',
 				'Rear Grip': 'Cronen 56',
 				Ammunition: '5.56 NATO Overpressured'
-			},
-			{
-				verified: false,
-				note: 'Brand new gun: codmunity rates it top tier in Multiplayer, wzstats near the bottom.'
 			}
+			// 2026-11-22: still codmunity's #1 build; codmunity, wzstats and Dexerto now all rate the gun top tier
 		),
-		wz: build('Long range', WZSTATS, '2026-11-09', {
+		// still wzstats' Long range build on 2026-11-22
+		wz: build('Long range', WZSTATS, '2026-11-22', {
 			Optic: 'Locus PX3 Canted',
 			Muzzle: 'FSS IS300',
 			Barrel: 'IO-556 Tac 18"',
@@ -332,12 +332,13 @@ export const LOADOUTS: Record<string, WeaponLoadouts> = {
 			'Rear Grip': 'Matuzek 532-L Grip',
 			Magazine: '35 Round Mag'
 		}),
-		// codmunity swapped the grip for an optic on 11 Nov; wzstats and Dexerto still list this one
-		wz: build('Close range', `${WZSTATS} + ${DEXERTO}`, S1, {
-			Muzzle: 'Full Port Comp',
+		// 2026-11-22: codmunity's #1 Close range build (12 Nov, Absolute meta, 20 % pick rate). wzstats moved to
+		// RX-5 Overstrike + Matuzek 532-L Grip; the old Full Port Comp build was only left on Dexerto's day-one page.
+		wz: build('Close range', CODMUNITY, '2026-11-12', {
+			Optic: 'ZLR Type C',
+			Muzzle: 'FTAC Silent Recon',
 			Barrel: 'GW Sender 500',
 			Magazine: '50 Round Drum Mag',
-			'Rear Grip': 'Matuzek 532-L Grip',
 			Stock: 'Wire Stock'
 		})
 	},

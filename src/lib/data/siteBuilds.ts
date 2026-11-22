@@ -4,7 +4,7 @@
  * a small copy button (2026-11-12, the user's ask: "all the different multiplayer and warzone
  * subclasses, neatly with the other metas on the red gun card").
  *
- * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-14: the build
+ * A dated SNAPSHOT of codmunity.gg's weapon pages (/weapon/mw4/<gun>), read 2026-11-22: the build
  * cards the page shows openly (Versatile, Close range, Long range, Sniper, Sniper support, Apex
  * build), in codmunity's rank order. Its "Additional Loadouts" (Max sprint speed, Min ADS …) are
  * Premium-locked on the website and were NOT taken from the page data: our own worked-out versions
@@ -31,7 +31,7 @@ type Parts = Partial<Record<AttachmentSlot, string>>;
 type Extras = { note?: string; verified?: boolean };
 
 export const SITE_SOURCE = 'codmunity.gg';
-const READ = '2026-11-14';
+const READ = '2026-11-22';
 
 function site(code: string, rank: number, role: string, date: string | null, parts: Parts, pro: boolean, extras: Extras = {}): SiteBuild {
 	return { ...build(role, SITE_SOURCE, date ?? READ, parts, extras), code, rank, pro, dated: date !== null };
@@ -41,22 +41,8 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 	'han-86': {
 		mp: [
 			site(
-				'A03-43QM8-AWAMA-2S11',
-				1,
-				'Versatile',
-				'2026-11-06',
-				{
-					Barrel: 'HAN 86 Silenced 413mm',
-					Optic: 'ZLR Type C',
-					'Rear Grip': 'FTAC Griplord 80',
-					Ammunition: '5.56 NATO Overpressured',
-					Underbarrel: 'FSS Tac90 Grip'
-				},
-				false
-			),
-			site(
 				'A03-AXK52-FBT31-1',
-				2,
+				1,
 				'Close range',
 				'2026-11-07',
 				{
@@ -65,6 +51,20 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 					Optic: 'ZLR Type C',
 					'Rear Grip': 'FTAC Griplord 80',
 					Magazine: '45 Round Mag'
+				},
+				false
+			),
+			site(
+				'A03-43QM8-AWAMA-2S11',
+				2,
+				'Versatile',
+				'2026-11-21',
+				{
+					Barrel: 'HAN 86 Silenced 413mm',
+					Optic: 'ZLR Type C',
+					'Rear Grip': 'FTAC Griplord 80',
+					Ammunition: '5.56 NATO Overpressured',
+					Underbarrel: 'FSS Tac90 Grip'
 				},
 				false
 			),
@@ -206,6 +206,22 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				},
 				false,
 				{ note: 'The Hyeon Hyperburst was nerfed hard in Season 1; nobody has re-tested this build yet.', verified: false }
+			),
+			site(
+				'A09-43QCI-L29W6-3S11',
+				3,
+				'Apex build',
+				null,
+				{
+					Muzzle: 'FSS IS300',
+					Laser: 'SA Laz-500',
+					'Rear Grip': 'HYN-Meipeul',
+					Ammunition: '6.8x43mm Overpressured',
+					Underbarrel: 'FSS Tac90 Grip',
+					Apex: 'Hyeon Auto'
+				},
+				false,
+				{ note: 'Uses the Season 1 event Apex Hyeon Auto, which you may not have yet.' }
 			)
 		],
 		wz: [
@@ -233,7 +249,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'B04-43QCD-CXHTK-HW11',
 				1,
 				'Versatile',
-				'2026-11-06',
+				'2026-11-20',
 				{
 					Muzzle: 'EXP Undertow Gen. 2',
 					'Rear Grip': 'EXP TR-Wrap',
@@ -308,20 +324,19 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				false
 			),
 			site(
-				'A01-3YQAP-ZU11',
+				'A01-3M64W-H6R11',
 				2,
 				'Close range',
-				'2026-11-11',
+				null,
 				{
 					Muzzle: 'Ivanov QR600',
-					Barrel: 'Hanbit 74U 206mm',
+					Laser: 'Schlager Visiv-5',
+					Stock: 'Kastov Dogfighter 27',
 					'Rear Grip': 'Hanbit TechGrip',
-					Magazine: '45 Round Mag 5.45',
-					Underbarrel: 'FSS Tac90 Grip',
-					Apex: 'Kastov 545'
+					Magazine: '45 Round Mag 7.62',
+					Apex: 'Kastov Arc'
 				},
-				false,
-				{ note: 'Uses the Season 1 event Apex Kastov 545, which you may not have yet.' }
+				false
 			)
 		],
 		wz: [
@@ -713,7 +728,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'S03-3K9Y5-L7T46-8711',
 				1,
 				'Close range',
-				null,
+				'2026-11-16',
 				{
 					Muzzle: 'TA TacPro-56',
 					Barrel: 'RV-B v2 Barrel',
@@ -745,7 +760,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'S04-3KA8Z-I5DIH-LH11',
 				1,
 				'Versatile',
-				'2026-11-13',
+				'2026-11-20',
 				{
 					Muzzle: 'FTAC Silent Recon',
 					Optic: 'ZLR Type C',
@@ -1000,11 +1015,18 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 		],
 		wz: [
 			site(
-				'C03-2JD6Z-LDIT6-5L11',
+				'C03-FTTCP-X11',
 				1,
 				'Close range',
-				'2026-11-07',
-				{ Muzzle: 'Haebang Bulsae-10', Barrel: 'Haebang 635R-7', Stock: 'No Stock', Laser: 'Pulse-MW Laser', Ammunition: '12 Gauge Slug' },
+				'2026-11-17',
+				{
+					Muzzle: 'EXP Firelite 12',
+					Barrel: 'ZLR 12GA Ported 21"',
+					'Rear Grip': 'XRK Bygone-39',
+					Stock: 'No Stock',
+					Guard: 'Demo Service-12G',
+					Apex: 'Rezi 12 Enforcer'
+				},
 				false
 			)
 		]
@@ -1050,7 +1072,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'L03-3RHVB-TA311',
 				1,
 				'Versatile',
-				'2026-11-06',
+				'2026-11-21',
 				{
 					Muzzle: 'EXP V-TAC Suppressor',
 					Laser: 'SZ Gen.6 PEQ',
@@ -1112,43 +1134,30 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 	'type-73': {
 		mp: [
 			site(
-				'L04-AXPGR-ABBD1-1',
+				'L04-KSMFT-I99S1-1',
 				1,
 				'Versatile',
-				'2026-11-06',
+				'2026-11-21',
 				{
-					Muzzle: 'Ivanov QR600',
-					Laser: 'Schlager Visiv-5',
-					Optic: 'ZLR Type C',
-					'Rear Grip': 'Assault-L9 Wood Grip',
-					Underbarrel: 'Bruen Renegade Grip'
-				},
-				false
-			),
-			site(
-				'L04-AV3HT-NUDQ1-1',
-				2,
-				'Close range',
-				'2026-11-07',
-				{
-					Muzzle: 'Ivanov QR600',
-					Optic: 'ZLR Type C',
-					Stock: 'No Stock',
-					'Rear Grip': 'Assault-L9 Wood Grip',
-					Underbarrel: 'Bruen Renegade Grip'
-				},
-				false
-			),
-			site(
-				'L04-KSMFQ-DIYW1-1',
-				3,
-				'Apex build',
-				null,
-				{
-					Muzzle: 'Ivanov QR600',
+					Muzzle: 'Gauge-12 Mono',
 					Laser: 'Schlager Visiv-5',
 					Optic: 'SZ SRE-7',
 					'Rear Grip': 'Assault-L9 Wood Grip',
+					Underbarrel: 'Bruen Renegade Grip',
+					Apex: 'Type 73 Assault'
+				},
+				false
+			),
+			site(
+				'L04-KSM3Z-RTE51-1',
+				2,
+				'Close range',
+				'2026-11-20',
+				{
+					Muzzle: 'Gauge-12 Mono',
+					Laser: 'Schlager Visiv-5',
+					Optic: 'SZ SRE-7',
+					Stock: 'No Stock',
 					Underbarrel: 'Bruen Renegade Grip',
 					Apex: 'Type 73 Assault'
 				},
@@ -1270,16 +1279,17 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 		],
 		wz: [
 			site(
-				'M02-3KATP-FGEF7-MF11',
+				'M02-2R4N6-PWBNF-11',
 				1,
 				'Long range',
-				'2026-11-07',
+				'2026-11-17',
 				{
-					Optic: 'SZ Echelon Holo',
-					Barrel: 'Bruen Reaper-X',
+					Optic: 'Locus PX3 Canted',
+					Muzzle: 'EXP Undertow Gen. 2',
+					Barrel: 'LM Class 6 HBL',
+					Magazine: '30 Round Mag',
 					'Rear Grip': 'Hanbit Wrap 76',
-					Ammunition: '7.62 NATO High Velocity',
-					'Trigger Action': 'MG-Tac Trigger'
+					Apex: 'MAR-9 Auto'
 				},
 				false
 			)
@@ -1348,7 +1358,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'M03-26ES6-3P15Q-11',
 				1,
 				'Versatile',
-				'2026-11-13',
+				'2026-11-20',
 				{
 					Muzzle: '330TC2 Gridlock',
 					Barrel: 'Mosin S762 Barrel',
@@ -1362,7 +1372,7 @@ export const SITE_BUILDS: Record<string, Record<SiteMode, SiteBuild[]>> = {
 				'M03-26HE5-1AH2N-11',
 				2,
 				'Close range',
-				'2026-11-13',
+				'2026-11-20',
 				{ Muzzle: '330TC2 Gridlock', Laser: 'Schlager Visiv-5', Bolt: 'TV-Light 7-Bolt', Optic: 'Cronen R808', Stock: 'No Stock' },
 				false
 			),

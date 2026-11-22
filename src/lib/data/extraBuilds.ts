@@ -31,7 +31,7 @@ export type ExtraBuild = Loadout;
 
 type Parts = Partial<Record<AttachmentSlot, string>>;
 
-const READ = '2026-11-14';
+const READ = '2026-11-22';
 const COMPUTED = 'Worked out from codmunity.gg’s attachment stats';
 
 function notes(n: number, level: number | null, first: string[], why: string): string {

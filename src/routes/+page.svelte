@@ -27,6 +27,7 @@
 	import LoadoutDialog from '#lib/components/LoadoutDialog.svelte';
 	import OperatorTag from '#lib/components/OperatorTag.svelte';
 	import MasterySection from '#lib/components/MasterySection.svelte';
+	import MetaPodium from '#lib/components/MetaPodium.svelte';
 	import MetaSection from '#lib/components/MetaSection.svelte';
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
 	import SaveStatus from '#lib/components/SaveStatus.svelte';
@@ -435,7 +436,9 @@
 		<!-- 6. Divergence and Mastery (each mode's box has its own Hide inside MasterySection) -->
 		<div class="mastery-wrap relative mt-7" hidden={hidden.is('mastery')}><MasterySection /><HideButton id="mastery" /></div>
 
-		<!-- 7. news and everything else -->
+		<!-- 7. news and everything else. "Absolute meta" (the top 3 with their classes, 2026-11-22) right above
+		     Meta top 5; the two share their Multiplayer / Warzone switch -->
+		<div class="compact-hide relative mt-7" hidden={hidden.is('metaTop')}><MetaPodium /><HideButton id="metaTop" /></div>
 		<div class="compact-hide relative mt-7" hidden={hidden.is('meta')}><MetaSection /><HideButton id="meta" /></div>
 
 		<!-- the banners share one height (the user's ask: "same size so they look in proportion"); each one

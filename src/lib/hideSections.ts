@@ -26,6 +26,7 @@ export const HIDE_SECTIONS = [
 	{ id: 'masteryMp', group: 'grind', parent: 'mastery' },
 	{ id: 'masteryWz', group: 'grind', parent: 'mastery' },
 	{ id: 'masteryDmz', group: 'grind', parent: 'mastery' },
+	{ id: 'metaTop', group: 'grind' },
 	{ id: 'meta', group: 'grind' },
 	{ id: 'sync', group: 'grind' },
 	{ id: 'help', group: 'grind' },
@@ -72,9 +73,19 @@ export function cleanHidden(raw: unknown): HideId[] {
 
 /**
  * "Only camos & metas": the progress tiles, the camo list (+ the class meta above it), Divergence & all
- * three Mastery tracks and Meta top 5 stay; everything else goes, the other tabs too.
+ * three Mastery tracks, Absolute meta and Meta top 5 stay; everything else goes, the other tabs too.
  */
-export const KEEP_CAMOS_META: readonly HideId[] = ['kpi', 'camos', 'classMeta', 'mastery', 'masteryMp', 'masteryWz', 'masteryDmz', 'meta'];
+export const KEEP_CAMOS_META: readonly HideId[] = [
+	'kpi',
+	'camos',
+	'classMeta',
+	'mastery',
+	'masteryMp',
+	'masteryWz',
+	'masteryDmz',
+	'metaTop',
+	'meta'
+];
 
 export const onlyCamosMeta = (): HideId[] => HIDE_SECTIONS.map((s) => s.id).filter((id) => !KEEP_CAMOS_META.includes(id));
 
