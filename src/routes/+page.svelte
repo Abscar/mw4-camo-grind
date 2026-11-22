@@ -14,8 +14,7 @@
 	import MatrixRain from '#lib/components/MatrixRain.svelte';
 	import ClassMeta from '#lib/components/ClassMeta.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
-	import CosmeticsSection from '#lib/components/CosmeticsSection.svelte';
-	import ExtraCamosSection from '#lib/components/ExtraCamosSection.svelte';
+	import CollectionsSection from '#lib/components/CollectionsSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
 	import HudReadout from '#lib/components/HudReadout.svelte';
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
@@ -81,7 +80,8 @@
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
 	    moved up here from its own switch inside Camo grind, second place, 2026-11-20). All stay mounted; the
 	    others are only hidden. Like the rest, the page always opens on Camo grind. */
-	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'extras', 'squad', 'casino', 'shop', 'arcade'] as const;
+	/* (2026-11-22, the user: Cosmetics + Extra camos merged into one tab, Squad last and lit up green) */
+	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'casino', 'shop', 'arcade', 'squad'] as const;
 	type PageTab = (typeof PAGE_TABS)[number];
 	let view = $state<PageTab>('grind');
 
@@ -91,7 +91,6 @@
 		grind: '#f2b81f', // camo gold
 		ranked: '#4d8dff',
 		cosmetics: '#ff5cb8',
-		extras: '#1fcfc2',
 		squad: '#43d35e', // the radio's green
 		casino: '#ff4a3d',
 		shop: '#a560ff', // BurgiShop's purple bag
@@ -103,7 +102,6 @@
 	const TAB_HIDE: Record<Exclude<PageTab, 'grind'>, HideId> = {
 		ranked: 'tabRanked',
 		cosmetics: 'tabCosmetics',
-		extras: 'tabExtras',
 		squad: 'tabSquad',
 		casino: 'tabCasino',
 		shop: 'tabShop',
@@ -338,7 +336,7 @@
 		<!-- "n parts hidden · Choose · Show all" while anything is hidden, and the "What to show" list -->
 		<HiddenBar />
 
-		<!-- page tabs: the tracker, Ranked prep, the Cosmetics list, Extra camos, the Squad, BurgiCasino, BurgiShop -->
+		<!-- page tabs: the tracker, Ranked prep, Cosmetics & camos, BurgiCasino, BurgiShop, BurgiArcade, the Squad (last, lit green) -->
 		<!-- every other tab hidden: no row for Camo grind alone (it stays in the page for the panel's label) -->
 		<div
 			class="page-tabs mt-4 flex gap-2"
@@ -379,12 +377,7 @@
 
 		<div id="panel-cosmetics" role="tabpanel" aria-labelledby="tab-cosmetics" hidden={view !== 'cosmetics'}>
 			{@render tabHide('cosmetics')}
-			<div class="mt-2"><CosmeticsSection /></div>
-		</div>
-
-		<div id="panel-extras" role="tabpanel" aria-labelledby="tab-extras" hidden={view !== 'extras'}>
-			{@render tabHide('extras')}
-			<div class="mt-2"><ExtraCamosSection /></div>
+			<div class="mt-2"><CollectionsSection /></div>
 		</div>
 
 		<div id="panel-squad" role="tabpanel" aria-labelledby="tab-squad" hidden={view !== 'squad'}>
@@ -608,6 +601,57 @@
 			animation: none;
 		}
 	}
+	/* The Squad tab sits last and is lit up green even when closed (2026-11-22, the user: "lys upp den grönt så
+	   den syns lite mer än dom andra"). A literal green, not --tc, so Steel / Matrix (which reset --tc) get it
+	   too; the breathing glow is a pseudo-element's opacity, so it stays cheap. */
+	.page-tab[data-tab='squad'] {
+		border-color: #43d35e;
+		background: linear-gradient(180deg, rgb(67 211 94 / 0.34), rgb(67 211 94 / 0.14));
+		box-shadow:
+			inset 0 3px 0 #43d35e,
+			0 0 14px -2px rgb(67 211 94 / 0.65);
+		color: #c9ffd3;
+		text-shadow: 0 0 8px rgb(67 211 94 / 0.7);
+	}
+	.page-tab[data-tab='squad']::after {
+		content: '';
+		position: absolute;
+		inset: -1px;
+		border-radius: inherit;
+		box-shadow: 0 0 22px 2px rgb(67 211 94 / 0.55);
+		opacity: 0.25;
+		pointer-events: none;
+		animation: squad-tab-glow 2.4s ease-in-out infinite;
+	}
+	@keyframes squad-tab-glow {
+		50% {
+			opacity: 1;
+		}
+	}
+	.page-tab[data-tab='squad'] :global(.pt-icon) {
+		color: #43d35e;
+		opacity: 1;
+		filter: drop-shadow(0 0 4px rgb(67 211 94 / 0.8));
+	}
+	.page-tab[data-tab='squad']:hover {
+		background: linear-gradient(180deg, rgb(67 211 94 / 0.46), rgb(67 211 94 / 0.2));
+		color: #fff;
+	}
+	.page-tab[data-tab='squad'][aria-selected='true'] {
+		border: 2px solid #5dff7a;
+		border-bottom: 0;
+		background: linear-gradient(180deg, rgb(67 211 94 / 0.6), rgb(67 211 94 / 0.24));
+		box-shadow:
+			inset 0 4px 0 #5dff7a,
+			0 -3px 22px -2px rgb(67 211 94 / 0.85);
+		color: #fff;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.page-tab[data-tab='squad']::after {
+			animation: none;
+			opacity: 0.6;
+		}
+	}
 	/* new radio messages on the Squad tab (red: the Squad tab itself is green now) */
 	.tab-badge {
 		display: inline-grid;
@@ -676,7 +720,7 @@
 	}
 	@container pagetabs (max-width: 607px) {
 		.page-tab {
-			/* eight tabs on a phone: two rows of four (2026-11-22), so the names stay readable */
+			/* seven tabs on a phone: four, then three (Squad last, a bit wider) so the names stay readable */
 			flex: 1 1 calc(25% - 3px);
 			padding: 5px 1px 4px;
 			border-radius: 8px 8px 0 0;

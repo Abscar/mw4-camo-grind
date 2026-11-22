@@ -226,8 +226,7 @@ export const en = {
 			picScooter: 'Scooter rider picture',
 			picJoker: 'Joker in flames picture',
 			tabRanked: 'Ranked tab',
-			tabCosmetics: 'Cosmetics tab',
-			tabExtras: 'Extra camos tab',
+			tabCosmetics: 'Cosmetics & camos tab',
 			tabSquad: 'Squad tab',
 			tabCasino: 'BurgiCasino tab',
 			tabShop: 'BurgiShop tab',
@@ -878,8 +877,10 @@ export const en = {
 		    until then a switch inside Camo grind */
 		ranked: 'Ranked',
 		/** soft hyphens: with six tabs a phone breaks it as "Cosmet-/ics", not anywhere */
-		cosmetics: 'Cos­met­ics',
-		extras: 'Extra camos',
+		cosmetics: 'Cos­met­ics & camos',
+		/** one tab since 2026-11-22: the switch inside it (CollectionsSection) */
+		collectionsLabel: 'Show',
+		collectionsParts: { cosmetics: 'Cosmetics', extras: 'Extra camos' },
 		squad: 'Squad',
 		/** BurgiShop's own tab (2026-11-16, the user: "BurgiShop can have a tab of its own instead of being among
 		    the casino games"); a soft hyphen like BurgiCasino's */

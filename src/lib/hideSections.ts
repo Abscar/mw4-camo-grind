@@ -43,7 +43,6 @@ export const HIDE_SECTIONS = [
 	// whole page tabs (Camo grind itself can't be hidden: it's where the page opens)
 	{ id: 'tabRanked', group: 'tabs' },
 	{ id: 'tabCosmetics', group: 'tabs' },
-	{ id: 'tabExtras', group: 'tabs' },
 	{ id: 'tabSquad', group: 'tabs' },
 	{ id: 'tabCasino', group: 'tabs' },
 	{ id: 'tabShop', group: 'tabs' },

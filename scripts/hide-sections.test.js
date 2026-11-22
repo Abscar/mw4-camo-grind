@@ -40,7 +40,7 @@ test('"Only camos & metas" hides everything but the camo and meta parts', () => 
 	assert.ok(hide.includes('tv') && hide.includes('picNuke') && hide.includes('tabCasino') && hide.includes('news'));
 	assert.deepEqual(cleanHidden(hide), hide);
 	assert.equal(idsIn('pictures').length, 8);
-	assert.equal(idsIn('tabs').length, 7);
+	assert.equal(idsIn('tabs').length, 6);
 });
 
 test('header grid: hidden parts leave no rows, no TV = one column', () => {
