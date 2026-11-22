@@ -63,7 +63,7 @@ export type Print =
 	| { k: 'big'; t: string; c: string[] }
 	| { k: 'num'; t: string; c: string; o: string }
 	| { k: 'letter'; t: string; c: string; o: string }
-	| { k: 'smiley' | 'skull' | 'flame' | 'leaf' | 'burger' | 'bolt' | 'star' | 'web' | 'dragon' | 'patches' | 'cyborg' | 'nuke'; c?: string };
+	| { k: 'smiley' | 'skull' | 'flame' | 'leaf' | 'burger' | 'bolt' | 'star' | 'web' | 'dragon' | 'patches'; c?: string };
 
 export type TopKind =
 	| 'tee'
@@ -97,51 +97,11 @@ export interface TopLook {
 	emblem?: 'sun' | 'skull' | 'rune' | 'eye' | 'flame' | 'claw';
 }
 
-export type NeckKind =
-	| 'cuban'
-	| 'iced'
-	| 'rope'
-	| 'tennis'
-	| 'pearls'
-	| 'tags'
-	| 'bandana'
-	| 'choker'
-	// the Abscar drop (2026-11-23)
-	| 'ammo'
-	| 'beads'
-	| 'kushlei'
-	| 'burgerlei'
-	| 'cable'
-	| 'rgb'
-	| 'double'
-	| 'skulls'
-	| 'fire'
-	| 'headset';
-export type Pendant =
-	| 'burger'
-	| 'holk'
-	| 'leaf'
-	| 'ab'
-	| 'skull'
-	| 'dollar'
-	| 'crown'
-	// the Abscar drop (2026-11-23)
-	| 'cyborg'
-	| 'iri'
-	| 'nuke'
-	| 'divergence'
-	| 'slacker'
-	| 'banned'
-	| 'controller'
-	| 'fries'
-	| 'ketchup'
-	| 'seven'
-	| 'grinder'
-	| 'eye'
-	| 'gg';
+export type NeckKind = 'cuban' | 'iced' | 'rope' | 'tennis' | 'pearls' | 'tags' | 'bandana' | 'choker';
+export type Pendant = 'burger' | 'holk' | 'leaf' | 'ab' | 'skull' | 'dollar' | 'crown';
 export interface NeckLook {
 	kind: NeckKind;
-	metal: 'gold' | 'silver' | 'iced' | 'black' | 'red' | 'bronze' | 'iri';
+	metal: 'gold' | 'silver' | 'iced' | 'black' | 'red';
 	pendant?: Pendant;
 }
 
@@ -385,48 +345,7 @@ export const DRIP_DEFS: DripDef[] = [
 	// three odd pauldrons, no set
 	pauld('d-rd-arcane', 'Arcane Orb Pauldrons', 300_000, 'epic', { kind: 'arcane', metal: '#3a2a6a', trim: '#e0a520', glow: '#c08aff' }),
 	pauld('d-rd-totem', 'Thunder Wolf Pauldrons', 300_000, 'epic', { kind: 'totem', metal: '#8a8f96', trim: '#6a4a2c', glow: '#7ad8ff' }),
-	pauld('d-rd-burger', 'Burger Pauldrons', 250_000, 'epic', { kind: 'burger', metal: '#f0a24a', trim: '#5c2f18', glow: '#ffd23a' }),
-
-	// ----- the Abscar drop (2026-11-23, the user: "mer roliga/snygga/feta abscarrelaterade saker … mer halsband …
-	// gå lite crazy, behöver inte vara verklighetstroget") -----
-	neck('d-nk-cyborg', 'Abscar Cyborg Skull Chain', 4_200_000, 'legendary', { kind: 'cuban', metal: 'bronze', pendant: 'cyborg' }),
-	neck('d-nk-div', 'Divergence Diamond', 2_500_000, 'legendary', { kind: 'tennis', metal: 'iced', pendant: 'divergence' }),
-	neck('d-nk-iri', 'Iridescent Rank Medallion', 1_500_000, 'legendary', { kind: 'rope', metal: 'iri', pendant: 'iri' }),
-	neck('d-nk-nuke', 'Tactical Nuke Pendant', 900_000, 'legendary', { kind: 'cuban', metal: 'gold', pendant: 'nuke' }),
-	neck('d-nk-777', 'Lucky 777 Chain', 777_777, 'legendary', { kind: 'cuban', metal: 'gold', pendant: 'seven' }),
-	neck('d-nk-fire', 'Chain on Fire', 666_000, 'legendary', { kind: 'fire', metal: 'black' }),
-	neck('d-nk-double', 'Double Stack Chains', 420_000, 'epic', { kind: 'double', metal: 'gold' }),
-	neck('d-nk-controller', 'Iced Controller Chain', 350_000, 'epic', { kind: 'iced', metal: 'iced', pendant: 'controller' }),
-	neck('d-nk-cable', 'Cyborg Neural Cable', 300_000, 'epic', { kind: 'cable', metal: 'black' }),
-	neck('d-nk-banned', 'BANNED Pendant', 250_000, 'epic', { kind: 'cuban', metal: 'silver', pendant: 'banned' }),
-	neck('d-nk-eye', 'Red Eye Pendant', 190_000, 'epic', { kind: 'rope', metal: 'black', pendant: 'eye' }),
-	neck('d-nk-gg', 'Iced GG Pendant', 160_000, 'epic', { kind: 'tennis', metal: 'iced', pendant: 'gg' }),
-	neck('d-nk-rgb', 'RGB Gamer Chain', 120_000, 'epic', { kind: 'rgb', metal: 'silver' }),
-	neck('d-nk-skulls', 'Mini Skull Chain', 80_000, 'rare', { kind: 'skulls', metal: 'bronze' }),
-	neck('d-nk-ammo', 'Bandolier Necklace', 65_000, 'rare', { kind: 'ammo', metal: 'gold' }),
-	neck('d-nk-burgerlei', 'Burger Lei', 48_000, 'rare', { kind: 'burgerlei', metal: 'gold' }),
-	neck('d-nk-kushlei', 'Kush Lei', 42_000, 'rare', { kind: 'kushlei', metal: 'gold' }),
-	neck('d-nk-fries', 'Fries Pendant', 30_000, 'rare', { kind: 'rope', metal: 'gold', pendant: 'fries' }),
-	neck('d-nk-ketchup', 'Ketchup Bottle Chain', 28_000, 'rare', { kind: 'rope', metal: 'silver', pendant: 'ketchup' }),
-	neck('d-nk-headset', 'Headset Round the Neck', 25_000, 'rare', { kind: 'headset', metal: 'black' }),
-	neck('d-nk-grinder', 'Grinder Pendant', 18_000, 'common', { kind: 'rope', metal: 'silver', pendant: 'grinder' }),
-	neck('d-nk-rasta', 'Rasta Beads', 9_000, 'common', { kind: 'beads', metal: 'gold' }),
-	neck('d-nk-slacker', 'Slacker Tag', 7_000, 'common', { kind: 'rope', metal: 'silver', pendant: 'slacker' }),
-	top('d-puf-hotrod', 'Hot Rod Flame Puffer', 300_000, 'epic', { kind: 'puffer', body: { p: 'flames', c: ['#3a0a08', '#ff3a1a', '#ffb02a', '#fff2a0'] }, trim: '#1a0604' }),
-	top('d-hd-iri', 'Iridescent Rank Hoodie', 260_000, 'epic', { kind: 'hoodie', body: { p: 'iri', c: ['#ff7ad8', '#7af0ff', '#b48aff', '#fff0a0'] }, trim: '#5a2a98', print: { k: 'bolt', c: '#7af0ff' } }),
-	top('d-hd-abscar', 'Abscar Cyborg Hoodie', 180_000, 'epic', { kind: 'hoodie', body: '#16171a', trim: '#8a1a10', print: { k: 'cyborg' } }),
-	top('d-hd-ghillie', 'Moss Ghillie Hoodie', 90_000, 'rare', { kind: 'hoodie', body: { p: 'camo', c: ['#4f7a2a', '#2a4a14', '#8ab84a', '#1a2a0a'] }, trim: '#2a4a14', print: { k: 'leaf', c: '#c8ff5a' } }),
-	top('d-jsy-abscar', 'Abscar Jersey', 35_000, 'rare', { kind: 'jersey', body: '#c8102e', trim: '#16171a', sleeve: '#16171a', print: { k: 'num', t: 'AB', c: '#f6f5f1', o: '#16171a' } }),
-	top('d-tee-nuke', 'Nuke Tee', 22_000, 'rare', { kind: 'tee', body: '#2a2d22', trim: '#1a1c14', print: { k: 'nuke' } }),
-	top('d-tee-campaign', 'Refuses Campaign Tee', 10_000, 'common', { kind: 'tee', body: '#4f6a2a', trim: '#2f4214', print: { k: 'text', t: ['NO', 'CAMPAIGN'], c: '#f4f1e8' } }),
-	top('d-tee-slacker', 'Slacker Tee', 6_000, 'common', { kind: 'tee', body: '#d8192a', trim: '#8a0612', print: { k: 'text', t: ['SLACKER'], c: '#ffffff' } }),
-	kick('d-kk-bronze', 'Cyborg Bronze Highs', 1_800_000, 'legendary', { kind: 'high', upper: { p: 'chrome', c: ['#f0c890', '#a8743a', '#3a200a'] }, accent: '#ff2a1a', sole: '#2a1608' }),
-	kick('d-kk-iri', 'Iridescent Lows', 220_000, 'epic', { kind: 'low', upper: { p: 'iri', c: ['#ff7ad8', '#7af0ff', '#b48aff', '#fff0a0'] }, accent: '#f6f5f1', sole: '#f6f5f1' }),
-	kick('d-kk-hotrod', 'Hot Rod Highs', 95_000, 'rare', { kind: 'high', upper: { p: 'flames', c: ['#16171a', '#ff3a1a', '#ffb02a', '#fff2a0'] }, accent: '#ff3a1a', sole: '#16171a' }),
-	kick('d-kk-ghillie', 'Ghillie Runners', 60_000, 'rare', { kind: 'knit', upper: { p: 'camo', c: ['#4f7a2a', '#2a4a14', '#8ab84a', '#1a2a0a'] }, accent: '#c8ff5a', sole: '#2a2a20' }),
-	hat('d-hat-iri', 'Iridescent Bucket Hat', 140_000, 'epic', { kind: 'bucket', body: { p: 'iri', c: ['#ff7ad8', '#7af0ff', '#b48aff', '#fff0a0'] }, accent: '#5a2a98' }),
-	hat('d-hat-flame', 'Flame Durag', 45_000, 'rare', { kind: 'durag', body: { p: 'flames', c: ['#c8180e', '#ff6a1a', '#ffd23a', '#fff2a0'] }, accent: '#5a0604' }),
-	hat('d-hat-abscar', 'Abscar Snapback', 16_000, 'common', { kind: 'cap', body: '#16171a', accent: '#ff2a1a', t: 'A' })
+	pauld('d-rd-burger', 'Burger Pauldrons', 250_000, 'epic', { kind: 'burger', metal: '#f0a24a', trim: '#5c2f18', glow: '#ffd23a' })
 ];
 
 /** The catalogue as shop items (shop.ts ITEM_BY_ID): bought, worn and drawn like BurgiShop's. */

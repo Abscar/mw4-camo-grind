@@ -205,6 +205,7 @@ export const en = {
 			hud: 'Red HUD box',
 			tv: 'Old TV',
 			buddy: 'News buddy',
+			whatsNew: 'What’s new billboard',
 			news: 'News radar',
 			season: 'Season countdown',
 			kpi: 'Progress tiles',
@@ -310,6 +311,28 @@ export const en = {
 		}
 	},
 	/** Abscar theme: tapping the news buddy (he coughs, blows a smoke ring or laughs). */
+	/** The "What's new" billboard beside the news buddy (WhatsNewBoard, data in data/whatsNew.ts). */
+	whatsNew: {
+		title: 'What’s new',
+		kicker: 'On the site',
+		newCount: (n: number) => `${n} new`,
+		kind: { new: 'Added', update: 'Update', fix: 'Fix' },
+		fresh: 'New since your last visit',
+		open: 'Open',
+		openLabel: (title: string, tab: string) => `${title}: open ${tab}`,
+		all: (n: number) => `All updates (${n})`,
+		less: 'Show fewer',
+		tabs: {
+			grind: 'Camo grind',
+			ranked: 'Ranked',
+			cosmetics: 'Cosmetics',
+			casino: 'BurgiCasino',
+			shop: 'BurgiShop',
+			arcade: 'BurgiArcade',
+			mayhem: 'Squad Mayhem',
+			squad: 'Squad'
+		}
+	},
 	buddy: {
 		poke: 'Poke the weed buddy',
 		/** He grows with your grind (buddyGrowth.ts): the line under his speech bubble. */

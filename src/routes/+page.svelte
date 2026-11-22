@@ -20,6 +20,7 @@
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
 	import NewsBanner from '#lib/components/NewsBanner.svelte';
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
+	import WhatsNewBoard from '#lib/components/WhatsNewBoard.svelte';
 	import RetroTv from '#lib/components/RetroTv.svelte';
 	import hotrodCamo from '#lib/assets/hotrod-camo.webp';
 	import { WORN_METAL } from '#lib/kpiCamos.ts';
@@ -129,6 +130,13 @@
 	$effect(() => {
 		if (squad.showTab > 0) untrack(goSquad);
 	});
+
+	/** "Open" on a "What's new" update: to its tab (brought back if hidden), scrolled to the tab row */
+	function goTab(tab: PageTab) {
+		if (tab !== 'grind' && hidden.is(TAB_HIDE[tab])) hidden.set(TAB_HIDE[tab], false);
+		view = tab;
+		requestAnimationFrame(() => document.getElementById(`tab-${tab}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+	}
 
 	function tabKey(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -322,7 +330,13 @@
 			<!-- the old TV with CoD montages; z above the fixed scanline layer (z 30), so nothing is
 			     drawn over the video -->
 			<div class="hdr-tv abscar-only compact-hide relative z-[31]" hidden={hidden.is('tv')}><RetroTv /></div>
-			<div class="hdr-buddy abscar-only compact-hide relative z-[1]" hidden={hidden.is('buddy')}><NewsBuddy /><HideButton id="buddy" /></div>
+			<!-- the buddy's row: the news buddy and, beside him, the "What's new" billboard (2026-11-23; every theme) -->
+			<div class="hdr-buddy compact-hide relative z-[1]" hidden={hidden.is('buddy') && hidden.is('whatsNew')}>
+				<div class="hdr-buddy-in abscar-only relative" hidden={hidden.is('buddy')}><NewsBuddy /><HideButton id="buddy" /></div>
+				<div class="hdr-board relative" hidden={hidden.is('whatsNew')}>
+					<WhatsNewBoard ongo={goTab} /><HideButton id="whatsNew" />
+				</div>
+			</div>
 		</header>
 		<div class="abscar-only compact-hide"><div class="damascus-floor"></div></div>
 	</div>
@@ -769,8 +783,29 @@
 	}
 	:global([data-theme='blackout']) .hdr-buddy {
 		grid-area: buddy;
-		justify-self: start;
+		justify-self: stretch;
 		max-width: 100%;
+	}
+	/* the buddy and the billboard side by side where they fit, the billboard under him otherwise */
+	.hdr-buddy {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 16px 20px;
+		width: 100%;
+	}
+	.hdr-buddy[hidden],
+	.hdr-buddy > [hidden] {
+		display: none;
+	}
+	.hdr-buddy-in {
+		flex: 0 1 auto;
+		max-width: 100%;
+	}
+	.hdr-board {
+		flex: 1 1 300px;
+		max-width: 460px;
+		min-width: 0;
 	}
 	/* two columns once the title (≈ 425 px) and the TV (304 px) fit side by side */
 	@media (min-width: 820px) {

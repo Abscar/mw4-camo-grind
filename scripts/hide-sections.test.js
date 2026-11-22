@@ -47,7 +47,7 @@ test('header grid: hidden parts leave no rows, no TV = one column', () => {
 	const all = headerAreas(new Set());
 	assert.equal(all.phone, "'squad' 'title' 'tv' 'buddy'");
 	assert.equal(all.mid, "'squad squad' 'title tv' 'buddy tv'");
-	assert.equal(all.wide, "'squad tv' 'title tv' 'buddy tv'");
+	assert.equal(all.wide, "'squad tv' 'title tv' 'buddy buddy'");
 	assert.equal(all.midCols, 'minmax(0, 1fr) auto');
 
 	const noSquad = headerAreas(new Set(['squad']));
@@ -55,13 +55,15 @@ test('header grid: hidden parts leave no rows, no TV = one column', () => {
 	assert.equal(noSquad.mid, "'title tv' 'buddy tv'");
 	assert.equal(noSquad.wide, "'title tv' 'buddy tv'");
 
-	const noTv = headerAreas(new Set(['tv', 'buddy']));
+	const noTv = headerAreas(new Set(['tv', 'buddy', 'whatsNew']));
 	assert.equal(noTv.phone, "'squad' 'title'");
 	assert.equal(noTv.mid, noTv.phone);
 	assert.equal(noTv.wide, noTv.phone);
 	assert.equal(noTv.wideCols, 'minmax(0, 1fr)');
 
-	const onlyTitle = headerAreas(new Set(['squad', 'tv', 'buddy', 'hud']));
+	const onlyTitle = headerAreas(new Set(['squad', 'tv', 'buddy', 'whatsNew', 'hud']));
+	const boardOnly = headerAreas(new Set(['buddy']));
+	assert.equal(boardOnly.phone, all.phone, 'the billboard keeps the buddy row');
 	assert.equal(onlyTitle.phone, "'title'");
 	assert.equal(onlyTitle.wide, "'title'");
 });
