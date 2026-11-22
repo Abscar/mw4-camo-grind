@@ -6,9 +6,12 @@
 	Shapes are drawn from the CS2 item pictures (csgoskins.gg), mirrored so the muzzle points right.
 	Painted parts are filled with <pattern>s drawn in icon coordinates, so a skin's design lines up
 	across parts. Rendered inside WeaponIcon's <svg>.
+	The Camo Armory's CS2 Skins tab (2026-11-22) adds the M4A1-S and ~50 more skins: those skins are drawn
+	in cs2SkinArt.ts (paint + defs as strings, put in <defs> with {@html}); the eight easter-egg skins stay here.
 -->
 <script lang="ts">
-	import type { Cs2Model, Skin } from '#lib/data/weaponLooks.ts';
+	import { SKIN_ART, type ArtSkin, type Cs2Part as Part } from '#lib/cs2SkinArt.ts';
+	import type { Cs2Model, EggSkin, Skin } from '#lib/data/weaponLooks.ts';
 
 	let { model, skin }: { model: Cs2Model; skin: Skin } = $props();
 
@@ -18,24 +21,6 @@
 	const HI = { stroke: '#fff', 'stroke-opacity': 0.4, 'stroke-width': 0.8 }; // cartoon highlight
 	const GROOVE = { stroke: INK, 'stroke-opacity': 0.55, 'stroke-width': 0.45 }; // serrations, ribs
 
-	type Part =
-		| 'stock'
-		| 'tube'
-		| 'body'
-		| 'lower'
-		| 'frame'
-		| 'guard'
-		| 'grip'
-		| 'mag'
-		| 'barrel'
-		| 'muzzle'
-		| 'can'
-		| 'fore'
-		| 'cylinder'
-		| 'sights'
-		| 'blade'
-		| 'handle'
-		| 'ring';
 	const PLAIN: Record<Part, string> = {
 		stock: DARK,
 		tube: STEEL,
@@ -56,7 +41,7 @@
 		ring: '#b9bfc6'
 	};
 	// which part gets which paint: a pattern below, or a plain '#colour'
-	const SKIN_PARTS: Record<Skin, Partial<Record<Part, string>>> = {
+	const SKIN_PARTS: Record<EggSkin, Partial<Record<Part, string>>> = {
 		'fire-serpent': { stock: 'wood', guard: 'wood', grip: 'wood', body: 'serpent', mag: 'swirl' },
 		asiimov: { stock: 'asiimov', tube: 'asiimov', body: 'asiimov', lower: 'asiimov', guard: 'asiimov', mag: 'asiimov', sights: '#dfe3e6', muzzle: '#8b9199' },
 		blaze: { body: 'blaze', frame: 'blaze', cylinder: '#1c1d21', grip: '#8a8e94' },
@@ -67,9 +52,12 @@
 		'lightning-strike': { stock: 'lightning', mag: '#8d9399' }
 	};
 	const uid = $props.id(); // pattern ids must be unique per icon (the same gun can be on screen twice)
+	/** A CS2 Skins tab skin (cs2SkinArt.ts), or null for an easter-egg skin drawn below. */
+	const art = $derived(Object.hasOwn(SKIN_ART, skin) ? SKIN_ART[skin as ArtSkin] : null);
 	const P = $derived.by(() => {
 		const out = { ...PLAIN };
-		for (const [part, p] of Object.entries(SKIN_PARTS[skin]) as [Part, string][]) {
+		const paint: Partial<Record<Part, string>> = art ? art.paint : SKIN_PARTS[skin as EggSkin];
+		for (const [part, p] of Object.entries(paint) as [Part, string][]) {
 			out[part] = p.startsWith('#') ? p : `url(#${uid}-${p})`;
 		}
 		// the Desert Eagle keeps a black grip under Blaze (only the R8 has the grey rubber one)
@@ -89,7 +77,10 @@
 </script>
 
 <defs>
-	{#if skin === 'fire-serpent'}
+	{#if art}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- our own SVG strings (cs2SkinArt.ts), no user input -->
+		{@html art.defs(uid)}
+	{:else if skin === 'fire-serpent'}
 		<!-- red-brown wood with dark wavy grain -->
 		<pattern id="{uid}-wood" patternUnits="userSpaceOnUse" width="9" height="2.8">
 			<rect width="9" height="2.8" fill="#9a4127" />
@@ -271,6 +262,35 @@
 		<path d="M29 14.8 C29.2 17.6 29.6 20 30.4 22.2 L34.2 21.8 C33.6 19.6 33.4 17.4 33.6 14.8 Z" fill={P.mag} />
 		<line x1="19.6" y1="8.3" x2="33.8" y2="8.3" {...HI} />
 		<line x1="37" y1="8.3" x2="45.4" y2="8.3" {...HI} />
+	{:else if model === 'm4a1s'}
+		<!-- M4A1-S: the same lower and stock, a carry handle on the upper, round ribbed handguard,
+		     A-frame front sight and a long screwed-on suppressor -->
+		<rect x="12.4" y="8.8" width="5.8" height="2.4" fill={P.tube} />
+		<path d="M14 8.4 L5.4 8.4 Q4.2 8.4 4.2 9.6 L4.2 16.8 Q4.2 17.6 5.2 17.4 L7.2 17 L9.4 13 L14 12 Z" fill={P.stock} />
+		<path d="M5.4 8.8 V17" stroke-width="0.5" />
+		<path d="M21.6 14.2 L19.8 21 Q19.6 21.8 20.6 21.8 L22.8 21.8 Q23.4 21.8 23.6 21.2 L25.2 14.2 Z" fill={DARK} />
+		<rect x="45" y="9.2" width="4" height="1.3" fill={P.barrel} />
+		<path d="M17.8 11 L34.4 11 L34.2 14.4 L33.6 14.9 L28.8 14.9 L28.4 14.4 L23.4 14.4 L20 13.6 Z" fill={P.lower} />
+		<path d="M17.6 7.6 L34.6 7.6 L34.6 11.2 L17.6 11.2 Z" fill={P.body} />
+		<path d="M19.4 7.8 L19.8 4.8 Q20 4.2 20.6 4.2 L29.8 4.2 Q30.4 4.2 30.5 4.8 L30.8 7.8 L29 7.8 L28.8 5.8 L21.6 5.8 L21.4 7.8 Z" fill={P.body} />
+		<rect x="19.6" y="3.1" width="1.6" height="1.2" rx="0.3" fill={DARK} stroke-width="0.5" />
+		<rect x="16.4" y="7.8" width="1.4" height="1.4" rx="0.3" fill={DARK} />
+		<rect x="25" y="9" width="4" height="1.1" rx="0.3" fill={DARK} stroke-width="0.4" />
+		<circle cx="31.8" cy="9.6" r="0.7" fill={DARK} stroke-width="0.5" />
+		<rect x="34.4" y="7.2" width="1.4" height="4.8" rx="0.3" fill={DARK} />
+		<rect x="35.6" y="7.6" width="9.8" height="4.4" rx="2" fill={P.guard} />
+		{#each [37.6, 39, 40.4, 41.8, 43.2] as x (x)}
+			<line x1={x} y1="8.5" x2={x} y2="11.1" {...GROOVE} />
+		{/each}
+		<path d="M44.8 11 L45.8 7.2 L46.2 4.6 L47.6 4.6 L47.8 7.2 L48.8 11 Z" fill={P.sights} />
+		<path d="M46.4 10.2 L46.9 7.8 L47.4 10.2 Z" fill={INK} stroke="none" />
+		<rect x="48.4" y="7.9" width="15" height="3.4" rx="1.5" fill={P.can} />
+		<path d="M50.2 8.3 V10.9 M61.6 8.3 V10.9" stroke-width="0.4" />
+		<path d="M25.2 14.4 Q25.2 16.4 27 16.4 L28.8 16.4 L28.8 15" fill="none" stroke-width="0.9" />
+		<path d="M29 14.8 C29.2 17.6 29.6 20 30.4 22.2 L34.2 21.8 C33.6 19.6 33.4 17.4 33.6 14.8 Z" fill={P.mag} />
+		<line x1="18.6" y1="8.5" x2="33.8" y2="8.5" {...HI} />
+		<line x1="37" y1="8.4" x2="44.4" y2="8.4" {...HI} />
+		<line x1="49.6" y1="8.7" x2="62" y2="8.7" stroke="#fff" stroke-opacity="0.3" stroke-width="0.6" />
 	{:else if model === 'deagle'}
 		<!-- Desert Eagle: long slab slide and barrel, frame running under the barrel, hammer, beavertail, big raked grip -->
 		<path d="M13.6 6 L11.2 3.6 Q10.8 3.2 10.4 3.6 L10.2 4.2 L12.6 7.6 Z" fill={DARK} />
@@ -436,9 +456,9 @@
 		<circle cx="24.5" cy="12" r="1.1" fill={STEEL} />
 		<rect x="27" y="5.4" width="1.6" height="2.5" fill={DARK} />
 		<rect x="34.6" y="5.4" width="1.6" height="2.5" fill={DARK} />
-		<rect x="24.6" y="3.6" width="14" height="2" rx="0.6" fill={DARK} />
-		<path d="M37.4 3.6 L41.4 2.4 Q41.9 2.3 41.9 2.8 L41.9 6.4 Q41.9 6.9 41.4 6.8 L37.4 5.6 Z" fill={DARK} />
-		<rect x="22.2" y="2.9" width="3.2" height="3.4" rx="0.7" fill={DARK} />
+		<rect x="24.6" y="3.6" width="14" height="2" rx="0.6" fill={P.sights} />
+		<path d="M37.4 3.6 L41.4 2.4 Q41.9 2.3 41.9 2.8 L41.9 6.4 Q41.9 6.9 41.4 6.8 L37.4 5.6 Z" fill={P.sights} />
+		<rect x="22.2" y="2.9" width="3.2" height="3.4" rx="0.7" fill={P.sights} />
 		<rect x="30.6" y="2" width="1.8" height="1.6" rx="0.3" fill={DARK} />
 		<line x1="25.6" y1="4.2" x2="37" y2="4.2" stroke="#fff" stroke-opacity="0.3" stroke-width="0.6" />
 		<line x1="15.4" y1="10.4" x2="39.6" y2="10.4" {...HI} />

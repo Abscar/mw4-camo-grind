@@ -904,6 +904,10 @@
 	.og-hold :global(.held[data-camo='gold']) {
 		filter: drop-shadow(0 0 2.5px rgb(255 200 60 / 0.7)) drop-shadow(0 1.5px 1px rgb(0 0 0 / 0.75));
 	}
+	/* a CS2 skin (the armory's last tab): a warm glow */
+	.og-hold :global(.held[data-camo='cs2']) {
+		filter: drop-shadow(0 0 2.5px rgb(255 140 70 / 0.65)) drop-shadow(0 1.5px 1px rgb(0 0 0 / 0.75));
+	}
 	/* Glitch: the emblem jumps and splits red / cyan for a moment every few seconds… */
 	.og[data-effect='fx-glitch'] .og-body {
 		animation: og-glitch 3s steps(1) infinite;

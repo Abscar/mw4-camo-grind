@@ -6,25 +6,48 @@
 	camo (Gold → … → Orion Reforged) and, per class, every weapon in that camo: buy it (asked first: it's a
 	lot of burgers), hold it, or why it isn't open yet. What you hold shows on your operator in the header's
 	squad frame and on your squad card (OpGear `hold`).
+	The last tab, CS2 Skins (2026-11-22, data/cs2Skins.ts): famous Counter-Strike skins on the guns that have a
+	CS2 twin, grouped per gun, any time, 100,000,000 burgers and up. Held the same way.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { faceOf } from '#lib/faceGear.ts';
-	import { worn } from '#lib/shop.ts';
-	import { armorySpent, camoOpenAnywhere, gunId, gunStatus, heldGun, ownedCount, ARMORY_CAMOS, ARMORY_CLASSES, GUN_BY_ID, type GunStatus } from '#lib/armory.ts';
+	import { worn, ITEM_BY_ID } from '#lib/shop.ts';
+	import {
+		armorySpent,
+		camoOpenAnywhere,
+		cs2Count,
+		cs2ItemId,
+		gunId,
+		gunStatus,
+		heldGun,
+		holdName,
+		ownedCount,
+		ARMORY_CAMOS,
+		ARMORY_CLASSES,
+		CS2_GROUPS,
+		type GunStatus
+	} from '#lib/armory.ts';
 	import { DIVERGENCE_REQUIRED } from '#lib/data/camos.ts';
-	import { camoLook } from '#lib/data/weaponLooks.ts';
+	import { CS2_GRADES, CS2_MODEL_NAME, type Cs2Skin } from '#lib/data/cs2Skins.ts';
+	import { camoLook, type GunLook } from '#lib/data/weaponLooks.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import OpGear from './OpGear.svelte';
 	import SquadAvatar from './SquadAvatar.svelte';
 	import WeaponIcon from './WeaponIcon.svelte';
 
 	const a = t.armory;
+	const x = t.armory.cs2;
 	const HB = ARMORY_CAMOS.findIndex((c) => c.id === 'harmonicBreak');
 	const DIV = ARMORY_CAMOS.findIndex((c) => c.id === 'divergence');
+	/** The CS2 Skins tab: one past the last camo. */
+	const CS2 = ARMORY_CAMOS.length;
+	const cs2Look = (s: Cs2Skin): GunLook => ({ kind: 'cs2', model: s.model, skin: s.art });
+	/** The CS2 gun names a weapon's skins are on ("M4A4 · M4A1-S"). */
+	const twins = (skins: readonly Cs2Skin[]) => [...new Set(skins.map((s) => CS2_MODEL_NAME[s.model]))].join(' · ');
 
-	/** The camo shown (index in ARMORY_CAMOS). */
+	/** The camo shown (index in ARMORY_CAMOS), or CS2 for the CS2 Skins tab. */
 	let camo = $state(0);
 	/** A gun being tried on (preview only). */
 	let trying = $state<string | null>(null);
@@ -37,9 +60,10 @@
 	const mine = $derived(worn(squad.shop));
 	const held = $derived(heldGun(squad.shop));
 	const shown = $derived(trying ?? held?.id ?? null);
-	const shownName = $derived(shown ? (GUN_BY_ID.get(shown)?.name ?? '') : '');
+	const shownName = $derived(holdName(shown));
 	const hbHave = $derived(ownedCount(own, HB).have);
-	const c = $derived(ARMORY_CAMOS[camo]);
+	const c = $derived(ARMORY_CAMOS[Math.min(camo, CS2 - 1)]);
+	const cs2All = $derived(cs2Count(own));
 
 	function pickCamo(i: number) {
 		camo = i;
@@ -51,13 +75,13 @@
 	}
 
 	function buyIt(id: string) {
-		const it = GUN_BY_ID.get(id);
+		const it = ITEM_BY_ID.get(id);
 		if (!it) return;
 		const r = squad.buyGun(id);
 		confirming = null;
 		if (r === 'ok') {
 			trying = null;
-			toast.show(a.bought(it.name));
+			toast.show(a.bought(holdName(id)));
 		} else if (r === 'broke') toast.show(a.broke(it.price, balance), undefined, 5000);
 		else if (r === 'locked') toast.show(a.locked, undefined, 5000);
 	}
@@ -65,7 +89,7 @@
 	function holdIt(id: string) {
 		if (squad.equipItem('hold', id)) {
 			trying = null;
-			toast.show(a.heldNow(GUN_BY_ID.get(id)?.name ?? ''));
+			toast.show(a.heldNow(holdName(id)));
 		}
 	}
 
@@ -84,7 +108,7 @@
 
 	function stateText(id: string, st: GunStatus): string {
 		if (st.state === 'owned') return held?.id === id ? a.held : a.owned;
-		if (st.state === 'open') return a.buy(GUN_BY_ID.get(id)?.price ?? 0);
+		if (st.state === 'open') return a.buy(ITEM_BY_ID.get(id)?.price ?? 0);
 		return lockText(st);
 	}
 </script>
@@ -134,12 +158,79 @@
 				</span>
 			</button>
 		{/each}
+		<!-- the last tab: CS2 skins -->
+		<button type="button" class="arm-camo" data-camo="cs2" aria-pressed={camo === CS2} aria-label={x.label(cs2All.have, cs2All.total)} onclick={() => pickCamo(CS2)}>
+			<span class="arm-sw" data-camo="cs2" aria-hidden="true"></span>
+			<span class="min-w-0" aria-hidden="true">
+				<b class="block font-head text-[13px] leading-tight font-bold">{x.tab}</b>
+				<span class="block text-[11px] leading-tight text-muted">{x.from} · <span class="arm-count num font-head">{cs2All.have}/{cs2All.total}</span></span>
+			</span>
+		</button>
 	</div>
 
 	{#if camo === DIV}
 		<p class="arm-note mt-3 text-[13px]" class:ok={hbHave >= DIVERGENCE_REQUIRED}>{hbHave >= DIVERGENCE_REQUIRED ? a.divOpen : a.divNote(hbHave, DIVERGENCE_REQUIRED)}</p>
 	{/if}
 
+	{#if camo === CS2}
+		<p class="cs2-intro mt-3 max-w-3xl text-[13px]">{x.intro}</p>
+		<!-- every skin, gun by gun, dearest first -->
+		{#each CS2_GROUPS as g (g.weapon.id)}
+			{@const n = cs2Count(own, g.weapon.id)}
+			<section class="arm-class mt-4" aria-labelledby="cs2-{g.weapon.id}">
+				<h3 id="cs2-{g.weapon.id}" class="flex flex-wrap items-baseline gap-x-3 font-head text-[15px] font-bold tracking-wide uppercase">
+					{g.weapon.name}
+					<span class="num text-[12px] font-semibold tracking-normal text-muted normal-case">{x.twin(twins(g.skins), n.have, n.total)}</span>
+				</h3>
+				<ul class="arm-grid cs2-grid mt-2">
+					{#each g.skins as s (s.key)}
+						{@const id = cs2ItemId(s)}
+						{@const owned = own?.[id] !== undefined}
+						{@const isHeld = held?.id === id}
+						{@const gr = CS2_GRADES[s.grade]}
+						{@const name = holdName(id)}
+						<li class="arm-gun cs2-card rounded-card border bg-panel-2 p-2" data-state={owned ? 'owned' : 'open'} data-skin={s.key} class:held={isHeld} style="--grade: {gr.colour}">
+							<button
+								type="button"
+								class="arm-pic cs2-pic"
+								aria-pressed={trying === id}
+								aria-label={x.cardLabel(name, gr.name, s.price, owned ? (isHeld ? a.held : a.owned) : x.buy)}
+								onclick={() => tryOn(id)}
+							>
+								<WeaponIcon look={cs2Look(s)} />
+							</button>
+							<p class="cs2-name mt-1.5 font-head text-[13.5px] leading-tight font-bold">
+								<span class="cs2-model">{CS2_MODEL_NAME[s.model]} |</span>
+								{s.finish}{#if s.note}{' '}<span class="cs2-phase">({s.note})</span>{/if}
+							</p>
+							<p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+								<span class="cs2-grade font-head">{gr.name}</span>
+								<span class="cs2-price num font-head" title="{s.price.toLocaleString('en-US')} 🍔">{x.short(s.price)}</span>
+							</p>
+							<div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+								{#if owned}
+									{#if isHeld}
+										<span class="arm-on font-head">✔ {a.held}</span>
+									{:else}
+										<button type="button" class="btn btn-sm btn-primary" onclick={() => holdIt(id)}>{a.hold}</button>
+										<span class="text-[11px] text-muted">{a.owned}</span>
+									{/if}
+								{:else if confirming === id}
+									<span class="arm-ask text-[12px]">{a.confirm(name, s.price)}</span>
+									<button type="button" class="btn btn-sm btn-primary" onclick={() => buyIt(id)}>{a.yes}</button>
+									<button type="button" class="btn btn-sm" onclick={() => (confirming = null)}>{a.cancel}</button>
+								{:else}
+									<button type="button" class="btn btn-sm btn-primary" disabled={balance < s.price} title={balance < s.price ? a.broke(s.price, balance) : undefined} onclick={() => (confirming = id)}
+										>{x.buy} · {x.short(s.price)}</button
+									>
+								{/if}
+							</div>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/each}
+	{:else}
 	<!-- every weapon in the camo shown, class by class -->
 	{#each ARMORY_CLASSES as cls (cls.id)}
 		{@const n = ownedCount(own, camo, cls.id)}
@@ -190,6 +281,7 @@
 			</ul>
 		</section>
 	{/each}
+	{/if}
 </div>
 
 <style>
@@ -350,5 +442,66 @@
 	}
 	.arm-name {
 		overflow-wrap: anywhere;
+	}
+
+	/* ----- the CS2 Skins tab ----- */
+	.arm-sw[data-camo='cs2'] {
+		background:
+			linear-gradient(135deg, transparent 0 46%, rgb(0 0 0 / 0.55) 46% 54%, transparent 54%),
+			linear-gradient(135deg, #ffd040, #ff9d3c 25%, #ff4f96 50%, #b24dff 75%, #6e5cff);
+	}
+	.arm-camo[data-camo='cs2'][aria-pressed='true'] {
+		border-color: #ff9d3c;
+		box-shadow:
+			0 0 0 1px rgb(255 157 60 / 0.45),
+			0 0 12px rgb(255 79 150 / 0.35);
+	}
+	.cs2-intro {
+		color: var(--t-muted);
+	}
+	/* bigger cards than the camo guns: a skin is its picture */
+	.cs2-grid {
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 184px), 1fr));
+	}
+	/* CS2's grade colour: a bar under the picture, like the game's inventory */
+	.cs2-pic {
+		min-height: 78px;
+		background: radial-gradient(circle at 50% 40%, rgb(255 255 255 / 0.12), rgb(0 0 0 / 0.32) 75%);
+		box-shadow: inset 0 -3px 0 var(--grade);
+	}
+	.cs2-pic :global(.weapon-icon) {
+		max-width: 176px;
+	}
+	.cs2-pic[aria-pressed='true'] {
+		box-shadow:
+			inset 0 0 0 2px #ffd23a,
+			inset 0 -3px 0 var(--grade);
+	}
+	.cs2-card[data-state='owned'] {
+		border-color: color-mix(in srgb, var(--grade) 60%, var(--t-line));
+	}
+	.cs2-name {
+		color: var(--t-fg);
+		overflow-wrap: anywhere;
+	}
+	.cs2-model,
+	.cs2-phase {
+		color: var(--t-muted);
+		font-weight: 600;
+	}
+	.cs2-grade {
+		padding: 1px 6px;
+		border-radius: 999px;
+		border: 1px solid var(--grade);
+		color: color-mix(in srgb, var(--grade) 70%, var(--t-fg));
+		background: color-mix(in srgb, var(--grade) 14%, transparent);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+	}
+	.cs2-price {
+		font-size: 13px;
+		font-weight: 800;
+		color: var(--t-fg);
 	}
 </style>

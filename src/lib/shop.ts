@@ -28,7 +28,7 @@
  * squad-codec.ts (which imports this file).
  */
 import { KARMA_ITEMS } from './karma-shop.ts';
-import { GUN_ITEMS } from './armory.ts';
+import { CS2_ITEMS, GUN_ITEMS } from './armory.ts';
 import { DRIP_ITEMS, DRIP_SLOTS, dripDealOf } from './drip.ts';
 import type { IconCamo } from './data/camos.ts';
 
@@ -86,6 +86,8 @@ export interface ShopItem {
 	gun?: { w: string; c: IconCamo };
 	/** BurgiDrip (drip.ts): clothes, bought with buy() on the store's own door, drawn by dripArt.ts. */
 	drip?: true;
+	/** The Camo Armory's CS2 Skins tab (armory.ts, data/cs2Skins.ts): the skin's key. Bought with buyCs2, not with buy(). */
+	cs2?: string;
 	/** Never sold: given for free when earned (grantRewards: the 420 collection, the throne's title). */
 	secret?: true;
 	/** Only in the shop around Christmas / New Year (windowOpen); whoever bought one keeps it. */
@@ -306,7 +308,7 @@ export function windowOpen(w: ShopWindow, at: number): boolean {
 
 /** Can this item be bought (or given, or come out of a box) right now? */
 export function buyable(it: ShopItem | undefined, at: number): it is ShopItem {
-	return !!it && !it.karma && !it.gun && !it.secret && (!it.window || windowOpen(it.window, at));
+	return !!it && !it.karma && !it.gun && !it.cs2 && !it.secret && (!it.window || windowOpen(it.window, at));
 }
 
 /** The viewer's local day, "2026-11-21" (the daily deal changes at midnight). */
@@ -370,8 +372,8 @@ export interface Prank {
 /** Pranks kept in the list (the newest); older ones only count as burgers spent (`pOld`). */
 export const PRANK_KEEP = 30;
 // KarmaShop's items too (karma-shop.ts): worn and drawn like these, but bought with hearts (buyKarmaItem), not here;
-// and the Camo Armory's guns (armory.ts), bought in the game's order with buyGun
-export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS, ...GUN_ITEMS, ...DRIP_ITEMS].map((i) => [i.id, i]));
+// and the Camo Armory's guns (armory.ts), bought in the game's order with buyGun, and its CS2 skins (buyCs2)
+export const ITEM_BY_ID: ReadonlyMap<string, ShopItem> = new Map([...SHOP_ITEMS, ...KARMA_ITEMS, ...GUN_ITEMS, ...CS2_ITEMS, ...DRIP_ITEMS].map((i) => [i.id, i]));
 
 export interface ShopState {
 	/** Item id → burgers paid. */
@@ -434,8 +436,9 @@ export const EMOTE_FRESH = 60_000;
 export const EMOTE_PLAY = 8_000;
 
 const ID = /^[a-z0-9-]{2,24}$/;
-// a sanity cap on stored prices (was 1,000,000; raised for the 10-million High Roller title, 2026-11-20)
-const PRICE_MAX = 100_000_000;
+// a sanity cap on stored prices (was 1,000,000; raised for the 10-million High Roller title, 2026-11-20; then
+// for the Camo Armory's CS2 skins, up to 10,000,000,000, 2026-11-22). A price over it drops that item when read.
+export const PRICE_MAX = 1_000_000_000_000;
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
 const MEMBER_ID = /^[A-Za-z0-9_-]{8,32}$/;
@@ -657,7 +660,7 @@ function addOwned(s: ShopState, id: string, price: number, at: number): ShopStat
 export function buy(s: ShopState | undefined, id: string, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
 	const it = ITEM_BY_ID.get(id);
 	// hearts items have their own buy (karma-shop.ts), the armory's guns theirs (armory.ts buyGun: in order)
-	if (!it || it.karma || it.gun || it.secret) return { result: 'unknown' };
+	if (!it || it.karma || it.gun || it.cs2 || it.secret) return { result: 'unknown' };
 	if (owns(s, id)) return { result: 'owned' };
 	if (!buyable(it, at)) return { result: 'closed' };
 	const price = priceOf(id, at);
@@ -732,7 +735,7 @@ export function worn(s: ShopState | undefined): Partial<Record<ShopSlot, ShopIte
 /** What selling an item gives back now (0 = can't: gifts, rewards, KarmaShop items and guns can't be sold). */
 export function sellValue(s: ShopState | undefined, id: string): number {
 	const it = ITEM_BY_ID.get(id);
-	if (!s || !it || it.karma || it.gun || it.secret || !owns(s, id)) return 0;
+	if (!s || !it || it.karma || it.gun || it.cs2 || it.secret || !owns(s, id)) return 0;
 	return Math.floor((s.own[id] - (s.sold?.[id]?.paid ?? 0)) * SELL_BACK);
 }
 
@@ -782,7 +785,7 @@ export function giveItem(
 	gid: string
 ): { state: ShopState; result: 'ok' } | { result: Exclude<BuyResult, 'ok'> } {
 	const it = ITEM_BY_ID.get(id);
-	if (!it || it.karma || it.gun || it.secret || !MEMBER_ID.test(to) || !PRANK_ID.test(gid)) return { result: 'unknown' };
+	if (!it || it.karma || it.gun || it.cs2 || it.secret || !MEMBER_ID.test(to) || !PRANK_ID.test(gid)) return { result: 'unknown' };
 	if (owns(theirs, id)) return { result: 'owned' };
 	if (!buyable(it, at)) return { result: 'closed' };
 	const price = priceOf(id, at);

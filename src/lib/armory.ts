@@ -23,10 +23,14 @@
  * devices merge the same way. Item ids `gun-<camo key>-<weapon slot>`: the slot is the weapon's permanent
  * number (weapons.ts), so ids never change. Never reuse one.
  *
+ * The last tab, CS2 Skins (2026-11-22, data/cs2Skins.ts): famous Counter-Strike skins on the guns that have
+ * a CS2 twin, 100,000,000 burgers and up, no order. Item ids `cs2-<key>`, held in the same `hold` slot.
+ *
  * Pure (no runes, no browser): tested in scripts/armory.test.js. Imports only types from shop.ts (which
  * imports this file for ITEM_BY_ID).
  */
 import { DIVERGENCE, DIVERGENCE_REQUIRED, LADDER, MASTERY, type IconCamo } from './data/camos.ts';
+import { CS2_SKINS, CS2_WEAPON, cs2Name, type Cs2Skin } from './data/cs2Skins.ts';
 import { CLASSES, WEAPONS, type Weapon } from './data/weapons.ts';
 import type { Rarity, ShopItem, ShopState } from './shop.ts';
 
@@ -70,7 +74,20 @@ export const GUN_ITEMS: ShopItem[] = ARMORY_CAMOS.flatMap((c, i) =>
 	ARMORY_WEAPONS.map((w) => ({ id: gunId(i, w), slot: 'hold' as const, name: `${c.name} ${w.name}`, price: c.price, rarity: c.rarity, gun: { w: w.id, c: c.id } }))
 );
 export const GUN_BY_ID: ReadonlyMap<string, ShopItem & { gun: { w: string; c: IconCamo } }> = new Map(GUN_ITEMS.map((i) => [i.id, i as ShopItem & { gun: { w: string; c: IconCamo } }]));
-export const isGunId = (id: string | null | undefined): boolean => !!id && GUN_BY_ID.has(id);
+
+// ----- the CS2 Skins tab -----
+
+export const cs2ItemId = (s: Pick<Cs2Skin, 'key'>) => `cs2-${s.key}`;
+/** Every CS2 skin as a BurgiShop item (worn in `hold`; bought with buyCs2, any time). */
+export const CS2_ITEMS: ShopItem[] = CS2_SKINS.map((s) => ({ id: cs2ItemId(s), slot: 'hold' as const, name: cs2Name(s), price: s.price, rarity: 'legendary' as const, cs2: s.key }));
+/** A CS2 skin by its item id. */
+export const CS2_BY_ID: ReadonlyMap<string, Cs2Skin> = new Map(CS2_SKINS.map((s) => [cs2ItemId(s), s]));
+/** The tab's groups: each weapon with a CS2 twin (game order) and its skins, dearest first. */
+export const CS2_GROUPS = WEAPONS.map((w) => ({ weapon: w, skins: CS2_SKINS.filter((s) => CS2_WEAPON[s.model] === w.id) })).filter((g) => g.skins.length);
+
+export const isGunId = (id: string | null | undefined): boolean => !!id && (GUN_BY_ID.has(id) || CS2_BY_ID.has(id));
+/** A held item's name: a camo gun's or a CS2 skin's. */
+export const holdName = (id: string | null | undefined): string => (id ? (GUN_BY_ID.get(id)?.name ?? (CS2_BY_ID.has(id) ? cs2Name(CS2_BY_ID.get(id)!) : '')) : '');
 
 /** The camo's place in ARMORY_CAMOS. */
 export const camoIndex = (c: string): number => ARMORY_CAMOS.findIndex((x) => x.id === c);
@@ -128,11 +145,29 @@ export function buyGun(s: ShopState | undefined, id: string, balance: number, at
 	return { result: 'ok', state: { ...s, own: { ...s?.own, [id]: it.price }, eq: { ...s?.eq, hold: id }, at } };
 }
 
-/** The gun a member holds (from their shop's `eq.hold`): weapon id + camo, or null. */
-export function heldGun(s: ShopState | undefined): { w: string; c: IconCamo; id: string } | null {
+/** Buy a CS2 skin (held at once): no order, only the burgers. */
+export function buyCs2(s: ShopState | undefined, id: string, balance: number, at: number): { state: ShopState; result: 'ok' } | { result: Exclude<GunBuyResult, 'ok' | 'locked'> } {
+	const sk = CS2_BY_ID.get(id);
+	if (!sk) return { result: 'unknown' };
+	if (s?.own[id] !== undefined) return { result: 'owned' };
+	if (balance < sk.price) return { result: 'broke' };
+	return { result: 'ok', state: { ...s, own: { ...s?.own, [id]: sk.price }, eq: { ...s?.eq, hold: id }, at } };
+}
+
+/** How many CS2 skins you own (all of them, or on one weapon). */
+export function cs2Count(own: Own, weaponId?: string): { have: number; total: number } {
+	const list = weaponId ? CS2_SKINS.filter((s) => CS2_WEAPON[s.model] === weaponId) : CS2_SKINS;
+	return { have: list.filter((s) => own?.[cs2ItemId(s)] !== undefined).length, total: list.length };
+}
+
+/** What a member holds (from their shop's `eq.hold`): a camo gun (weapon id + camo) or a CS2 skin (weapon id + skin key), or null. */
+export function heldGun(s: ShopState | undefined): { w: string; c?: IconCamo; cs2?: string; id: string } | null {
 	const id = s?.eq.hold;
-	const it = id ? GUN_BY_ID.get(id) : undefined;
-	return it && s?.own[it.id] !== undefined ? { ...it.gun, id: it.id } : null;
+	if (!id || s?.own[id] === undefined) return null;
+	const it = GUN_BY_ID.get(id);
+	if (it) return { ...it.gun, id };
+	const sk = CS2_BY_ID.get(id);
+	return sk ? { w: CS2_WEAPON[sk.model], cs2: sk.key, id } : null;
 }
 
 /** Your best camo on a weapon (its highest owned), for the armory's weapon pictures. */
@@ -144,4 +179,4 @@ export function bestCamo(own: Own, weaponId: string): number {
 }
 
 /** Burgers spent in the armory (part of shopSpent; shown on its own in the armory). */
-export const armorySpent = (s: ShopState | undefined): number => Object.entries(s?.own ?? {}).reduce((n, [id, p]) => n + (GUN_BY_ID.has(id) ? p : 0), 0);
+export const armorySpent = (s: ShopState | undefined): number => Object.entries(s?.own ?? {}).reduce((n, [id, p]) => n + (GUN_BY_ID.has(id) || CS2_BY_ID.has(id) ? p : 0), 0);

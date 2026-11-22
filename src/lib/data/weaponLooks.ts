@@ -5,6 +5,7 @@
  * Exception: the CS2 easter eggs (`Cs2Look`, see below) are drawn as the CS2 gun instead.
  * Every weapon in weapons.ts must have an entry (checked by the tests).
  */
+import type { ArtSkin } from '../cs2SkinArt.ts';
 
 export type Stock = 'fixed' | 'skeleton' | 'wood' | 'folded';
 export type Mag = 'straight' | 'curved' | 'drum' | 'box' | 'tube' | 'grip' | 'none';
@@ -39,8 +40,12 @@ export type MeleeLook = { kind: 'melee'; style: 'knife' | 'axe'; body: string; h
  * Our own cartoons in the skin's style (researched from item pictures), never the game textures,
  * and no names in the UI.
  */
-export type Skin = 'fire-serpent' | 'asiimov' | 'blaze' | 'printstream' | 'bloodsport' | 'frost-borre' | 'fade' | 'lightning-strike';
-export type Cs2Model = 'ak47' | 'm4a4' | 'deagle' | 'usps' | 'mp7' | 'r8' | 'xm1014' | 'karambit' | 'awp';
+/** The 2026-11-07 easter-egg skins, drawn in Cs2Gun.svelte itself. */
+export type EggSkin = 'fire-serpent' | 'asiimov' | 'blaze' | 'printstream' | 'bloodsport' | 'frost-borre' | 'fade' | 'lightning-strike';
+/** Every CS2 skin we can draw: the easter eggs + the Camo Armory's CS2 Skins tab (cs2SkinArt.ts, 2026-11-22). */
+export type Skin = EggSkin | ArtSkin;
+/** `m4a1s` (2026-11-22) only appears in the Camo Armory's CS2 Skins tab: the M4's other CS2 twin. */
+export type Cs2Model = 'ak47' | 'm4a4' | 'm4a1s' | 'deagle' | 'usps' | 'mp7' | 'r8' | 'xm1014' | 'karambit' | 'awp';
 export type Cs2Look = { kind: 'cs2'; model: Cs2Model; skin: Skin };
 
 export type GunLook = RifleLook | PistolLook | LauncherLook | MeleeLook | Cs2Look;
@@ -118,6 +123,7 @@ export const WEAPON_LOOKS: Record<string, GunLook> = {
 const PLAIN_LOOKS: Record<Cs2Model, Exclude<GunLook, Cs2Look>> = {
 	ak47: rifle({ stock: 'wood', mag: 'curved', optic: 'irons', guard: 'wood', muzzle: 'brake', barrel: 1, body: BLACK, furniture: WOOD }),
 	m4a4: rifle({ stock: 'fixed', mag: 'straight', optic: 'red', guard: 'rail', muzzle: 'brake', barrel: 1, body: BLACK, furniture: BLACK }),
+	m4a1s: rifle({ stock: 'fixed', mag: 'straight', optic: 'irons', guard: 'slim', muzzle: 'can', barrel: 1, carry: true, body: BLACK, furniture: BLACK }),
 	mp7: rifle({ stock: 'folded', mag: 'grip', optic: 'red', guard: 'slim', muzzle: 'plain', barrel: 0.35, body: BLACK, furniture: BLACK }),
 	xm1014: rifle({ stock: 'fixed', mag: 'tube', optic: 'irons', guard: 'slim', muzzle: 'plain', barrel: 1, body: BLACK, furniture: BLACK }),
 	awp: rifle({ stock: 'fixed', mag: 'straight', optic: 'big', guard: 'slim', muzzle: 'brake', barrel: 1.4, bolt: true, body: OD, furniture: BLACK }),

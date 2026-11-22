@@ -1517,7 +1517,7 @@ export const en = {
 		heading: 'Camo Armory',
 		/** the line under the page heading and on its door */
 		sub: 'Camo guns your operator holds',
-		door: 'Gold to Orion guns 🍔',
+		door: 'Gold to Orion + CS2 skins 🍔',
 		intro: 'Buy a weapon in a camo and your operator holds it at the top of the page and on your squad card, for the whole squad to see. Very expensive, and only in the game’s order.',
 		rulesTitle: 'How it unlocks',
 		rules: [
@@ -1561,7 +1561,22 @@ export const en = {
 		locked: 'Not open yet: buy the camo before it first.',
 		cardLabel: (name: string, state: string) => `${name}: ${state}`,
 		event: (name: string, price: number) => `bought a ${name} for ${price.toLocaleString('en-US')} 🍔 in the Camo Armory 🔫`,
-		eventClass: (camo: string, cls: string) => `owns all the ${cls} in ${camo} now 🔫✨`
+		eventClass: (camo: string, cls: string) => `owns all the ${cls} in ${camo} now 🔫✨`,
+		/** the last tab (2026-11-22): famous CS2 skins on the guns with a CS2 twin */
+		cs2: {
+			tab: 'CS2 Skins',
+			/** under the tab's name: the cheapest price */
+			from: '100M+ 🍔',
+			label: (have: number, total: number) => `CS2 Skins, 100,000,000 burgers and up, ${have} of ${total} owned`,
+			intro: 'Counter-Strike 2’s most famous skins, on the MW4 guns built on the same gun as a CS2 one (and the AWP’s on the KG-7 Vulcan). No order here: any skin, any time, if you have the mountain of burgers. Our own cartoons in each skin’s style.',
+			/** a gun's heading: which CS2 gun(s) it is, how many of its skins you own */
+			twin: (cs: string, have: number, total: number) => `${cs} · ${have} / ${total}`,
+			/** a price, short: 250M 🍔, 2.5B 🍔 */
+			short: (n: number) => (n >= 1_000_000_000 ? `${n / 1_000_000_000}B` : `${n / 1_000_000}M`) + ' 🍔',
+			buy: 'Buy',
+			cardLabel: (name: string, grade: string, price: number, state: string) => `${name}, ${grade}, ${price.toLocaleString('en-US')} burgers: ${state}`,
+			event: (name: string, price: number) => `bought a ${name} for ${price.toLocaleString('en-US')} 🍔 in the Camo Armory 💎🔫`
+		}
 	},
 	/** BurgiDrip (2026-11-22, drip.ts): the clothing store, the fourth door in the BurgiShop tab. */
 	drip: {

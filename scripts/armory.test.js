@@ -17,7 +17,7 @@ import {
 	GUN_BY_ID,
 	GUN_ITEMS
 } from '../src/lib/armory.ts';
-import { buy, cleanShop, equip, mergeShop, shopSpent, worn, ITEM_BY_ID } from '../src/lib/shop.ts';
+import { buy, cleanShop, equip, mergeShop, shopSpent, worn, ITEM_BY_ID, PRICE_MAX } from '../src/lib/shop.ts';
 import { DIVERGENCE_REQUIRED } from '../src/lib/data/camos.ts';
 import { WEAPONS } from '../src/lib/data/weapons.ts';
 import { WEAPON_LOOKS, camoLook } from '../src/lib/data/weaponLooks.ts';
@@ -62,7 +62,7 @@ test('the catalogue: every released weapon in every camo, unique stable ids, gol
 		assert.match(i.id, /^gun-[a-z]{1,2}-\d{1,2}$/, i.id);
 		assert.ok(i.id.length <= 24);
 		assert.equal(i.slot, 'hold');
-		assert.ok(i.price <= 100_000_000, 'under shop.ts PRICE_MAX, or a stored price would be dropped');
+		assert.ok(i.price <= PRICE_MAX, 'under shop.ts PRICE_MAX, or a stored price would be dropped');
 		assert.equal(ITEM_BY_ID.get(i.id), i, 'worn like every BurgiShop item');
 	}
 	// ids come from the weapon's permanent slot number

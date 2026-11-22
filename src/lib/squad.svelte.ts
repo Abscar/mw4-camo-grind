@@ -108,7 +108,8 @@ import {
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
 import { cleanDonations, giveTo, goalPassed, heartsGiftedTo, karmaBalance, loveFor, mergeDonations, squadGiving, withLove, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
 import { buyKarmaItem, cleanKarmaShop, heartsOf, mergeKarmaShop, ownKarmaItems, KARMA_BY_ID, type Hearts, type KarmaBuyResult, type KarmaShopState } from './karma-shop.ts';
-import { buyGun as armoryBuy, camoIndex, ownedCount, ARMORY_CAMOS, ARMORY_CLASSES, GUN_BY_ID, type GunBuyResult } from './armory.ts';
+import { buyCs2, buyGun as armoryBuy, camoIndex, ownedCount, ARMORY_CAMOS, ARMORY_CLASSES, CS2_BY_ID, GUN_BY_ID, type GunBuyResult } from './armory.ts';
+import { cs2Name } from './data/cs2Skins.ts';
 import { is420 } from './four20.ts';
 import { cleanTune, forcedFor, karmaLuck, luckFor, withUsed, type CasinoTune, type ForceKind, type KarmaLuck, type RigGame } from './casino-rig.ts';
 
@@ -1105,6 +1106,17 @@ class Squad {
 		const me = this.me;
 		const bank = this.myBank;
 		if (!me || !bank) return 'off';
+		// the CS2 Skins tab (armory.ts buyCs2): no order, every one goes on the radio
+		const sk = CS2_BY_ID.get(id);
+		if (sk) {
+			const c = buyCs2(this.shop, id, bank.balance, Math.round(this.serverNow()));
+			if (c.result !== 'ok') return c.result;
+			this.shop = c.state;
+			writeJson(SHOP_KEY, c.state);
+			this.#schedulePublish();
+			void this.#event(t.armory.cs2.event(cs2Name(sk), sk.price));
+			return 'ok';
+		}
 		const r = armoryBuy(this.shop, id, bank.balance, Math.round(this.serverNow()));
 		if (r.result !== 'ok') return r.result;
 		this.shop = r.state;
