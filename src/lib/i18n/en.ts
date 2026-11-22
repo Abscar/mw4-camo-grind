@@ -763,8 +763,16 @@ export const en = {
 		modeGroup: 'Game mode',
 		overall: 'Overall',
 		tier: (tier: string) => `${tier} tier`,
-		/** A class with fewer guns than the list's length. */
+		/** A class with fewer guns than the list's length (ClassMeta). */
 		onlyN: (n: number) => `MW4 has only ${n} guns in this class so far.`,
+		/** The snapshot date in the header. */
+		updated: (date: string) => `Updated ${date}`,
+		/** The pill on each class card: how much of the class the list shows. */
+		count: (shown: number, total: number, top: number) =>
+			total > shown ? `Top ${shown} of ${total}` : total < top ? `Only ${total} in MW4` : `All ${total}`,
+		allClasses: 'All classes',
+		legendLabel: 'What the tiers mean',
+		legend: { S: 'Top meta', A: 'Strong', B: 'Solid', C: 'Niche', D: 'Weak' },
 		openHint: 'open its meta class',
 		snapshot: (sources: string, date: string) =>
 			`A snapshot of ${sources} on ${date}. The meta moves with every balance patch. Tap a gun for its meta class.`

@@ -41,17 +41,17 @@
 					<h3 id={headingId} class="font-head px-1.5 text-[12px] font-bold tracking-[0.14em] text-fg uppercase">
 						{t.loadout.modes[list.mode]}
 					</h3>
-					<ol class="mt-1 grid">
+					<ol class="mb-rows mt-1 grid">
 						{#each list.picks as pick, i (pick.id)}
 							{@const look = WEAPON_LOOKS[pick.id]}
 							<li>
 								<button
 									type="button"
-									class="meta-pick grid min-h-11 w-full grid-cols-[1rem_auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-[6px] px-1.5 py-1 text-left"
+									class="meta-pick grid min-h-11 w-full grid-cols-[1.5rem_auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-[7px] px-1.5 py-1 text-left"
 									aria-haspopup="dialog"
 									onclick={() => loadoutView.show(pick.id)}
 								>
-									<span class="meta-rank font-head text-[15px] font-bold tabular-nums" class:first={i === 0} aria-hidden="true">{i + 1}</span>
+									<span class="meta-rank font-head tabular-nums" class:first={i === 0} data-rank={i + 1} aria-hidden="true">{i + 1}</span>
 									{#if look}<WeaponIcon {look} />{:else}<span></span>{/if}
 									<span class="min-w-0">
 										<span class="flex min-w-0">

@@ -308,8 +308,23 @@
 	background: var(--t-accent);
 	color: var(--t-on-accent);
 }
-.meta-pick:hover {
-	background: var(--t-panel);
+/* rows (Meta top 5 + ClassMeta; tidied 2026-11-22): a thin line between them, the #1 row tinted
+   gold, hover = accent tint + a bar on the left */
+.mb-rows > li + li {
+	border-top: 1px solid color-mix(in srgb, var(--t-line) 75%, transparent);
+}
+.meta-pick {
+	transition:
+		background-color 0.15s,
+		box-shadow 0.15s;
+}
+.mb-rows > li:first-child .meta-pick {
+	background: linear-gradient(90deg, color-mix(in srgb, var(--t-gold) 17%, transparent), transparent 78%);
+}
+.meta-pick:hover,
+.mb-rows > li:first-child .meta-pick:hover {
+	background: color-mix(in srgb, var(--t-accent) 11%, transparent);
+	box-shadow: inset 3px 0 0 var(--t-accent);
 }
 .meta-pick:hover .weapon-name {
 	text-decoration: underline;
@@ -326,28 +341,71 @@
 .meta-rank.first {
 	color: var(--t-gold-ink, var(--t-gold));
 }
-/* the tier letter: S filled, A outlined in the accent, the rest quiet */
+/* the rank as a medal: gold, silver, bronze, then a plain ring */
+.meta-rank[data-rank] {
+	display: grid;
+	place-items: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	border: 1.5px solid var(--t-line);
+	border-radius: 50%;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1;
+}
+.meta-rank[data-rank='1'],
+.meta-rank[data-rank='2'],
+.meta-rank[data-rank='3'] {
+	border-color: rgb(0 0 0 / 0.28);
+	color: #2a1d06;
+	box-shadow:
+		inset 0 1px 0 rgb(255 255 255 / 0.55),
+		0 1px 3px rgb(0 0 0 / 0.3);
+}
+.meta-rank[data-rank='1'] {
+	background: radial-gradient(circle at 35% 30%, #fff2b8, #f2c443 45%, #b9861b);
+}
+.meta-rank[data-rank='2'] {
+	background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 45%, #8e9aab);
+	color: #1d2430;
+}
+.meta-rank[data-rank='3'] {
+	background: radial-gradient(circle at 35% 30%, #ffd9b0, #d08a4c 45%, #8b5226);
+	color: #2b1406;
+}
+/* the tier letter: S filled + glow, A tinted in the accent, B neutral, C/D quiet */
 .meta-tier {
 	display: grid;
 	place-items: center;
-	min-width: 1.5rem;
-	height: 1.4rem;
+	min-width: 1.6rem;
+	height: 1.5rem;
 	padding: 0 0.3rem;
 	border: 1px solid var(--t-line);
-	border-radius: 4px;
-	font-size: 12px;
+	border-radius: 6px;
+	font-size: 12.5px;
 	font-weight: 800;
 	line-height: 1;
 	color: var(--t-muted);
 }
 .meta-tier[data-tier='S'] {
 	border-color: var(--t-accent);
-	background: var(--t-accent);
+	background: linear-gradient(180deg, color-mix(in srgb, var(--t-accent) 82%, white), var(--t-accent) 55%);
 	color: var(--t-on-accent);
+	box-shadow:
+		0 0 10px color-mix(in srgb, var(--t-accent) 45%, transparent),
+		inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
 .meta-tier[data-tier='A'] {
 	border-color: var(--t-accent);
+	background: color-mix(in srgb, var(--t-accent) 20%, transparent);
 	color: var(--t-fg);
+}
+.meta-tier[data-tier='B'] {
+	background: color-mix(in srgb, var(--t-fg) 9%, transparent);
+	color: var(--t-fg);
+}
+.meta-tier[data-tier='D'] {
+	border-style: dashed;
 }
 
 /* ---------- Abscar: every weapon (name + its boxes) in its own white frame, with room between
