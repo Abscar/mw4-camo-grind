@@ -287,7 +287,7 @@
 		<!-- squad up: the header burns while 3+ of the squad are online -->
 		<div class="abscar-only compact-hide"><SquadUpFire /></div>
 		<!-- the settings row: save status on the left; Compact, theme, sound and pause animations on the right (2026-11-10/11) -->
-		<div class="hdr-bar relative z-[32] mx-auto flex max-w-[1240px] items-center justify-between gap-2 px-4 pt-2 sm:px-5 sm:pt-3">
+		<div class="hdr-bar relative z-[32] mx-auto flex max-w-[1240px] items-center justify-between gap-1 px-4 pt-2 min-[421px]:gap-2 sm:px-5 sm:pt-3">
 			<div class="min-w-0"><SaveStatus /></div>
 			<!-- CS2 skin prices: opens BUFF163's search (2026-11-11); a magnifier with a drop-down on phones -->
 			<BuffSearch />

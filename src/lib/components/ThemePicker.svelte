@@ -53,7 +53,23 @@
 	});
 </script>
 
-<div class="relative flex items-center gap-0.5" bind:this={root}>
+<div class="relative flex items-center min-[421px]:gap-0.5" bind:this={root}>
+	<!-- refresh: loads the page again (the user's ask, 2026-11-22); ticks are already saved -->
+	<button
+		type="button"
+		class="refresh-btn grid size-11 place-items-center rounded-full text-band-muted opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+		aria-label={t.refresh.label}
+		title={t.refresh.title}
+		onclick={() => location.reload()}
+	>
+		<svg class="sound-icon size-5" viewBox="0 0 24 24" aria-hidden="true">
+			<g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+				<path d="M19.8 4.2v4.6h-4.6" />
+			</g>
+		</svg>
+	</button>
+
 	<!-- compact mode between matches (saved per device; app.html applies it before the first paint) -->
 	<button
 		type="button"

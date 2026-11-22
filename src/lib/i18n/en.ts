@@ -35,7 +35,7 @@ export const en = {
 		open: 'Backup & sync settings',
 		/** Phones up to 420 px: the same states in fewer words (the settings row is full there). */
 		short: {
-			saved: 'Saved here',
+			saved: 'Saved',
 			notSaving: 'Not saving',
 			syncing: 'Syncing…',
 			synced: 'Synced',
@@ -146,6 +146,8 @@ export const en = {
 	},
 	/** Sound effects for your own ticks (button next to the theme picker; off by default). */
 	sound: { label: 'Sound effects', on: 'Sound effects: on', off: 'Sound effects: off' },
+	/** The refresh button at the start of the settings row (2026-11-22). */
+	refresh: { label: 'Refresh the page', title: 'Refresh: load the page again (your ticks are saved)' },
 	/** Battery saver (motion.svelte.ts; the header's old pause button, 2026-11-20). */
 	saver: {
 		label: 'Battery saver',
