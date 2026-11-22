@@ -13,7 +13,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
-	import { donationTotal, goalOf, parseAmount, squadGiving, DON_AMOUNTS, DON_MAX, ORGS, ORG_BY_ID, type OrgId } from '#lib/donations.ts';
+	import { donationTotal, goalOf, parseAmount, squadGiving, DON_AMOUNTS, ORGS, ORG_BY_ID, type OrgId } from '#lib/donations.ts';
 	import { houseOf } from '#lib/squad-fun.ts';
 	import DonateArt from './DonateArt.svelte';
 	import DonateKarma from './DonateKarma.svelte';
@@ -62,7 +62,6 @@
 	function give(org: OrgId) {
 		const n = amount;
 		if (!n) return void (error = d.bad);
-		if (n > DON_MAX) return void (error = d.tooBig(DON_MAX));
 		if (n > balance) return void (error = d.broke(balance));
 		const r = squad.donate(org, n);
 		if (r.result !== 'ok') {
@@ -165,7 +164,7 @@
 									<button type="button" class="dn-chip num" aria-pressed={amount === n} disabled={n > balance} onclick={() => pickAmount(n)}>{fmt(n)}</button>
 								{/each}
 								<button type="button" class="dn-chip" aria-pressed={amount === Math.floor(balance / 2) && balance > 1} disabled={balance < 2} onclick={() => pickAmount(Math.floor(balance / 2))}>{d.half}</button>
-								<button type="button" class="dn-chip" aria-pressed={amount === balance && balance > 0} disabled={balance < 1} onclick={() => pickAmount(Math.min(balance, DON_MAX))}>{d.all}</button>
+								<button type="button" class="dn-chip" aria-pressed={amount === balance && balance > 0} disabled={balance < 1} onclick={() => pickAmount(balance)}>{d.all}</button>
 							</div>
 							<label class="grid gap-1">
 								<span class="sr-only">{d.amount}</span>

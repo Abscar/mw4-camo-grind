@@ -14,7 +14,6 @@ import {
 	parseAmount,
 	squadGiving,
 	DON_LOG,
-	DON_MAX,
 	ORG_IDS,
 	ORGS,
 	cleanKarma,
@@ -68,7 +67,13 @@ test('donations: give, balance check, bad gifts refused', () => {
 	assert.deepEqual(giveTo(book, 'devA', 'g4', 'redcross', 10, 1e9, T), { result: 'bad' }, 'only our causes');
 	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 0, 1e9, T), { result: 'bad' });
 	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 2.5, 1e9, T), { result: 'bad' });
-	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', DON_MAX + 1, 1e12, T), { result: 'bad' });
+	assert.equal(giveTo(book, 'devA', 'g4', 'barn', 5e12, 1e13, T).result, 'ok', 'no cap on a gift (was 100,000,000)');
+	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 5e12, 1e12, T), { result: 'broke' }, 'only your burgers limit it');
+	assert.deepEqual(giveTo(book, 'devA', 'g4', 'barn', 1e20, 1e21, T), { result: 'bad' }, 'past what JavaScript counts exactly');
+	const huge = give(give(undefined, 'devA', 'h1', 'barn', 9e12, 1e15), 'devA', 'h2', 'holk', 8e12, 1e15, T + 1);
+	const back = cleanDonations(JSON.parse(JSON.stringify(huge)));
+	assert.equal(donationTotal(back), 17e12, 'a device past 10 billion is kept when read back (it used to be dropped)');
+	assert.equal(back.log.h1.n, 9e12, 'and so is a gift past 100 million in the log');
 	assert.deepEqual(giveTo(book, 'no!', 'g4', 'barn', 10, 1e9, T), { result: 'bad' });
 });
 
@@ -160,6 +165,9 @@ test('donations: typed amounts', () => {
 	assert.equal(parseAmount('12 345'), 12345);
 	assert.equal(parseAmount('10k'), 10000);
 	assert.equal(parseAmount('2.5M'), 2500000);
+	assert.equal(parseAmount('3b'), 3_000_000_000);
+	assert.equal(parseAmount('1.5T'), 1_500_000_000_000);
+	assert.equal(parseAmount('25000000000'), 25_000_000_000);
 	assert.equal(parseAmount('2.5'), null, 'no half burgers');
 	assert.equal(parseAmount('0'), null);
 	assert.equal(parseAmount('-5'), null);

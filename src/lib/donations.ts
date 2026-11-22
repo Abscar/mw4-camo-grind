@@ -56,8 +56,9 @@ export const ORG_BY_ID = new Map(ORGS.map((o) => [o.id, o]));
 
 /** Quick amounts on the page (any other amount can be typed in). */
 export const DON_AMOUNTS = [100, 1_000, 10_000, 100_000];
-/** The most one gift can be. */
-export const DON_MAX = 100_000_000;
+// No cap on a gift (the user, 2026-11-22: "donera oändligt", it was 100,000,000): only your own burgers limit
+// it. An amount just has to be a whole number JavaScript counts exactly (up to ≈ 9 quadrillion). Same for the
+// karma bank below.
 /** Gifts this big go on the squad radio. */
 export const DON_RADIO = 1_000;
 /** Gifts kept in a member's log (the "latest gifts" list). */
@@ -89,9 +90,7 @@ const GIFT_ID = /^[A-Za-z0-9_-]{1,16}$/;
 const ORG_SET = new Set<string>(ORG_IDS);
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 const isTime = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x) && x > 0;
-const isAmount = (x: unknown): x is number => Number.isInteger(x) && (x as number) > 0;
-/** A whole device's total can't be more than this (sanity, like the casino's NET_MAX). */
-const SUM_MAX = 10_000_000_000;
+const isAmount = (x: unknown): x is number => Number.isSafeInteger(x) && (x as number) > 0;
 
 export const isOrg = (x: unknown): x is OrgId => typeof x === 'string' && ORG_SET.has(x);
 
@@ -120,19 +119,14 @@ export function cleanDonations(raw: unknown): DonationBook | undefined {
 	for (const [id, d] of Object.entries(raw.dev)) {
 		if (!DEVICE_ID.test(id) || !isObject(d) || !isObject(d.s) || !isTime(d.at)) continue;
 		const s: Partial<Record<OrgId, number>> = {};
-		let sum = 0;
-		for (const [o, n] of Object.entries(d.s)) {
-			if (!isOrg(o) || !isAmount(n)) continue;
-			s[o] = n;
-			sum += n;
-		}
-		if (!Object.keys(s).length || sum > SUM_MAX) continue;
+		for (const [o, n] of Object.entries(d.s)) if (isOrg(o) && isAmount(n)) s[o] = n;
+		if (!Object.keys(s).length) continue;
 		dev[id] = { s, at: Math.round(d.at) };
 	}
 	let log: Record<string, Gift> | undefined;
 	if (isObject(raw.log)) {
 		for (const [id, g] of Object.entries(raw.log)) {
-			if (!GIFT_ID.test(id) || !isObject(g) || !isOrg(g.o) || !isAmount(g.n) || (g.n as number) > DON_MAX || !isTime(g.at)) continue;
+			if (!GIFT_ID.test(id) || !isObject(g) || !isOrg(g.o) || !isAmount(g.n) || !isTime(g.at)) continue;
 			(log ??= {})[id] = { o: g.o, n: g.n as number, at: Math.round(g.at as number) };
 		}
 	}
@@ -155,10 +149,10 @@ export type GiveResult = { result: 'ok'; book: DonationBook } | { result: 'broke
 
 /** Give `n` burgers to a cause from this device: 'broke' = more than you have, 'bad' = not a gift. */
 export function giveTo(b: DonationBook | undefined, device: string, id: string, org: string, n: number, balance: number, now: number): GiveResult {
-	if (!DEVICE_ID.test(device) || !GIFT_ID.test(id) || !isOrg(org) || !isAmount(n) || n > DON_MAX || !isTime(now)) return { result: 'bad' };
+	if (!DEVICE_ID.test(device) || !GIFT_ID.test(id) || !isOrg(org) || !isAmount(n) || !isTime(now)) return { result: 'bad' };
 	if (n > balance) return { result: 'broke' };
 	const mine = b?.dev[device];
-	const s = { ...mine?.s, [org]: (mine?.s[org] ?? 0) + n };
+	const s = { ...mine?.s, [org]: Math.min(Number.MAX_SAFE_INTEGER, (mine?.s[org] ?? 0) + n) };
 	const at = Math.round(now);
 	const next = book({ ...b?.dev, [device]: { s, at: Math.max(at, mine?.at ?? 0) } }, { ...b?.log, [id]: { o: org, n, at } });
 	return next ? { result: 'ok', book: next } : { result: 'bad' };
@@ -263,15 +257,16 @@ export function squadGiving(members: Record<string, Giver>, recent = 12): SquadG
 }
 
 /**
- * A typed amount: "1500", "1,500", "1 500", "10k", "2.5m" → whole burgers, or null.
- * (k = thousand, m = million; decimals only with a suffix.)
+ * A typed amount: "1500", "1,500", "1 500", "10k", "2.5m", "3b", "1t" → whole burgers, or null.
+ * (k = thousand, m = million, b = billion, t = trillion; decimals only with a suffix.)
  */
+const SUFFIX: Record<string, number> = { '': 1, k: 1e3, m: 1e6, b: 1e9, t: 1e12 };
 export function parseAmount(text: string): number | null {
 	const s = text.trim().toLowerCase().replace(/[\s,_\u00a0\u202f]/g, '');
-	const m = /^(\d+(?:\.\d+)?)([km]?)$/.exec(s);
+	const m = /^(\d+(?:\.\d+)?)([kmbt]?)$/.exec(s);
 	if (!m) return null;
 	if (m[1].includes('.') && !m[2]) return null;
-	const n = Math.round(Number(m[1]) * (m[2] === 'k' ? 1_000 : m[2] === 'm' ? 1_000_000 : 1));
+	const n = Math.round(Number(m[1]) * SUFFIX[m[2]]);
 	return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
@@ -281,8 +276,6 @@ export function parseAmount(text: string): number | null {
 export const LOVE_LINES = 6;
 /** Karma gifts kept in the squad document's log (the newest). */
 export const KARMA_LOG = 30;
-/** The most one member can get in one go. */
-export const KARMA_MAX = 100_000_000;
 
 export interface KarmaGift {
 	/** To whom (member id), how many burgers, when (ms, the sync service's clock). */
@@ -309,7 +302,7 @@ function pruneKarmaLog(log: Record<string, KarmaGift> | undefined): Record<strin
 export function cleanKarma(raw: unknown): Karma | undefined {
 	if (!isObject(raw) || !isObject(raw.given)) return undefined;
 	const given: Record<string, number> = {};
-	for (const [id, n] of Object.entries(raw.given)) if (MEMBER.test(id) && isAmount(n) && n <= SUM_MAX) given[id] = n;
+	for (const [id, n] of Object.entries(raw.given)) if (MEMBER.test(id) && isAmount(n)) given[id] = n;
 	let log: Record<string, KarmaGift> | undefined;
 	if (isObject(raw.log)) {
 		for (const [id, g] of Object.entries(raw.log)) {
@@ -337,13 +330,13 @@ export function karmaBalance(squadDonated: number, k: Karma | undefined): number
  * it's more than the bank holds or not a gift.
  */
 export function withLove(k: Karma | undefined, to: string[], n: number, balance: number, ids: string[], at: number, m?: number): Karma | null {
-	if (!to.length || to.length !== ids.length || new Set(to).size !== to.length || !isAmount(n) || n > KARMA_MAX || !isTime(at)) return null;
+	if (!to.length || to.length !== ids.length || new Set(to).size !== to.length || !isAmount(n) || !isTime(at)) return null;
 	if (to.some((id) => !MEMBER.test(id)) || ids.some((id) => !GIFT_ID.test(id))) return null;
 	if (n * to.length > balance) return null;
 	const given = { ...k?.given };
 	const log = { ...k?.log };
 	to.forEach((id, i) => {
-		given[id] = (given[id] ?? 0) + n;
+		given[id] = Math.min(Number.MAX_SAFE_INTEGER, (given[id] ?? 0) + n);
 		const gift: KarmaGift = { to: id, n, at: Math.round(at) };
 		if (m !== undefined && Number.isInteger(m) && m >= 0 && m < LOVE_LINES) gift.m = m;
 		log[ids[i]] = gift;

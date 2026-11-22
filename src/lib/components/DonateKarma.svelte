@@ -10,7 +10,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
-	import { karmaBalance, karmaGiven, parseAmount, LOVE_LINES, KARMA_MAX } from '#lib/donations.ts';
+	import { karmaBalance, karmaGiven, parseAmount, LOVE_LINES } from '#lib/donations.ts';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	let { donated }: { donated: number } = $props();
@@ -36,7 +36,6 @@
 	async function send() {
 		const n = amount;
 		if (!who || !n) return;
-		if (n > KARMA_MAX) return void (error = k.broke(hearts));
 		if (cost > hearts) return void (error = k.broke(hearts));
 		busy = true;
 		error = '';
