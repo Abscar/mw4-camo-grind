@@ -78,6 +78,18 @@
 		transform: scale(1.1);
 	}
 }
+/* the RGB Gamer Chain cycles through every colour (2026-11-23) */
+.dr-rgb {
+	animation: dr-rgb 4s linear infinite;
+}
+@keyframes dr-rgb {
+	from {
+		filter: hue-rotate(0deg);
+	}
+	to {
+		filter: hue-rotate(360deg);
+	}
+}
 /* the set bonus: the pauldrons glow in the set's colour and sparks rise round them */
 .dr-setglow {
 	filter: drop-shadow(0 0 1.2px var(--g)) drop-shadow(0 0 2.6px var(--g));
@@ -100,6 +112,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
 	.dr-glow,
+	.dr-rgb,
 	.dr-flicker,
 	.dr-bob,
 	.dr-zap,
