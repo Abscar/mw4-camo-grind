@@ -298,7 +298,10 @@ export interface BankRow {
 	grant: number;
 	/** BurgiGives: burgers given to the joke causes (donations.ts). They become hearts in the karma bank. */
 	donated: number;
-	/** BurgiGives' karma bank: burgers Abscar sent this member with love (donations.ts). */
+	/**
+	 * BurgiGives' karma bank: burgers Abscar sent this member before 2026-11-22, when gifts still arrived as
+	 * burgers (doc field `karma`, donations.ts). Gifts since are KarmaShop hearts and never touch burgers.
+	 */
 	karma: number;
 	won: number;
 	lost: number;
@@ -311,7 +314,7 @@ export interface BankRow {
 
 /**
  * Everyone's burgers: earned + daily bonus + casino + bets won − bets lost − burgers on open bets −
- * donations + love from the karma bank, and for the house (Abscar) everything the others lost in the casino and on bets. Never
+ * donations + love from the karma bank sent before 2026-11-22 (since then it's hearts), and for the house (Abscar) everything the others lost in the casino and on bets. Never
  * below zero on show.
  */
 export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, now = Date.now()): Record<string, BankRow> {

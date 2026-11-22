@@ -964,21 +964,23 @@ export const en = {
 		karma: {
 			heading: 'Karma bank',
 			secret: 'Only you see this',
-			intro: 'Every burger anyone donates turns into a heart here. Send hearts back to the gang: they arrive as burgers, with a little love.',
+			intro: 'Every burger anyone donates turns into a heart here. Send hearts to the gang: they arrive as ❤️ hearts they can spend in KarmaShop, with a little love.',
+			priceHint: (cheapest: number, dearest: number, all: number) =>
+				`In KarmaShop things cost ${cheapest.toLocaleString('en-US')}–${dearest.toLocaleString('en-US')} ❤️ (all of it together: ${all.toLocaleString('en-US')} ❤️).`,
 			hearts: (n: number) => `${n.toLocaleString('en-US')} 💗`,
 			heartsLabel: 'Hearts in the bank',
 			given: (n: number) => `${n.toLocaleString('en-US')} 💗 sent back so far`,
 			amount: 'Hearts each',
 			line: 'With a love line',
 			noLine: 'No line',
-			lines: ['GG, legend 💗', 'For the grind 💪', 'Burgers on me 🍔', 'You deserve it ❤️', 'Squad love 🫶', 'Keep smiling 😘'],
+			lines: ['GG, legend 💗', 'For the grind 💪', 'Treat yourself 💖', 'You deserve it ❤️', 'Squad love 🫶', 'Keep smiling 😘'],
 			to: 'Who gets the love',
 			everyone: 'Everyone',
 			send: (n: number) => `Send ${n.toLocaleString('en-US')} 💗`,
 			sendEmpty: 'Send 💗',
 			sendAll: (n: number, people: number) => `Send ${n.toLocaleString('en-US')} 💗 to all ${people}`,
-			sent: (name: string, n: number) => `${n.toLocaleString('en-US')} 💗 sent to ${name} as burgers`,
-			sentAll: (n: number, people: number) => `${n.toLocaleString('en-US')} 💗 each sent to ${people} people`,
+			sent: (name: string, n: number) => `${n.toLocaleString('en-US')} ❤️ sent to ${name}, to spend in KarmaShop`,
+			sentAll: (n: number, people: number) => `${n.toLocaleString('en-US')} ❤️ each sent to ${people} people, to spend in KarmaShop`,
 			broke: (have: number) => `The bank only has ${have.toLocaleString('en-US')} 💗.`,
 			off: 'Couldn’t reach the squad. Try again in a moment.',
 			nobody: 'Nobody else is in the squad yet.',
@@ -986,9 +988,10 @@ export const en = {
 			logHeading: 'Love sent',
 			logNone: 'No love sent yet.',
 			logRow: (name: string, n: number) => `${name} got ${n.toLocaleString('en-US')} 💗`,
-			event: (name: string, n: number, line: string | null) => `sent ${name} ${n.toLocaleString('en-US')} 🍔 from the karma bank${line ? `: “${line}”` : ''} 💗`,
-			eventAll: (n: number, line: string | null) => `sent everyone ${n.toLocaleString('en-US')} 🍔 from the karma bank${line ? `: “${line}”` : ''} 💗`,
-			got: (from: string, n: number, line: string | null) => `💗 ${from} sent you ${n.toLocaleString('en-US')} 🍔 with love${line ? `: “${line}”` : '!'}`
+			event: (name: string, n: number, line: string | null) => `sent ${name} ${n.toLocaleString('en-US')} ❤️ from the karma bank${line ? `: “${line}”` : ''} 💗`,
+			eventAll: (n: number, line: string | null) => `sent everyone ${n.toLocaleString('en-US')} ❤️ from the karma bank${line ? `: “${line}”` : ''} 💗`,
+			got: (from: string, n: number, line: string | null) =>
+				`💗 ${from} sent you ${n.toLocaleString('en-US')} ❤️ with love${line ? `: “${line}”` : '!'} Spend them in BurgiShop → KarmaShop.`
 		},
 		orgs: {
 			holk: {
@@ -2577,7 +2580,7 @@ export const en = {
 			howLabel: 'How burgers work',
 			betsHeading: 'Bets',
 			how: (s: { start: number; gold: number; platinum: number; harmonicBreak: number; mastery: number; divergence: number }) =>
-				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (2,500, going up by 2,500 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account. Burgers you give away in BurgiGives (the Donations tab) go to the karma bank, and now and then love from it comes back as burgers.`,
+				`You earn burgers on camos: ${s.start} to start, Gold +${s.gold}, Platinum +${s.platinum}, Harmonic Break +${s.harmonicBreak}, Divergence +${s.divergence}, each Mastery camo +${s.mastery}. Bet them on duels and the race to Divergence: win and you get your bet back doubled. Every day you’re online with the squad adds a daily bonus (2,500, going up by 2,500 every 5 days online), and what you win or lose in BurgiCasino counts too. Abscar is the house: every burger the others lose in BurgiCasino or on bets goes to Abscar’s account. Burgers you give away in BurgiGives (the Donations tab) go to the karma bank, and now and then love from it comes back as hearts to spend in KarmaShop.`,
 			houseTag: (n: number) => `house +${n.toLocaleString('en-US')}`,
 			richest: 'Richest',
 			burgers: (n: number) => `${n.toLocaleString('en-US')} burger${n === 1 ? '' : 's'}`,
@@ -2754,13 +2757,15 @@ export const en = {
 		hearts: (n: number) => `${n.toLocaleString('en-US')} ❤️`,
 		intro: 'Kindness pays here. You earn hearts by giving burgers away in BurgiGives, and spend them on good-karma looks for your operator: the whole squad sees them. What you buy is yours to keep and is worn like your BurgiShop things (one per kind).',
 		how: 'How you earn hearts',
-		rules: [
+		rules: (causes: number) => [
 			'1 ❤️ for every 1,000 🍔 you give in BurgiCasino → Donations (BurgiGives).',
-			'+10 ❤️ once for each cause you give at least 1,000 🍔 (up to +50 for all five).',
+			`+10 ❤️ once for each cause you give at least 1,000 🍔 (up to +${(causes * 10).toLocaleString('en-US')} for all ${causes}).`,
+			'Hearts can also come your way from the karma bank, as a thank-you from Abscar 💗',
 			'Everything you’ve given before counts too. Hearts never run out on their own, and only you can spend yours.'
 		],
-		given: (burgers: number, causes: number) => `You’ve given ${burgers.toLocaleString('en-US')} 🍔 to ${causes} of 5 causes`,
+		given: (burgers: number, causes: number, of: number) => `You’ve given ${burgers.toLocaleString('en-US')} 🍔 to ${causes} of ${of} causes`,
 		earnedSpent: (earned: number, spent: number) => `${earned.toLocaleString('en-US')} ❤️ earned · ${spent.toLocaleString('en-US')} ❤️ spent`,
+		gifted: (n: number, from: string) => `${n.toLocaleString('en-US')} ❤️ from ${from}’s karma bank 💗`,
 		next: (burgers: number) => `${burgers.toLocaleString('en-US')} 🍔 more given = 1 more ❤️`,
 		toDonate: 'Give burgers in BurgiGives',
 		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} ❤️`,

@@ -3,22 +3,30 @@
 	hearts as a currency only I see, that I can use to give back to the gang and show love"). Shown only to
 	the member who is the house (Abscar): the hearts in the bank (every burger the squad donated, minus what
 	was sent back), who gets the love (one member or everyone), how many hearts each, an optional love line,
-	Send, and the love sent so far. Hearts arrive as burgers on the others' balances (squad-fun.ts `karma`),
-	with a radio line and a toast on their page. Pretend burgers, never money.
+	Send, and the love sent so far. Since 2026-11-22 hearts arrive as KarmaShop hearts ❤️, 1 💗 = 1 ❤️ (doc
+	field `karmaHearts`, karma-shop.ts heartsOf `gifted`; until then they arrived as burgers, doc field
+	`karma`, which still counts here), with a radio line and a toast on their page. Pretend hearts, never money.
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { toast } from '#lib/toast.svelte.ts';
-	import { karmaBalance, karmaGiven, parseAmount, LOVE_LINES } from '#lib/donations.ts';
+	import { heartsGiftedTo, karmaBalance, loveLog, lovedTotal, parseAmount, LOVE_LINES } from '#lib/donations.ts';
+	import { KARMA_ITEMS } from '#lib/karma-shop.ts';
 	import SquadAvatar from './SquadAvatar.svelte';
 
 	let { donated }: { donated: number } = $props();
 	const k = t.donate.karma;
 	const fmt = (n: number) => n.toLocaleString('en-US');
 
-	const karma = $derived(squad.doc?.karma);
-	const hearts = $derived(karmaBalance(donated, karma));
+	const books = $derived(squad.doc);
+	const hearts = $derived(karmaBalance(donated, books?.karma, books?.karmaHearts));
+	const sentSoFar = $derived(lovedTotal(books));
+	/** What KarmaShop's items cost, so Abscar knows what a heart is worth there. */
+	const prices = KARMA_ITEMS.map((i) => i.price);
+	const cheapest = Math.min(...prices);
+	const dearest = Math.max(...prices);
+	const everything = prices.reduce((a, p) => a + p, 0);
 	const others = $derived(squad.entries.filter((e) => !e.mine));
 	const nameOf = (id: string) => squad.byId(id)?.member.name ?? '?';
 
@@ -31,7 +39,8 @@
 	const amount = $derived(parseAmount(text));
 	const people = $derived(who === 'all' ? others.length : who ? 1 : 0);
 	const cost = $derived((amount ?? 0) * people);
-	const QUICK = [100, 1_000, 10_000, 100_000];
+	/** Quick amounts in KarmaShop terms (its items cost 5–500 ❤️); any other amount can be typed in. */
+	const QUICK = [10, 50, 100, 500, 1_000];
 
 	async function send() {
 		const n = amount;
@@ -48,12 +57,7 @@
 		} else error = r === 'broke' ? k.broke(hearts) : k.off;
 	}
 
-	const log = $derived(
-		Object.entries(karma?.log ?? {})
-			.map(([id, g]) => ({ id, ...g }))
-			.sort((a, b) => b.at - a.at)
-			.slice(0, 8)
-	);
+	const log = $derived(loveLog(books).slice(0, 8));
 	const now = $derived(Math.max(squad.now, Date.now()));
 	const ago = (at: number) => t.donate.ago(Math.max(0, Math.floor((now - at) / 60_000)));
 </script>
@@ -68,7 +72,7 @@
 			<span class="kb-n num font-head">{k.hearts(hearts)}</span>
 			<span class="text-[11px] font-bold tracking-[0.12em] uppercase opacity-80">{k.heartsLabel}</span>
 		</p>
-		{#if karmaGiven(karma)}<p class="text-[12px] opacity-85">{k.given(karmaGiven(karma))}</p>{/if}
+		{#if sentSoFar}<p class="text-[12px] opacity-85">{k.given(sentSoFar)}</p>{/if}
 	</div>
 	<p class="text-[13px]">{k.intro}</p>
 
@@ -79,7 +83,7 @@
 			<p class="kb-label font-head">{k.to}</p>
 			<div class="flex flex-wrap gap-1.5">
 				{#each others as e (e.id)}
-					{@const got = karma?.given[e.id] ?? 0}
+					{@const got = heartsGiftedTo(books, e.id)}
 					<button type="button" class="kb-who" aria-pressed={who === e.id} onclick={() => ((who = e.id), (error = ''))}>
 						<SquadAvatar name={e.member.name} op={e.member.op} size={26} />
 						<span class="grid text-left leading-tight">
@@ -104,6 +108,7 @@
 					<input class="field kb-field num" type="text" inputmode="numeric" autocomplete="off" placeholder={t.donate.amountHint} bind:value={text} oninput={() => (error = '')} />
 				</label>
 			</div>
+			<p class="text-[11.5px] opacity-85">{k.priceHint(cheapest, dearest, everything)}</p>
 		</div>
 		<div class="grid gap-1.5">
 			<p class="kb-label font-head">{k.line}</p>

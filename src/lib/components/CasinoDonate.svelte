@@ -6,7 +6,7 @@
 	raised, a goal bar and their top donor, a Donate box per cause, a thank-you sticker after a gift, then
 	"Who gave to what" (every member, the causes they gave to and how much) and the latest gifts.
 	Six more causes came on 2026-11-21 (eleven in all), and donated burgers now become hearts in Abscar's karma
-	bank (DonateKarma.svelte, shown only to the house), which Abscar sends back to the gang as burgers. The
+	bank (DonateKarma.svelte, shown only to the house), which Abscar sends back to the gang as KarmaShop hearts (as burgers until 2026-11-22). The
 	squad card lists the five biggest causes. Pretend burgers, never money.
 -->
 <script lang="ts">

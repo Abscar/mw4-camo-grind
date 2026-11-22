@@ -8,8 +8,16 @@
  * Donated burgers come off the giver's balance (squad-fun.ts burgerBank `donated`) and, since 2026-11-21
  * (the user: "all donated burgers go to a karma bank, hearts as a currency only I see, that I can use to
  * give back to the gang and show love"), become hearts in the karma bank: 1 burger = 1 💗, seen only by
- * Abscar (squad-casino.ts HOUSE_OP). Abscar sends hearts back to members as burgers (squad-doc field
- * `karma`, below; burgerBank `karma`), never to the house's own account.
+ * Abscar (squad-casino.ts HOUSE_OP). Abscar sends hearts back to members, never to the house's own account.
+ * Since 2026-11-22 they arrive as KarmaShop hearts ❤️ (karma-shop.ts heartsOf `gifted`), 1 💗 = 1 ❤️ (the
+ * user: "när jag ger operatorerna karma-hjärtan ska de faktiskt få hjärtan och inte hamburgare … hur ska
+ * de kunna köpa saker i karma-shoppen om de bara får burgare?"). Until then they arrived as burgers.
+ * So there are two lists (the same shape, `Karma` below):
+ *   - squad-doc field `karmaHearts`: everything sent since, hearts only;
+ *   - squad-doc field `karma`: what was sent before. Those burgers stay on the receivers' balances
+ *     (burgerBank `karma`), and the gifts count as hearts too now (what Abscar meant to send).
+ *     Nothing writes to it any more. A new field, not a new part of `karma`, because pages from before
+ *     would strip an unknown part of a field they clean, but keep an unknown field as it is.
  *
  * Stored as member field `donations` (squad-codec.ts):
  *   - `dev`: per device, the burgers given per cause. A device only ever adds to its own numbers, so
@@ -278,7 +286,7 @@ export const LOVE_LINES = 6;
 export const KARMA_LOG = 30;
 
 export interface KarmaGift {
-	/** To whom (member id), how many burgers, when (ms, the sync service's clock). */
+	/** To whom (member id), how many hearts, when (ms, the sync service's clock). */
 	to: string;
 	n: number;
 	at: number;
@@ -286,10 +294,17 @@ export interface KarmaGift {
 	m?: number;
 }
 export interface Karma {
-	/** Burgers given back per member, a running total (what their balance gets). */
+	/** Hearts given back per member, a running total. */
 	given: Record<string, number>;
 	/** The newest KARMA_LOG gifts: gift id → gift. */
 	log?: Record<string, KarmaGift>;
+}
+/** The karma bank's two lists in the squad document (see the top of this file). */
+export interface KarmaBooks {
+	/** Sent before 2026-11-22 (arrived as burgers; count as hearts too now). Nothing writes to it any more. */
+	karma?: Karma;
+	/** Sent since: KarmaShop hearts. */
+	karmaHearts?: Karma;
 }
 
 const MEMBER = /^[A-Za-z0-9_-]{8,32}$/;
@@ -317,17 +332,33 @@ export function cleanKarma(raw: unknown): Karma | undefined {
 	return l ? { given, log: l } : { given };
 }
 
-/** Hearts given back so far (all members). */
+/** Hearts given back so far (all members) in one list. */
 export const karmaGiven = (k: Karma | undefined): number => Object.values(k?.given ?? {}).reduce((a, n) => a + n, 0);
 
-/** Hearts in the bank: every burger the squad donated, minus what Abscar gave back. */
-export function karmaBalance(squadDonated: number, k: Karma | undefined): number {
-	return Math.max(0, squadDonated - karmaGiven(k));
+/** Hearts given back so far, both lists. */
+export const lovedTotal = (b: KarmaBooks | null | undefined): number => karmaGiven(b?.karma) + karmaGiven(b?.karmaHearts);
+
+/** Hearts in the bank: every burger the squad donated, minus what Abscar gave back (every list passed). */
+export function karmaBalance(squadDonated: number, ...lists: (Karma | undefined)[]): number {
+	return Math.max(0, lists.reduce((left, k) => left - karmaGiven(k), squadDonated));
+}
+
+/** KarmaShop hearts a member got from the karma bank (both lists). */
+export function heartsGiftedTo(b: KarmaBooks | null | undefined, id: string | null | undefined): number {
+	if (!id) return 0;
+	return Math.min(Number.MAX_SAFE_INTEGER, (b?.karma?.given[id] ?? 0) + (b?.karmaHearts?.given[id] ?? 0));
+}
+
+/** Every gift in both lists' logs, newest first. */
+export function loveLog(b: KarmaBooks | null | undefined): (KarmaGift & { id: string })[] {
+	return [b?.karma, b?.karmaHearts]
+		.flatMap((k) => Object.entries(k?.log ?? {}).map(([id, g]) => ({ id, ...g })))
+		.sort((x, y) => y.at - x.at || (x.id < y.id ? -1 : 1));
 }
 
 /**
- * Send hearts back as burgers: `n` each to `to` (members, never the giver), one log line each; null when
- * it's more than the bank holds or not a gift.
+ * Send hearts back: `n` each to `to` (members, never the giver), one log line each; null when it's more
+ * than the bank holds or not a gift. Used on `karmaHearts` (the hearts list).
  */
 export function withLove(k: Karma | undefined, to: string[], n: number, balance: number, ids: string[], at: number, m?: number): Karma | null {
 	if (!to.length || to.length !== ids.length || new Set(to).size !== to.length || !isAmount(n) || !isTime(at)) return null;

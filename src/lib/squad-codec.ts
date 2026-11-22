@@ -221,9 +221,12 @@ export interface SquadDoc {
 	tune?: CasinoTune;
 	/**
 	 * BurgiGives' karma bank (donations.ts; 2026-11-21): every donated burger becomes a heart only Abscar
-	 * sees; Abscar gives them back to members as burgers (member id → total), with a log of the latest gifts.
+	 * sees. What Abscar sent back until 2026-11-22 (it arrived as burgers; member id → total), with a log of
+	 * the latest gifts. Nothing writes to it any more: see `karmaHearts`.
 	 */
 	karma?: Karma;
+	/** The karma bank's gifts since 2026-11-22: KarmaShop hearts (member id → total + log; donations.ts). */
+	karmaHearts?: Karma;
 	/** Document fields a newer page wrote that this one doesn't know: kept as they are. */
 	more?: Record<string, unknown>;
 }
@@ -251,7 +254,7 @@ export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
 const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans', 'donations', 'karmaShop']);
-const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune', 'karma']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune', 'karma', 'karmaHearts']);
 
 /** Admin grants: member id → whole burgers (±), within a sane range. */
 export function cleanGrants(raw: unknown): Record<string, number> | undefined {
@@ -496,6 +499,8 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 	if (tune) doc.tune = tune;
 	const karma = cleanKarma(raw.karma);
 	if (karma) doc.karma = karma;
+	const karmaHearts = cleanKarma(raw.karmaHearts);
+	if (karmaHearts) doc.karmaHearts = karmaHearts;
 	const more = unknownKeys(raw, DOC_KEYS);
 	if (more) doc.more = more;
 	return doc;
@@ -515,6 +520,7 @@ export function toSquadWire(doc: SquadDoc): SquadWire {
 	if (doc.grants) wire.grants = doc.grants;
 	if (doc.tune) wire.tune = doc.tune;
 	if (doc.karma) wire.karma = doc.karma;
+	if (doc.karmaHearts) wire.karmaHearts = doc.karmaHearts;
 	return wire;
 }
 

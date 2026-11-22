@@ -17,9 +17,12 @@ import {
 	ORG_IDS,
 	ORGS,
 	cleanKarma,
+	heartsGiftedTo,
 	karmaBalance,
 	karmaGiven,
 	loveFor,
+	loveLog,
+	lovedTotal,
 	withLove,
 	KARMA_LOG,
 	LOVE_LINES
@@ -222,6 +225,33 @@ test('karma bank: in the squad document and the burger bank', () => {
 	assert.equal(bank[B].balance, BURGERS.start - 6 + 5, 'gave 6, got 5 back with love');
 	assert.equal(bank[A].karma, 0);
 	assert.equal(bank[A].house, 0, 'the house gets none of the donations');
+});
+
+test('karma bank since 2026-11-22: gifts are KarmaShop hearts (`karmaHearts`), never burgers; the old list still counts as hearts', () => {
+	const progress = { weapons: {}, mastery: {}, lastTickAt: null };
+	const abscar = memberEntry({ name: 'Abscar', op: 'abscar' }, progress, T);
+	const ingman = memberEntry({ name: 'Ingman', op: 'ingman' }, progress, T, false, { donations: give(undefined, 'devB', 'gb1', 'beer', 1000) });
+	// sent before (arrived as burgers) and since (hearts)
+	const karma = withLove(undefined, [B], 5, 1000, ['k1'], T, 0);
+	const karmaHearts = withLove(undefined, [B], 200, karmaBalance(1000, karma), ['h1'], T + 60_000, 3);
+	assert.equal(withLove(undefined, [B], 996, karmaBalance(1000, karma), ['h2'], T), null, 'what went out in the old list comes off the bank too');
+	const doc = fromSquadWire(JSON.parse(JSON.stringify(toSquadWire({ members: { [A]: abscar, [B]: ingman }, karma, karmaHearts }))));
+	assert.deepEqual(doc.karmaHearts, karmaHearts, 'survives the trip through the document');
+	assert.equal(doc.more, undefined, 'a field this page knows');
+	assert.equal(karmaBalance(1000, doc.karma, doc.karmaHearts), 795);
+	assert.equal(lovedTotal(doc), 205);
+	assert.equal(heartsGiftedTo(doc, B), 205, 'old + new gifts are hearts');
+	assert.equal(heartsGiftedTo(doc, A), 0);
+	assert.equal(heartsGiftedTo(doc, null), 0);
+	assert.deepEqual(
+		loveLog(doc).map((g) => g.id),
+		['h1', 'k1'],
+		'both logs, newest first'
+	);
+	const bank = burgerBank(doc, doc.members, T);
+	assert.equal(bank[B].karma, 5, 'only the old gift is burgers');
+	assert.equal(bank[B].raw, BURGERS.start - 1000 + 5, 'the 200 hearts never touch burgers');
+	assert.equal(bank[A].house, 0);
 });
 
 test('donations: in the squad document and the burger bank (not to the house)', () => {

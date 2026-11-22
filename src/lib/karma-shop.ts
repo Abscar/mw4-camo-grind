@@ -6,9 +6,12 @@
  * Hearts are earned by being kind in BurgiGives (donations.ts), worked out from what a member has given, so
  * past gifts count too and every page agrees without anything typed in:
  *   - 1 ❤️ per HEART_BURGERS (1,000) burgers given in total (rounded down), and
- *   - CAUSE_BONUS (10) ❤️ once for each cause you've given at least CAUSE_MIN (1,000) burgers to (max 50).
+ *   - CAUSE_BONUS (10) ❤️ once for each cause you've given at least CAUSE_MIN (1,000) burgers to.
  * Gifts only ever grow, so hearts earned never go down. (Paying a duel IOU was considered too: the `paid`
  * list in the squad document is trimmed with the settled duels, so hearts from it could disappear again.)
+ * On top of that, since 2026-11-22, the hearts Abscar sends from BurgiGives' karma bank (`gifted`,
+ * donations.ts heartsGiftedTo), 1 💗 = 1 ❤️. They're spendable like earned ones but aren't "earned": the
+ * karma luck on the slots (casino-rig.ts) and the kindest list only count what a member gave themself.
  *
  * The items are "good karma" cosmetics in BurgiShop's own slots (shop.ts SLOTS), worn exactly like
  * BurgiShop items: they're in shop.ts's ITEM_BY_ID, owned in the member's `shop.own` at 0 burgers (so the
@@ -99,6 +102,8 @@ export interface Hearts {
 	causes: number;
 	/** Hearts earned so far (gifts + cause bonuses). */
 	earned: number;
+	/** Hearts sent to you from the karma bank (Abscar's). */
+	gifted: number;
 	/** Hearts spent in KarmaShop. */
 	spent: number;
 	/** What's left to spend (never below zero on show). */
@@ -134,11 +139,12 @@ export function cleanKarmaShop(raw: unknown): KarmaShopState | undefined {
 /** Hearts spent in KarmaShop. */
 export const heartsSpent = (k: KarmaShopState | undefined): number => Object.values(k?.own ?? {}).reduce((n, p) => n + p, 0);
 
-/** A member's hearts: earned from their gifts, spent in KarmaShop, left. */
-export function heartsOf(m: { donations?: DonationBook; karmaShop?: KarmaShopState } | undefined): Hearts {
+/** A member's hearts: earned from their gifts + sent from the karma bank (`gifted`), spent in KarmaShop, left. */
+export function heartsOf(m: { donations?: DonationBook; karmaShop?: KarmaShopState } | undefined, gifted = 0): Hearts {
 	const e = heartsEarned(m?.donations);
+	const g = Number.isSafeInteger(gifted) && gifted > 0 ? gifted : 0;
 	const spent = heartsSpent(m?.karmaShop);
-	return { ...e, spent, balance: Math.max(0, e.earned - spent) };
+	return { ...e, gifted: g, spent, balance: Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, e.earned + g) - spent) };
 }
 
 /** Two copies of your karma (two devices): everything owned on either, the higher price paid. */

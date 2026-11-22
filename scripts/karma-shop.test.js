@@ -76,8 +76,18 @@ test('hearts: 1 per 1,000 burgers given, +10 once per cause given 1,000, past gi
 	assert.deepEqual(heartsEarned(two), { given: 2100, causes: 1, earned: 2 + CAUSE_BONUS });
 	assert.equal(HEART_BURGERS, 1000);
 	// spent comes off, never below zero on show
-	assert.deepEqual(heartsOf({ donations: gifts({ holk: 5000 }), karmaShop: { own: { 'k-pin-heart': 5 } } }), { given: 5000, causes: 1, earned: 15, spent: 5, balance: 10 });
+	assert.deepEqual(heartsOf({ donations: gifts({ holk: 5000 }), karmaShop: { own: { 'k-pin-heart': 5 } } }), { given: 5000, causes: 1, earned: 15, gifted: 0, spent: 5, balance: 10 });
 	assert.equal(heartsOf({ karmaShop: { own: { 'k-pin-heart': 5 } } }).balance, 0);
+});
+
+test('hearts from the karma bank (2026-11-22): spendable like earned ones, but not "earned"', () => {
+	const h = heartsOf({ karmaShop: { own: { 'k-pin-heart': 5 } } }, 200);
+	assert.deepEqual(h, { given: 0, causes: 0, earned: 0, gifted: 200, spent: 5, balance: 195 }, 'someone who never gave can shop with gifted hearts');
+	assert.equal(heartsOf({ donations: gifts({ holk: 5000 }) }, 100).balance, 115, 'earned + gifted');
+	for (const junk of [-5, NaN, Infinity, 1.5]) assert.equal(heartsOf(undefined, junk).gifted, 0);
+	const r = buyKarmaItem(undefined, undefined, 'k-pet-cherub', h.balance, T);
+	assert.equal(r.result, 'broke', '500 ❤️ needed');
+	assert.equal(buyKarmaItem(undefined, undefined, 'k-pet-heart', h.balance, T).result, 'ok');
 });
 
 test('buying with hearts: worn at once, owned at 0 burgers, the burger bank never sees it', () => {

@@ -12,6 +12,8 @@
 	import { faceOf } from '#lib/faceGear.ts';
 	import { worn, type ShopItem, type ShopSlot } from '#lib/shop.ts';
 	import { kindest, HEART_BURGERS, KARMA_ITEMS, KARMA_SLOTS, type KarmaSlot } from '#lib/karma-shop.ts';
+	import { ORG_IDS } from '#lib/donations.ts';
+	import { houseOf } from '#lib/squad-fun.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import OpGear from './OpGear.svelte';
 	import ShopPin from './ShopPin.svelte';
@@ -36,6 +38,8 @@
 	/** burgers still to give for the next heart */
 	const toNext = $derived(HEART_BURGERS - (hearts.given % HEART_BURGERS));
 	const board = $derived(kindest(Object.fromEntries(squad.entries.map((e) => [e.id, e.member]))));
+	/** whose karma bank sends hearts (the house, Abscar) */
+	const bankName = $derived(squad.doc ? (squad.doc.members[houseOf(squad.doc.members) ?? '']?.name ?? 'Abscar') : 'Abscar');
 
 	function tryOn(it: ShopItem) {
 		trying = trying?.id === it.id ? null : it;
@@ -84,7 +88,8 @@
 			{#if look.title}<span class="og-title" data-rarity={look.title.rarity}>{look.title.text}</span>{/if}
 			<p class="karma-hearts mt-2 font-head" aria-live="polite"><b class="num">{hearts.balance.toLocaleString('en-US')}</b> <span aria-hidden="true">❤️</span><span class="karma-hearts-word">{k.balance}</span></p>
 			<p class="karma-dim text-[11.5px]">{k.earnedSpent(hearts.earned, hearts.spent)}</p>
-			<p class="karma-dim text-[11.5px]">{k.given(hearts.given, hearts.causes)} · {k.next(toNext)}</p>
+			{#if hearts.gifted}<p class="karma-gift text-[11.5px] font-bold">{k.gifted(hearts.gifted, bankName)}</p>{/if}
+			<p class="karma-dim text-[11.5px]">{k.given(hearts.given, hearts.causes, ORG_IDS.length)} · {k.next(toNext)}</p>
 		</div>
 	</div>
 
@@ -92,7 +97,7 @@
 	<div class="karma-how mt-3 rounded-card px-4 py-3">
 		<p class="font-head text-[13px] font-bold tracking-wide uppercase">{k.how}</p>
 		<ul class="mt-1 grid gap-0.5 text-[12.5px]">
-			{#each k.rules as rule, i (i)}<li class="flex gap-2"><span aria-hidden="true">❤️</span><span>{rule}</span></li>{/each}
+			{#each k.rules(ORG_IDS.length) as rule, i (i)}<li class="flex gap-2"><span aria-hidden="true">❤️</span><span>{rule}</span></li>{/each}
 		</ul>
 	</div>
 
@@ -191,6 +196,9 @@
 	}
 	.karma-dim {
 		color: #ffd6e8;
+	}
+	.karma-gift {
+		color: var(--k-gold);
 	}
 	.karma-face {
 		display: grid;

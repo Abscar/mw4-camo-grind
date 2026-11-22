@@ -106,7 +106,7 @@ import {
 	type ShopState
 } from './shop.ts';
 import { cleanLoans, mergeLoans, openLoan, owedOn, repayLoan, takeLoan, type LoanBook } from './loans.ts';
-import { cleanDonations, giveTo, goalPassed, karmaBalance, loveFor, mergeDonations, squadGiving, withLove, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
+import { cleanDonations, giveTo, goalPassed, heartsGiftedTo, karmaBalance, loveFor, mergeDonations, squadGiving, withLove, DON_RADIO, type DonationBook, type OrgId } from './donations.ts';
 import { buyKarmaItem, cleanKarmaShop, heartsOf, mergeKarmaShop, ownKarmaItems, KARMA_BY_ID, type Hearts, type KarmaBuyResult, type KarmaShopState } from './karma-shop.ts';
 import { buyGun as armoryBuy, camoIndex, ownedCount, ARMORY_CAMOS, ARMORY_CLASSES, GUN_BY_ID, type GunBuyResult } from './armory.ts';
 import { is420 } from './four20.ts';
@@ -856,8 +856,9 @@ class Squad {
 	// ----- BurgiGives' karma bank (donations.ts): only Abscar sees it and gives from it -----
 
 	/**
-	 * Send hearts from the karma bank back to members as burgers, `n` each, with an optional love line.
-	 * Only Abscar may, never to themself, never more than the bank holds (checked on the newest document).
+	 * Send hearts from the karma bank to members as KarmaShop hearts (doc field `karmaHearts`), `n` each, with
+	 * an optional love line. Only Abscar may, never to themself, never more than the bank holds (checked on
+	 * the newest document; what went out before 2026-11-22 in `karma` counts too).
 	 */
 	async sendLove(to: string[], n: number, m?: number): Promise<'ok' | 'broke' | 'bad' | 'off'> {
 		const me = this.me;
@@ -871,12 +872,13 @@ class Squad {
 		const outcome = await this.#squad.write((doc) => {
 			const members = this.#members(doc);
 			const live = targets.filter((id) => !!members[id]);
-			const next = live.length === targets.length ? withLove(doc.karma, live, n, karmaBalance(squadGiving(members).total, doc.karma), ids, at, m) : null;
+			const bank = karmaBalance(squadGiving(members).total, doc.karma, doc.karmaHearts);
+			const next = live.length === targets.length ? withLove(doc.karmaHearts, live, n, bank, ids, at, m) : null;
 			if (!next) {
 				refused = true;
 				return doc;
 			}
-			return { ...doc, karma: next };
+			return { ...doc, karmaHearts: next };
 		});
 		this.#done(outcome);
 		if (outcome !== 'ok') return 'off';
@@ -887,17 +889,20 @@ class Squad {
 		return 'ok';
 	}
 
-	/** Love from the karma bank that reached you since this device last looked: a toast. */
+	/**
+	 * Hearts from the karma bank that reached you since this device last looked: a toast. Only the hearts
+	 * list: gifts in the old `karma` list were toasted (as burgers) when they came.
+	 */
 	#loveNews(doc: SquadDoc, id: string): void {
 		const saved = readJson(KARMA_SEEN_KEY) as { code?: string; at?: number } | null;
-		const latest = Math.max(0, ...Object.values(doc.karma?.log ?? {}).map((g) => g.at));
+		const latest = Math.max(0, ...Object.values(doc.karma?.log ?? {}).map((g) => g.at), ...Object.values(doc.karmaHearts?.log ?? {}).map((g) => g.at));
 		if (!saved || saved.code !== this.code || typeof saved.at !== 'number') {
 			writeJson(KARMA_SEEN_KEY, { code: this.code, at: latest });
 			return;
 		}
 		if (latest <= saved.at) return;
 		writeJson(KARMA_SEEN_KEY, { code: this.code, at: latest });
-		const got = loveFor(doc.karma, id, saved.at);
+		const got = loveFor(doc.karmaHearts, id, saved.at);
 		if (!got.length) return;
 		const total = got.reduce((a, g) => a + g.n, 0);
 		const last = got[got.length - 1].m;
@@ -907,9 +912,9 @@ class Squad {
 
 	// ----- KarmaShop (karma-shop.ts) -----
 
-	/** Your hearts: earned from what you gave in BurgiGives, spent in KarmaShop. */
+	/** Your hearts: earned from what you gave in BurgiGives + sent to you from the karma bank, spent in KarmaShop. */
 	get myHearts(): Hearts {
-		return heartsOf({ donations: this.donations, karmaShop: this.karmaShop });
+		return heartsOf({ donations: this.donations, karmaShop: this.karmaShop }, heartsGiftedTo(this.doc, this.me?.id));
 	}
 
 	/** Buy a KarmaShop item with hearts (worn at once); epic and legendary ones go on the radio. */
