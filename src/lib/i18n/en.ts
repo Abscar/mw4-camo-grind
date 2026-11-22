@@ -214,6 +214,7 @@ export const en = {
 			masteryDmz: 'DMZ Mastery',
 			metaTop: 'Absolute meta (top 3 with classes)',
 			meta: 'Meta top 5',
+			sights: 'Sights (visual recoil)',
 			sync: 'Backup & sync',
 			help: 'Help text at the bottom',
 			picNuke: 'Nuke operator picture',
@@ -791,6 +792,42 @@ export const en = {
 		noBuild: 'No meta class for this gun yet.',
 		snapshot: (sources: string, date: string) =>
 			`Our weighing of ${sources} on ${date}. Copy a class, or open all builds for Hardcore, other ranges and the Apex.`
+	},
+
+	/** Sights: least visual recoil + the best sight per gun (SightsSection, under Meta top 5). */
+	sights: {
+		heading: 'Sights',
+		sub: 'Least visual recoil · best per gun',
+		tabsLabel: 'Sight lists',
+		tabs: { kick: 'Visual recoil', guns: 'Per gun' },
+		kickIntro:
+			'How much the picture jumps when you fire, from the game’s own numbers: zoom × gun kick, measured against a red dot (1×). Lower is steadier.',
+		/** The big number on each row: on-screen kick against a red dot. */
+		times: (n: number) => `${n.toFixed(1)}×`,
+		timesLabel: (n: number) => `${n.toFixed(1)} times the jump of a red dot`,
+		zoom: (z: number) => `${z}x`,
+		kickLabel: (k: number) => (k < 1 ? `kick ×${k}` : 'no kick cut'),
+		recoilLabel: (r: number) => (r < 1 ? `recoil ×${r}` : 'no recoil cut'),
+		tipsHeading: 'Make any sight look steadier',
+		tips: [
+			'Rail position: in Gunsmith, slide a 1x or holo sight all the way to “Near”. Every guide says the shake looks smaller there; the real recoil doesn’t change.',
+			'Settings: a wide Field of View (100–120) and ADS Field of View on “Affected” keep the kick from looking bigger when you aim.',
+			'Real recoil: only the scopes (4x and up) cut it. Red dots and holos leave it to your grip, stock and muzzle.'
+		],
+		snipersLeftOut: 'The sniper rifles are left out: their sight numbers are measured against their own 11.2x scope.',
+		gunsIntro:
+			'For each gun: the steadiest 1x sight, the steadiest scope for range (least on-screen kick) and what the meta builds use. Tap a gun for its meta class.',
+		close: 'Close',
+		range: 'Range',
+		meta: 'Meta',
+		noScope: 'no scope fits',
+		noOptic: 'no optic',
+		ownScope: 'its own scope',
+		modeShort: { mp: 'MP', wz: 'WZ' },
+		sniper: 'Sniper: the kick barely matters for one shot.',
+		openHint: 'open its meta class',
+		snapshot: (source: string, sourceDate: string, date: string) =>
+			`Our own estimate from the game’s optic stats as ${source} lists them (${sourceDate}), checked ${date}. Nobody has published a measured visual-recoil test for MW4 yet.`
 	},
 
 	/** The picked class's meta top 5 above its weapons (ClassMeta). */

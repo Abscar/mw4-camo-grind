@@ -28,6 +28,7 @@ export const HIDE_SECTIONS = [
 	{ id: 'masteryDmz', group: 'grind', parent: 'mastery' },
 	{ id: 'metaTop', group: 'grind' },
 	{ id: 'meta', group: 'grind' },
+	{ id: 'sights', group: 'grind' },
 	{ id: 'sync', group: 'grind' },
 	{ id: 'help', group: 'grind' },
 	// the user's own pictures under Meta top 5 (Abscar only), in page order
@@ -84,7 +85,8 @@ export const KEEP_CAMOS_META: readonly HideId[] = [
 	'masteryWz',
 	'masteryDmz',
 	'metaTop',
-	'meta'
+	'meta',
+	'sights'
 ];
 
 export const onlyCamosMeta = (): HideId[] => HIDE_SECTIONS.map((s) => s.id).filter((id) => !KEEP_CAMOS_META.includes(id));

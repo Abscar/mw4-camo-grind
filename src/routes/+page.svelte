@@ -29,6 +29,7 @@
 	import MasterySection from '#lib/components/MasterySection.svelte';
 	import MetaPodium from '#lib/components/MetaPodium.svelte';
 	import MetaSection from '#lib/components/MetaSection.svelte';
+	import SightsSection from '#lib/components/SightsSection.svelte';
 	import CyborgBanner from '#lib/components/CyborgBanner.svelte';
 	import SaveStatus from '#lib/components/SaveStatus.svelte';
 	import BuffSearch from '#lib/components/BuffSearch.svelte';
@@ -440,6 +441,9 @@
 		     Meta top 5; the two share their Multiplayer / Warzone switch -->
 		<div class="compact-hide relative mt-7" hidden={hidden.is('metaTop')}><MetaPodium /><HideButton id="metaTop" /></div>
 		<div class="compact-hide relative mt-7" hidden={hidden.is('meta')}><MetaSection /><HideButton id="meta" /></div>
+
+		<!-- sights: least visual recoil + the best sight per gun (2026-11-22, right under Meta top 5) -->
+		<div class="compact-hide relative mt-7" hidden={hidden.is('sights')}><SightsSection /><HideButton id="sights" /></div>
 
 		<!-- the banners share one height (the user's ask: "same size so they look in proportion"); each one
 		     can be hidden on its own, all of them hidden = no gap left here -->
