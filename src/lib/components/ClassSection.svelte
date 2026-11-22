@@ -3,8 +3,9 @@
 	import type { Weapon, WeaponClass } from '#lib/data/weapons.ts';
 	import { t } from '#lib/i18n/en.ts';
 	import { progress } from '#lib/progress.svelte.ts';
+	import { hoverTip } from '#lib/hoverTip.ts';
 	import { CAMO_INK, percent } from '#lib/ui.ts';
-	import FactText from './FactText.svelte';
+	import ClassChallenges from './ClassChallenges.svelte';
 	import NukeOperator from './NukeOperator.svelte';
 	import WeaponCard from './WeaponCard.svelte';
 
@@ -47,19 +48,28 @@
 			{cls.name}
 		</h2>
 		<span class="font-head font-bold tabular-nums">{pct}%</span>
+		<ClassChallenges {cls} />
 	</header>
 
 	<div class="px-4 pt-1 pb-3">
 		<div class="bar" style:--k="var(--c)"><i style:width="{pct}%"></i></div>
 		<div class="font-head mt-2 flex flex-wrap gap-x-3.5 gap-y-1 text-xs font-semibold text-muted tabular-nums">
 			{#each LADDER as camo, i (camo.id)}
-				<span title={camo.name}
-					>{camo.short} <b class="font-bold {CAMO_INK[camo.id]}">{counts[i]}/{total}</b></span
+				{@const fact = cls.challenges[camo.id]}
+				<span
+					class="col-tip"
+					use:hoverTip={{
+						label: camo.name,
+						text: fact.text,
+						ink: CAMO_INK[camo.id],
+						flag: fact.verified ? undefined : t.unverified
+					}}>{camo.short} <b class="font-bold {CAMO_INK[camo.id]}">{counts[i]}/{total}</b></span
 				>
 			{/each}
 			{#if prestigeDone > 0}
-				<span title={PRESTIGE[PRESTIGE.length - 1].name}
-					>{PRESTIGE[PRESTIGE.length - 1].short} <b class="font-bold text-pyro-ink">{prestigeDone}/{total}</b></span
+				{@const last = PRESTIGE[PRESTIGE.length - 1]}
+				<span class="col-tip" use:hoverTip={{ label: last.name, text: last.challenge, ink: CAMO_INK[last.id] }}
+					>{last.short} <b class="font-bold text-pyro-ink">{prestigeDone}/{total}</b></span
 				>
 			{/if}
 			{#if maxed}
@@ -74,13 +84,26 @@
 		aria-hidden="true"
 	>
 		<span>{t.weapon.column}</span>
+		<!-- hover a camo's letters (mouse) = its challenge; touch screens use the "?" in the header -->
 		{#each LADDER as camo (camo.id)}
-			<span class="text-center {CAMO_INK[camo.id]}" title={camo.name}>{camo.short}</span>
+			{@const fact = cls.challenges[camo.id]}
+			<span
+				class="col-tip text-center {CAMO_INK[camo.id]}"
+				use:hoverTip={{
+					label: camo.name,
+					text: fact.text,
+					ink: CAMO_INK[camo.id],
+					flag: fact.verified ? undefined : t.unverified
+				}}>{camo.short}</span
+			>
 		{/each}
 		<!-- second line: the Prestige camos' row under G / P / HB -->
 		<span class="text-[9.5px] tracking-[0.1em]">{t.weapon.prestigeColumn}</span>
 		{#each PRESTIGE as camo (camo.id)}
-			<span class="text-center text-[9.5px] {CAMO_INK[camo.id]}" title={camo.name}>{camo.short}</span>
+			<span
+				class="col-tip text-center text-[9.5px] {CAMO_INK[camo.id]}"
+				use:hoverTip={{ label: camo.name, text: camo.challenge, ink: CAMO_INK[camo.id] }}>{camo.short}</span
+			>
 		{/each}
 		{#if cls.id === PEEK_CLASS}
 			<!-- Abscar easter egg: the friend's operator peeks over this line now and then (absolute, so no grid cell) -->
@@ -89,7 +112,7 @@
 	</div>
 
 	{#if visible.length > 0}
-		<!-- flex-1: boxes in a row are equally tall; the list takes the extra room so the challenges sit at the bottom -->
+		<!-- flex-1: boxes in a row are equally tall; the list takes the extra room -->
 		<ul class="flex-1 px-2 pb-2">
 			{#each visible as weapon (weapon.id)}
 				<WeaponCard {weapon} {columns} />
@@ -98,20 +121,4 @@
 	{:else}
 		<p class="flex-1 px-4 pt-1 pb-3 text-sm text-muted">{t.cls.allHidden}</p>
 	{/if}
-
-	<footer class="compact-hide grid gap-1 border-t border-line px-4 py-3 text-[13px] text-muted">
-		<h3 class="sr-only">{t.cls.challenges}</h3>
-		{#each LADDER as camo (camo.id)}
-			<div>
-				<b class="font-head mr-1.5 text-[11px] font-bold tracking-wider uppercase {CAMO_INK[camo.id]}"
-					>{camo.name}</b
-				><FactText fact={cls.challenges[camo.id]} />
-			</div>
-		{/each}
-		<div>
-			<b class="font-head mr-1.5 text-[11px] font-bold tracking-wider text-pyro-ink uppercase">{t.weapon.prestigeColumn}</b>{PRESTIGE.map(
-				(c) => `${c.name.replace('Pyroclast ', '')}: ${c.challenge}`
-			).join(' · ')}
-		</div>
-	</footer>
 </section>

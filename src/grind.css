@@ -26,6 +26,75 @@
 	--t-nerf: #c42020;
 }
 
+/* ---------- a class box's G / P / HB / TER / SCA / CAS headings: hover = that camo's challenge (hoverTip.ts) ---------- */
+@media (hover: hover) and (pointer: fine) {
+	.col-tip {
+		cursor: help;
+	}
+	.col-tip:hover {
+		text-decoration: underline dotted;
+		text-underline-offset: 3px;
+	}
+}
+.hover-tip {
+	position: fixed;
+	z-index: 70;
+	max-width: min(300px, calc(100vw - 16px));
+	padding: 7px 10px 8px;
+	border: 1px solid var(--t-line);
+	border-radius: 8px;
+	background: var(--t-panel);
+	color: var(--t-fg);
+	box-shadow: 0 10px 24px rgb(0 0 0 / 0.4);
+	font-size: 12.5px;
+	line-height: 1.4;
+	pointer-events: none;
+}
+.hover-tip[hidden] {
+	display: none;
+}
+.hover-tip-label {
+	display: block;
+	margin-bottom: 1px;
+	font-family: var(--font-head, inherit);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+.hover-tip::before {
+	content: '';
+	position: absolute;
+	top: -6px;
+	left: calc(var(--arrow-x, 50%) - 5px);
+	width: 10px;
+	height: 10px;
+	background: inherit;
+	border-left: 1px solid var(--t-line);
+	border-top: 1px solid var(--t-line);
+	transform: rotate(45deg);
+}
+.hover-tip.above::before {
+	top: auto;
+	bottom: -6px;
+	border: 0;
+	border-right: 1px solid var(--t-line);
+	border-bottom: 1px solid var(--t-line);
+}
+[data-theme='blackout'] .hover-tip {
+	background: #2c3338;
+	border-color: rgb(255 210 120 / 0.55);
+	box-shadow:
+		0 0 14px rgb(255 120 30 / 0.35),
+		0 10px 24px rgb(0 0 0 / 0.6);
+	color: #f3f6f8;
+	text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+	--t-hb-ink: #e2ccff;
+}
+[data-theme='blackout'] .hover-tip::before {
+	border-color: rgb(255 210 120 / 0.55);
+}
+
 /* ---------- the weapon button (name + cartoon) opens the weapon card ---------- */
 .weapon-open {
 	border-radius: 3px;

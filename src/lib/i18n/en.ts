@@ -803,7 +803,9 @@ export const en = {
 		number: (n: number) => String(n).padStart(2, '0'),
 		maxed: 'Class maxed',
 		allHidden: 'Every weapon in this class is maxed ◆',
-		challenges: 'Challenges'
+		/** behind the "?" in the class box's header (ClassChallenges) */
+		challenges: 'Camo challenges',
+		challengesFor: (cls: string) => `Camo challenges for ${cls}`
 	},
 
 	/** The page tabs under the header: the tracker itself, the Cosmetics list and Extra camos (2026-11-12). */
