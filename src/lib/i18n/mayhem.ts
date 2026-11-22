@@ -1,0 +1,58 @@
+/** Squad Mayhem's words (2026-11-22). Kept apart from en.ts like the arcade's, so sessions editing en.ts don't collide. */
+export const mayhemText = {
+	title: 'Squad Mayhem',
+	kicker: 'Side-view squad brawler',
+	intro: 'Run, jump and shoot your way through endless waves of randoms. Punch them, take their guns, throw the empty ones at their heads. You play as your own operator, and every gun you pick up wears the camo you’ve earned on it in the tracker.',
+	pickOp: 'Your operator',
+	pickGun: 'Starting gun',
+	gunHint: 'Guns you have a camo on (in the tracker or the Camo Armory) can be your starting gun. Grind more camos, get more choices.',
+	starter: 'Starter',
+	noCamo: 'No camo',
+	gear: (n: number) => (n ? `Wearing ${n} BurgiShop item${n === 1 ? '' : 's'}` : 'No BurgiShop items worn'),
+	play: 'Play',
+	again: 'Play again',
+	menu: 'Change operator',
+	resume: 'Resume',
+	paused: 'Paused',
+	pausedHint: 'Press Esc or tap Resume',
+	best: (score: string, wave: number) => `Your best: ${score} (wave ${wave})`,
+	noBest: 'No runs yet',
+	fullscreen: 'Full screen',
+	exitFull: 'Exit full screen',
+	sound: 'Game sound',
+	pause: 'Pause',
+	controlsTitle: 'Controls',
+	controls: [
+		['A / D', 'run'],
+		['W / Space', 'jump'],
+		['S', 'drop through a ledge'],
+		['Mouse', 'aim'],
+		['Click', 'shoot · punch · throw an empty gun'],
+		['E / right click', 'pick up or swap a gun'],
+		['Q', 'throw your gun'],
+		['Shift', 'Holk Time (slow motion)'],
+		['Esc', 'pause']
+	] as [string, string][],
+	touchHint: 'On a phone: tap and hold on the game to aim and shoot, buttons for the rest. Turn it sideways and use full screen.',
+	hud: {
+		wave: 'Wave',
+		score: 'Score',
+		left: 'left',
+		holk: 'Holk Time',
+		holkReady: 'Shift',
+		fists: 'Fists',
+		empty: 'EMPTY: click to throw it'
+	},
+	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Drop down', pick: 'Pick up', throw: 'Throw', holk: 'Holk Time' },
+	over: {
+		title: 'WASTED BY RANDOMS',
+		newBest: 'New personal best!',
+		score: 'Score',
+		wave: 'Wave reached',
+		kills: 'Kills',
+		heads: 'Headshots',
+		acc: 'Accuracy',
+		combo: 'Best combo'
+	},
+	stageLabel: 'Squad Mayhem game. Needs a mouse and keyboard, or touch.'
+} as const;
