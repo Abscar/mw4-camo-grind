@@ -7,7 +7,7 @@
 import { ALL_MASTERY, MASTERY, MASTERY_EXTRA, MASTERY_TRACKS, MAX_LEVEL, PRESTIGE_MAX } from './data/camos.ts';
 import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { isStatusFilter, type StatusFilter } from './filters.ts';
-import { DEFAULT_THEME, isThemeId, type ThemeId } from './themes.ts';
+import { DEFAULT_THEME, themeFrom, type ThemeId } from './themes.ts';
 
 export interface ProgressData {
 	/** Weapon id → ladder level (0 = nothing … 3 = Harmonic Break). Unknown ids are kept, never dropped. */
@@ -378,7 +378,7 @@ export function migrate(raw: unknown): Migrated | null {
 export function normalisePrefs(raw: Record<string, unknown>): Prefs {
 	const d = defaultPrefs();
 	return {
-		theme: isThemeId(raw.theme) ? raw.theme : d.theme,
+		theme: themeFrom(raw.theme),
 		hideMaxed: typeof raw.hideMaxed === 'boolean' ? raw.hideMaxed : d.hideMaxed,
 		classFilter:
 			typeof raw.classFilter === 'string' && CLASSES.some((c) => c.id === raw.classFilter)

@@ -220,10 +220,4 @@
 		filter: blur(0.6px);
 		opacity: 0.85;
 	}
-	:global([data-theme='field']) .rl-gun {
-		color: #7a4e00;
-	}
-	:global([data-theme='field']) .rl-reel {
-		background: rgb(0 0 0 / 0.05);
-	}
 </style>

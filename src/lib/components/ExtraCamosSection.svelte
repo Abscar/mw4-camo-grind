@@ -568,15 +568,11 @@
 		width: 18px;
 		height: 18px;
 		fill: none;
-		/* dark tick on the light greens (Abscar, Neon Grid), white on the dark ones */
+		/* a dark tick on the light greens (both themes' --t-ok) */
 		stroke: var(--xc-ink, #0b1606);
 		stroke-width: 3.2;
 		stroke-linecap: round;
 		stroke-linejoin: round;
-	}
-	:global([data-theme='field']) .xc-box,
-	:global([data-theme='command']) .xc-box {
-		--xc-ink: #fff;
 	}
 	.xc-tick:hover .xc-box {
 		border-color: var(--t-ok);

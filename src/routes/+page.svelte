@@ -11,6 +11,7 @@
 	import { THEMES } from '#lib/themes.ts';
 	import { toast } from '#lib/toast.svelte.ts';
 	import AbscarFx from '#lib/components/AbscarFx.svelte';
+	import MatrixRain from '#lib/components/MatrixRain.svelte';
 	import ClassMeta from '#lib/components/ClassMeta.svelte';
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import CosmeticsSection from '#lib/components/CosmeticsSection.svelte';
@@ -266,6 +267,8 @@
 >
 
 <AbscarFx />
+<!-- the Matrix theme's falling green code, behind everything (only drawn in that theme) -->
+<MatrixRain />
 
 <div class="app-gate" class:ready={progress.ready}>
 	<div class="relative bg-band text-band-fg">

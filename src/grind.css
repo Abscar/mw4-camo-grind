@@ -13,19 +13,6 @@
 	--t-buff: #7dff5a;
 	--t-nerf: #ff6a6a;
 }
-[data-theme='field'] {
-	--t-buff: #2d7a1f;
-	--t-nerf: #b42318;
-}
-[data-theme='neon'] {
-	--t-buff: #b6f23d;
-	--t-nerf: #ff6b8b;
-}
-[data-theme='command'] {
-	--t-buff: #15803d;
-	--t-nerf: #c42020;
-}
-
 /* ---------- a class box's G / P / HB / TER / SCA / CAS headings: hover = that camo's challenge (hoverTip.ts) ---------- */
 @media (hover: hover) and (pointer: fine) {
 	.col-tip {

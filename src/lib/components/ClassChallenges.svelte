@@ -213,14 +213,6 @@
 		color: #fff;
 		text-shadow: 0 1px 1px rgb(0 0 0 / 0.5);
 	}
-	/* Field Manual fills the header with the class colour: a white disc instead */
-	:global([data-theme='field']) .cc-btn:hover .cc-q,
-	:global([data-theme='field']) .cc-btn[aria-expanded='true'] .cc-q {
-		background: #fff;
-		border-color: #fff;
-		color: var(--c, var(--t-accent));
-		text-shadow: none;
-	}
 	.cc-btn:focus-visible {
 		outline: 2px solid var(--t-accent);
 		outline-offset: -6px;

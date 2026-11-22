@@ -77,7 +77,7 @@ test('migrate: old tracker localStorage (v1) keeps every tick and mastery count'
 		v: 1,
 		ticks: Object.fromEntries(WEAPONS.map((w) => [w.id, [w.season === 'launch' ? 1 : 0, 0, 0]])),
 		mastery: { md: 12, pr: 0, or: 999999 },
-		theme: 'neon',
+		theme: 'steel',
 		hideMaxed: true
 	};
 	v1.ticks['m4'] = [1, 1, 0];
@@ -92,7 +92,7 @@ test('migrate: old tracker localStorage (v1) keeps every tick and mastery count'
 	assert.equal(m.progress.weapons['cronen-osprey'], 0);
 	assert.equal(m.progress.mastery.mercurialDrift, 12);
 	assert.equal(m.progress.mastery.orionReforged, 500); // clamped to target
-	assert.deepEqual(m.prefs, { theme: 'neon', hideMaxed: true, classFilter: null, focus: [], status: null, compact: false });
+	assert.deepEqual(m.prefs, { theme: 'steel', hideMaxed: true, classFilter: null, focus: [], status: null, compact: false });
 });
 
 test('migrate: old tracker export file (v1) works too', () => {
@@ -253,7 +253,7 @@ test('notes: kept in saves and backups, trimmed and capped; older saves without 
 	assert.equal(raw.notes?.axion, undefined);
 	assert.equal(raw.notes?.['future-gun'], 'hi');
 
-	const old = migrate({ v: 2, progress: { weapons: { m4: 2 }, mastery: {} }, prefs: { theme: 'neon' } });
+	const old = migrate({ v: 2, progress: { weapons: { m4: 2 }, mastery: {} }, prefs: { theme: 'steel' } });
 	assert.ok(old);
 	assert.equal(old.notes, undefined);
 	assert.equal(old.lastTickAt, undefined);
@@ -305,4 +305,20 @@ test('link: Prestige camos ride along; older links leave them alone; broken ones
 	assert.equal(decodeLink(`${old}.R!`), null);
 	assert.equal(decodeLink(`${old}.Q`), null);
 	assert.deepEqual(decodeLink(`${code}.Zfuture`)?.prestige, p.prestige);
+});
+test('themes: the three removed looks open in Steel, anything unknown in the default', async () => {
+	const { THEMES, DEFAULT_THEME, themeFrom } = await import('../src/lib/themes.ts');
+	assert.deepEqual(
+		THEMES.map((x) => x.id),
+		['blackout', 'steel', 'matrix']
+	);
+	for (const old of ['field', 'neon', 'command']) {
+		assert.equal(themeFrom(old), 'steel');
+		assert.equal(normalisePrefs({ theme: old }).theme, 'steel');
+	}
+	assert.equal(themeFrom('matrix'), 'matrix');
+	assert.equal(themeFrom('blackout'), 'blackout');
+	assert.equal(themeFrom('nope'), DEFAULT_THEME);
+	assert.equal(themeFrom(undefined), DEFAULT_THEME);
+	assert.equal(normalisePrefs({}).theme, DEFAULT_THEME);
 });

@@ -113,7 +113,7 @@ try {
 	results.afterReload = await evaluate(state);
 
 	// 3. Theme switch persists.
-	await evaluate(`[...document.querySelectorAll('button[aria-pressed]')].find(b => b.title === 'Neon Grid').click(); true`);
+	await evaluate(`[...document.querySelectorAll('button[aria-pressed]')].find(b => b.title === 'Steel').click(); true`);
 	await sleep(400);
 	await navigate(FILE_URL);
 	results.themeAfterReload = await evaluate('document.documentElement.dataset.theme');
