@@ -315,6 +315,11 @@ function printMarkup(v: string, pr: Print, x: number, y: number, k: number): str
 			const body = `M${f(x - 9 * k)} ${f(y + 5 * k)} C${f(x - 6 * k)} ${f(y - 4 * k)} ${f(x - 1 * k)} ${f(y + 6 * k)} ${f(x + 2 * k)} ${f(y - 1 * k)} C${f(x + 4 * k)} ${f(y - 5 * k)} ${f(x + 7 * k)} ${f(y - 3 * k)} ${f(x + 8 * k)} ${f(y - 5.4 * k)}`;
 			return `${line(body, '#5a3a06', 2.4 * k)}${line(body, col, 1.6 * k)}${line(body, '#fff4b0', 0.4 * k, ` stroke-dasharray="${f(0.4 * k)} ${f(0.6 * k)}"`)}<path d="M${f(x + 7 * k)} ${f(y - 4.6 * k)} L${f(x + 10.6 * k)} ${f(y - 6.4 * k)} L${f(x + 9 * k)} ${f(y - 4 * k)} L${f(x + 10.8 * k)} ${f(y - 3 * k)} L${f(x + 7.4 * k)} ${f(y - 3.4 * k)} Z" fill="${col}" stroke="#5a3a06" stroke-width="${f(0.35 * k)}" stroke-linejoin="round"/><path d="M${f(x + 8.2 * k)} ${f(y - 5.6 * k)} L${f(x + 8.4 * k)} ${f(y - 7.8 * k)} M${f(x + 9 * k)} ${f(y - 5.6 * k)} L${f(x + 10 * k)} ${f(y - 7.4 * k)}" stroke="${col}" stroke-width="${f(0.4 * k)}" stroke-linecap="round"/><circle cx="${f(x + 8.6 * k)}" cy="${f(y - 4.8 * k)}" r="${f(0.3 * k)}" fill="#c8102e"/>${[-6.2, -2.4, 1.4].map((dx) => `<path d="M${f(x + dx * k)} ${f(y + 0.8 * k)} l${f(-0.6 * k)} ${f(1.4 * k)} M${f(x + (dx + 0.6) * k)} ${f(y + 0.8 * k)} l${f(0.6 * k)} ${f(1.4 * k)}" stroke="${col}" stroke-width="${f(0.4 * k)}" stroke-linecap="round"/>`).join('')}`;
 		}
+		case 'cyborg':
+			// Abscar's own cyborg skull in bronze: glowing red eyes, a holk in the grin with an ember
+			return `<defs><radialGradient id="${v}-cy"><stop offset="0" stop-color="#ff2a1a" stop-opacity="0.9"/><stop offset="1" stop-color="#ff2a1a" stop-opacity="0"/></radialGradient></defs>${skullMarkup(x, y, 1.15 * k, '#c08a4a', '#2a1608', '#ff2a1a')}${[-1, 1].map((s) => `<circle class="dr-glow" cx="${f(x + s * 1.5 * k)}" cy="${f(y - 0.7 * k)}" r="${f(2.2 * k)}" fill="url(#${v}-cy)"/>`).join('')}${line(`M${f(x + 1.4 * k)} ${f(y + 2.6 * k)} L${f(x + 6 * k)} ${f(y + 3.8 * k)}`, '#2a1608', 1.3 * k)}${line(`M${f(x + 1.4 * k)} ${f(y + 2.6 * k)} L${f(x + 6 * k)} ${f(y + 3.8 * k)}`, '#f3efe4', 0.9 * k)}<circle class="dr-glow" cx="${f(x + 6.1 * k)}" cy="${f(y + 3.8 * k)}" r="${f(0.6 * k)}" fill="#ff8a1a"/>`;
+		case 'nuke':
+			return `<circle cx="${f(x)}" cy="${f(y)}" r="${f(4.6 * k)}" fill="#ffd21a" stroke="#1a1a1a" stroke-width="${f(0.45 * k)}"/>${trefoil(x, y, 4 * k, '#1a1a1a')}`;
 		case 'patches':
 			return `<g transform="translate(${f(x - 8.6 * k)} ${f(y - 4.4 * k)})"><rect width="${f(3.4 * k)}" height="${f(3.4 * k)}" fill="#f4f1e8" stroke="#1a1a1a" stroke-width="${f(0.3 * k)}"/><rect width="${f(1.7 * k)}" height="${f(1.7 * k)}" fill="#1a1a1a"/><rect x="${f(1.7 * k)}" y="${f(1.7 * k)}" width="${f(1.7 * k)}" height="${f(1.7 * k)}" fill="#1a1a1a"/></g><circle cx="${f(x + 8.4 * k)}" cy="${f(y - 2.6 * k)}" r="${f(2 * k)}" fill="#2a5ad8" stroke="#f4f1e8" stroke-width="${f(0.4 * k)}"/><path d="${star4(x + 8.4 * k, y - 2.6 * k, 1.3 * k)}" fill="#ffe23a"/><rect x="${f(x + 6.2 * k)}" y="${f(y + 3.2 * k)}" width="${f(4.6 * k)}" height="${f(2 * k)}" rx="${f(0.4 * k)}" fill="#ffd23a" stroke="#1a1a1a" stroke-width="${f(0.3 * k)}"/>`;
 	}
@@ -323,6 +328,21 @@ function printMarkup(v: string, pr: Print, x: number, y: number, k: number): str
 
 function skullMarkup(x: number, y: number, s: number, bone: string, ink: string, glow = ''): string {
 	return `<path d="M${f(x)} ${f(y - 3.6 * s)} C${f(x + 3.4 * s)} ${f(y - 3.6 * s)} ${f(x + 3.6 * s)} ${f(y - 0.4 * s)} ${f(x + 3 * s)} ${f(y + 0.8 * s)} L${f(x + 2.2 * s)} ${f(y + 1.4 * s)} L${f(x + 2 * s)} ${f(y + 3.2 * s)} L${f(x - 2 * s)} ${f(y + 3.2 * s)} L${f(x - 2.2 * s)} ${f(y + 1.4 * s)} L${f(x - 3 * s)} ${f(y + 0.8 * s)} C${f(x - 3.6 * s)} ${f(y - 0.4 * s)} ${f(x - 3.4 * s)} ${f(y - 3.6 * s)} ${f(x)} ${f(y - 3.6 * s)} Z" fill="${bone}" stroke="${ink}" stroke-width="${f(0.35 * s)}"/><ellipse cx="${f(x - 1.3 * s)}" cy="${f(y - 0.6 * s)}" rx="${f(1 * s)}" ry="${f(1.15 * s)}" fill="${glow || ink}"/><ellipse cx="${f(x + 1.3 * s)}" cy="${f(y - 0.6 * s)}" rx="${f(1 * s)}" ry="${f(1.15 * s)}" fill="${glow || ink}"/><path d="M${f(x)} ${f(y + 0.6 * s)} l${f(-0.5 * s)} ${f(0.9 * s)} h${f(1 * s)} Z M${f(x - 1 * s)} ${f(y + 2.2 * s)} v${f(1 * s)} M${f(x)} ${f(y + 2.2 * s)} v${f(1 * s)} M${f(x + 1 * s)} ${f(y + 2.2 * s)} v${f(1 * s)}" fill="${ink}" stroke="${ink}" stroke-width="${f(0.3 * s)}"/>`;
+}
+
+/** The radiation sign: three blades (down, up-left, up-right) round a dot. */
+function trefoil(x: number, y: number, r: number, col: string): string {
+	const r0 = r * 0.3;
+	const at = (a: number, rr: number) => `${f(x + Math.cos((a * Math.PI) / 180) * rr)} ${f(y + Math.sin((a * Math.PI) / 180) * rr)}`;
+	const blades = [90, 210, 330]
+		.map((a) => `M${at(a - 30, r0)} L${at(a - 30, r)} A${f(r)} ${f(r)} 0 0 1 ${at(a + 30, r)} L${at(a + 30, r0)} A${f(r0)} ${f(r0)} 0 0 0 ${at(a - 30, r0)} Z`)
+		.join(' ');
+	return `<path d="${blades}" fill="${col}"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(r * 0.2)}" fill="${col}"/>`;
+}
+
+/** A tiny burger (bun, cheese, patty, bun) for the lei: a few shapes, so a dozen of them stay small. */
+function miniBurger(x: number, y: number, s: number): string {
+	return `<path d="M${f(x - 1.6 * s)} ${f(y)} Q${f(x - 1.6 * s)} ${f(y - 1.7 * s)} ${f(x)} ${f(y - 1.7 * s)} Q${f(x + 1.6 * s)} ${f(y - 1.7 * s)} ${f(x + 1.6 * s)} ${f(y)} Z" fill="#f0a24a" stroke="#3a1a08" stroke-width="${f(0.2 * s)}"/><rect x="${f(x - 1.75 * s)}" y="${f(y - 0.05 * s)}" width="${f(3.5 * s)}" height="${f(0.5 * s)}" fill="#ffc928"/><rect x="${f(x - 1.7 * s)}" y="${f(y + 0.4 * s)}" width="${f(3.4 * s)}" height="${f(0.7 * s)}" rx="${f(0.3 * s)}" fill="#5c2f18"/><path d="M${f(x - 1.5 * s)} ${f(y + 1.1 * s)} H${f(x + 1.5 * s)} L${f(x + 1.3 * s)} ${f(y + 1.8 * s)} H${f(x - 1.3 * s)} Z" fill="#e8a050" stroke="#3a1a08" stroke-width="${f(0.2 * s)}"/><circle cx="${f(x - 0.5 * s)}" cy="${f(y - 1.1 * s)}" r="${f(0.18 * s)}" fill="#fff4d6"/><circle cx="${f(x + 0.6 * s)}" cy="${f(y - 0.9 * s)}" r="${f(0.18 * s)}" fill="#fff4d6"/>`;
 }
 
 function burgerMarkup(v: string, x: number, y: number, s: number): string {
@@ -626,7 +646,10 @@ const METAL: Record<NeckLook['metal'], [string, string, string]> = {
 	silver: ['#ffffff', '#b8c0c8', '#4a525a'],
 	iced: ['#ffffff', '#dff4ff', '#7a8a9a'],
 	black: ['#4a4a50', '#1a1a1e', '#000000'],
-	red: ['#ff6a5a', '#c8102e', '#5a0610']
+	red: ['#ff6a5a', '#c8102e', '#5a0610'],
+	// Abscar's weathered bronze (his emblem's skin) and the Iridescent rank's pink → cyan → violet
+	bronze: ['#f6d29a', '#b07a3c', '#4a2a0e'],
+	iri: ['#ffb4ec', '#8af2ff', '#7a4ad8']
 };
 
 function cubicPts(p0: P, p1: P, p2: P, p3: P, n: number): P[] {
@@ -649,7 +672,14 @@ export function neckMarkup(u: string, L: NeckLook, B: BodyAt): string {
 	const L2: P = [c - 3.4 * k, t + drop];
 	const M: P = [c, t + drop];
 	const chain = `M${f(L0[0])} ${f(L0[1])} C${f(L1[0])} ${f(L1[1])} ${f(L2[0])} ${f(L2[1])} ${f(c)} ${f(M[1])} C${f(c + 3.4 * k)} ${f(M[1])} ${f(c + 7.2 * k)} ${f(L1[1])} ${f(c + 7.2 * k)} ${f(L0[1])}`;
-	const pts = () => [...cubicPts(L0, L1, L2, M, 7), ...cubicPts(M, [c + 3.4 * k, M[1]], [c + 7.2 * k, L1[1]], [c + 7.2 * k, L0[1]], 7).slice(1)];
+	const ptsN = (n: number) => [...cubicPts(L0, L1, L2, M, n), ...cubicPts(M, [c + 3.4 * k, M[1]], [c + 7.2 * k, L1[1]], [c + 7.2 * k, L0[1]], n).slice(1)];
+	const pts = () => ptsN(7);
+	/** the chain's direction at point i, in degrees */
+	const tangent = (P: P[], i: number) => {
+		const a = P[Math.max(0, i - 1)];
+		const b = P[Math.min(P.length - 1, i + 1)];
+		return (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+	};
 	const out: string[] = [defs];
 	switch (L.kind) {
 		case 'cuban':
@@ -686,6 +716,107 @@ export function neckMarkup(u: string, L: NeckLook, B: BodyAt): string {
 			out.push(spikes, line(arc, '#000', 2 * k), line(arc, '#2a2a30', 1.4 * k));
 			break;
 		}
+		// ----- the Abscar drop (2026-11-23) -----
+		case 'ammo': {
+			// a leather strap with brass rounds standing out from it, tips outward
+			out.push(line(chain, '#2a1608', 2 * k), line(chain, '#6a4220', 1.4 * k));
+			const P = ptsN(6);
+			out.push(
+				...P.slice(1, -1).map(([x, y], i) => {
+					const a = tangent(P, i + 1);
+					return `<g transform="translate(${f(x)} ${f(y)}) rotate(${f(a, 1)})"><rect x="${f(-0.55 * k)}" y="${f(-0.4 * k)}" width="${f(1.1 * k)}" height="${f(2.2 * k)}" rx="${f(0.15 * k)}" fill="url(#${g})" stroke="${lo}" stroke-width="${f(0.15 * k)}"/><path d="M${f(-0.55 * k)} ${f(1.8 * k)} Q${f(-0.55 * k)} ${f(3.2 * k)} 0 ${f(3.5 * k)} Q${f(0.55 * k)} ${f(3.2 * k)} ${f(0.55 * k)} ${f(1.8 * k)} Z" fill="#c87a3a" stroke="#5a2a0a" stroke-width="${f(0.15 * k)}"/></g>`;
+				})
+			);
+			break;
+		}
+		case 'beads': {
+			const cols = ['#e8241a', '#ffd21a', '#2fb84a'];
+			out.push(line(chain, '#3a2a1a', 0.4 * k), ...ptsN(11).map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${f(0.72 * k)}" fill="${cols[i % 3]}" stroke="#1a1208" stroke-width="${f(0.15 * k)}"/><circle cx="${f(x - 0.25 * k)}" cy="${f(y - 0.25 * k)}" r="${f(0.22 * k)}" fill="#fff" opacity="0.55"/>`));
+			break;
+		}
+		case 'kushlei': {
+			// a lei of weed leaves, alternating greens, each turned along the string
+			const greens = ['#2f8a3e', '#5ac84a', '#1c6a2a', '#8ae05a'];
+			const P = ptsN(8);
+			out.push(
+				line(chain, '#1c6a2a', 0.5 * k),
+				...P.map(([x, y], i) => {
+					const a = tangent(P, i) + (i % 2 ? 150 : 210);
+					return `<g transform="translate(${f(x)} ${f(y)}) rotate(${f(a, 1)}) scale(${f(0.2 * k, 3)}) translate(-12 -20)">${LEAF_PATHS.map((d) => `<path d="${d}" fill="${greens[i % 4]}" stroke="#0f3a14" stroke-width="1.4"/>`).join('')}</g>`;
+				}),
+				...[2, 5, 8, 11, 14].map((i) => `<circle cx="${P[i][0]}" cy="${P[i][1]}" r="${f(0.65 * k)}" fill="#ff7ad8" stroke="#a83a8a" stroke-width="${f(0.15 * k)}"/>`)
+			);
+			break;
+		}
+		case 'burgerlei': {
+			const P = ptsN(6);
+			out.push(line(chain, '#ffd21a', 0.5 * k), ...P.map(([x, y]) => miniBurger(x, y, 0.62 * k)));
+			break;
+		}
+		case 'cable': {
+			// a thick neural cable plugged in at both ends, pulsing red, with chrome junctions and LEDs
+			out.push(line(chain, '#000', 2.6 * k), line(chain, '#1e1e24', 2 * k), `<path class="dr-glow" d="${chain}" fill="none" stroke="#ff2a1a" stroke-width="${f(0.5 * k)}" stroke-dasharray="${f(1.2 * k)} ${f(0.8 * k)}" stroke-linecap="round"/>`);
+			const P = ptsN(4);
+			out.push(...[1, 3, 5, 7].map((i, j) => `<rect x="${f(P[i][0] - 1 * k)}" y="${f(P[i][1] - 0.9 * k)}" width="${f(2 * k)}" height="${f(1.8 * k)}" rx="${f(0.4 * k)}" fill="#9aa4ae" stroke="#2a3038" stroke-width="${f(0.2 * k)}"/><circle class="dr-glow" style="animation-delay:-${j * 0.6}s" cx="${P[i][0]}" cy="${P[i][1]}" r="${f(0.45 * k)}" fill="#ff2a1a"/>`));
+			out.push(`<path d="M${f(c - 2.4 * k)} ${f(t + drop - 0.6 * k)} h${f(4.8 * k)} v${f(3.4 * k)} h${f(-4.8 * k)} Z" fill="#2a3038" stroke="#000" stroke-width="${f(0.25 * k)}"/><path d="M${f(c - 1.4 * k)} ${f(t + drop + 2.8 * k)} v${f(1.2 * k)} M${f(c)} ${f(t + drop + 2.8 * k)} v${f(1.2 * k)} M${f(c + 1.4 * k)} ${f(t + drop + 2.8 * k)} v${f(1.2 * k)}" stroke="#e0a520" stroke-width="${f(0.4 * k)}"/><rect class="dr-glow" x="${f(c - 1.6 * k)}" y="${f(t + drop + 0.1 * k)}" width="${f(3.2 * k)}" height="${f(0.7 * k)}" fill="#ff2a1a"/>`);
+			break;
+		}
+		case 'rgb': {
+			// a gamer's LED chain: rainbow links that cycle through every colour (.dr-rgb)
+			const id = `${v}-rgb`;
+			out.push(
+				`<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f(c - 7.2 * k)}" y1="0" x2="${f(c + 7.2 * k)}" y2="0">${['#ff2a2a', '#ffb01a', '#f4ff2a', '#2aff6a', '#2ac8ff', '#9a3aff', '#ff2ad8'].map((col, i) => `<stop offset="${f(i / 6)}" stop-color="${col}"/>`).join('')}</linearGradient></defs>`,
+				`<g class="dr-rgb">${line(chain, '#0c0c10', 2.3 * k)}${line(chain, `url(#${id})`, 1.5 * k)}<path d="${chain}" fill="none" stroke="#0c0c10" stroke-width="${f(1.5 * k)}" stroke-dasharray="${f(0.12 * k)} ${f(0.9 * k)}" opacity="0.8"/>${pts()
+					.filter((_, i) => i % 3 === 1)
+					.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${f(0.5 * k)}" fill="#fff" opacity="0.85"/>`)
+					.join('')}</g>`
+			);
+			break;
+		}
+		case 'double': {
+			// a cuban on top and a long rope under it, the stacked flex
+			const d2 = drop * 1.45;
+			const chain2 = `M${f(c - 7.6 * k)} ${f(t + 0.6)} C${f(c - 7.6 * k)} ${f(t + d2 * 0.72)} ${f(c - 3.6 * k)} ${f(t + d2)} ${f(c)} ${f(t + d2)} C${f(c + 3.6 * k)} ${f(t + d2)} ${f(c + 7.6 * k)} ${f(t + d2 * 0.72)} ${f(c + 7.6 * k)} ${f(t + 0.6)}`;
+			out.push(line(chain2, lo, 1.9 * k), line(chain2, `url(#${g})`, 1.3 * k), line(chain2, lo, 1.3 * k, ` stroke-dasharray="${f(0.22 * k)} ${f(0.42 * k)}" stroke-linecap="butt" opacity="0.6"`), line(chain2, hi, 0.35 * k, ` stroke-dasharray="${f(0.3 * k)} ${f(0.35 * k)}"`));
+			out.push(line(chain, lo, 2.5 * k), line(chain, `url(#${g})`, 1.8 * k), line(chain, lo, 1.8 * k, ` stroke-dasharray="${f(0.32 * k)} ${f(0.7 * k)}" stroke-linecap="butt" opacity="0.7"`), line(chain, '#ffffff', 0.4 * k, ` stroke-dasharray="${f(0.5 * k)} ${f(0.55 * k)}" opacity="0.6"`));
+			out.push(`<path class="dr-twinkle" d="${star4(c + 3 * k, t + d2 - 0.4 * k, 1.1 * k)}" fill="#fffbe6"/>`, `<path class="dr-twinkle" style="animation-delay:-1.2s" d="${star4(c - 4 * k, t + drop * 0.8, 1 * k)}" fill="#fffbe6"/>`);
+			break;
+		}
+		case 'skulls': {
+			const P = ptsN(6);
+			out.push(line(chain, lo, 1 * k), line(chain, `url(#${g})`, 0.6 * k), ...P.slice(1, -1).map(([x, y]) => skullMarkup(x, y + 0.4 * k, 0.36 * k, `url(#${g})`, lo)));
+			break;
+		}
+		case 'fire': {
+			// a blackened iron chain with flames licking up off every other link
+			out.push(line(chain, '#000', 2.2 * k), line(chain, '#3a3436', 1.5 * k), line(chain, '#000', 1.5 * k, ` stroke-dasharray="${f(0.3 * k)} ${f(0.6 * k)}" stroke-linecap="butt" opacity="0.8"`));
+			const P = ptsN(6);
+			out.push(
+				...P.slice(1, -1).map(([x, y], i) => {
+					const h = (i % 2 ? 2.6 : 3.6) * k;
+					return `<g class="dr-flicker" style="animation-delay:-${f(i * 0.23, 2)}s"><path d="M${f(x - 1.1 * k)} ${f(y)} C${f(x - 1.4 * k)} ${f(y - h * 0.5)} ${f(x - 0.2 * k)} ${f(y - h * 0.6)} ${f(x)} ${f(y - h)} C${f(x + 0.3 * k)} ${f(y - h * 0.6)} ${f(x + 1.4 * k)} ${f(y - h * 0.5)} ${f(x + 1.1 * k)} ${f(y)} Z" fill="#ff5a1a" opacity="0.9"/><path d="M${f(x - 0.5 * k)} ${f(y)} C${f(x - 0.6 * k)} ${f(y - h * 0.3)} ${f(x)} ${f(y - h * 0.4)} ${f(x)} ${f(y - h * 0.6)} C${f(x + 0.1 * k)} ${f(y - h * 0.4)} ${f(x + 0.6 * k)} ${f(y - h * 0.3)} ${f(x + 0.5 * k)} ${f(y)} Z" fill="#ffe23a"/></g>`;
+				}),
+				...[2, 6, 10].map((i) => `<circle class="dr-glow" cx="${pts()[i][0]}" cy="${pts()[i][1]}" r="${f(0.5 * k)}" fill="#ff8a1a"/>`)
+			);
+			break;
+		}
+		case 'headset': {
+			// a gaming headset hung round the neck: the band behind, a cup on each collarbone, the mic sticking out
+			const cup = (s: number) => {
+				const x = c + s * 6.6 * k;
+				const y = t + 2.6 * k;
+				return `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(2.6 * k)}" ry="${f(3 * k)}" fill="#1a1a1e" stroke="#000" stroke-width="${f(0.35 * k)}"/><ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(1.7 * k)}" ry="${f(2.1 * k)}" fill="#2c2c32"/><ellipse class="dr-glow" cx="${f(x)}" cy="${f(y)}" rx="${f(2.1 * k)}" ry="${f(2.5 * k)}" fill="none" stroke="#ff2a1a" stroke-width="${f(0.35 * k)}"/><text x="${f(x)}" y="${f(y + 0.1 * k)}" text-anchor="middle" dominant-baseline="central" ${FONT} font-size="${f(1.6 * k)}" fill="#ff2a1a">A</text>`;
+			};
+			out.push(
+				line(`M${f(c - 7.4 * k)} ${f(t + 1.4 * k)} Q${f(c - 6 * k)} ${f(t - 1.6 * k)} ${f(c - 3.6 * k)} ${f(t - 0.2)}`, '#26262c', 1.2 * k),
+				line(`M${f(c + 7.4 * k)} ${f(t + 1.4 * k)} Q${f(c + 6 * k)} ${f(t - 1.6 * k)} ${f(c + 3.6 * k)} ${f(t - 0.2)}`, '#26262c', 1.2 * k),
+				line(`M${f(c - 6.6 * k)} ${f(t + 5.2 * k)} Q${f(c - 5 * k)} ${f(t + 8.4 * k)} ${f(c - 1.6 * k)} ${f(t + 7.8 * k)}`, '#1a1a1e', 0.7 * k),
+				`<rect x="${f(c - 2.2 * k)}" y="${f(t + 7.1 * k)}" width="${f(1.6 * k)}" height="${f(1.3 * k)}" rx="${f(0.5 * k)}" fill="#3a3a40"/>`,
+				cup(-1),
+				cup(1)
+			);
+			break;
+		}
 	}
 	if (L.pendant) out.push(pendantMarkup(v, L.pendant, c, t + drop + 0.4, k, g, lo));
 	return `<g class="dr-neck">${out.join('')}</g>`;
@@ -709,6 +840,63 @@ function pendantMarkup(v: string, p: Pendant, x: number, y: number, k: number, g
 			return `${bail}<text x="${f(x)}" y="${f(cy + 0.2 * k)}" text-anchor="middle" dominant-baseline="central" ${FONT} font-size="${f(5.6 * k)}" fill="url(#${g})" stroke="${lo}" stroke-width="${f(0.35 * k)}" paint-order="stroke">$</text>`;
 		case 'crown':
 			return `${bail}<path d="M${f(x - 2.8 * k)} ${f(cy + 1.6 * k)} L${f(x - 3 * k)} ${f(cy - 1.8 * k)} L${f(x - 1.4 * k)} ${f(cy - 0.2 * k)} L${f(x)} ${f(cy - 2.4 * k)} L${f(x + 1.4 * k)} ${f(cy - 0.2 * k)} L${f(x + 3 * k)} ${f(cy - 1.8 * k)} L${f(x + 2.8 * k)} ${f(cy + 1.6 * k)} Z" fill="url(#${g})" stroke="${lo}" stroke-width="${f(0.3 * k)}" stroke-linejoin="round"/><circle cx="${f(x)}" cy="${f(cy + 0.6 * k)}" r="${f(0.55 * k)}" fill="#d8192a"/><circle cx="${f(x - 1.6 * k)}" cy="${f(cy + 0.8 * k)}" r="${f(0.4 * k)}" fill="#2a8aff"/><circle cx="${f(x + 1.6 * k)}" cy="${f(cy + 0.8 * k)}" r="${f(0.4 * k)}" fill="#2fd36a"/><path class="dr-twinkle" d="${star4(x + 2.6 * k, cy - 2.4 * k, 1 * k)}" fill="#fffbe6"/>`;
+		// ----- the Abscar drop (2026-11-23) -----
+		case 'cyborg':
+			// Abscar's cyborg skull in his bronze: red eyes that glow, a white holk in the grin, smoke rising
+			return `${bail}<defs><radialGradient id="${v}-ce"><stop offset="0" stop-color="#ff2a1a" stop-opacity="0.95"/><stop offset="1" stop-color="#ff2a1a" stop-opacity="0"/></radialGradient></defs>${skullMarkup(x, cy + 0.6 * k, 1.1 * k, `url(#${g})`, lo, '#ff2a1a')}${[-1, 1].map((s) => `<circle class="dr-glow" cx="${f(x + s * 1.43 * k)}" cy="${f(cy - 0.06 * k)}" r="${f(1.9 * k)}" fill="url(#${v}-ce)"/>`).join('')}${line(`M${f(x + 1 * k)} ${f(cy + 3 * k)} L${f(x + 4.4 * k)} ${f(cy + 3.6 * k)}`, '#2a1608', 1 * k)}${line(`M${f(x + 1 * k)} ${f(cy + 3 * k)} L${f(x + 4.4 * k)} ${f(cy + 3.6 * k)}`, '#f3efe4', 0.65 * k)}<circle class="dr-glow" cx="${f(x + 4.5 * k)}" cy="${f(cy + 3.6 * k)}" r="${f(0.45 * k)}" fill="#ff8a1a"/>${[0, 1, 2].map((i) => `<circle class="dr-spark" style="animation-delay:-${f(i * 0.7, 1)}s" cx="${f(x + (4.8 + i * 0.4) * k)}" cy="${f(cy + (2.4 - i * 0.6) * k)}" r="${f((0.5 + i * 0.15) * k)}" fill="#e8e8ea" opacity="0.7"/>`).join('')}<path class="dr-twinkle" d="${star4(x - 2.6 * k, cy - 2 * k, 1 * k)}" fill="#fffbe6"/>`;
+		case 'iri': {
+			// the Iridescent rank: a bevelled hexagon in shifting purple-cyan with a cyan bolt and a gold rim
+			const hex = (r: number) =>
+				Array.from({ length: 6 }, (_, i) => {
+					const a = (i * Math.PI) / 3 - Math.PI / 2;
+					return `${f(x + Math.cos(a) * r)},${f(cy + 0.4 * k + Math.sin(a) * r)}`;
+				}).join(' ');
+			return `${bail}<defs>${lin(`${v}-ih`, [[0, '#ff7ad8'], [0.5, '#7a4ad8'], [1, '#7af0ff']], 1, 1)}</defs><polygon points="${hex(3.6 * k)}" fill="#e0a520" stroke="#6b4306" stroke-width="${f(0.25 * k)}"/><polygon points="${hex(2.9 * k)}" fill="url(#${v}-ih)"/><path d="M${f(x + 0.6 * k)} ${f(cy - 2 * k)} L${f(x - 1.3 * k)} ${f(cy + 0.7 * k)} L${f(x - 0.1 * k)} ${f(cy + 0.7 * k)} L${f(x - 0.6 * k)} ${f(cy + 2.8 * k)} L${f(x + 1.4 * k)} ${f(cy)} L${f(x + 0.2 * k)} ${f(cy)} Z" fill="#c8faff" stroke="#1a6a8a" stroke-width="${f(0.15 * k)}"/><path class="dr-twinkle" d="${star4(x + 2.4 * k, cy - 2 * k, 1.1 * k)}" fill="#ffffff"/><path class="dr-twinkle" style="animation-delay:-1.2s" d="${star4(x - 2.4 * k, cy + 2 * k, 0.9 * k)}" fill="#ffffff"/>`;
+		}
+		case 'nuke':
+			return `${bail}<defs><radialGradient id="${v}-ng"><stop offset="0" stop-color="#7dff3a" stop-opacity="0.8"/><stop offset="1" stop-color="#7dff3a" stop-opacity="0"/></radialGradient></defs><circle class="dr-glow" cx="${f(x)}" cy="${f(cy + 0.4 * k)}" r="${f(5.2 * k)}" fill="url(#${v}-ng)"/><circle cx="${f(x)}" cy="${f(cy + 0.4 * k)}" r="${f(3.2 * k)}" fill="#ffd21a" stroke="url(#${g})" stroke-width="${f(0.6 * k)}"/>${trefoil(x, cy + 0.4 * k, 2.7 * k, '#1a1a1a')}`;
+		case 'divergence': {
+			// a brilliant-cut diamond in Divergence's chrome rainbow
+			const top = cy - 1.8 * k;
+			const mid = cy - 0.2 * k;
+			const bot = cy + 4 * k;
+			const w = 3.4 * k;
+			return `${bail}<defs>${lin(`${v}-dv`, [[0, '#ff6a8a'], [0.25, '#ffe27a'], [0.5, '#7aff9a'], [0.75, '#7ad8ff'], [1, '#c08aff']], 1, 0.6)}</defs><path d="M${f(x - w * 0.55)} ${f(top)} H${f(x + w * 0.55)} L${f(x + w)} ${f(mid)} L${f(x)} ${f(bot)} L${f(x - w)} ${f(mid)} Z" fill="url(#${v}-dv)" stroke="#5a6a7a" stroke-width="${f(0.25 * k)}" stroke-linejoin="round"/><path d="M${f(x - w)} ${f(mid)} H${f(x + w)} M${f(x - w * 0.55)} ${f(top)} L${f(x - w * 0.2)} ${f(mid)} L${f(x)} ${f(bot)} L${f(x + w * 0.2)} ${f(mid)} L${f(x + w * 0.55)} ${f(top)} M${f(x - w * 0.2)} ${f(mid)} L${f(x)} ${f(top)} L${f(x + w * 0.2)} ${f(mid)}" fill="none" stroke="#ffffff" stroke-width="${f(0.18 * k)}" opacity="0.75"/><path class="dr-twinkle" d="${star4(x - 1.6 * k, top + 0.4 * k, 1.3 * k)}" fill="#ffffff"/><path class="dr-twinkle" style="animation-delay:-0.8s" d="${star4(x + 2.2 * k, mid + 0.8 * k, 1 * k)}" fill="#ffffff"/><path class="dr-twinkle" style="animation-delay:-1.6s" d="${star4(x + 0.4 * k, bot - 1 * k, 0.8 * k)}" fill="#ffffff"/>`;
+		}
+		case 'slacker':
+			return `${bail}<g transform="rotate(-9 ${f(x)} ${f(cy)})"><rect x="${f(x - 4.2 * k)}" y="${f(cy - 1.1 * k)}" width="${f(8.4 * k)}" height="${f(2.8 * k)}" rx="${f(0.5 * k)}" fill="#d8192a" stroke="#ffffff" stroke-width="${f(0.35 * k)}"/><text x="${f(x)}" y="${f(cy + 0.32 * k)}" text-anchor="middle" dominant-baseline="central" ${FONT} font-size="${f(1.7 * k)}" textLength="${f(7 * k)}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">SLACKER</text></g>`;
+		case 'banned':
+			return `${bail}<g transform="rotate(-12 ${f(x)} ${f(cy)})"><rect x="${f(x - 4.4 * k)}" y="${f(cy - 1.3 * k)}" width="${f(8.8 * k)}" height="${f(3.2 * k)}" rx="${f(0.3 * k)}" fill="#1a0a0a" stroke="#ff2a2a" stroke-width="${f(0.5 * k)}"/><text x="${f(x)}" y="${f(cy + 0.32 * k)}" text-anchor="middle" dominant-baseline="central" ${FONT} font-size="${f(2 * k)}" textLength="${f(7.2 * k)}" lengthAdjust="spacingAndGlyphs" fill="#ff2a2a">BANNED</text></g>`;
+		case 'controller': {
+			// an iced-out game pad: a flat body with two grips, the face buttons in colour, a d-pad, sticks
+			const yy = cy + 0.6 * k;
+			return `${bail}<path d="M${f(x - 3.6 * k)} ${f(yy - 1.6 * k)} H${f(x + 3.6 * k)} Q${f(x + 5 * k)} ${f(yy - 1.6 * k)} ${f(x + 5.2 * k)} ${f(yy + 1 * k)} Q${f(x + 5.4 * k)} ${f(yy + 3 * k)} ${f(x + 4 * k)} ${f(yy + 3 * k)} Q${f(x + 3 * k)} ${f(yy + 3 * k)} ${f(x + 2.4 * k)} ${f(yy + 1.4 * k)} H${f(x - 2.4 * k)} Q${f(x - 3 * k)} ${f(yy + 3 * k)} ${f(x - 4 * k)} ${f(yy + 3 * k)} Q${f(x - 5.4 * k)} ${f(yy + 3 * k)} ${f(x - 5.2 * k)} ${f(yy + 1 * k)} Q${f(x - 5 * k)} ${f(yy - 1.6 * k)} ${f(x - 3.6 * k)} ${f(yy - 1.6 * k)} Z" fill="url(#${g})" stroke="#7a8a9a" stroke-width="${f(0.25 * k)}"/><path d="M${f(x - 3.6 * k)} ${f(yy - 0.3 * k)} h${f(1.6 * k)} M${f(x - 2.8 * k)} ${f(yy - 1.1 * k)} v${f(1.6 * k)}" stroke="#4a525a" stroke-width="${f(0.5 * k)}"/>${[
+				[3, -1, '#2fd36a'],
+				[3.9, -0.2, '#d8192a'],
+				[3, 0.6, '#2a8aff'],
+				[2.1, -0.2, '#ff7ad8']
+			]
+				.map(([dx, dy, col]) => `<circle cx="${f(x + (dx as number) * k)}" cy="${f(yy + (dy as number) * k)}" r="${f(0.4 * k)}" fill="${col}"/>`)
+				.join('')}<circle cx="${f(x - 1 * k)}" cy="${f(yy + 0.8 * k)}" r="${f(0.6 * k)}" fill="#4a525a"/><circle cx="${f(x + 1 * k)}" cy="${f(yy + 0.8 * k)}" r="${f(0.6 * k)}" fill="#4a525a"/><path class="dr-twinkle" d="${star4(x - 3.8 * k, yy - 1.8 * k, 1.1 * k)}" fill="#ffffff"/><path class="dr-twinkle" style="animation-delay:-1.1s" d="${star4(x + 4.4 * k, yy + 2.4 * k, 0.9 * k)}" fill="#ffffff"/>`;
+		}
+		case 'fries':
+			return `${bail}${[-1.8, -0.9, 0, 0.9, 1.8, -1.3, 1.3]
+				.map((dx, i) => `<rect x="${f(x + dx * k - 0.35 * k)}" y="${f(cy - (2.4 + (i % 3) * 0.6) * k)}" width="${f(0.7 * k)}" height="${f(3.4 * k)}" fill="#ffd23a" stroke="#b07a10" stroke-width="${f(0.12 * k)}" transform="rotate(${(dx * 6).toFixed(1)} ${f(x + dx * k)} ${f(cy)})"/>`)
+				.join('')}<path d="M${f(x - 2.8 * k)} ${f(cy - 0.4 * k)} H${f(x + 2.8 * k)} L${f(x + 2.1 * k)} ${f(cy + 3.6 * k)} H${f(x - 2.1 * k)} Z" fill="#d8192a" stroke="#5a0610" stroke-width="${f(0.25 * k)}" stroke-linejoin="round"/><path d="M${f(x - 1.6 * k)} ${f(cy + 1.4 * k)} Q${f(x)} ${f(cy + 2.6 * k)} ${f(x + 1.6 * k)} ${f(cy + 1.4 * k)}" fill="none" stroke="#ffd23a" stroke-width="${f(0.45 * k)}" stroke-linecap="round"/>`;
+		case 'ketchup':
+			return `${bail}<rect x="${f(x - 0.7 * k)}" y="${f(y + 0.6 * k)}" width="${f(1.4 * k)}" height="${f(1.4 * k)}" fill="#f4f1e8" stroke="#6a6a6a" stroke-width="${f(0.15 * k)}"/><path d="M${f(x - 0.9 * k)} ${f(y + 2 * k)} H${f(x + 0.9 * k)} Q${f(x + 2.2 * k)} ${f(y + 2.6 * k)} ${f(x + 2.2 * k)} ${f(y + 4.4 * k)} V${f(y + 7.4 * k)} Q${f(x + 2.2 * k)} ${f(y + 8 * k)} ${f(x + 1.6 * k)} ${f(y + 8 * k)} H${f(x - 1.6 * k)} Q${f(x - 2.2 * k)} ${f(y + 8 * k)} ${f(x - 2.2 * k)} ${f(y + 7.4 * k)} V${f(y + 4.4 * k)} Q${f(x - 2.2 * k)} ${f(y + 2.6 * k)} ${f(x - 0.9 * k)} ${f(y + 2 * k)} Z" fill="#d8192a" stroke="#5a0610" stroke-width="${f(0.22 * k)}"/><rect x="${f(x - 1.6 * k)}" y="${f(y + 4.6 * k)}" width="${f(3.2 * k)}" height="${f(1.8 * k)}" rx="${f(0.3 * k)}" fill="#f4f1e8"/><circle cx="${f(x)}" cy="${f(y + 5.6 * k)}" r="${f(0.65 * k)}" fill="#e8241a"/><path d="M${f(x - 0.5 * k)} ${f(y + 5 * k)} L${f(x)} ${f(y + 5.2 * k)} L${f(x + 0.5 * k)} ${f(y + 5 * k)}" fill="none" stroke="#2fb84a" stroke-width="${f(0.25 * k)}" stroke-linecap="round"/><path d="M${f(x - 1.3 * k)} ${f(y + 2.8 * k)} v${f(1.4 * k)}" stroke="#ffffff" stroke-width="${f(0.35 * k)}" stroke-linecap="round" opacity="0.6"/>`;
+		case 'seven':
+			return `${bail}<rect x="${f(x - 4 * k)}" y="${f(cy - 1.8 * k)}" width="${f(8 * k)}" height="${f(3.8 * k)}" rx="${f(0.8 * k)}" fill="url(#${g})" stroke="${lo}" stroke-width="${f(0.3 * k)}"/><rect x="${f(x - 3.3 * k)}" y="${f(cy - 1.2 * k)}" width="${f(6.6 * k)}" height="${f(2.6 * k)}" rx="${f(0.3 * k)}" fill="#fff8e6"/><text x="${f(x)}" y="${f(cy + 0.15 * k)}" text-anchor="middle" dominant-baseline="central" ${FONT} font-size="${f(2.4 * k)}" textLength="${f(5.8 * k)}" lengthAdjust="spacingAndGlyphs" fill="#d8192a" stroke="#5a0610" stroke-width="${f(0.12 * k)}">777</text><path class="dr-twinkle" d="${star4(x + 3.8 * k, cy - 1.8 * k, 1.1 * k)}" fill="#fffbe6"/>`;
+		case 'grinder': {
+			// a herb grinder from above: knurled rim, a leaf on the lid
+			const yy = cy + 0.4 * k;
+			return `${bail}<circle cx="${f(x)}" cy="${f(yy)}" r="${f(3 * k)}" fill="url(#${g})" stroke="${lo}" stroke-width="${f(0.25 * k)}"/><circle cx="${f(x)}" cy="${f(yy)}" r="${f(2.75 * k)}" fill="none" stroke="${lo}" stroke-width="${f(0.4 * k)}" stroke-dasharray="${f(0.25 * k)} ${f(0.35 * k)}"/><circle cx="${f(x)}" cy="${f(yy)}" r="${f(2.1 * k)}" fill="#4a525a"/><g transform="translate(${f(x)} ${f(yy + 1.5 * k)}) scale(${f(0.14 * k, 3)}) translate(-12 -20)">${LEAF_PATHS.map((d) => `<path d="${d}" fill="#7dff3a"/>`).join('')}</g>`;
+		}
+		case 'eye':
+			// a single red cyborg eye in a black chrome socket, glowing
+			return `${bail}<defs><radialGradient id="${v}-ey"><stop offset="0" stop-color="#ffffff"/><stop offset="0.25" stop-color="#ff5a3a"/><stop offset="0.7" stop-color="#c80a0a"/><stop offset="1" stop-color="#3a0000"/></radialGradient><radialGradient id="${v}-eg"><stop offset="0" stop-color="#ff2a1a" stop-opacity="0.85"/><stop offset="1" stop-color="#ff2a1a" stop-opacity="0"/></radialGradient></defs><circle class="dr-glow" cx="${f(x)}" cy="${f(cy + 0.4 * k)}" r="${f(5 * k)}" fill="url(#${v}-eg)"/><circle cx="${f(x)}" cy="${f(cy + 0.4 * k)}" r="${f(3 * k)}" fill="url(#${g})" stroke="#000" stroke-width="${f(0.3 * k)}"/><circle cx="${f(x)}" cy="${f(cy + 0.4 * k)}" r="${f(2 * k)}" fill="url(#${v}-ey)"/><circle cx="${f(x - 0.6 * k)}" cy="${f(cy - 0.3 * k)}" r="${f(0.4 * k)}" fill="#fff" opacity="0.9"/>`;
+		case 'gg':
+			return `${bail}<text x="${f(x)}" y="${f(cy)}" text-anchor="middle" dominant-baseline="central" ${FONT} font-size="${f(4.6 * k)}" fill="#f4fbff" stroke="#7a8a9a" stroke-width="${f(0.35 * k)}" paint-order="stroke">GG</text><path class="dr-twinkle" d="${star4(x - 2 * k, cy - 1.4 * k, 1.1 * k)}" fill="#ffffff"/><path class="dr-twinkle" style="animation-delay:-1s" d="${star4(x + 2.2 * k, cy + 0.9 * k, 0.9 * k)}" fill="#ffffff"/>`;
 	}
 	return '';
 }
