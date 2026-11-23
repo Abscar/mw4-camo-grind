@@ -1771,6 +1771,35 @@
 		--og-r: #ffc928;
 		box-shadow: 0 0 8px rgb(255 201 40 / 0.6);
 	}
+	/* Ultimate (Skeddsson): neon green letters that glow, a glowing green plate that breathes */
+	:global(.og-title[data-rarity='ultimate']) {
+		--og-r: #7dff3a;
+		background: linear-gradient(180deg, rgb(20 60 16 / 0.9), rgb(6 24 6 / 0.92));
+		color: #b8ff7a;
+		text-shadow:
+			0 0 4px #7dff3a,
+			0 0 10px rgb(125 255 58 / 0.8);
+		animation: og-ultimate 2.4s ease-in-out infinite;
+	}
+	@keyframes og-ultimate {
+		0%,
+		100% {
+			box-shadow:
+				0 0 6px rgb(125 255 58 / 0.55),
+				inset 0 0 4px rgb(125 255 58 / 0.25);
+		}
+		50% {
+			box-shadow:
+				0 0 16px rgb(125 255 58 / 0.95),
+				inset 0 0 8px rgb(125 255 58 / 0.45);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:global(.og-title[data-rarity='ultimate']) {
+			animation: none;
+			box-shadow: 0 0 10px rgb(125 255 58 / 0.75);
+		}
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.og-aura i,
 		.og-aura::after,

@@ -103,7 +103,7 @@ import {
 	ITEM_BY_ID,
 	PRANK_BY_ID,
 	type BuyResult,
-	type Rarity,
+	type BoxRarity,
 	type ShopSlot,
 	type ShopState
 } from './shop.ts';
@@ -940,7 +940,7 @@ class Squad {
 		writeJson(SHOP_KEY, r.shop);
 		this.#schedulePublish();
 		const it = KARMA_BY_ID.get(id);
-		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.karmaShop.event(it.name, t.shop.rarity[it.rarity]));
+		if (it && (it.rarity === 'epic' || it.rarity === 'legendary' || it.rarity === 'ultimate')) void this.#event(t.karmaShop.event(it.name, t.shop.rarity[it.rarity]));
 		return 'ok';
 	}
 
@@ -983,7 +983,7 @@ class Squad {
 		writeJson(SHOP_KEY, r.shop);
 		this.#schedulePublish();
 		const it = PRIZE_BY_ID.get(id);
-		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.arcade.prizeEvent(it.name, t.shop.rarity[it.rarity]));
+		if (it && (it.rarity === 'epic' || it.rarity === 'legendary' || it.rarity === 'ultimate')) void this.#event(t.arcade.prizeEvent(it.name, t.shop.rarity[it.rarity]));
 		return 'ok';
 	}
 
@@ -1175,7 +1175,7 @@ class Squad {
 		writeJson(SHOP_KEY, r.state);
 		this.#schedulePublish();
 		const it = ITEM_BY_ID.get(id);
-		if (it && (it.rarity === 'epic' || it.rarity === 'legendary')) void this.#event(t.shop.event(it.name, t.shop.rarity[it.rarity]));
+		if (it && (it.rarity === 'epic' || it.rarity === 'legendary' || it.rarity === 'ultimate')) void this.#event(t.shop.event(it.name, t.shop.rarity[it.rarity]));
 		return 'ok';
 	}
 
@@ -1190,7 +1190,7 @@ class Squad {
 		const r = shopBuy(this.shop, id, bank.balance, Math.round(this.serverNow()));
 		if (r.result !== 'ok') return r.result;
 		this.#saveShop(r.state);
-		if (it.rarity === 'epic' || it.rarity === 'legendary') void this.#event(t.drip.event(it.name, price));
+		if (it.rarity === 'epic' || it.rarity === 'legendary' || it.rarity === 'ultimate') void this.#event(t.drip.event(it.name, price));
 		return 'ok';
 	}
 
@@ -1247,7 +1247,7 @@ class Squad {
 	}
 
 	/** Open a Munchie Box: a random item of that rarity (a duplicate gives half the box back). */
-	openBox(rarity: Rarity): { id: string; dup: boolean; back: number } | 'broke' | 'off' {
+	openBox(rarity: BoxRarity): { id: string; dup: boolean; back: number } | 'broke' | 'off' {
 		const bank = this.myBank;
 		if (!this.me || !bank) return 'off';
 		const r = shopBox(this.shop, rarity, bank.balance, Math.round(this.serverNow()), Math.random());

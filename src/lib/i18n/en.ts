@@ -1542,7 +1542,7 @@ export const en = {
 			tap: (name: string) => `Play your emote: ${name}`,
 			played: (name: string) => `${name}! The squad sees it for a few seconds.`
 		},
-		rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
+		rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', ultimate: 'Ultimate' },
 		buy: (price: number) => `Buy · ${price.toLocaleString('en-US')} 🍔`,
 		wear: 'Wear',
 		wearing: 'Wearing',

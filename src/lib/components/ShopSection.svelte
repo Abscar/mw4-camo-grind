@@ -33,7 +33,7 @@
 		SHOP_ITEMS,
 		SLOTS,
 		STATUE_PRICE,
-		type Rarity,
+		type BoxRarity,
 		type ShopItem,
 		type ShopSlot
 	} from '#lib/shop.ts';
@@ -189,14 +189,14 @@
 	}
 
 	// Munchie Boxes
-	const RARITIES: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
+	const RARITIES: BoxRarity[] = ['common', 'rare', 'epic', 'legendary'];
 	let boxOpen = $state(false);
-	let boxRarity = $state<Rarity>('common');
+	let boxRarity = $state<BoxRarity>('common');
 	let boxResult = $state<{ id: string; dup: boolean; back: number } | null>(null);
 	let boxRevealed = $state(false);
 	let boxTimer: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => () => clearTimeout(boxTimer));
-	function openBox(r: Rarity) {
+	function openBox(r: BoxRarity) {
 		const res = squad.openBox(r);
 		if (res === 'broke') {
 			toast.show(s.broke(BOX_PRICE[r], balance), undefined, 5000);
@@ -910,6 +910,28 @@
 	.shop-item[data-rarity='legendary'] {
 		--r: #ffc928;
 	}
+	/* Ultimate (the Skeddsson title): neon green, breathing glow */
+	.shop-item[data-rarity='ultimate'] {
+		--r: #7dff3a;
+		background:
+			radial-gradient(120% 70% at 50% 0%, rgb(125 255 58 / 0.18), transparent 70%),
+			linear-gradient(180deg, rgb(18 34 16 / 0.97), rgb(6 12 6 / 0.98));
+		animation: sh-ultimate 2.6s ease-in-out infinite;
+	}
+	.shop-item[data-rarity='ultimate'] .shop-rarity {
+		background: linear-gradient(90deg, #2fd36a, #d8ff6a, #2fd36a);
+		color: #0a2a0a;
+		text-shadow: none;
+	}
+	@keyframes sh-ultimate {
+		0%,
+		100% {
+			box-shadow: 0 0 10px rgb(125 255 58 / 0.35);
+		}
+		50% {
+			box-shadow: 0 0 24px rgb(125 255 58 / 0.75);
+		}
+	}
 	.shop-item {
 		border-color: color-mix(in srgb, var(--r) 70%, transparent);
 		border-width: 1.5px;
@@ -1022,6 +1044,10 @@
 		box-shadow: none;
 	}
 	@media (prefers-reduced-motion: reduce) {
+		.shop-item[data-rarity='ultimate'] {
+			animation: none;
+			box-shadow: 0 0 16px rgb(125 255 58 / 0.55);
+		}
 		.st-rays,
 		.st-blob,
 		.shop-item[data-rarity='legendary']::after {

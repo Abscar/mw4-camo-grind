@@ -72,7 +72,13 @@ export const SLOTS = [
     `plush` (hugged in front of the chest) + `mount` (ridden; arcade-prizes.ts). */
 export const WEAR_SLOTS = [...SLOTS, 'hold', ...DRIP_SLOTS, 'plush', 'mount'] as const;
 export type ShopSlot = (typeof WEAR_SLOTS)[number];
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+/**
+ * **ultimate** is above legendary (2026-11-23): only the Kush Crown + Kush Reactor Core (BurgiDrip) and the Skeddsson title have it.
+ * Never in Munchie Boxes or the daily deal (`BoxRarity` is the four that boxes come in).
+ */
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'ultimate';
+/** The rarities Munchie Boxes come in (not ultimate). */
+export type BoxRarity = Exclude<Rarity, 'ultimate'>;
 
 export interface ShopItem {
 	id: string;
@@ -140,6 +146,8 @@ export const SHOP_ITEMS: ShopItem[] = [
 	// 10 million (2026-11-20, the user: "high roller titeln ska kosta 10 miljoner"); was a 150-burger common,
 	// made legendary so rarer still costs more within the titles. People who bought it before keep it.
 	item('title-roller', 'title', 'High Roller', 10_000_000, 'legendary', 'High Roller'),
+	// the one ultimate title (2026-11-23, the user: "högsta rarityn som kronan … bara stå Skeddsson … grön o glowa")
+	item('title-skeddsson', 'title', 'Skeddsson', 100_000_000, 'ultimate', 'Skeddsson'),
 	item('title-goblin', 'title', 'Camo Goblin', 2000, 'common', 'Camo Goblin'),
 	item('title-ketchup', 'title', 'Ketchup King', 2500, 'common', 'Ketchup King'),
 	item('title-baron', 'title', 'Burger Baron', 3900, 'rare', 'Burger Baron'),
@@ -328,7 +336,7 @@ function hash(text: string): number {
 }
 
 /** The daily deal's pool: ordinary items up to 100,000 (no holiday, secret, throne or High Roller). */
-const DEAL_POOL = SHOP_ITEMS.filter((i) => !i.secret && !i.window && i.price <= 100_000);
+const DEAL_POOL = SHOP_ITEMS.filter((i) => !i.secret && !i.window && i.price <= 100_000 && i.rarity !== 'ultimate');
 /** Today's deal: the same item and discount for the whole squad (30–50 % off), from the day alone. */
 export function dealOf(day: string): { id: string; off: number } {
 	const h = hash(`deal:${day}`);
@@ -422,7 +430,7 @@ export interface Gift {
 export const GIFT_KEEP = 40;
 const RX_KEEP = 120;
 /** Munchie Box prices per rarity; a duplicate gives back half (BOX_BACK). */
-export const BOX_PRICE: Record<Rarity, number> = { common: 2500, rare: 7500, epic: 18000, legendary: 70000 };
+export const BOX_PRICE: Record<BoxRarity, number> = { common: 2500, rare: 7500, epic: 18000, legendary: 70000 };
 export const BOX_BACK = 0.5;
 /** Selling gives back half of what you paid. */
 export const SELL_BACK = 0.5;
@@ -755,12 +763,12 @@ export function sellItem(s: ShopState | undefined, id: string, at: number): { st
 }
 
 /** The boxes' pools: every ordinary item of that rarity (no holiday, secret, throne or High Roller). */
-export const boxPool = (r: Rarity): ShopItem[] => SHOP_ITEMS.filter((i) => i.rarity === r && !i.secret && !i.window && i.slot !== 'throne' && i.id !== 'title-roller');
+export const boxPool = (r: BoxRarity): ShopItem[] => SHOP_ITEMS.filter((i) => i.rarity === r && !i.secret && !i.window && i.slot !== 'throne' && i.id !== 'title-roller');
 
 /** Open a Munchie Box: a random item of that rarity (`roll` 0–1), worn at once; one you own gives half the box back. */
 export function openBox(
 	s: ShopState | undefined,
-	rarity: Rarity,
+	rarity: BoxRarity,
 	balance: number,
 	at: number,
 	roll: number

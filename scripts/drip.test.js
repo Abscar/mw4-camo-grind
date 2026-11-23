@@ -162,13 +162,16 @@ test('the store’s pictures: one per piece, a viewBox, sound markup', () => {
 	assert.ok(MANNEQUIN_HEAD.w > 0);
 });
 
-test('the Kush Crown: the one ultimate piece, a hat for 100,000,000, never the daily drop', () => {
+test('the ultimate pieces: Kush Crown + Kush Reactor Core, 100,000,000 each, never the daily drop', () => {
 	const ult = DRIP_DEFS.filter((d) => d.rarity === 'ultimate');
-	assert.deepEqual(ult.map((d) => d.id), ['d-hat-kushcrown']);
+	assert.deepEqual(ult.map((d) => d.id).sort(), ['d-hat-kushcrown', 'd-nk-kushcore']);
 	const c = DRIP_BY_ID.get('d-hat-kushcrown');
 	assert.equal(c.price, 100_000_000);
 	assert.equal(c.draw.slot, 'hat');
-	assert.ok(DRIP_DEFS.every((d) => d === c || d.price < c.price), 'the dearest piece in the store');
+	assert.ok(DRIP_DEFS.every((d) => d.rarity === 'ultimate' || d.price < c.price), 'the dearest pieces in the store');
+	assert.equal(DRIP_BY_ID.get('d-nk-kushcore').price, 100_000_000);
+	for (let i = 1; i <= 400; i++) assert.notEqual(dripDealOf(`2027-${i}`).id, 'd-nk-kushcore');
+	for (const key of KEYS) assert.match(dripUnder(`kr-${key}`, { neck: 'd-nk-kushcore' }, key), /dr-spark/, `${key}: the core smokes`);
 	for (let i = 1; i <= 400; i++) assert.notEqual(dripDealOf(`2027-${i}`).id, c.id);
 	const r = buy(undefined, c.id, 100_000_000, AT);
 	assert.equal(r.result, 'ok');
@@ -183,6 +186,6 @@ test('DRIP_ITEMS mirror the catalogue', () => {
 		const d = DRIP_BY_ID.get(it.id);
 		assert.equal(it.slot, d.draw.slot);
 		assert.equal(it.price, d.price);
-		assert.equal(it.rarity, d.rarity === 'ultimate' ? 'legendary' : d.rarity, `${it.id}: ultimate counts as legendary in the shop`);
+		assert.equal(it.rarity, d.rarity);
 	}
 });

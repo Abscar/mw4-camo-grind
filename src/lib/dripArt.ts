@@ -800,6 +800,32 @@ export function neckMarkup(u: string, L: NeckLook, B: BodyAt): string {
 			);
 			break;
 		}
+		case 'core': {
+			// the Kush Reactor Core (ultimate): a chest reactor, metal ring with ten glowing green cells, a white-hot
+			// middle with a dark weed leaf in it, a breathing green aura and smoke pouring off it
+			const x = c;
+			const y = t + drop * 0.9;
+			const R = 5.2 * k;
+			const cells = Array.from({ length: 10 }, (_, i) => {
+				const a0 = (i * 36 + 4) * (Math.PI / 180);
+				const a1 = (i * 36 + 32) * (Math.PI / 180);
+				const p = (a: number, r: number) => `${f(x + Math.cos(a) * r)} ${f(y + Math.sin(a) * r)}`;
+				return `M${p(a0, R * 0.58)} L${p(a0, R * 0.86)} L${p(a1, R * 0.86)} L${p(a1, R * 0.58)} Z`;
+			}).join(' ');
+			out.push(
+				`<defs><radialGradient id="${v}-ra"><stop offset="0" stop-color="#7dff3a" stop-opacity="0.9"/><stop offset="0.5" stop-color="#7dff3a" stop-opacity="0.35"/><stop offset="1" stop-color="#7dff3a" stop-opacity="0"/></radialGradient><radialGradient id="${v}-rc"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#e4ffc8"/><stop offset="1" stop-color="#5ae03a"/></radialGradient></defs>`,
+				`<circle class="dr-glow" cx="${f(x)}" cy="${f(y)}" r="${f(R * 2.5)}" fill="url(#${v}-ra)"/>`,
+				`<circle cx="${f(x)}" cy="${f(y)}" r="${f(R * 1.05)}" fill="url(#${g})" stroke="#1a1e22" stroke-width="${f(0.35 * k)}"/>`,
+				`<circle cx="${f(x)}" cy="${f(y)}" r="${f(R * 0.9)}" fill="#0c1a0c"/>`,
+				`<path class="dr-glow" d="${cells}" fill="#9dff5a" stroke="#2a8a2a" stroke-width="${f(0.12 * k)}"/>`,
+				`<circle cx="${f(x)}" cy="${f(y)}" r="${f(R * 0.5)}" fill="url(#${v}-rc)" stroke="#3ab83a" stroke-width="${f(0.2 * k)}"/>`,
+				`<g transform="translate(${f(x)} ${f(y + R * 0.38)}) scale(${f(0.17 * k, 3)}) translate(-12 -20)">${LEAF_PATHS.map((d) => `<path d="${d}" fill="#1c6a2a"/>`).join('')}</g>`,
+				...[-1, 1].map((sd) => `<circle cx="${f(x + sd * R * 0.98)}" cy="${f(y)}" r="${f(0.35 * k)}" fill="#c8ccd2" stroke="#4a525a" stroke-width="${f(0.1 * k)}"/>`),
+				...[0, 1, 2, 3, 4, 5].map((i) => `<circle class="dr-spark" style="animation-delay:-${f(i * 0.37, 2)}s" cx="${f(x + (i % 2 ? 1 : -1) * (2.2 + (i % 3) * 1.2) * k)}" cy="${f(y - (3.6 + (i % 3) * 1) * k)}" r="${f((1.1 + (i % 3) * 0.4) * k)}" fill="#d8f0d0" opacity="0.65"/>`),
+				`<path class="dr-twinkle" d="${star4(x + 2.4 * k, y - 2.6 * k, 1.1 * k)}" fill="#f4ffd8"/>`
+			);
+			break;
+		}
 		case 'headset': {
 			// a gaming headset hung round the neck: the band behind, a cup on each collarbone, the mic sticking out
 			const cup = (s: number) => {

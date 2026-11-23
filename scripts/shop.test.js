@@ -3,6 +3,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+	boxPool,
+	dealOf,
 	buy,
 	buyStatue,
 	cleanShop,
@@ -52,7 +54,7 @@ test('prices (2026-11-20, ×10–×20 by rarity): each rarity in its band, prank
 	// common ×10, rare ×13, epic ×16, legendary ×20 of the old prices (100–5,000), rounded
 	const band = { common: [1000, 3500], rare: [3900, 10500], epic: [9600, 32000], legendary: [48000, 100000] };
 	for (const i of SHOP_ITEMS) {
-		if (i.id === 'title-roller' || i.id === 'throne-abscar' || i.secret) continue; // the user's own picks, below; rewards are free
+		if (i.id === 'title-roller' || i.id === 'throne-abscar' || i.id === 'title-skeddsson' || i.secret) continue; // the user's own picks, below; rewards are free
 		const [lo, hi] = band[i.rarity];
 		assert.ok(i.price >= lo && i.price <= hi, `${i.id} ${i.rarity} ${i.price} not in ${lo}–${hi}`);
 	}
@@ -63,7 +65,13 @@ test('prices (2026-11-20, ×10–×20 by rarity): each rarity in its band, prank
 	// High Roller: 10 million (the user, 2026-11-20), legendary so the titles still go up by rarity
 	const roller = ITEM_BY_ID.get('title-roller');
 	assert.deepEqual({ price: roller.price, rarity: roller.rarity, text: roller.text }, { price: 10_000_000, rarity: 'legendary', text: 'High Roller' });
-	assert.equal(Math.max(...SHOP_ITEMS.filter((i) => i.slot !== 'throne').map((i) => i.price)), 10_000_000, 'the dearest item but the throne');
+	assert.equal(Math.max(...SHOP_ITEMS.filter((i) => i.slot !== 'throne' && i.rarity !== 'ultimate').map((i) => i.price)), 10_000_000, 'the dearest item but the throne and Skeddsson');
+	// Skeddsson: the one ultimate title (2026-11-23), 100 million, never in a box or the daily deal
+	const sk = ITEM_BY_ID.get('title-skeddsson');
+	assert.deepEqual({ price: sk.price, rarity: sk.rarity, text: sk.text, slot: sk.slot }, { price: 100_000_000, rarity: 'ultimate', text: 'Skeddsson', slot: 'title' });
+	assert.deepEqual(SHOP_ITEMS.filter((i) => i.rarity === 'ultimate').map((i) => i.id), ['title-skeddsson']);
+	for (const r of ['common', 'rare', 'epic', 'legendary']) assert.ok(!boxPool(r).some((i) => i.rarity === 'ultimate'));
+	for (let d = 1; d <= 400; d++) assert.notEqual(dealOf(`2027-${d}`).id, 'title-skeddsson');
 	assert.equal(ITEM_BY_ID.get('throne-abscar').price, 100_000_000, 'Abscar’s Throne (2026-11-21)');
 	assert.equal(Math.min(...SHOP_ITEMS.filter((i) => !i.secret).map((i) => i.price)), 1000, 'the cheapest (Burger Pin)');
 	// 10 million survives cleaning (the stored-price cap used to be 1 million) and the squad document
