@@ -1,36 +1,37 @@
 <!--
-	Squad Mayhem (2026-11-22, the user: "a game connected to my camo grinder, our own operators, gun camos,
-	skins, cosmetics"): our own side-view arena brawler-shooter (engine.ts = the rules, render.ts = the canvas).
-	On top of the canvas sits the operator's real emblem (SquadAvatar, with your BurgiShop gear via OpGear) and
-	the weapon's real cartoon (WeaponIcon) in the camo you've earned on it: best of the tracker's ladder camo
-	and the Camo Armory. Guns lying on the floor are drawn the same way, so you see your Gold Kastov waiting.
-	The panel stays mounted like every tab: the loop only runs while a game is on and the tab is open.
+	Abscars Madness (2026-11-23; it started as the Squad Mayhem tab of 2026-11-22). The user: "rename it Abscars
+	Madness, lots of levels, not stuck in one room with waves, move forward by killing, a bit of puzzle to get on,
+	a skill tree with cool abilities to unlock". Our own side-scrolling brawler-shooter: engine.ts = the rules,
+	levels.ts = the 12 levels, skills.ts = the skill tree, render.ts + painter.ts = the canvas.
+	It opens full screen from its own title button (MadnessLauncher.svelte). Menu: levels (each opens when the one
+	before is cleared; up to 4 skill points each: 2 for clearing, 1 for killing everyone, 1 for no deaths), the
+	skill tree, your operator, your starting gun (the guns you have a camo on). Progress is kept on this device.
 -->
 <script lang="ts">
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { ARMORY_CAMOS, bestCamo, heldGun } from '#lib/armory.ts';
 	import { camoLook } from '#lib/data/weaponLooks.ts';
 	import type { IconCamo } from '#lib/data/camos.ts';
-	import { faceOf } from '#lib/faceGear.ts';
 	import { mayhemText as M } from '#lib/i18n/mayhem.ts';
 	import { t } from '#lib/i18n/en.ts';
-	import { FLOOR, H, Mayhem, NO_INPUT, VH, VW, W, type GameEvent, type Input } from '#lib/mayhem/engine.ts';
+	import { H, Mayhem, NO_INPUT, VH, VW, W, type GameEvent, type Input } from '#lib/mayhem/engine.ts';
 	import { gunOf, OUT_WEAPONS, STARTER } from '#lib/mayhem/guns.ts';
+	import { LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, type LevelRecord } from '#lib/mayhem/levels.ts';
+	import { BRANCHES, canBuy, cleanSkills, SKILLS, skillCost, type SkillId } from '#lib/mayhem/skills.ts';
 	import { render } from '#lib/mayhem/render.ts';
 	import { LOOKS, paintFigure, type GunPic } from '#lib/mayhem/painter.ts';
 	import { MayhemSound } from '#lib/mayhem/sound.ts';
 	import { progress } from '#lib/progress.svelte.ts';
-	import { worn } from '#lib/shop.ts';
 	import { squad } from '#lib/squad.svelte.ts';
 	import { SQUAD_OPS, type SquadOp } from '#lib/squad-codec.ts';
-	import OpGear from '../OpGear.svelte';
 	import SquadAvatar from '../SquadAvatar.svelte';
 	import WeaponIcon from '../WeaponIcon.svelte';
 
-	let { active = false }: { active?: boolean } = $props();
+	let { active = false, onclose }: { active?: boolean; onclose?: () => void } = $props();
 
 	const KEY = 'mw4-camo-grind:mayhem';
-	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; best?: { score: number; wave: number; kills: number; op: string; at: number } };
+	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[] };
+	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp };
 	function readSaved(): Saved {
 		try {
 			const v = JSON.parse(localStorage.getItem(KEY) ?? '{}');
@@ -58,6 +59,34 @@
 		joker: t.operator.joker
 	};
 
+	// ---------- the campaign: levels + skills ----------
+	const camp = $derived<Camp>(saved.camp ?? {});
+	const done = $derived<Record<string, LevelRecord>>(camp.done && typeof camp.done === 'object' ? camp.done : {});
+	const skills = $derived(cleanSkills(camp.skills));
+	const skillSet = $derived(new Set<SkillId>(skills));
+	const earned = $derived(LEVELS.reduce((n, l) => n + pointsOf(done[l.id]), 0));
+	const free = $derived(earned - skillCost(skills));
+	const cleared = $derived(LEVELS.filter((l) => done[l.id]?.clear).length);
+	let levelId = $state(LEVELS[0].id);
+	const level = $derived(LEVEL_BY_ID.get(levelId) ?? LEVELS[0]);
+	const levelNo = $derived(LEVELS.indexOf(level) + 1);
+	function setCamp(c: Camp) {
+		saved = { ...saved, camp: { ...camp, ...c } };
+		writeSaved(saved);
+	}
+	function buySkill(id: SkillId) {
+		if (canBuy(id, skillSet, free) !== 'ok') return;
+		setCamp({ skills: [...skills, id] });
+	}
+	function pickLevel(id: string) {
+		const i = LEVELS.findIndex((l) => l.id === id);
+		if (i < 0 || !levelOpen(i, done)) return;
+		levelId = id;
+		saved = { ...saved, level: id };
+		writeSaved(saved);
+	}
+	const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
 	// ---------- your look and your camos ----------
 	const CAMO_RANK: IconCamo[] = ['gold', 'platinum', 'harmonicBreak', 'divergence', 'mercurialDrift', 'polyatomicReforged', 'orionReforged'];
 	const CAMO_NAME: Record<IconCamo, string> = {
@@ -81,10 +110,6 @@
 
 	let op = $state<SquadOp>('abscar');
 	let start = $state<string>(STARTER);
-	const look = $derived(worn(squad.shop));
-	const face = $derived(faceOf(look));
-	const gearCount = $derived(Object.keys(look).length);
-	const myName = $derived(squad.me?.name ?? OP_NAMES[op]);
 
 	/** starting guns: the starter pistol, your held Camo Armory gun, and every gun you have a camo on */
 	const gunChoices = $derived.by(() => {
@@ -98,6 +123,10 @@
 		op = saved.op && SQUAD_OPS.includes(saved.op) ? saved.op : (squad.me?.op ?? 'abscar');
 		sfx.muted = !!saved.mute;
 		muted = sfx.muted;
+		const rec = saved.camp?.done ?? {};
+		const i = LEVELS.findIndex((l) => l.id === saved.level);
+		const firstNew = LEVELS.findIndex((l, j) => levelOpen(j, rec) && !rec[l.id]?.clear);
+		levelId = i >= 0 && levelOpen(i, rec) ? LEVELS[i].id : LEVELS[Math.max(0, firstNew)].id;
 	});
 	// pick a sensible starting gun once the tracker and shop are read
 	let gunPicked = false;
@@ -112,12 +141,14 @@
 	});
 
 	// ---------- the game ----------
-	type Screen = 'menu' | 'play' | 'over';
+	type Screen = 'menu' | 'play' | 'done';
 	let screen = $state<Screen>('menu');
 	let paused = $state(false);
 	let game: Mayhem | null = null;
 	const sfx = new MayhemSound();
 	let muted = $state(false);
+	/** the menu's panels */
+	let panel = $state<'levels' | 'skills' | 'loadout'>('levels');
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -132,26 +163,51 @@
 	let reduce = false;
 
 	// HUD (copied from the game a few times a second)
-	let hud = $state({ hp: 100, ammo: 0, mag: 0, gun: '', gunId: '', melee: false, wave: 0, score: 0, combo: 0, holk: 0, holkOn: false, left: 0 });
+	let hud = $state({
+		hp: 100,
+		maxHp: 100,
+		ammo: 0,
+		mag: 0,
+		gun: '',
+		gunId: '',
+		melee: false,
+		score: 0,
+		combo: 0,
+		holk: 0,
+		holkOn: false,
+		kills: 0,
+		total: 0,
+		keys: '',
+		nades: 0,
+		cp: 0,
+		dead: false,
+		hint: ''
+	});
 	let drops = $state<{ uid: number; id: string; empty: boolean }[]>([]);
 	let dropKey = '';
 	const dropEls = new Map<number, HTMLElement>();
-	let result = $state<{ score: number; wave: number; kills: number; heads: number; acc: number; combo: number; best: boolean } | null>(null);
+	type Result = {
+		name: string;
+		no: number;
+		time: number;
+		kills: number;
+		total: number;
+		deaths: number;
+		score: number;
+		heads: number;
+		acc: number;
+		combo: number;
+		gained: number;
+		all: boolean;
+		clean: boolean;
+		bestTime: boolean;
+		next: string | null;
+	};
+	let result = $state<Result | null>(null);
 
 	function place(node: HTMLElement, uid: number) {
 		dropEls.set(uid, node);
 		return { destroy: () => dropEls.delete(uid) };
-	}
-
-	/** where the fist holds each kind of cartoon (WeaponIcon's 64 × 24 units → the 44 × 16.5 px gun box) */
-	function pivot(id: string): [number, number] {
-		const l = camoLook(id);
-		const k = 44 / 64;
-		if (!l) return [24 * k, 17 * k];
-		if (l.kind === 'rifle') return [((l.bullpup ? 29 : 25) + 2.2) * k, 17.4 * k];
-		if (l.kind === 'pistol') return [24 * k, 18 * k];
-		if (l.kind === 'launcher') return [24.6 * k, 16.8 * k];
-		return [14 * k, 12.6 * k];
 	}
 
 	const input: Input = { ...NO_INPUT };
@@ -228,10 +284,11 @@
 		});
 	});
 
-	function begin() {
-		saved = { ...saved, op, gun: start };
+	function begin(id: string = levelId) {
+		levelId = id;
+		saved = { ...saved, op, gun: start, level: id };
 		writeSaved(saved);
-		game = new Mayhem(start);
+		game = new Mayhem(id, start, skills, Date.now());
 		// for the check scripts (read only; like the frame cap's window.__mw4fx)
 		(window as unknown as { __mayhem: Mayhem }).__mayhem = game;
 		result = null;
@@ -239,13 +296,19 @@
 		dropKey = '';
 		screen = 'play';
 		paused = false;
-		Object.assign(input, NO_INPUT, { aimX: W * 0.75, aimY: FLOOR - 60 });
+		Object.assign(input, NO_INPUT, { aimX: game.player.x + 200, aimY: game.player.y - 60 });
 		mfx = 0.75;
 		mfy = 0.6;
 		sfx.unlock();
 		last = 0;
 		loop();
 		stage?.focus();
+	}
+
+	function toMenu() {
+		screen = 'menu';
+		paused = false;
+		cancelAnimationFrame(raf);
 	}
 
 	let raf = 0;
@@ -271,27 +334,42 @@
 
 	function onEvent(e: GameEvent) {
 		sfx.play(e);
-		if (e.t === 'dead') setTimeout(finish, 1400);
+		if (e.t === 'complete') setTimeout(finish, 1500);
 	}
 
 	function finish() {
 		if (!game || screen !== 'play') return;
 		const g = game;
-		const best = g.score > 0 && (!saved.best || g.score > saved.best.score);
+		const id = g.level.id;
+		const old = done[id] ?? {};
+		const all = g.stats.kills >= g.totalEnemies;
+		const clean = g.deaths === 0;
+		const time = Math.round(g.time);
+		const rec: LevelRecord = { ...old, clear: 1 };
+		if (all) rec.all = 1;
+		if (clean) rec.clean = 1;
+		const bestTime = !old.best || time < old.best;
+		if (bestTime) rec.best = time;
+		const i = LEVELS.findIndex((l) => l.id === id);
 		result = {
-			score: g.score,
-			wave: g.wave,
+			name: g.level.name,
+			no: i + 1,
+			time,
 			kills: g.stats.kills,
+			total: g.totalEnemies,
+			deaths: g.deaths,
+			score: g.score,
 			heads: g.stats.heads,
 			acc: g.stats.shots ? Math.round((g.stats.hits / g.stats.shots) * 100) : 0,
 			combo: g.stats.bestCombo,
-			best
+			gained: pointsOf(rec) - pointsOf(old),
+			all,
+			clean,
+			bestTime: bestTime && !!old.best,
+			next: LEVELS[i + 1]?.id ?? null
 		};
-		if (best) {
-			saved = { ...saved, best: { score: g.score, wave: g.wave, kills: g.stats.kills, op, at: Date.now() } };
-			writeSaved(saved);
-		}
-		screen = 'over';
+		setCamp({ done: { ...done, [id]: rec } });
+		screen = 'done';
 	}
 
 	function draw() {
@@ -324,17 +402,23 @@
 		const h = hud;
 		const next = {
 			hp: Math.max(0, Math.ceil(p.hp)),
+			maxHp: p.maxHp,
 			ammo: p.held?.ammo ?? 0,
-			mag: gun?.mag ?? 0,
+			mag: gun ? Math.round(gun.mag * (skillSet.has('mags') ? 1.5 : 1)) : 0,
 			gun: gun?.name ?? M.hud.fists,
 			gunId: p.held?.id ?? '',
 			melee: gun?.kind === 'melee',
-			wave: g.wave,
 			score: g.score,
 			combo: g.combo,
 			holk: Math.round(g.holk),
 			holkOn: g.holkOn,
-			left: g.alive + g.toSpawn
+			kills: g.stats.kills,
+			total: g.totalEnemies,
+			keys: [...g.have].sort().join(','),
+			nades: g.grenades,
+			cp: g.checkpoint,
+			dead: p.hp <= 0,
+			hint: g.time < 8 ? g.level.hint : ''
 		};
 		for (const k of Object.keys(next) as (keyof typeof next)[]) if (h[k] !== next[k]) (h as Record<string, unknown>)[k] = next[k];
 	}
@@ -346,7 +430,7 @@
 		cssW = Math.max(200, r.width);
 		dpr = Math.min(window.devicePixelRatio || 1, 2);
 		canvas.width = Math.round(cssW * dpr);
-		canvas.height = Math.round(((cssW * H) / W) * dpr);
+		canvas.height = Math.round(((cssW * VH) / VW) * dpr);
 		ctx = canvas.getContext('2d');
 		if (game) draw();
 	}
@@ -354,8 +438,9 @@
 	let ro: ResizeObserver | null = null;
 	onMount(() => {
 		reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-		heroK = innerWidth < 640 ? 1.2 : 2;
+		heroK = innerWidth < 640 ? 1.2 : 1.8;
 		touchy = matchMedia('(pointer: coarse)').matches;
+		full = !!document.fullscreenElement;
 		ro = new ResizeObserver(resize);
 		if (stage) ro.observe(stage);
 		const onVis = () => {
@@ -384,7 +469,7 @@
 		ro?.disconnect();
 	});
 
-	// leaving the tab pauses
+	// closing the game pauses
 	$effect(() => {
 		if (!active) untrack(() => pause(true));
 	});
@@ -392,7 +477,7 @@
 	function pause(on: boolean) {
 		if (screen !== 'play' || game?.over) return;
 		paused = on;
-		if (on) Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false });
+		if (on) Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false });
 		else {
 			last = 0;
 			stage?.focus();
@@ -412,6 +497,8 @@
 		ArrowDown: 'down',
 		KeyE: 'pick',
 		KeyQ: 'throw',
+		KeyC: 'dash',
+		KeyG: 'nade',
 		ShiftLeft: 'holk',
 		ShiftRight: 'holk'
 	};
@@ -420,7 +507,14 @@
 		return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 	}
 	function keydown(e: KeyboardEvent) {
-		if (!active || screen !== 'play' || typing(e)) return;
+		if (!active || typing(e)) return;
+		if (screen !== 'play') {
+			if (e.code === 'Escape' && onclose) {
+				e.preventDefault();
+				onclose();
+			}
+			return;
+		}
 		if (e.code === 'Escape' || e.code === 'KeyP') {
 			e.preventDefault();
 			pause(!paused);
@@ -494,10 +588,9 @@
 
 	// ---------- full screen + sound ----------
 	let full = $state(false);
-	let shell: HTMLDivElement | undefined = $state();
 	function toggleFull() {
 		if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-		else shell?.requestFullscreen?.().catch(() => {});
+		else document.documentElement.requestFullscreen?.().catch(() => {});
 	}
 	function toggleMute() {
 		sfx.muted = !sfx.muted;
@@ -507,21 +600,24 @@
 	}
 
 	const fmt = (n: number) => n.toLocaleString('en-US');
-	const hpTone = $derived(hud.hp > 60 ? 'ok' : hud.hp > 30 ? 'mid' : 'low');
+	const hpTone = $derived(hud.hp > hud.maxHp * 0.6 ? 'ok' : hud.hp > hud.maxHp * 0.3 ? 'mid' : 'low');
+	const KEY_COL: Record<string, string> = { red: '#ff3b3b', blue: '#3b8bff', yellow: '#ffd23b' };
+	const THEME_NAME = { office: 'Office', diner: 'Diner', warehouse: 'Warehouse' } as const;
 </script>
 
 <svelte:window onkeydown={keydown} onkeyup={keyup} onpointerup={up} />
 
-<section class="mh" aria-labelledby="mh-h">
+<section class="mh" class:immersive={screen !== 'menu'} aria-labelledby="mh-h">
 	<header class="mh-head">
 		<div>
 			<p class="mh-kicker font-head">{M.kicker}</p>
-			<h2 id="mh-h" class="mh-logo font-head" aria-label={M.title}><span>SQUAD</span><b>MAYHEM</b></h2>
+			<h2 id="mh-h" class="mh-logo font-head" aria-label={M.title}><span>ABSCARS</span><b>MADNESS</b></h2>
 		</div>
-		<p class="mh-best num">{saved.best ? M.best(fmt(saved.best.score), saved.best.wave) : M.noBest}</p>
+		<p class="mh-best num">{M.progress(cleared, LEVELS.length, earned, LEVELS.length * 4)}</p>
+		{#if onclose}<button type="button" class="mh-close" onclick={onclose} aria-label={M.close}>✕ <span>{M.close}</span></button>{/if}
 	</header>
 
-	<div class="mh-shell" class:full bind:this={shell}>
+	<div class="mh-shell">
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div
 			class="mh-stage"
@@ -536,7 +632,7 @@
 		>
 			<canvas bind:this={canvas} class="mh-canvas" aria-hidden="true"></canvas>
 
-			<!-- the SVG layer: 960 × 540 world units, scaled to the stage -->
+			<!-- the SVG layer: world units, scaled to the stage and moved with the camera -->
 			<div class="mh-layer" bind:this={layerEl} style:transform="scale({layerScale})" aria-hidden="true" hidden={screen === 'menu'}>
 				{#each drops as d (d.uid)}
 					{@const l = camoLook(d.id)}
@@ -557,15 +653,19 @@
 				<!-- HUD -->
 				<div class="mh-hud" aria-hidden="true">
 					<div class="mh-hud-l">
-						<span class="mh-wave-sm font-head">{M.hud.wave} {hud.wave} · {hud.left} {M.hud.left}</span>
-						<div class="mh-hp" data-tone={hpTone}><i style:width="{hud.hp}%"></i><span class="num">{hud.hp} HP</span></div>
+						<span class="mh-wave-sm font-head">{levelNo}. {level.name}</span>
+						<div class="mh-hp" data-tone={hpTone}><i style:width="{(hud.hp / hud.maxHp) * 100}%"></i><span class="num">{hud.hp} HP</span></div>
 						<div class="mh-holk" class:on={hud.holkOn} class:ready={hud.holk >= 20}>
 							<i style:width="{hud.holk}%"></i><span>{M.hud.holk}{#if !touchy}<em> · {M.hud.holkReady}</em>{/if}</span>
 						</div>
+						<div class="mh-inv">
+							{#each hud.keys ? hud.keys.split(',') : [] as k (k)}<span class="mh-key" style:background={KEY_COL[k]} title="{k} key"></span>{/each}
+							{#if skillSet.has('frag')}<span class="mh-nades num">💣 {hud.nades}</span>{/if}
+						</div>
 					</div>
 					<div class="mh-hud-c">
-						<span class="mh-wave font-head">{M.hud.wave} {hud.wave}</span>
-						<span class="mh-left num">{hud.left} {M.hud.left}</span>
+						<span class="mh-wave font-head">{levelNo}. {level.name}</span>
+						<span class="mh-left num">{M.hud.kills(hud.kills, hud.total)} · {M.hud.cp(hud.cp, level.checkpoints.length)}</span>
 					</div>
 					<div class="mh-hud-r">
 						<span class="mh-score num">{fmt(hud.score)}</span>
@@ -578,6 +678,8 @@
 						</span>
 					</div>
 				</div>
+				{#if hud.hint}<p class="mh-hint" aria-live="polite">{hud.hint}</p>{/if}
+				{#if hud.dead}<p class="mh-respawn font-head" aria-live="polite">{M.respawn}</p>{/if}
 
 				<div class="mh-tools">
 					<button type="button" class="mh-tool" onclick={() => pause(true)} aria-label={M.pause} title={M.pause}>❚❚</button>
@@ -594,8 +696,10 @@
 							<button type="button" class="mh-tb" aria-label={M.touch.jump} {...hold('jump')}>▲</button>
 						</div>
 						<div class="mh-pad">
-							<button type="button" class="mh-tb sm" aria-label={M.touch.pick} {...hold('pick')}>PICK</button>
+							<button type="button" class="mh-tb sm" aria-label={M.touch.pick} {...hold('pick')}>USE</button>
 							<button type="button" class="mh-tb sm" aria-label={M.touch.throw} {...hold('throw')}>THROW</button>
+							<button type="button" class="mh-tb sm" aria-label={M.touch.dash} {...hold('dash')}>DASH</button>
+							{#if skillSet.has('frag')}<button type="button" class="mh-tb sm" aria-label={M.touch.nade} {...hold('nade')}>NADE</button>{/if}
 							<button type="button" class="mh-tb sm holk" aria-label={M.touch.holk} {...hold('holk')}>HOLK</button>
 						</div>
 					</div>
@@ -607,27 +711,44 @@
 						<p class="mh-cover-s">{M.pausedHint}</p>
 						<div class="mh-row">
 							<button type="button" class="mh-btn primary" onclick={() => pause(false)}>{M.resume}</button>
-							<button type="button" class="mh-btn" onclick={() => ((screen = 'menu'), cancelAnimationFrame(raf))}>{M.menu}</button>
+							<button type="button" class="mh-btn" onclick={() => begin(levelId)}>{M.restart}</button>
+							<button type="button" class="mh-btn" onclick={toMenu}>{M.menu}</button>
 						</div>
 					</div>
 				{/if}
 			{/if}
 
-			{#if screen === 'over' && result}
+			{#if screen === 'done' && result}
 				<div class="mh-cover over">
-					<p class="mh-cover-t font-head red">{M.over.title}</p>
-					{#if result.best}<p class="mh-newbest font-head">{M.over.newBest}</p>{/if}
+					<p class="mh-cover-k font-head">{M.done.kicker(result.no)}</p>
+					<p class="mh-cover-t font-head lime">{M.done.title}</p>
+					<p class="mh-cover-s">{result.name}</p>
+					{#if result.gained > 0}<p class="mh-newbest font-head">{M.done.points(result.gained)}</p>{/if}
 					<dl class="mh-stats">
-						<div><dt>{M.over.score}</dt><dd class="num">{fmt(result.score)}</dd></div>
-						<div><dt>{M.over.wave}</dt><dd class="num">{result.wave}</dd></div>
-						<div><dt>{M.over.kills}</dt><dd class="num">{result.kills}</dd></div>
-						<div><dt>{M.over.heads}</dt><dd class="num">{result.heads}</dd></div>
-						<div><dt>{M.over.acc}</dt><dd class="num">{result.acc}%</dd></div>
-						<div><dt>{M.over.combo}</dt><dd class="num">×{result.combo}</dd></div>
+						<div><dt>{M.done.time}</dt><dd class="num">{fmtTime(result.time)}{#if result.bestTime}<small> ★</small>{/if}</dd></div>
+						<div><dt>{M.done.kills}</dt><dd class="num" class:ok={result.all}>{result.kills}/{result.total}</dd></div>
+						<div><dt>{M.done.deaths}</dt><dd class="num" class:ok={result.clean}>{result.deaths}</dd></div>
+						<div><dt>{M.done.score}</dt><dd class="num">{fmt(result.score)}</dd></div>
+						<div><dt>{M.done.heads}</dt><dd class="num">{result.heads}</dd></div>
+						<div><dt>{M.done.acc}</dt><dd class="num">{result.acc}%</dd></div>
 					</dl>
 					<div class="mh-row">
-						<button type="button" class="mh-btn primary" onclick={begin}>{M.again}</button>
-						<button type="button" class="mh-btn" onclick={() => ((screen = 'menu'), cancelAnimationFrame(raf))}>{M.menu}</button>
+						{#if result.next}
+							{@const nx = result.next}
+							<button type="button" class="mh-btn primary" onclick={() => begin(nx)}>{M.done.next}</button>
+						{:else}
+							<p class="mh-newbest font-head">{M.done.allDone}</p>
+						{/if}
+						<button type="button" class="mh-btn" onclick={() => begin(levelId)}>{M.done.again}</button>
+						<button
+							type="button"
+							class="mh-btn"
+							onclick={() => {
+								panel = 'skills';
+								if (result?.next) levelId = result.next;
+								toMenu();
+							}}>{M.done.skills(free)}</button
+						>
 					</div>
 				</div>
 			{/if}
@@ -636,60 +757,112 @@
 				<div class="mh-menu">
 					<!-- your operator, whole body, holding the starting gun: the same drawing as in the game -->
 					<canvas class="mh-menu-hero" bind:this={heroCanvas} aria-hidden="true" style:width="{70 * heroK}px" style:height="{104 * heroK}px"></canvas>
-					<p class="mh-intro">{M.intro}</p>
-					<button type="button" class="mh-btn primary big" onclick={begin}>{M.play}</button>
+					<div class="mh-menu-info">
+						<p class="mh-cover-k font-head">{M.levelNo(levelNo, LEVELS.length)} · {THEME_NAME[level.theme]}</p>
+						<p class="mh-menu-name font-head">{level.name}</p>
+						<p class="mh-intro">{level.hint}</p>
+						<button type="button" class="mh-btn primary big" onclick={() => begin()}>{done[level.id]?.clear ? M.playAgain : M.play}</button>
+					</div>
 				</div>
 			{/if}
 		</div>
 	</div>
 
 	{#if screen === 'menu'}
-		<div class="mh-setup">
-			<div class="mh-box">
-				<h3 class="mh-h3 font-head">{M.pickOp}</h3>
-				<div class="mh-ops" role="radiogroup" aria-label={M.pickOp}>
-					{#each SQUAD_OPS as o (o)}
-						<button type="button" class="mh-op" role="radio" aria-checked={op === o} onclick={() => (op = o)}>
-							<SquadAvatar name={OP_NAMES[o]} op={o} size={44} />
-							<span>{OP_NAMES[o]}</span>
-						</button>
-					{/each}
-				</div>
-				<p class="mh-note">{M.gear(gearCount)}</p>
-			</div>
-			<div class="mh-box">
-				<h3 class="mh-h3 font-head">{M.pickGun}</h3>
-				<div class="mh-guns" role="radiogroup" aria-label={M.pickGun}>
-					{#each gunChoices as g (g.id)}
-						{@const l = camoLook(g.id)}
-						<button
-							type="button"
-							class="mh-gunpick"
-							role="radio"
-							aria-checked={start === g.id}
-							onclick={() => {
-								start = g.id;
-								gunPicked = true;
-							}}
-						>
-							{#if l}<WeaponIcon look={l} camo={g.camo} />{/if}
-							<span class="mh-gn">{g.name}</span>
-							<span class="mh-gc" data-camo={g.camo}>{g.camo ? CAMO_NAME[g.camo] : g.id === STARTER ? M.starter : M.noCamo}</span>
-						</button>
-					{/each}
-				</div>
-				<p class="mh-note">{M.gunHint}</p>
-			</div>
-			<div class="mh-box">
-				<h3 class="mh-h3 font-head">{M.controlsTitle}</h3>
-				<dl class="mh-keys">
-					{#each M.controls as [k, what] (k)}
-						<div><dt><kbd>{k}</kbd></dt><dd>{what}</dd></div>
-					{/each}
-				</dl>
-				<p class="mh-note">{M.touchHint}</p>
-			</div>
+		<div class="mh-tabs" role="tablist" aria-label={M.menuLabel}>
+			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'levels'} onclick={() => (panel = 'levels')}>{M.tabs.levels}</button>
+			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'skills'} onclick={() => (panel = 'skills')}>
+				{M.tabs.skills}{#if free > 0}<span class="mh-pill num">{free}</span>{/if}
+			</button>
+			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'loadout'} onclick={() => (panel = 'loadout')}>{M.tabs.loadout}</button>
 		</div>
+
+		{#if panel === 'levels'}
+			<div class="mh-levels">
+				{#each LEVELS as l, i (l.id)}
+					{@const open = levelOpen(i, done)}
+					{@const r = done[l.id]}
+					<button type="button" class="mh-level" data-theme-l={l.theme} aria-pressed={levelId === l.id} disabled={!open} onclick={() => pickLevel(l.id)}>
+						<span class="mh-lv-no num">{i + 1}</span>
+						<span class="mh-lv-name font-head">{l.name}</span>
+						<span class="mh-lv-hint">{open ? l.hint : M.locked}</span>
+						<span class="mh-lv-stars" aria-label={M.starsLabel(pointsOf(r))}>
+							<i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.all} title={M.star.all}>☠</i><i class:on={!!r?.clean} title={M.star.clean}>♥</i>
+							{#if r?.best}<em class="num">{fmtTime(r.best)}</em>{/if}
+						</span>
+						{#if !open}<span class="mh-lv-lock" aria-hidden="true">🔒</span>{/if}
+					</button>
+				{/each}
+			</div>
+			<p class="mh-note">{M.levelsNote}</p>
+		{:else if panel === 'skills'}
+			<div class="mh-skillhead">
+				<p><b class="num">{free}</b> {M.skillPoints(free)} · {M.earned(earned, LEVELS.length * 4)}</p>
+				{#if skills.length}<button type="button" class="mh-btn sm" onclick={() => setCamp({ skills: [] })}>{M.refund}</button>{/if}
+			</div>
+			<div class="mh-tree">
+				{#each BRANCHES as b (b.id)}
+					<div class="mh-branch" style:--bc={b.colour}>
+						<h3 class="mh-h3 font-head">{b.name}</h3>
+						{#each SKILLS.filter((s) => s.branch === b.id) as s (s.id)}
+							{@const st = canBuy(s.id, skillSet, free)}
+							<button type="button" class="mh-skill" data-state={st} disabled={st !== 'ok'} onclick={() => buySkill(s.id)}>
+								<span class="mh-sk-name font-head">{s.name}</span>
+								<span class="mh-sk-what">{s.what}</span>
+								{#if s.key}<span class="mh-sk-key"><kbd>{s.key}</kbd></span>{/if}
+								<span class="mh-sk-cost">{st === 'owned' ? M.owned : st === 'locked' ? M.needsFirst : M.cost(s.cost)}</span>
+							</button>
+						{/each}
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="mh-setup">
+				<div class="mh-box">
+					<h3 class="mh-h3 font-head">{M.pickOp}</h3>
+					<div class="mh-ops" role="radiogroup" aria-label={M.pickOp}>
+						{#each SQUAD_OPS as o (o)}
+							<button type="button" class="mh-op" role="radio" aria-checked={op === o} onclick={() => (op = o)}>
+								<SquadAvatar name={OP_NAMES[o]} op={o} size={44} />
+								<span>{OP_NAMES[o]}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+				<div class="mh-box">
+					<h3 class="mh-h3 font-head">{M.pickGun}</h3>
+					<div class="mh-guns" role="radiogroup" aria-label={M.pickGun}>
+						{#each gunChoices as g (g.id)}
+							{@const l = camoLook(g.id)}
+							<button
+								type="button"
+								class="mh-gunpick"
+								role="radio"
+								aria-checked={start === g.id}
+								onclick={() => {
+									start = g.id;
+									gunPicked = true;
+								}}
+							>
+								{#if l}<WeaponIcon look={l} camo={g.camo} />{/if}
+								<span class="mh-gn">{g.name}</span>
+								<span class="mh-gc" data-camo={g.camo}>{g.camo ? CAMO_NAME[g.camo] : g.id === STARTER ? M.starter : M.noCamo}</span>
+							</button>
+						{/each}
+					</div>
+					<p class="mh-note">{M.gunHint}</p>
+				</div>
+				<div class="mh-box">
+					<h3 class="mh-h3 font-head">{M.controlsTitle}</h3>
+					<dl class="mh-keys">
+						{#each M.controls as [k, what] (k)}
+							<div><dt><kbd>{k}</kbd></dt><dd>{what}</dd></div>
+						{/each}
+					</dl>
+					<p class="mh-note">{M.touchHint}</p>
+				</div>
+			</div>
+		{/if}
 	{/if}
 </section>
 
@@ -750,18 +923,6 @@
 
 	.mh-shell {
 		position: relative;
-	}
-	.mh-shell.full {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #000;
-		width: 100vw;
-		height: 100vh;
-	}
-	.mh-shell.full .mh-stage {
-		width: min(100vw, calc(100vh * 16 / 9));
-		border-radius: 0;
 	}
 	.mh-stage {
 		position: relative;
@@ -1313,6 +1474,410 @@
 		.mh-hp i,
 		.mh-holk i {
 			transition: none;
+		}
+	}
+
+	/* ---------- Abscars Madness (2026-11-23): full screen game, levels, skill tree ---------- */
+	.mh {
+		min-height: 100%;
+		border-radius: 0;
+		border: 0;
+		position: relative;
+	}
+	.mh-head {
+		max-width: 1100px;
+		margin-inline: auto;
+	}
+	.mh-close {
+		min-height: 44px;
+		padding: 0 14px;
+		border-radius: 10px;
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		background: rgba(0, 0, 0, 0.5);
+		color: #fff;
+		font-weight: 800;
+		margin-left: auto;
+	}
+	.mh-close:hover {
+		border-color: var(--mh-red);
+	}
+	.mh-shell {
+		max-width: 1100px;
+		margin-inline: auto;
+	}
+	/* while playing: only the game, as big as the screen allows */
+	.mh.immersive {
+		padding: 0;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #000;
+	}
+	.mh.immersive .mh-head {
+		display: none;
+	}
+	.mh.immersive .mh-shell {
+		max-width: none;
+		width: min(100%, calc(100dvh * 16 / 9));
+	}
+	.mh.immersive .mh-stage {
+		border-radius: 0;
+	}
+	.mh-logo b {
+		color: #ff6a1a;
+		text-shadow:
+			0 0 18px rgba(255, 106, 26, 0.6),
+			3px 3px 0 #2a0a08 !important;
+	}
+	.mh-inv {
+		display: flex;
+		gap: 4px;
+		align-items: center;
+		min-height: 12px;
+	}
+	.mh-key {
+		width: 16px;
+		height: 11px;
+		border-radius: 2px;
+		box-shadow: 0 0 6px currentColor;
+		border: 1px solid rgba(0, 0, 0, 0.6);
+	}
+	.mh-nades {
+		font-size: 11px;
+		font-weight: 700;
+	}
+	.mh-hint {
+		position: absolute;
+		left: 50%;
+		bottom: 14%;
+		transform: translateX(-50%);
+		max-width: min(90%, 520px);
+		padding: 6px 12px;
+		border-radius: 8px;
+		background: rgba(0, 0, 0, 0.65);
+		border: 1px solid rgba(255, 210, 59, 0.5);
+		color: #ffe69a;
+		font-size: 13px;
+		text-align: center;
+		pointer-events: none;
+	}
+	.mh-respawn {
+		position: absolute;
+		inset: 40% 0 auto;
+		text-align: center;
+		font-size: clamp(18px, 4vw, 34px);
+		font-weight: 900;
+		color: var(--mh-red);
+		text-shadow: 0 0 18px rgba(255, 59, 47, 0.6), 0 2px 0 #000;
+		pointer-events: none;
+	}
+	.mh-cover-k {
+		font-size: 11px;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		opacity: 0.75;
+	}
+	.mh-cover-t.lime {
+		color: var(--mh-lime);
+		text-shadow: 0 0 22px rgba(157, 255, 46, 0.5);
+	}
+	.mh-stats dd.ok {
+		color: var(--mh-lime);
+	}
+	.mh-stats small {
+		color: #ffd23a;
+	}
+	.mh-menu {
+		flex-direction: row;
+		gap: clamp(10px, 4vw, 40px);
+	}
+	.mh-menu-info {
+		display: grid;
+		justify-items: start;
+		gap: 8px;
+		text-align: left;
+		max-width: 420px;
+	}
+	.mh-menu-name {
+		font-size: clamp(24px, 4.4vw, 44px);
+		font-weight: 900;
+		line-height: 1;
+		color: #fff;
+		text-shadow: 0 0 20px rgba(255, 106, 26, 0.5), 3px 3px 0 #2a0a08;
+	}
+	.mh-tabs {
+		display: flex;
+		gap: 6px;
+		max-width: 1100px;
+		margin: 12px auto 0;
+		flex-wrap: wrap;
+	}
+	.mh-tab {
+		min-height: 44px;
+		padding: 0 16px;
+		border-radius: 10px;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: rgba(255, 255, 255, 0.05);
+		color: inherit;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		font-size: 13px;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.mh-tab[aria-selected='true'] {
+		border-color: #ff6a1a;
+		background: rgba(255, 106, 26, 0.16);
+		box-shadow: 0 0 12px rgba(255, 106, 26, 0.35);
+	}
+	.mh-pill {
+		min-width: 20px;
+		padding: 1px 6px;
+		border-radius: 99px;
+		background: #ffd23a;
+		color: #2a1600;
+		font-size: 11px;
+	}
+	.mh-levels {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 8px;
+		max-width: 1100px;
+		margin: 10px auto 0;
+	}
+	.mh-level {
+		position: relative;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: center;
+		gap: 2px 8px;
+		min-height: 44px;
+		padding: 10px;
+		text-align: left;
+		border-radius: 10px;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.2));
+		color: inherit;
+	}
+	.mh-level[data-theme-l='office'] {
+		border-left: 4px solid #6a8aa0;
+	}
+	.mh-level[data-theme-l='diner'] {
+		border-left: 4px solid #e0302a;
+	}
+	.mh-level[data-theme-l='warehouse'] {
+		border-left: 4px solid #c48a3a;
+	}
+	.mh-level[aria-pressed='true'] {
+		border-color: #ff6a1a;
+		box-shadow: 0 0 14px rgba(255, 106, 26, 0.4);
+		background: linear-gradient(135deg, rgba(255, 106, 26, 0.18), rgba(0, 0, 0, 0.2));
+	}
+	.mh-level:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+	.mh-lv-no {
+		grid-row: span 3;
+		font-size: 22px;
+		font-weight: 900;
+		color: rgba(255, 255, 255, 0.5);
+		min-width: 26px;
+		text-align: center;
+	}
+	.mh-lv-name {
+		font-weight: 800;
+		font-size: 15px;
+	}
+	.mh-lv-hint {
+		font-size: 11px;
+		line-height: 1.3;
+		opacity: 0.75;
+	}
+	.mh-lv-stars {
+		display: flex;
+		gap: 3px;
+		align-items: center;
+		font-size: 13px;
+	}
+	.mh-lv-stars i {
+		font-style: normal;
+		color: rgba(255, 255, 255, 0.2);
+	}
+	.mh-lv-stars i.on {
+		color: #ffd23a;
+		text-shadow: 0 0 6px rgba(255, 210, 58, 0.6);
+	}
+	.mh-lv-stars em {
+		font-style: normal;
+		font-size: 11px;
+		opacity: 0.7;
+		margin-left: 6px;
+	}
+	.mh-lv-lock {
+		position: absolute;
+		top: 8px;
+		right: 10px;
+	}
+	.mh-levels + .mh-note,
+	.mh-skillhead,
+	.mh-tree,
+	.mh-setup {
+		max-width: 1100px;
+		margin-inline: auto;
+	}
+	.mh-skillhead {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 10px;
+		margin-top: 10px;
+		font-size: 13px;
+	}
+	.mh-skillhead b {
+		font-size: 22px;
+		color: #ffd23a;
+	}
+	.mh-btn.sm {
+		min-height: 44px;
+		padding: 0 12px;
+		font-size: 12px;
+	}
+	.mh-tree {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 10px;
+		margin-top: 8px;
+	}
+	@media (min-width: 760px) {
+		.mh-tree {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+	.mh-branch {
+		display: grid;
+		gap: 0;
+		padding: 10px;
+		border-radius: 12px;
+		border: 1px solid color-mix(in srgb, var(--bc) 40%, transparent);
+		background: linear-gradient(180deg, color-mix(in srgb, var(--bc) 12%, transparent), rgba(0, 0, 0, 0.3));
+	}
+	.mh-branch .mh-h3 {
+		color: var(--bc);
+	}
+	.mh-skill {
+		position: relative;
+		display: grid;
+		gap: 3px;
+		min-height: 44px;
+		padding: 9px 10px;
+		text-align: left;
+		border-radius: 10px;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		background: rgba(0, 0, 0, 0.35);
+		color: inherit;
+		margin-bottom: 14px;
+	}
+	.mh-skill:not(:last-child)::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		bottom: -15px;
+		width: 2px;
+		height: 14px;
+		background: color-mix(in srgb, var(--bc) 50%, transparent);
+	}
+	.mh-skill:last-child {
+		margin-bottom: 0;
+	}
+	.mh-skill[data-state='owned'] {
+		border-color: var(--bc);
+		background: color-mix(in srgb, var(--bc) 18%, rgba(0, 0, 0, 0.4));
+		box-shadow: 0 0 12px color-mix(in srgb, var(--bc) 40%, transparent);
+	}
+	.mh-skill[data-state='ok'] {
+		border-color: #ffd23a;
+		cursor: pointer;
+	}
+	.mh-skill[data-state='ok']:hover {
+		background: rgba(255, 210, 58, 0.12);
+	}
+	.mh-skill[data-state='locked'],
+	.mh-skill[data-state='poor'] {
+		opacity: 0.6;
+	}
+	.mh-skill:disabled {
+		cursor: default;
+	}
+	.mh-sk-name {
+		font-weight: 800;
+		font-size: 14px;
+	}
+	.mh-sk-what {
+		font-size: 11.5px;
+		line-height: 1.35;
+		opacity: 0.85;
+	}
+	.mh-sk-key kbd {
+		font-size: 10px;
+	}
+	.mh-sk-cost {
+		font-size: 11px;
+		font-weight: 800;
+		color: #ffd23a;
+	}
+	.mh-skill[data-state='owned'] .mh-sk-cost {
+		color: var(--bc);
+	}
+	.mh-holk {
+		height: 14px !important;
+	}
+	.mh-holk span {
+		display: block;
+		font-size: 9px !important;
+		line-height: 12px !important;
+		white-space: nowrap;
+	}
+	@media (pointer: coarse) {
+		.mh-hint {
+			bottom: auto;
+			top: 24%;
+		}
+	}
+	/* a phone held upright: the game is a thin strip, so ask to turn it */
+	@media (orientation: portrait) and (pointer: coarse) {
+		.mh.immersive::before {
+			content: '↻ Turn your phone sideways for a bigger game';
+			position: absolute;
+			top: 16px;
+			left: 50%;
+			transform: translateX(-50%);
+			white-space: nowrap;
+			padding: 8px 14px;
+			border-radius: 99px;
+			background: rgba(255, 106, 26, 0.18);
+			border: 1px solid #ff6a1a;
+			color: #ffd9a8;
+			font-size: 13px;
+			font-weight: 700;
+		}
+	}
+	@media (max-width: 639px) {
+		.mh-menu {
+			flex-direction: column;
+		}
+		.mh-menu-info {
+			justify-items: center;
+			text-align: center;
+		}
+		.mh-close span {
+			display: none;
+		}
+		.mh-hint {
+			font-size: 11px;
 		}
 	}
 </style>

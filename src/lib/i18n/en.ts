@@ -206,6 +206,7 @@ export const en = {
 			tv: 'Old TV',
 			buddy: 'News buddy',
 			whatsNew: 'What’s new billboard',
+			madness: 'Abscars Madness button (the game)',
 			news: 'News radar',
 			season: 'Season countdown',
 			kpi: 'Progress tiles',
@@ -233,8 +234,7 @@ export const en = {
 			tabSquad: 'Squad tab',
 			tabCasino: 'BurgiCasino tab',
 			tabShop: 'BurgiShop tab',
-			tabArcade: 'BurgiArcade tab',
-			tabMayhem: 'Squad Mayhem tab'
+			tabArcade: 'BurgiArcade tab'
 		},
 		/** small notes in the list for parts that keep working while hidden */
 		notes: {
@@ -329,7 +329,7 @@ export const en = {
 			casino: 'BurgiCasino',
 			shop: 'BurgiShop',
 			arcade: 'BurgiArcade',
-			mayhem: 'Squad Mayhem',
+			madness: 'Abscars Madness',
 			squad: 'Squad'
 		}
 	},
@@ -913,8 +913,6 @@ export const en = {
 		shop: 'Burgi­Shop',
 		/** BurgiArcade (2026-11-22): ten games, high scores, tickets, a prize counter */
 		arcade: 'Burgi­Arcade',
-		/** Squad Mayhem, the side-view brawler (2026-11-22) */
-		mayhem: 'Squad May­hem',
 		/** a soft hyphen so it can break on a phone ("Burgi-/Casino") */
 		casino: 'Burgi­Casino'
 	},

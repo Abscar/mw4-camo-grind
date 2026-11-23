@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WHATS_NEW, newSince } from '../src/lib/data/whatsNew.ts';
 
-const TABS = new Set(['grind', 'ranked', 'cosmetics', 'casino', 'shop', 'arcade', 'mayhem', 'squad']);
+const TABS = new Set(['grind', 'ranked', 'cosmetics', 'casino', 'shop', 'arcade', 'squad', 'madness']);
 
 test('entries: unique ids, real dates, newest first, short texts', () => {
 	assert.ok(WHATS_NEW.length > 0);

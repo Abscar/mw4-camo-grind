@@ -67,7 +67,7 @@
 	import CasinoSection from '#lib/components/CasinoSection.svelte';
 	import ShopPage from '#lib/components/ShopPage.svelte';
 	import ArcadePage from '#lib/components/arcade/ArcadePage.svelte';
-	import MayhemPage from '#lib/components/mayhem/MayhemPage.svelte';
+	import MadnessLauncher from '#lib/components/mayhem/MadnessLauncher.svelte';
 	import ReadyBanner from '#lib/components/ReadyBanner.svelte';
 	import SquadUpBanner from '#lib/components/SquadUpBanner.svelte';
 	import Four20Banner from '#lib/components/Four20Banner.svelte';
@@ -82,9 +82,9 @@
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
 	    moved up here from its own switch inside Camo grind, second place, 2026-11-20). All stay mounted; the
 	    others are only hidden. Like the rest, the page always opens on Camo grind. */
-	/* (2026-11-22, the user: Cosmetics + Extra camos merged into one tab, Squad last and lit up green;
-	   Squad Mayhem 2026-11-23, right before Squad) */
-	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'casino', 'shop', 'arcade', 'mayhem', 'squad'] as const;
+	/* (2026-11-22, the user: Cosmetics + Extra camos merged into one tab, Squad last and lit up green; the Squad
+	   Mayhem tab of 2026-11-23 became Abscars Madness, its own big button above the tabs, the same day) */
+	const PAGE_TABS = ['grind', 'ranked', 'cosmetics', 'casino', 'shop', 'arcade', 'squad'] as const;
 	type PageTab = (typeof PAGE_TABS)[number];
 	let view = $state<PageTab>('grind');
 
@@ -97,8 +97,7 @@
 		squad: '#43d35e', // the radio's green
 		casino: '#ff4a3d',
 		shop: '#a560ff', // BurgiShop's purple bag
-		arcade: '#ff8a2a', // BurgiArcade's neon orange
-		mayhem: '#9dff2e' // Squad Mayhem's acid lime (2026-11-23)
+		arcade: '#ff8a2a' // BurgiArcade's neon orange
 	};
 
 	/** Every tab but Camo grind can be hidden (2026-11-20, the "Hide" buttons): its tab button goes, the panel
@@ -109,8 +108,7 @@
 		squad: 'tabSquad',
 		casino: 'tabCasino',
 		shop: 'tabShop',
-		arcade: 'tabArcade',
-		mayhem: 'tabMayhem'
+		arcade: 'tabArcade'
 	};
 	const tabShown = (tab: PageTab) => tab === 'grind' || !hidden.is(TAB_HIDE[tab]);
 	const shownTabs = $derived(PAGE_TABS.filter(tabShown));
@@ -132,7 +130,12 @@
 	});
 
 	/** "Open" on a "What's new" update: to its tab (brought back if hidden), scrolled to the tab row */
-	function goTab(tab: PageTab) {
+	function goTab(tab: PageTab | 'madness') {
+		if (tab === 'madness') {
+			if (hidden.is('madness')) hidden.set('madness', false);
+			requestAnimationFrame(() => document.getElementById('madness')?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+			return;
+		}
 		if (tab !== 'grind' && hidden.is(TAB_HIDE[tab])) hidden.set(TAB_HIDE[tab], false);
 		view = tab;
 		requestAnimationFrame(() => document.getElementById(`tab-${tab}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
@@ -354,6 +357,10 @@
 		<!-- "n parts hidden · Choose · Show all" while anything is hidden, and the "What to show" list -->
 		<HiddenBar />
 
+		<!-- Abscars Madness: the game's own big title button (2026-11-23, the user: "a button of its own high up on the
+		     page"); a tap opens the game full screen -->
+		<div id="madness" class="relative mt-4" hidden={hidden.is('madness')}><MadnessLauncher /><HideButton id="madness" /></div>
+
 		<!-- page tabs: the tracker, Ranked prep, Cosmetics & camos, BurgiCasino, BurgiShop, BurgiArcade, the Squad (last, lit green) -->
 		<!-- every other tab hidden: no row for Camo grind alone (it stays in the page for the panel's label) -->
 		<div
@@ -416,11 +423,6 @@
 		<div id="panel-arcade" role="tabpanel" aria-labelledby="tab-arcade" hidden={view !== 'arcade'}>
 			{@render tabHide('arcade')}
 			<div class="mt-2"><ArcadePage onSquad={goSquad} /></div>
-		</div>
-
-		<div id="panel-mayhem" role="tabpanel" aria-labelledby="tab-mayhem" hidden={view !== 'mayhem'}>
-			{@render tabHide('mayhem')}
-			<div class="mt-2"><MayhemPage active={view === 'mayhem'} /></div>
 		</div>
 
 		<!-- Every box here has its own "Hide" (an edge tab on its top-right corner, HideButton; 2026-11-20). A hidden
@@ -743,7 +745,7 @@
 	}
 	@container pagetabs (max-width: 607px) {
 		.page-tab {
-			/* eight tabs on a phone (Squad Mayhem 2026-11-23): two rows of four, so the names stay readable */
+			/* seven tabs on a phone: four, then three (Squad last, a bit wider) so the names stay readable */
 			flex: 1 1 calc(25% - 3px);
 			padding: 5px 1px 4px;
 			border-radius: 8px 8px 0 0;

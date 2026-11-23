@@ -4,11 +4,11 @@
  * live adds an entry at the top** (date = the day it went live, in plain words, no jargon).
  *
  * `id` is stored per device (the newest one seen, for the "NEW" pills): never change or reuse one.
- * `tab` = the page tab the "Open" button jumps to (left out = nowhere to jump).
+ * `tab` = the page tab the "Open" button jumps to (left out = nowhere to jump); 'madness' = the game's button.
  * Pure, so the tests can run it (scripts/whats-new.test.js).
  */
 
-export type WhatsNewTab = 'grind' | 'ranked' | 'cosmetics' | 'casino' | 'shop' | 'arcade' | 'mayhem' | 'squad';
+export type WhatsNewTab = 'grind' | 'ranked' | 'cosmetics' | 'casino' | 'shop' | 'arcade' | 'squad' | 'madness';
 export type WhatsNewKind = 'new' | 'update' | 'fix';
 
 export interface WhatsNewEntry {
@@ -22,6 +22,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
+	{
+		id: 'abscars-madness',
+		date: '2026-11-23',
+		kind: 'new',
+		title: 'Abscars Madness',
+		text: 'Squad Mayhem grew up: 12 levels with puzzles and bosses, a skill tree, double jump + dash, new gun sounds, a big button up top.',
+		tab: 'madness'
+	},
 	{
 		id: 'drip-abscar-drop',
 		date: '2026-11-23',
@@ -43,7 +51,7 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
 		kind: 'new',
 		title: 'Squad Mayhem',
 		text: 'A new tab: a side-view brawler where you play as your own operator with your camo guns, wave after wave.',
-		tab: 'mayhem'
+		tab: 'madness'
 	},
 	{
 		id: 'pinball',
