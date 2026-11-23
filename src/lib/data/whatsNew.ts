@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-real-guns',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Real gunshots in Abscars Madness',
+		text: 'Pistols, SMGs, rifles, shotguns, LMGs and snipers now sound like real recorded guns, each kind its own.',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-settings',
 		date: '2026-11-24',
 		kind: 'update',

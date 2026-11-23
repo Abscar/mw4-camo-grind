@@ -6,9 +6,35 @@
  * part (the shotgun's pump, the sniper's bolt). Enemy shots sound further away (quieter, duller).
  * Moves: jump whoosh, a higher airy one for the double jump, wall kick, landing thud, footsteps, dash, slam.
  * Starts on the Play tap (browsers only allow audio after one). Its own mute, remembered per device.
+ *
+ * Real recorded gunshots since 2026-11-23 (the user picked free CC0 sounds): the first shot of one file per gun
+ * kind from "The Free Firearm Sound Library" (Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney; CC0, no
+ * credit needed; opengameart.org/content/the-free-firearm-sound-library), cut to mono 24 kHz WAVs in
+ * src/lib/assets/mayhem/ (≈ 195 KB in all): pistol = Colt 1911, smg = Carl Gustav M45, ar = AR-15, lmg = AK-47
+ * (played a little lower), shotgun = Benelli Nova, marksman = SKS, sniper = Tikka T3 .30-06. They load on the
+ * Play tap; until one has loaded (or if it can't) that gun uses its synth recipe below. The shotgun's pump and
+ * the sniper's bolt are still synth layers on top. Launcher + melee stay synth (the library has neither).
  */
 import type { GameEvent } from './engine.ts';
 import type { GunKind } from './guns.ts';
+import pistolWav from '#lib/assets/mayhem/pistol.wav';
+import smgWav from '#lib/assets/mayhem/smg.wav';
+import arWav from '#lib/assets/mayhem/ar.wav';
+import lmgWav from '#lib/assets/mayhem/lmg.wav';
+import shotgunWav from '#lib/assets/mayhem/shotgun.wav';
+import marksmanWav from '#lib/assets/mayhem/marksman.wav';
+import sniperWav from '#lib/assets/mayhem/sniper.wav';
+
+/** recorded shots: file, loudness, base playback rate, and which synth layers (by index) still play on top */
+const REC: Partial<Record<GunKind, { url: string; vol: number; rate: number; keep: number[] }>> = {
+	pistol: { url: pistolWav, vol: 0.62, rate: 1, keep: [] },
+	smg: { url: smgWav, vol: 0.5, rate: 1.04, keep: [] },
+	ar: { url: arWav, vol: 0.6, rate: 1, keep: [] },
+	lmg: { url: lmgWav, vol: 0.62, rate: 0.9, keep: [] },
+	shotgun: { url: shotgunWav, vol: 0.8, rate: 1, keep: [3, 4, 5, 6] },
+	marksman: { url: marksmanWav, vol: 0.7, rate: 1, keep: [] },
+	sniper: { url: sniperWav, vol: 0.85, rate: 1, keep: [4, 5, 6] }
+};
 
 type Layer =
 	| { n: 'noise'; type: BiquadFilterType; f: number; to?: number; q: number; len: number; vol: number; at?: number }
@@ -87,6 +113,37 @@ export class MayhemSound {
 	#noise: AudioBuffer | null = null;
 	#out: GainNode | null = null;
 	#last = new Map<string, number>();
+	#rec = new Map<GunKind, AudioBuffer>();
+
+	/** fetch + decode the recorded shots (once); a failure just leaves that gun on its synth sound */
+	#loadRecordings(ctx: AudioContext) {
+		for (const [kind, r] of Object.entries(REC) as [GunKind, NonNullable<(typeof REC)[GunKind]>][]) {
+			fetch(r.url)
+				.then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+				.then((data) => new Promise<AudioBuffer>((ok, bad) => ctx.decodeAudioData(data, ok, bad)))
+				.then((buf) => this.#rec.set(kind, buf))
+				.catch(() => {});
+		}
+	}
+
+	/** play a recorded shot; enemies' are quieter and duller (further away) */
+	#sample(buf: AudioBuffer, vol: number, rate: number, dull: boolean) {
+		const ctx = this.#ctx!;
+		const src = ctx.createBufferSource();
+		src.buffer = buf;
+		src.playbackRate.value = rate;
+		const g = ctx.createGain();
+		g.gain.value = vol;
+		let node: AudioNode = src.connect(g);
+		if (dull) {
+			const lp = ctx.createBiquadFilter();
+			lp.type = 'lowpass';
+			lp.frequency.value = 1800;
+			node = node.connect(lp);
+		}
+		node.connect(this.#out!);
+		src.start();
+	}
 
 	unlock() {
 		if (this.#ctx) {
@@ -111,6 +168,7 @@ export class MayhemSound {
 			this.#ctx = ctx;
 			this.#noise = buf;
 			this.#out = out;
+			this.#loadRecordings(ctx);
 		} catch {
 			/* no audio: silent game */
 		}
@@ -174,6 +232,15 @@ export class MayhemSound {
 			case 'shot': {
 				if (!this.#ok(`shot${e.kind}${e.mine}`, e.mine ? GAP[e.kind] : GAP[e.kind] * 2)) return;
 				const pitch = 0.94 + Math.random() * 0.12; // no two shots exactly alike
+				const r = REC[e.kind], buf = this.#rec.get(e.kind);
+				if (r && buf) {
+					this.#sample(buf, r.vol * (e.mine ? 1 : 0.4), r.rate * pitch, !e.mine);
+					for (const i of r.keep) {
+						const l = GUN[e.kind][i];
+						this.#layer(l.n === 'tone' ? { ...l, f: l.f * pitch, to: l.to * pitch } : { ...l, f: l.f * pitch }, e.mine ? 1 : 0.4, !e.mine);
+					}
+					break;
+				}
 				for (const l of GUN[e.kind]) {
 					const v: Layer = l.n === 'tone' ? { ...l, f: l.f * pitch, to: l.to * pitch } : { ...l, f: l.f * pitch };
 					this.#layer(v, e.mine ? 1 : 0.4, !e.mine);
