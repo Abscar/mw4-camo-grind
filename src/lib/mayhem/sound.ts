@@ -77,6 +77,12 @@ const GAP: Record<GunKind, number> = { pistol: 0.03, smg: 0.05, ar: 0.05, shotgu
 
 export class MayhemSound {
 	muted = false;
+	#vol = 0.8;
+	/** 0 … 1, from the game's settings */
+	set volume(v: number) {
+		this.#vol = Math.min(1, Math.max(0, v));
+		if (this.#out) this.#out.gain.value = 0.75 * this.#vol;
+	}
 	#ctx: AudioContext | null = null;
 	#noise: AudioBuffer | null = null;
 	#out: GainNode | null = null;
@@ -100,7 +106,7 @@ export class MayhemSound {
 			comp.threshold.value = -14;
 			comp.ratio.value = 6;
 			const out = ctx.createGain();
-			out.gain.value = 0.6;
+			out.gain.value = 0.75 * this.#vol;
 			out.connect(comp).connect(ctx.destination);
 			this.#ctx = ctx;
 			this.#noise = buf;

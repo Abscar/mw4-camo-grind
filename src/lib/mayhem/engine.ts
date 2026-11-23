@@ -359,6 +359,8 @@ export class Mayhem {
 	#prev: Input = NO_INPUT;
 	/** the jump key is held (higher jumps) / where the player steers (wall slide) */
 	#held = false;
+	/** settings: let go of jump early for a short hop (off = every jump is a full jump) */
+	shortHop = true;
 	#wasHeld = false;
 	#want = 0;
 	#startGun: string;
@@ -692,7 +694,7 @@ export class Mayhem {
 				}
 			}
 			// a short tap of jump gives a short hop
-			if (!inp.jump && p.vy < -P_JUMP * 0.45 && !p.onGround && prevJumpHeld(p)) p.vy = -P_JUMP * 0.45;
+			if (this.shortHop && !inp.jump && p.vy < -P_JUMP * 0.45 && !p.onGround && prevJumpHeld(p)) p.vy = -P_JUMP * 0.45;
 			if (press('down')) {
 				if (p.onGround && p.y < FLOOR - 1) p.drop = 0.25;
 				else if (!p.onGround && !p.slam) {
@@ -984,8 +986,9 @@ export class Mayhem {
 		const fallV = f.vy;
 		if (!f.player) f.vy += GRAV * dt;
 		else if (f.dashT <= 0) {
-			let k = f.vy < 0 ? (this.#held ? 1 : 1.9) : 1.6;
-			if (this.#held && Math.abs(f.vy) < 130 && !f.slam) k = 0.5; // a little hang at the top
+			const held = this.#held || !this.shortHop;
+			let k = f.vy < 0 ? (held ? 1 : 1.9) : 1.6;
+			if (held && Math.abs(f.vy) < 130 && !f.slam) k = 0.5; // a little hang at the top
 			if (f.slam) k = 2.4;
 			f.vy = Math.min(f.slam ? 1900 : 1180, f.vy + P_GRAV * k * dt);
 			// sliding down a wall you push into

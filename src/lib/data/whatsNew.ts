@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-settings',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Abscars Madness settings',
+		text: 'Pick your own keys for jump, dash and the rest, plus volume, screen shake and short hops, in the game’s Settings tab.',
+		tab: 'madness'
+	},
+	{
 		id: 'abscars-madness',
 		date: '2026-11-23',
 		kind: 'new',

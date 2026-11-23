@@ -19,6 +19,7 @@
 	import { LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, type LevelRecord } from '#lib/mayhem/levels.ts';
 	import { BRANCHES, canBuy, cleanSkills, SKILLS, skillCost, type SkillId } from '#lib/mayhem/skills.ts';
 	import { render } from '#lib/mayhem/render.ts';
+	import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, inputOf, keyLabel, keyMap, unbind, type Action, type Settings } from '#lib/mayhem/controls.ts';
 	import { LOOKS, paintFigure, type GunPic } from '#lib/mayhem/painter.ts';
 	import { MayhemSound } from '#lib/mayhem/sound.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -31,7 +32,7 @@
 
 	const KEY = 'mw4-camo-grind:mayhem';
 	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[] };
-	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp };
+	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp; settings?: unknown };
 	function readSaved(): Saved {
 		try {
 			const v = JSON.parse(localStorage.getItem(KEY) ?? '{}');
@@ -121,6 +122,8 @@
 	onMount(() => {
 		saved = readSaved();
 		op = saved.op && SQUAD_OPS.includes(saved.op) ? saved.op : (squad.me?.op ?? 'abscar');
+		settings = cleanSettings(saved.settings);
+		sfx.volume = settings.volume;
 		sfx.muted = !!saved.mute;
 		muted = sfx.muted;
 		const rec = saved.camp?.done ?? {};
@@ -148,7 +151,22 @@
 	const sfx = new MayhemSound();
 	let muted = $state(false);
 	/** the menu's panels */
-	let panel = $state<'levels' | 'skills' | 'loadout'>('levels');
+	let panel = $state<'levels' | 'skills' | 'loadout' | 'settings'>('levels');
+
+	// ---------- settings (controls.ts): keys, volume, shake, hints, short hop ----------
+	let settings = $state<Settings>(DEFAULT_SETTINGS);
+	/** waiting for a key press to bind */
+	let listening = $state<{ a: Action; slot: 0 | 1 } | null>(null);
+	/** the settings opened from the pause screen */
+	let pauseSettings = $state(false);
+	function saveSettings(s: Settings) {
+		settings = s;
+		saved = { ...saved, settings: s };
+		writeSaved(saved);
+		sfx.volume = s.volume;
+		if (game) game.shortHop = s.shortHop;
+	}
+	const keysChanged = $derived(JSON.stringify(settings.keys) !== JSON.stringify(DEFAULT_KEYS));
 
 	let stage: HTMLDivElement | undefined = $state();
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -289,6 +307,8 @@
 		saved = { ...saved, op, gun: start, level: id };
 		writeSaved(saved);
 		game = new Mayhem(id, start, skills, Date.now());
+		game.shortHop = settings.shortHop;
+		pauseSettings = false;
 		// for the check scripts (read only; like the frame cap's window.__mw4fx)
 		(window as unknown as { __mayhem: Mayhem }).__mayhem = game;
 		result = null;
@@ -375,7 +395,7 @@
 	function draw() {
 		if (!game || !ctx || !canvas) return;
 		const g = game;
-		if (reduce) g.shake = 0;
+		if (reduce || !settings.shake) g.shake = 0;
 		render(ctx, g, { op, scale: (cssW * dpr) / VW, pw: canvas.width, ph: canvas.height, gun: g.player.held ? gunPic(g.player.held.id) : null });
 		if (layerEl) layerEl.style.transform = `scale(${layerScale}) translate(${-g.cam.x}px, ${-g.cam.y}px)`;
 		const p = g.player;
@@ -418,7 +438,7 @@
 			nades: g.grenades,
 			cp: g.checkpoint,
 			dead: p.hp <= 0,
-			hint: g.time < 8 ? g.level.hint : ''
+			hint: settings.hints && g.time < 8 ? g.level.hint : ''
 		};
 		for (const k of Object.keys(next) as (keyof typeof next)[]) if (h[k] !== next[k]) (h as Record<string, unknown>)[k] = next[k];
 	}
@@ -485,29 +505,23 @@
 	}
 
 	// ---------- input ----------
-	const KEYS: Record<string, keyof Input> = {
-		KeyA: 'left',
-		ArrowLeft: 'left',
-		KeyD: 'right',
-		ArrowRight: 'right',
-		KeyW: 'jump',
-		ArrowUp: 'jump',
-		Space: 'jump',
-		KeyS: 'down',
-		ArrowDown: 'down',
-		KeyE: 'pick',
-		KeyQ: 'throw',
-		KeyC: 'dash',
-		KeyG: 'nade',
-		ShiftLeft: 'holk',
-		ShiftRight: 'holk'
-	};
+	/** the key bindings from the settings: key code → action */
+	const keymap = $derived(keyMap(settings.keys));
 	function typing(e: Event) {
 		const el = e.target as HTMLElement | null;
 		return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 	}
 	function keydown(e: KeyboardEvent) {
-		if (!active || typing(e)) return;
+		if (!active) return;
+		// waiting for a new key in the settings
+		if (listening) {
+			e.preventDefault();
+			e.stopPropagation();
+			if (e.code !== 'Escape') saveSettings({ ...settings, keys: bind(settings.keys, listening.a, listening.slot, e.code) });
+			listening = null;
+			return;
+		}
+		if (typing(e)) return;
 		if (screen !== 'play') {
 			if (e.code === 'Escape' && onclose) {
 				e.preventDefault();
@@ -515,18 +529,21 @@
 			}
 			return;
 		}
-		if (e.code === 'Escape' || e.code === 'KeyP') {
+		const act = keymap.get(e.code);
+		if (e.code === 'Escape' || act === 'pause') {
 			e.preventDefault();
-			pause(!paused);
+			if (paused && pauseSettings) pauseSettings = false;
+			else pause(!paused);
 			return;
 		}
-		const k = KEYS[e.code];
+		const k = act ? inputOf(act) : null;
 		if (!k || paused) return;
 		e.preventDefault();
 		(input as unknown as Record<string, boolean>)[k] = true;
 	}
 	function keyup(e: KeyboardEvent) {
-		const k = KEYS[e.code];
+		const act = keymap.get(e.code);
+		const k = act ? inputOf(act) : null;
 		if (k) (input as unknown as Record<string, boolean>)[k] = false;
 	}
 
@@ -604,6 +621,70 @@
 	const KEY_COL: Record<string, string> = { red: '#ff3b3b', blue: '#3b8bff', yellow: '#ffd23b' };
 	const THEME_NAME = { office: 'Office', diner: 'Diner', warehouse: 'Warehouse' } as const;
 </script>
+
+{#snippet settingsUi()}
+	<div class="mh-set">
+		<div class="mh-set-keys">
+			<div class="mh-set-head">
+				<h3 class="mh-h3 font-head">{M.set.keys}</h3>
+				{#if keysChanged}<button type="button" class="mh-btn sm" onclick={() => saveSettings({ ...settings, keys: DEFAULT_KEYS })}>{M.set.resetKeys}</button>{/if}
+			</div>
+			<p class="mh-note">{M.set.keysHelp}</p>
+			<div class="mh-binds" role="list">
+				{#each ACTIONS as act (act.a)}
+					<div class="mh-bind" role="listitem">
+						<span class="mh-bind-name">{act.name}</span>
+						{#each [0, 1] as const as slot (slot)}
+							{@const k = settings.keys[act.a][slot]}
+							{@const wait = listening?.a === act.a && listening.slot === slot}
+							<span class="mh-keycell">
+								<button
+									type="button"
+									class="mh-keybtn"
+									class:wait
+									class:empty={!k}
+									aria-label={M.set.bindLabel(act.name, slot + 1, keyLabel(k))}
+									onclick={() => (listening = wait ? null : { a: act.a, slot })}
+								>
+									{wait ? M.set.press : keyLabel(k)}
+								</button>
+								{#if k && !wait}
+									<button type="button" class="mh-keyx" aria-label={M.set.clearLabel(act.name, keyLabel(k))} onclick={() => saveSettings({ ...settings, keys: unbind(settings.keys, act.a, slot) })}>×</button>
+								{/if}
+							</span>
+						{/each}
+					</div>
+				{/each}
+				<div class="mh-bind locked" role="listitem"><span class="mh-bind-name">{M.set.mouse}</span><span class="mh-fixed">{M.set.mouseKeys}</span></div>
+				<div class="mh-bind locked" role="listitem"><span class="mh-bind-name">{M.set.escName}</span><span class="mh-fixed">Esc</span></div>
+			</div>
+		</div>
+		<div class="mh-set-opts">
+			<h3 class="mh-h3 font-head">{M.set.game}</h3>
+			<label class="mh-range">
+				<span>{M.set.volume} <b class="num">{Math.round(settings.volume * 100)}%</b></span>
+				<input type="range" min="0" max="100" step="5" value={Math.round(settings.volume * 100)} oninput={(e) => saveSettings({ ...settings, volume: Number(e.currentTarget.value) / 100 })} />
+			</label>
+			<label class="mh-check">
+				<input type="checkbox" checked={!muted} onchange={toggleMute} />
+				<span>{M.set.sound}</span>
+			</label>
+			<label class="mh-check">
+				<input type="checkbox" checked={settings.shake} onchange={(e) => saveSettings({ ...settings, shake: e.currentTarget.checked })} />
+				<span>{M.set.shake}</span>
+			</label>
+			<label class="mh-check">
+				<input type="checkbox" checked={settings.shortHop} onchange={(e) => saveSettings({ ...settings, shortHop: e.currentTarget.checked })} />
+				<span>{M.set.shortHop}<small>{M.set.shortHopHelp}</small></span>
+			</label>
+			<label class="mh-check">
+				<input type="checkbox" checked={settings.hints} onchange={(e) => saveSettings({ ...settings, hints: e.currentTarget.checked })} />
+				<span>{M.set.hints}</span>
+			</label>
+			<p class="mh-note">{M.set.saved}</p>
+		</div>
+	</div>
+{/snippet}
 
 <svelte:window onkeydown={keydown} onkeyup={keyup} onpointerup={up} />
 
@@ -706,14 +787,22 @@
 				{/if}
 
 				{#if paused}
-					<div class="mh-cover">
+					<div class="mh-cover" class:settings={pauseSettings}>
+						{#if pauseSettings}
+							<div class="mh-pause-set">
+								{@render settingsUi()}
+								<button type="button" class="mh-btn primary" onclick={() => (pauseSettings = false)}>{M.set.back}</button>
+							</div>
+						{:else}
 						<p class="mh-cover-t font-head">{M.paused}</p>
 						<p class="mh-cover-s">{M.pausedHint}</p>
 						<div class="mh-row">
 							<button type="button" class="mh-btn primary" onclick={() => pause(false)}>{M.resume}</button>
+							<button type="button" class="mh-btn" onclick={() => (pauseSettings = true)}>⚙ {M.tabs.settings}</button>
 							<button type="button" class="mh-btn" onclick={() => begin(levelId)}>{M.restart}</button>
 							<button type="button" class="mh-btn" onclick={toMenu}>{M.menu}</button>
 						</div>
+						{/if}
 					</div>
 				{/if}
 			{/if}
@@ -775,6 +864,7 @@
 				{M.tabs.skills}{#if free > 0}<span class="mh-pill num">{free}</span>{/if}
 			</button>
 			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'loadout'} onclick={() => (panel = 'loadout')}>{M.tabs.loadout}</button>
+			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'settings'} onclick={() => (panel = 'settings')}>⚙ {M.tabs.settings}</button>
 		</div>
 
 		{#if panel === 'levels'}
@@ -816,6 +906,8 @@
 					</div>
 				{/each}
 			</div>
+		{:else if panel === 'settings'}
+			<div class="mh-setwrap">{@render settingsUi()}</div>
 		{:else}
 			<div class="mh-setup">
 				<div class="mh-box">
@@ -855,9 +947,10 @@
 				<div class="mh-box">
 					<h3 class="mh-h3 font-head">{M.controlsTitle}</h3>
 					<dl class="mh-keys">
-						{#each M.controls as [k, what] (k)}
-							<div><dt><kbd>{k}</kbd></dt><dd>{what}</dd></div>
+						{#each ACTIONS as act (act.a)}
+							<div><dt><kbd>{settings.keys[act.a].filter(Boolean).map(keyLabel).join(' / ') || '–'}</kbd></dt><dd>{act.name}</dd></div>
 						{/each}
+						<div><dt><kbd>{M.set.mouseKeys}</kbd></dt><dd>{M.set.mouse}</dd></div>
 					</dl>
 					<p class="mh-note">{M.touchHint}</p>
 				</div>
@@ -1474,6 +1567,162 @@
 		.mh-hp i,
 		.mh-holk i {
 			transition: none;
+		}
+	}
+
+	/* ---------- settings (2026-11-24) ---------- */
+	.mh-setwrap {
+		max-width: 1100px;
+		margin: 10px auto 0;
+	}
+	.mh-set {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 12px;
+		text-align: left;
+	}
+	@media (min-width: 820px) {
+		.mh-set {
+			grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+		}
+	}
+	.mh-set-keys,
+	.mh-set-opts {
+		background: rgba(0, 0, 0, 0.35);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+		border-radius: 10px;
+		padding: 10px;
+		min-width: 0;
+	}
+	.mh-set-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 8px;
+	}
+	.mh-set-head .mh-h3 {
+		margin: 0;
+	}
+	.mh-binds {
+		display: grid;
+		gap: 4px;
+		margin-top: 8px;
+	}
+	.mh-bind {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 118px 118px;
+		gap: 6px;
+		align-items: center;
+		font-size: 13px;
+	}
+	.mh-bind.locked {
+		grid-template-columns: minmax(0, 1fr) auto;
+		opacity: 0.75;
+	}
+	.mh-bind-name {
+		min-width: 0;
+	}
+	.mh-keycell {
+		position: relative;
+		display: flex;
+	}
+	.mh-keybtn {
+		flex: 1;
+		min-height: 44px;
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.28);
+		background: rgba(255, 255, 255, 0.07);
+		color: #fff;
+		font: 700 13px/1 'Cascadia Mono', Consolas, monospace;
+		padding: 0 22px 0 8px;
+	}
+	.mh-keybtn.empty {
+		color: rgba(255, 255, 255, 0.35);
+		padding-right: 8px;
+	}
+	.mh-keybtn:hover {
+		border-color: #ff6a1a;
+	}
+	.mh-keybtn.wait {
+		border-color: #ffd23a;
+		background: rgba(255, 210, 58, 0.18);
+		color: #ffd23a;
+		padding-right: 8px;
+		animation: mh-blink 0.8s steps(2) infinite;
+	}
+	@keyframes mh-blink {
+		50% {
+			border-color: transparent;
+		}
+	}
+	.mh-keyx {
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 26px;
+		color: rgba(255, 255, 255, 0.55);
+		font-size: 16px;
+	}
+	.mh-keyx:hover {
+		color: #ff6a5a;
+	}
+	.mh-fixed {
+		font: 600 12px/1.4 'Cascadia Mono', Consolas, monospace;
+		opacity: 0.85;
+	}
+	.mh-range {
+		display: grid;
+		gap: 4px;
+		font-size: 13px;
+		margin-bottom: 6px;
+	}
+	.mh-range input {
+		width: 100%;
+		min-height: 32px;
+		accent-color: #ff6a1a;
+	}
+	.mh-check {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 44px;
+		font-size: 13px;
+		cursor: pointer;
+	}
+	.mh-check input {
+		width: 20px;
+		height: 20px;
+		accent-color: #ff6a1a;
+		flex: none;
+	}
+	.mh-check small {
+		display: block;
+		font-size: 11px;
+		opacity: 0.65;
+	}
+	.mh-cover.settings {
+		justify-content: flex-start;
+		overflow-y: auto;
+		background: rgba(5, 7, 5, 0.92);
+	}
+	.mh-pause-set {
+		display: grid;
+		gap: 10px;
+		justify-items: center;
+		width: min(100%, 900px);
+		margin: auto;
+	}
+	/* phones: the menu stage (operator + level + Play) needs more height than a 16:9 strip */
+	@media (max-width: 639px) {
+		.mh:not(.immersive) .mh-stage {
+			aspect-ratio: 9 / 10;
+		}
+	}
+	@media (max-width: 519px) {
+		.mh-bind {
+			grid-template-columns: minmax(0, 1fr) 84px 84px;
+			font-size: 12px;
 		}
 	}
 
