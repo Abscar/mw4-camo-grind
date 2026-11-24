@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'case-battles-look',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Case Battles got a makeover',
+		text: 'New cases with a glass window, a lit stage, CS2-style reel and item cards, and tidier battles and lobbies.',
+		tab: 'casino'
+	},
+	{
 		id: 'case-battles',
 		date: '2026-11-24',
 		kind: 'new',

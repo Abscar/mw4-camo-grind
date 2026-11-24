@@ -95,7 +95,8 @@
 	<div class="cc-seats" style:--n={b.pulls.length}>
 		{#each seats as seat, s (s)}
 			{@const win = ended && b.winners.includes(s)}
-			<div class="cc-seat" class:win class:you={seat.you} class:gap={b.size === '2v2' && s === 2}>
+			<div class="cc-seat" class:win class:you={seat.you} class:gap={b.size === '2v2' && s === 2} data-team={b.size === '2v2' ? teamOf(b.size, s) + 1 : undefined}>
+				{#if win}<span class="cc-crown" aria-hidden="true">👑</span>{/if}
 				<div class="cc-who">
 					<SquadAvatar name={seat.name} op={seat.op} size={34} />
 					<span class="grid min-w-0">
@@ -154,7 +155,7 @@
 	.cc-wait {
 		display: grid;
 		place-items: center;
-		height: 216px;
+		height: 228px;
 		border-radius: 10px;
 		background: rgb(0 0 0 / 0.3);
 	}
@@ -183,6 +184,35 @@
 		max-width: 240px;
 		justify-self: center;
 	}
+	.cc-seat {
+		position: relative;
+		background: linear-gradient(180deg, #19141e, #0c0a0f);
+	}
+	.cc-seat[data-team='1'] {
+		border-top: 3px solid #4d8dff;
+	}
+	.cc-seat[data-team='2'] {
+		border-top: 3px solid #ff8a2a;
+	}
+	.cc-crown {
+		position: absolute;
+		top: -14px;
+		right: 8px;
+		font-size: 22px;
+		filter: drop-shadow(0 0 6px #ffd23a);
+		animation: cc-crown 0.6s cubic-bezier(0.3, 1.8, 0.5, 1);
+	}
+	@keyframes cc-crown {
+		from {
+			transform: translateY(-10px) scale(0.4);
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.cc-crown {
+			animation: none;
+		}
+	}
 	.cc-seat.you {
 		border-color: rgb(255 210 58 / 0.5);
 	}
@@ -199,6 +229,11 @@
 		flex-wrap: wrap;
 	}
 	.cc-total {
+		justify-self: start;
+		padding: 1px 10px;
+		border-radius: 999px;
+		background: rgb(255 210 58 / 0.1);
+		border: 1px solid rgb(255 210 58 / 0.35);
 		font-size: 18px;
 		font-weight: 900;
 		color: #ffd23a;

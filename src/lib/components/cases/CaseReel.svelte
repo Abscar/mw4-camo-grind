@@ -95,13 +95,19 @@
 	.cr {
 		position: relative;
 		overflow: hidden;
-		height: 92px;
-		border-radius: 10px;
-		background: linear-gradient(180deg, #14121c, #08070c);
+		height: 112px;
+		border-radius: 12px;
+		background:
+			repeating-linear-gradient(90deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 8px),
+			linear-gradient(180deg, #1a1724, #0a0910);
 		border: 1.5px solid rgb(255 255 255 / 0.12);
+		box-shadow: inset 0 0 24px rgb(0 0 0 / 0.7);
 	}
 	.cr.y {
-		height: 216px;
+		height: 228px;
+		background:
+			repeating-linear-gradient(0deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 8px),
+			linear-gradient(90deg, #1a1724, #0a0910);
 	}
 	.cr-strip {
 		display: flex;
@@ -115,44 +121,59 @@
 	.cr-strip.moving {
 		transition: transform var(--ms) cubic-bezier(0.08, 0.72, 0.16, 1);
 	}
+	/* each item = a little tile like an inventory card: dark, the grade colour rising from the bottom */
 	.cr-cell {
 		position: relative;
-		flex: 0 0 96px;
+		flex: 0 0 124px;
 		height: 100%;
-		padding: 8px 6px 10px;
-		border-right: 1px solid rgb(255 255 255 / 0.05);
-		background: linear-gradient(180deg, transparent 60%, color-mix(in srgb, var(--g) 22%, transparent));
+		padding: 10px 4px;
 	}
-	.cr-cell::after {
+	.cr-cell::before {
 		content: '';
 		position: absolute;
-		left: 8%;
-		right: 8%;
-		bottom: 3px;
-		height: 3px;
-		border-radius: 2px;
-		background: var(--g);
+		inset: 8px 4px;
+		border-radius: 8px;
+		background: linear-gradient(180deg, rgb(255 255 255 / 0.04), color-mix(in srgb, var(--g) 30%, transparent));
+		border: 1px solid rgb(255 255 255 / 0.06);
+		border-bottom: 3px solid var(--g);
+	}
+	.cr-cell > :global(.ci) {
+		position: relative;
+		padding: 2px 4px 6px;
 	}
 	.cr.y .cr-cell {
-		flex: 0 0 72px;
+		flex: 0 0 76px;
 		width: 100%;
-		height: 72px;
-		border-right: 0;
-		border-bottom: 1px solid rgb(255 255 255 / 0.05);
+		height: 76px;
+		padding: 4px 8px;
+	}
+	.cr.y .cr-cell::before {
+		inset: 4px 6px;
 	}
 	.done .cr-cell:not(.win) {
-		opacity: 0.28;
-		transition: opacity 0.3s;
+		opacity: 0.25;
+		filter: saturate(0.4);
+		transition:
+			opacity 0.35s,
+			filter 0.35s;
 	}
 	.cr-cell.win {
-		background: radial-gradient(closest-side, color-mix(in srgb, var(--g) 40%, transparent), transparent);
-		animation: cr-pop 0.5s cubic-bezier(0.3, 1.8, 0.5, 1);
+		z-index: 1;
+		animation: cr-pop 0.55s cubic-bezier(0.3, 1.8, 0.5, 1);
+	}
+	.cr-cell.win::before {
+		background: radial-gradient(closest-side, color-mix(in srgb, var(--g) 55%, transparent), color-mix(in srgb, var(--g) 18%, transparent));
+		border-color: var(--g);
+		box-shadow:
+			0 0 18px color-mix(in srgb, var(--g) 70%, transparent),
+			inset 0 0 12px color-mix(in srgb, var(--g) 50%, transparent);
 	}
 	@keyframes cr-pop {
 		from {
-			transform: scale(0.85);
+			transform: scale(0.82);
 		}
 	}
+	/* the marker: a gold line with an arrow at each end */
 	.cr-mark {
 		position: absolute;
 		left: 50%;
@@ -160,8 +181,26 @@
 		bottom: 0;
 		width: 2px;
 		margin-left: -1px;
-		background: #ffd23a;
-		box-shadow: 0 0 8px #ffd23a;
+		background: linear-gradient(180deg, #ffe88a, #ffb020);
+		box-shadow: 0 0 10px #ffc23a;
+		z-index: 2;
+	}
+	.cr-mark::before,
+	.cr-mark::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		border: 8px solid transparent;
+		translate: -50% 0;
+		filter: drop-shadow(0 0 4px #ffc23a);
+	}
+	.cr-mark::before {
+		top: -2px;
+		border-top-color: #ffd23a;
+	}
+	.cr-mark::after {
+		bottom: -2px;
+		border-bottom-color: #ffd23a;
 	}
 	.cr.y .cr-mark {
 		left: 0;
@@ -171,15 +210,34 @@
 		width: auto;
 		height: 2px;
 		margin: -1px 0 0;
+		background: linear-gradient(90deg, #ffe88a, #ffb020);
+	}
+	.cr.y .cr-mark::before,
+	.cr.y .cr-mark::after {
+		top: 50%;
+		left: auto;
+		translate: 0 -50%;
+		border-width: 7px;
+	}
+	.cr.y .cr-mark::before {
+		left: -2px;
+		border-color: transparent;
+		border-left-color: #ffd23a;
+	}
+	.cr.y .cr-mark::after {
+		right: -2px;
+		bottom: auto;
+		border-color: transparent;
+		border-right-color: #ffd23a;
 	}
 	.cr-fade {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		background: linear-gradient(90deg, #08070c, transparent 22%, transparent 78%, #08070c);
+		background: linear-gradient(90deg, #0a0910, transparent 24%, transparent 76%, #0a0910);
 	}
 	.cr.y .cr-fade {
-		background: linear-gradient(180deg, #08070c, transparent 26%, transparent 74%, #08070c);
+		background: linear-gradient(180deg, #0a0910, transparent 28%, transparent 72%, #0a0910);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.cr-cell.win {
