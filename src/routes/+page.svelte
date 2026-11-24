@@ -77,6 +77,7 @@
 	import { headerAreas, type HideId } from '#lib/hideSections.ts';
 	import HideButton from '#lib/components/HideButton.svelte';
 	import HiddenBar from '#lib/components/HiddenBar.svelte';
+	import BurgiCity from '#lib/components/BurgiCity.svelte';
 	import PageTabIcon from '#lib/components/PageTabIcon.svelte';
 
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
@@ -360,6 +361,8 @@
 		<!-- Abscars Madness: the game's own big title button (2026-11-23, the user: "a button of its own high up on the
 		     page"); a tap opens the game full screen -->
 		<div id="madness" class="relative mt-4" hidden={hidden.is('madness')}><MadnessLauncher /><HideButton id="madness" /></div>
+		<!-- Burgi City: the page as a town, one building per tab (2026-11-23); only in the Burgi City theme -->
+		<div class="city-only compact-hide" hidden={hidden.is('city')}><BurgiCity {view} shown={shownTabs} ongo={goTab} /></div>
 
 		<!-- page tabs: the tracker, Ranked prep, Cosmetics & camos, BurgiCasino, BurgiShop, BurgiArcade, the Squad (last, lit green) -->
 		<!-- every other tab hidden: no row for Camo grind alone (it stays in the page for the panel's label) -->

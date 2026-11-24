@@ -207,6 +207,7 @@ export const en = {
 			buddy: 'News buddy',
 			whatsNew: 'What’s new billboard',
 			madness: 'Abscars Madness button (the game)',
+			city: 'Burgi City map',
 			news: 'News radar',
 			season: 'Season countdown',
 			kpi: 'Progress tiles',
@@ -311,6 +312,36 @@ export const en = {
 		}
 	},
 	/** Abscar theme: tapping the news buddy (he coughs, blows a smoke ring or laughs). */
+	/** Burgi City (2026-11-23, the user: "bygg en burgi city"): a cartoon town over the page tabs, one building
+	    per tab, the squad's online operators walking the streets. */
+	city: {
+		title: 'Burgi City',
+		kicker: 'Tap a building to go in',
+		fold: 'Fold up',
+		unfold: 'Show Burgi City',
+		label: 'Burgi City: a map of the page, one building per tab',
+		online: (n: number) => (n === 1 ? '1 operator on the streets' : `${n} operators on the streets`),
+		visitors: 'The squad is out for a walk',
+		swipe: 'Swipe to look around',
+		here: 'You are here',
+		go: (name: string) => `Go to ${name}`,
+		park: 'Holk Park',
+		parkSub: 'Smoke break',
+		b: {
+			grind: { name: 'Abscar’s Base', sub: 'Camo grind HQ' },
+			ranked: { name: 'Ranked Tower', sub: 'CDL rules & classes' },
+			cosmetics: { name: 'Sticker Museum', sub: 'Cosmetics & camos' },
+			casino: { name: 'BurgiCasino', sub: 'Slots, roulette, blackjack' },
+			shop: { name: 'BurgiShop Mall', sub: 'Drip, armory, karma' },
+			arcade: { name: 'BurgiArcade', sub: 'Games & high scores' },
+			mayhem: { name: 'Mayhem Arena', sub: 'Play Abscars Madness' },
+			squad: { name: 'Squad Barracks', sub: 'Race, radio, records' }
+		},
+		hbLeft: (n: number) => (n <= 0 ? 'Divergence unlocked' : `${n} HB to Divergence`),
+		inSquad: (n: number) => `${n} online now`,
+		burgers: (n: string) => `You have ${n} 🍔`
+	},
+
 	/** The "What's new" billboard beside the news buddy (WhatsNewBoard, data in data/whatsNew.ts). */
 	whatsNew: {
 		title: 'What’s new',

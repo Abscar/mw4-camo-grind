@@ -18,6 +18,8 @@ export const HIDE_SECTIONS = [
 	{ id: 'buddy', group: 'header', abscar: true },
 	{ id: 'whatsNew', group: 'header' },
 	{ id: 'madness', group: 'header' },
+	// Burgi City, the map over the page tabs (2026-11-23)
+	{ id: 'city', group: 'header' },
 	// the Camo grind tab, top to bottom
 	{ id: 'news', group: 'grind' },
 	{ id: 'season', group: 'grind' },

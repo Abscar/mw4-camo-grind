@@ -10,7 +10,9 @@
 export const THEMES = [
 	{ id: 'blackout', name: 'Abscar', swatch: ['#23160D', '#FF4418'], browserBar: '#23160D' },
 	{ id: 'steel', name: 'Steel', swatch: ['#1D2126', '#C9D1D9'], browserBar: '#15181C' },
-	{ id: 'matrix', name: 'Matrix', swatch: ['#010603', '#00FF41'], browserBar: '#010603' }
+	{ id: 'matrix', name: 'Matrix', swatch: ['#010603', '#00FF41'], browserBar: '#010603' },
+	// Burgi City (2026-11-24, the user: "lägg ut som ett TEMA"): night-town colours + the town map over the tabs
+	{ id: 'city', name: 'Burgi City', swatch: ['#140f2b', '#FF8A2A'], browserBar: '#0d0b1a' }
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]['id'];

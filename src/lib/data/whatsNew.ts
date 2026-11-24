@@ -23,6 +23,13 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'burgi-city-theme',
+		date: '2026-11-24',
+		kind: 'new',
+		title: 'New theme: Burgi City',
+		text: 'Pick it in the theme menu: the page turns into a town at night, one building per tab, the squad walking the streets.'
+	},
+	{
 		id: 'madness-chapter-2',
 		date: '2026-11-24',
 		kind: 'new',
