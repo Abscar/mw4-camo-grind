@@ -204,6 +204,7 @@
 		total: 0,
 		keys: '',
 		nades: 0,
+		knives: 0,
 		cp: 0,
 		dead: false,
 		hint: ''
@@ -443,9 +444,10 @@
 			total: g.totalEnemies,
 			keys: [...g.have].sort().join(','),
 			nades: g.grenades,
+			knives: g.knives,
 			cp: g.checkpoint,
 			dead: p.hp <= 0,
-			hint: settings.hints && g.time < 8 ? g.level.hint : ''
+			hint: settings.hints && g.time < (g.level.id === LEVELS[0].id ? 12 : 8) ? (g.level.id === LEVELS[0].id ? `${g.level.hint} ${M.hud.stealthTip}` : g.level.hint) : ''
 		};
 		for (const k of Object.keys(next) as (keyof typeof next)[]) if (h[k] !== next[k]) (h as Record<string, unknown>)[k] = next[k];
 	}
@@ -504,7 +506,7 @@
 	function pause(on: boolean) {
 		if (screen !== 'play' || game?.over) return;
 		paused = on;
-		if (on) Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false });
+		if (on) Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false });
 		else {
 			last = 0;
 			stage?.focus();
@@ -749,7 +751,7 @@
 						</div>
 						<div class="mh-inv">
 							{#each hud.keys ? hud.keys.split(',') : [] as k (k)}<span class="mh-key" style:background={KEY_COL[k]} title="{k} key"></span>{/each}
-							{#if skillSet.has('frag')}<span class="mh-nades num">💣 {hud.nades}</span>{/if}
+							<span class="mh-knives num" title={M.hud.knives} aria-label="{M.hud.knives}: {hud.knives}">🔪 {hud.knives}</span>{#if skillSet.has('frag')}<span class="mh-nades num">💣 {hud.nades}</span>{/if}
 						</div>
 					</div>
 					<div class="mh-hud-c">
@@ -788,6 +790,7 @@
 							<button type="button" class="mh-tb sm" aria-label={M.touch.pick} {...hold('pick')}>USE</button>
 							<button type="button" class="mh-tb sm" aria-label={M.touch.throw} {...hold('throw')}>THROW</button>
 							<button type="button" class="mh-tb sm" aria-label={M.touch.dash} {...hold('dash')}>DASH</button>
+							<button type="button" class="mh-tb sm" aria-label={M.touch.knife} {...hold('knife')}>KNIFE</button>
 							{#if skillSet.has('frag')}<button type="button" class="mh-tb sm" aria-label={M.touch.nade} {...hold('nade')}>NADE</button>{/if}
 							<button type="button" class="mh-tb sm holk" aria-label={M.touch.holk} {...hold('holk')}>HOLK</button>
 						</div>
@@ -1806,7 +1809,8 @@
 		box-shadow: 0 0 6px currentColor;
 		border: 1px solid rgba(0, 0, 0, 0.6);
 	}
-	.mh-nades {
+	.mh-nades,
+	.mh-knives {
 		font-size: 11px;
 		font-weight: 700;
 	}

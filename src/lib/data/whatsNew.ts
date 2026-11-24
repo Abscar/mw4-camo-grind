@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-stealth',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Madness: slower, sneakier, knives',
+		text: 'Calmer pace and a closer camera. Sneak up behind enemies for silent takedowns, or throw knives (F) and pick them back up.',
+		tab: 'madness'
+	},
+	{
 		id: 'burgi-city-theme',
 		date: '2026-11-24',
 		kind: 'new',

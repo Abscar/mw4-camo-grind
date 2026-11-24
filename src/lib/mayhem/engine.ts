@@ -10,6 +10,13 @@
  * everyone has a double jump, a dash (C, also in the air), wall slide + wall jump and a ground slam (S in the air).
  * Jumps feel like a platformer's: a short grace after running off a ledge ("coyote time"), a jump pressed just
  * before landing still counts, holding jump goes higher, a little hang at the top, falling faster than rising.
+ * Slower and sneakier (2026-11-24, the user: "more slow-paced, more zoomed in, fun stuff like throwing knives, not
+ * just rushing through and shooting"): calmer movement (run ~15 % slower, jumps rise slower, same heights), camera zoomed in
+ * 2×, enemy bullets fly slowly enough to dodge, enemies shoot in short bursts with long breaks. Enemies patrol and
+ * have to SEE you (in front of them, a "?" meter fills, then "!"); gunshots are loud and wake everyone near.
+ * Throwing knives (F): silent, a headshot or an unaware target dies at once, they stick in walls and you pick them
+ * back up by walking over them. Punching / slashing an unaware enemy from behind is a silent TAKEDOWN. Takedowns
+ * and knife headshots get a short slow-motion kill cam.
  * Pure game logic: no DOM, no drawing (render.ts + painter.ts draw it, MayhemPage.svelte runs it).
  * Coordinates: world px, y down; a fighter's `y` is where their feet are.
  * Chapter 2 (2026-11-23, the user: "fler banor där man använder movement … uppåt eller neråt … mer fantasi"):
@@ -24,19 +31,28 @@ export { FLOOR, CEIL };
 /** the background tile width (render.ts repeats the arena picture every W) */
 export const W = 960;
 export const H = 540;
-/** the camera shows this much of the world (zoomed in 1.5×, it follows the player) */
-export const VW = 640;
-export const VH = 360;
-const GRAV = 2300;
-const RUN = 300;
-const JUMP = 830;
+/** the camera shows this much of the world (zoomed in 2×, it follows the player) */
+export const VW = 480;
+export const VH = 270;
+// ~15 % slower than the first version (run), jumps rise slower, with the same jump heights (speed × 0.86, gravity × 0.74; run 255 vs 300; chapter 2 needs the reach)
+const GRAV = 1700;
+const RUN = 255;
+const JUMP = 714;
 /** the player's own gravity: rising (held jump), falling, a released jump, the hang at the top */
-const P_GRAV = 2000;
-const P_JUMP = 860;
-const COYOTE = 0.11;
-const BUFFER = 0.13;
-const DASH_V = 980;
-const DASH_T = 0.15;
+const P_GRAV = 1480;
+const P_JUMP = 740;
+const COYOTE = 0.12;
+const BUFFER = 0.14;
+const DASH_V = 820;
+const DASH_T = 0.18;
+/** throwing knives: what you start (and respawn) with, the most you carry */
+export const KNIVES_START = 4;
+export const KNIVES_MAX = 6;
+/** how fast bullets fly compared with the gun's stats: yours, the enemies' (slow enough to dodge) */
+const MY_BULLET = 0.72;
+const THEIR_BULLET = 0.4;
+/** how far a shot is heard (wakes enemies) */
+const NOISE: Record<GunKind, number> = { pistol: 380, smg: 440, ar: 520, shotgun: 480, lmg: 560, marksman: 560, sniper: 700, launcher: 620, melee: 0 };
 
 /** body proportions (from the feet up) */
 export const BODY = { hip: 44, shoulder: 69, head: 82, headR: 8.5, half: 11, top: 91 } as const;
@@ -90,7 +106,12 @@ export interface Fighter {
 	rest: number;
 	charge: number;
 	err: number;
+	/** not aware of the player yet (patrolling); `spot` fills 0 → 1 while they can see you, 1 = they wake */
 	asleep: boolean;
+	spot: number;
+	/** where they patrol around, and a pause before turning */
+	home: number;
+	pause: number;
 	zone?: string;
 	// player moves
 	jumps: number;
@@ -126,7 +147,7 @@ export interface Bullet {
 	life: number;
 	pierce: number;
 	hit: number[];
-	kind: 'bullet' | 'rocket' | 'thrown' | 'frag';
+	kind: 'bullet' | 'rocket' | 'thrown' | 'frag' | 'knife';
 	/** a thrown weapon: what lands afterwards */
 	gun?: Held;
 	spin?: number;
@@ -145,6 +166,9 @@ export interface Pickup {
 	life: number;
 	spin: number;
 	onGround: boolean;
+	/** a throwing knife to pick back up (`ang` = how it sticks) */
+	knife?: boolean;
+	ang?: number;
 }
 
 export interface Corpse {
@@ -182,7 +206,7 @@ export interface Popup {
 	y: number;
 	text: string;
 	t: number;
-	tone: 'kill' | 'head' | 'combo' | 'heal' | 'wave' | 'gun' | 'info';
+	tone: 'kill' | 'head' | 'combo' | 'heal' | 'wave' | 'gun' | 'info' | 'alert' | 'stealth';
 	/** drawn on the screen (centre), not in the world */
 	screen?: boolean;
 }
@@ -250,6 +274,9 @@ export type GameEvent =
 	| { t: 'boom' }
 	| { t: 'punch' }
 	| { t: 'throw' }
+	| { t: 'knife' }
+	| { t: 'takedown' }
+	| { t: 'spotted' }
 	| { t: 'pickup'; id: string | null }
 	| { t: 'empty' }
 	| { t: 'wave'; n: number }
@@ -279,11 +306,12 @@ export interface Input {
 	holk: boolean;
 	dash: boolean;
 	nade: boolean;
+	knife: boolean;
 	aimX: number;
 	aimY: number;
 }
 
-export const NO_INPUT: Input = { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, aimX: W, aimY: FLOOR - 60 };
+export const NO_INPUT: Input = { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, aimX: W, aimY: FLOOR - 60 };
 
 /** A small seeded random (mulberry32), so tests can replay a run. */
 export function rng(seed: number) {
@@ -359,6 +387,11 @@ export class Mayhem {
 	holkOn = false;
 	shake = 0;
 	grenades = 0;
+	knives = KNIVES_START;
+	/** a short slow-motion kill cam (takedowns, knife headshots) */
+	slowT = 0;
+	/** the label for the next kill's popup (TAKEDOWN …), set right before the killing blow */
+	#label = '';
 	/** the camera's top-left corner in the world */
 	cam = { x: 0, y: H - VH };
 	/** kept for render.ts / older code: there are no waves any more */
@@ -479,6 +512,9 @@ export class Mayhem {
 			charge: 0,
 			err: 0,
 			asleep: !player,
+			spot: 0,
+			home: x,
+			pause: 0,
 			jumps: 0,
 			dashT: 0,
 			dashCool: 0,
@@ -511,8 +547,9 @@ export class Mayhem {
 		const f = this.#fighter(false, kind, x, y, held);
 		f.hp = f.maxHp = spec.hp;
 		f.scale = spec.scale;
-		f.facing = -1;
+		f.facing = this.r() < 0.5 ? -1 : 1;
 		f.react = 0.45 + this.r() * 0.5;
+		f.pause = this.r() * 2;
 		f.err = 0.22;
 		f.think = this.r() * 0.5;
 		f.zone = zone;
@@ -627,8 +664,10 @@ export class Mayhem {
 				this.holkOn = false;
 			}
 		}
-		const wdt = this.holkOn ? dt * 0.35 : dt;
-		const pdt = this.holkOn ? dt * 0.75 : dt;
+		const slow = this.slowT > 0 ? 0.28 : 1;
+		if (this.slowT > 0) this.slowT -= dt;
+		const wdt = (this.holkOn ? dt * 0.35 : dt) * slow;
+		const pdt = (this.holkOn ? dt * 0.75 : dt) * (slow < 1 ? 0.5 : 1);
 		this.t += wdt;
 
 		this.#moveMovers();
@@ -665,19 +704,21 @@ export class Mayhem {
 		this.corpses = this.corpses.filter((c) => c.f !== p);
 		this.windUsed = false;
 		this.grenades = this.skills.has('frag') ? 3 : 0;
+		this.knives = Math.max(this.knives, KNIVES_START);
+		this.slowT = 0;
 		this.holk = Math.max(this.holk, 40);
 		this.events.push({ t: 'respawn' });
 	}
 
 	#camera(dt: number, inp: Input) {
 		const p = this.player.hp > 0 ? this.player : (this.corpses.find((c) => c.f.player) ?? this.player);
-		const ahead = Math.max(-90, Math.min(90, (inp.aimX - p.x) * 0.25));
+		const ahead = Math.max(-70, Math.min(70, (inp.aimX - p.x) * 0.22));
 		const tx = Math.max(0, Math.min(this.w - VW, p.x + ahead - VW / 2));
 		// tall levels: look the way you're going (up while rising, down while falling)
 		const look = p.vy > 380 ? 90 : p.vy < -380 ? -50 : 0;
 		this.#camLook += (look - this.#camLook) * Math.min(1, dt * 3);
-		const ty = Math.max(this.top, Math.min(H - VH, p.y - 60 - VH * 0.55 + (this.top < 0 ? this.#camLook : 0)));
-		const k = Math.min(1, dt * 6);
+		const ty = Math.max(this.top, Math.min(H - VH, p.y - 50 - VH * 0.55 + (this.top < 0 ? this.#camLook : 0)));
+		const k = Math.min(1, dt * 4);
 		this.cam.x += (tx - this.cam.x) * k;
 		this.cam.y += (ty - this.cam.y) * k;
 	}
@@ -747,8 +788,8 @@ export class Mayhem {
 		} else if (p.stun <= 0) {
 			const target = want * speed;
 			let acc: number;
-			if (p.onGround) acc = want === 0 ? 5200 : p.vx && Math.sign(target) !== Math.sign(p.vx) ? 7600 : 4200;
-			else acc = want === 0 ? 700 : 2800;
+			if (p.onGround) acc = want === 0 ? 3800 : p.vx && Math.sign(target) !== Math.sign(p.vx) ? 5400 : 2700;
+			else acc = want === 0 ? 520 : 2000;
 			if (p.wallLock > 0 && want === p.wall) acc *= 0.2;
 			p.vx += Math.max(-acc * dt, Math.min(acc * dt, target - p.vx));
 			if (p.buffer > 0) {
@@ -762,7 +803,7 @@ export class Mayhem {
 					for (let i = 0; i < 5; i++) this.parts.push({ x: p.x + (this.r() - 0.5) * 16, y: p.y, vx: (this.r() - 0.5) * 140, vy: -this.r() * 40, life: 0.35, max: 0.35, kind: 'smoke', r: 2.5 });
 				} else if (p.wall) {
 					p.vy = -P_JUMP * 0.92;
-					p.vx = -p.wall * 470;
+					p.vx = -p.wall * 360;
 					p.jumps = 1;
 					p.airDash = 0;
 					p.buffer = 0;
@@ -785,7 +826,7 @@ export class Mayhem {
 				if (p.onGround && p.y < FLOOR - 1) p.drop = 0.25;
 				else if (!p.onGround && !p.slam) {
 					p.slam = true;
-					p.vy = 1400;
+					p.vy = 1150;
 					p.vx *= 0.25;
 				}
 			}
@@ -811,12 +852,17 @@ export class Mayhem {
 			this.events.push({ t: 'throw' });
 		}
 
+		if (press('knife') && this.knives > 0 && p.cool <= 0.1) this.#throwKnife(p);
+
 		// pick up / swap / use a switch
 		if (press('pick')) {
 			if (!this.#useSwitch()) this.#pickUp(p, true);
 		} else if (!p.held) this.#pickUp(p, false);
 
-		if (press('throw') && p.held) this.#throw(p);
+		// walk up behind someone who hasn't seen you and click: a takedown, gun in hand or not
+		const td = press('fire') && p.cool <= 0 ? this.canTakedown() : null;
+		if (td) this.#punch(p);
+		else if (press('throw') && p.held) this.#throw(p);
 		else if (g && p.held) {
 			if (g.kind === 'melee') {
 				if (press('fire') && p.cool <= 0) this.#slash(p, g);
@@ -827,6 +873,23 @@ export class Mayhem {
 				this.#throw(p);
 			}
 		} else if (press('fire') && p.cool <= 0) this.#punch(p);
+	}
+
+	/** an unaware enemy right in front of you with their back turned (a click = takedown) */
+	canTakedown(): Fighter | null {
+		const p = this.player;
+		if (p.hp <= 0 || this.complete) return null;
+		const s = this.#shoulder(p);
+		for (const e of this.enemies) {
+			if (e.hp <= 0 || !e.asleep) continue;
+			const dx = e.x - p.x;
+			const dy = e.y - BODY.shoulder * e.scale - s.y;
+			if (Math.abs(dx) > 40 + BODY.half * e.scale || Math.abs(dy) > 46) continue;
+			if (Math.sign(dx) !== p.facing && Math.abs(dx) > 10) continue;
+			if (e.facing !== p.facing && e.stun <= 0) continue;
+			return e;
+		}
+		return null;
 	}
 
 	#useSwitch() {
@@ -890,9 +953,47 @@ export class Mayhem {
 		this.events.push({ t: 'throw' });
 	}
 
+	#throwKnife(f: Fighter) {
+		this.knives--;
+		const s = this.#shoulder(f);
+		const sp = 820;
+		this.bullets.push({ x: s.x + Math.cos(f.aim) * 14, y: s.y + Math.sin(f.aim) * 14, vx: Math.cos(f.aim) * sp + f.vx * 0.2, vy: Math.sin(f.aim) * sp - 40, dmg: 70, mine: true, life: 2, pierce: 0, hit: [], kind: 'knife', spin: 22 * f.facing, from: f.uid });
+		f.punch = 0.16;
+		f.cool = Math.max(f.cool, 0.28);
+		this.events.push({ t: 'knife' });
+	}
+
+	/** a knife lands (stuck in a wall / the floor, or dropped off someone) and can be picked up again */
+	#dropKnife(x: number, y: number, stuck: boolean, ang: number) {
+		this.pickups.push({ uid: this.uid++, x: Math.max(10, Math.min(this.w - 10, x)), y, vx: stuck ? 0 : (this.r() - 0.5) * 120, vy: stuck ? 0 : -220, gun: null, heal: 0, life: 1e9 - 1, spin: stuck ? 0 : 14, onGround: stuck, knife: true, ang });
+	}
+
+	/** wake everyone who hears it */
+	#noise(x: number, y: number, r: number) {
+		for (const e of this.enemies) {
+			if (!e.asleep || e.hp <= 0) continue;
+			const d = Math.hypot(e.x - x, e.y - y);
+			if (d < r * 0.45 || (d < r && this.clearLine(e.x, e.y - 70, x, y))) this.#alert(e, d < r * 0.45 ? 0.5 : 0.9);
+		}
+	}
+
+	/** an enemy notices the player: "!", a moment to react, and they shout to the ones near them */
+	#alert(e: Fighter, react = 0.7, shout = true) {
+		if (!e.asleep) return;
+		e.asleep = false;
+		e.spot = 1;
+		e.react = react + this.r() * 0.4;
+		e.facing = this.player.x < e.x ? -1 : 1;
+		this.popups.push({ x: e.x, y: e.y - 108 * e.scale, text: '!', t: 0, tone: 'alert' });
+		this.events.push({ t: 'spotted' });
+		if (shout)
+			for (const o of this.enemies)
+				if (o !== e && o.asleep && Math.abs(o.x - e.x) < 260 && Math.abs(o.y - e.y) < 120 && this.clearLine(o.x, o.y - 70, e.x, e.y - 70)) this.#alert(o, react + 0.5, false);
+	}
+
 	#shoot(f: Fighter, g: GunStats, dmgMult: number) {
 		if (!f.held) return;
-		f.cool = f.player ? g.rate : g.rate * 1.7;
+		f.cool = f.player ? g.rate : g.rate * 2.4;
 		if (f.player) {
 			f.held.ammo--;
 			this.stats.shots++;
@@ -902,12 +1003,14 @@ export class Mayhem {
 		const err = f.player ? 0 : (this.r() - 0.5) * f.err;
 		for (let i = 0; i < g.pellets; i++) {
 			const a = f.aim + err + (this.r() - 0.5) * 2 * g.spread;
-			const sp = g.speed * (g.pellets > 1 ? 0.85 + this.r() * 0.3 : 1);
-			this.bullets.push({ x: m.x, y: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: g.dmg * dmgMult, mine: f.player, life: g.reach / g.speed, pierce: g.pierce, hit: [], kind: g.kind === 'launcher' ? 'rocket' : 'bullet', from: f.uid });
+			const base = g.speed * (f.player ? MY_BULLET : THEIR_BULLET);
+			const sp = base * (g.pellets > 1 ? 0.85 + this.r() * 0.3 : 1);
+			this.bullets.push({ x: m.x, y: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: g.dmg * dmgMult, mine: f.player, life: g.reach / base, pierce: g.pierce, hit: [], kind: g.kind === 'launcher' ? 'rocket' : 'bullet', from: f.uid });
 		}
 		this.parts.push({ x: m.x, y: m.y, vx: 0, vy: 0, life: 0.06, max: 0.06, kind: 'flash', r: g.kind === 'shotgun' || g.kind === 'sniper' ? 16 : 11 });
 		if (g.kind !== 'launcher') this.parts.push({ x: m.x - Math.cos(f.aim) * 18, y: m.y, vx: -f.facing * (60 + this.r() * 80), vy: -180 - this.r() * 120, life: 1.2, max: 1.2, kind: 'shell', r: 2 });
 		if (f.player) {
+			this.#noise(m.x, m.y, NOISE[g.kind]);
 			f.vx -= Math.cos(f.aim) * (g.kind === 'shotgun' ? 120 : g.kind === 'sniper' ? 160 : 14);
 			this.shake = Math.max(this.shake, g.kind === 'sniper' || g.kind === 'shotgun' || g.kind === 'launcher' ? 7 : 2);
 		}
@@ -926,6 +1029,15 @@ export class Mayhem {
 			if (Math.abs(dx) > range + BODY.half * e.scale || Math.abs(dy) > arc) continue;
 			if (Math.sign(dx) !== f.facing && Math.abs(dx) > 10) continue;
 			any = true;
+			// an enemy who hasn't seen you, hit from behind: a silent takedown
+			if (f.player && e.asleep && (e.facing === f.facing || e.stun > 0)) {
+				this.#label = 'TAKEDOWN';
+				this.slowT = 0.5;
+				this.shake = Math.max(this.shake, 6);
+				this.events.push({ t: 'takedown' });
+				this.#damage(e, 9999, false, f, f.facing * 260, -200);
+				continue;
+			}
 			e.vx += f.facing * knock;
 			e.vy = Math.min(e.vy, -220);
 			e.stun = 0.35;
@@ -953,13 +1065,20 @@ export class Mayhem {
 		e.think -= dt;
 		e.laserCool -= dt;
 		const pAlive = p.hp > 0 && !this.complete;
-		// asleep until the player comes close (or shoots them)
+		// unaware: patrol, and only notice the player in front of them (or right behind, running)
 		if (e.asleep) {
-			if (pAlive && Math.abs(p.x - e.x) < 560 && Math.abs(p.y - e.y) < 420 && this.clearLine(e.x, e.y - 70, p.x, p.y - 70)) e.asleep = false;
-			else {
-				e.vx *= 0.8;
-				return;
+			this.#patrol(e, dt);
+			if (pAlive) {
+				const dx = p.x - e.x, dy = p.y - e.y, d = Math.abs(dx);
+				const front = Math.sign(dx) === e.facing || d < 14;
+				const range = e.kind === 'camper' ? 520 : 340;
+				let rate = 0;
+				if (front && d < range && Math.abs(dy) < 170 && this.clearLine(e.x + e.facing * 6, e.y - 72, p.x, p.y - 70)) rate = d < 150 ? 2.4 : d < 260 ? 1.3 : 0.8;
+				else if (d < 40 && Math.abs(dy) < 50 && Math.abs(p.vx) > 170) rate = 1.1;
+				e.spot = rate ? Math.min(1, e.spot + rate * dt) : Math.max(0, e.spot - 0.35 * dt);
+				if (e.spot >= 1) this.#alert(e, 0.55);
 			}
+			if (e.asleep) return;
 		}
 		e.react -= dt;
 		const tx = p.x;
@@ -1007,7 +1126,7 @@ export class Mayhem {
 			}
 		}
 		const sp = RUN * spec.speed * (g?.weight ?? 1);
-		const acc = e.onGround ? 2400 : 1200;
+		const acc = e.onGround ? 1700 : 900;
 		if (e.stun <= 0) e.vx += Math.max(-acc * dt, Math.min(acc * dt, move * sp - e.vx));
 
 		if (!pAlive || e.react > 0 || e.stun > 0 || !sees) {
@@ -1033,10 +1152,10 @@ export class Mayhem {
 		if (g.kind === 'sniper') {
 			if (e.cool > 0) return;
 			e.charge += dt;
-			if (e.charge >= 1.15) {
+			if (e.charge >= 1.5) {
 				e.charge = 0;
 				this.#shoot(e, g, spec.dmg * 0.9);
-				e.cool = 1.8;
+				e.cool = 2.4;
 			}
 			return;
 		}
@@ -1047,12 +1166,40 @@ export class Mayhem {
 		if (e.cool <= 0) {
 			this.#shoot(e, g, spec.dmg);
 			e.burst++;
-			const max = g.auto ? 4 + Math.floor(this.r() * 4) : 2 + Math.floor(this.r() * 2);
+			const max = g.auto ? 3 + Math.floor(this.r() * 3) : 1 + Math.floor(this.r() * 2);
 			if (e.burst >= max) {
 				e.burst = 0;
-				e.rest = 0.7 + this.r() * 0.9;
+				e.rest = 1.2 + this.r() * 1.3;
 			}
 		}
+	}
+
+	#patrol(e: Fighter, dt: number) {
+		const still = e.kind === 'camper' || e.kind === 'jugg';
+		if (e.stun > 0) return;
+		if (e.pause > 0 || still) {
+			e.pause -= dt;
+			e.vx *= 0.8;
+			if (e.pause <= 0) {
+				// campers and juggernauts just look the other way now and then
+				if (still) {
+					e.facing = -e.facing as 1 | -1;
+					e.pause = 2.5 + this.r() * 2.5;
+				} else e.pause = 0;
+			}
+			return;
+		}
+		const sp = RUN * 0.3;
+		const ahead = e.x + e.facing * 18;
+		const far = Math.abs(e.x - e.home) > 90 && Math.sign(e.x - e.home) === e.facing;
+		if (far || (e.onGround && (!this.#footing(ahead, e.y) || e.wall === e.facing))) {
+			e.facing = -e.facing as 1 | -1;
+			e.pause = 1 + this.r() * 1.6;
+			return;
+		}
+		e.aim = e.facing > 0 ? 0.25 : Math.PI - 0.25;
+		const acc = 900;
+		e.vx += Math.max(-acc * dt, Math.min(acc * dt, e.facing * sp - e.vx));
 	}
 
 	#box(f: Fighter): Rect {
@@ -1077,10 +1224,10 @@ export class Mayhem {
 			let k = f.vy < 0 ? (held ? 1 : 1.9) : 1.6;
 			if (held && Math.abs(f.vy) < 130 && !f.slam) k = 0.5; // a little hang at the top
 			if (f.slam) k = 2.4;
-			f.vy = Math.min(f.slam ? 1900 : 1180, f.vy + P_GRAV * k * dt);
+			f.vy = Math.min(f.slam ? 1600 : 1000, f.vy + P_GRAV * k * dt);
 			// sliding down a wall you push into
-			if (f.wall && !f.onGround && f.vy > 200 && this.#want === f.wall) {
-				f.vy = 200;
+			if (f.wall && !f.onGround && f.vy > 170 && this.#want === f.wall) {
+				f.vy = 170;
 				if (this.r() < 0.3) this.parts.push({ x: f.x + f.wall * 11, y: f.y - 70, vx: -f.wall * 30, vy: -30, life: 0.3, max: 0.3, kind: 'spark', r: 1.2 });
 			}
 		}
@@ -1410,6 +1557,7 @@ export class Mayhem {
 			this.#kill(f, kx, ky, head);
 			if (by?.player || by === null) this.#scoreKill(f, head);
 		}
+		this.#label = '';
 	}
 
 	#scoreKill(f: Fighter, head: boolean) {
@@ -1420,10 +1568,11 @@ export class Mayhem {
 		if (head) this.stats.heads++;
 		this.stats.bestCombo = Math.max(this.stats.bestCombo, this.combo);
 		const mult = Math.min(this.combo, 6);
-		const pts = (spec.score + (head ? 75 : 0)) * mult;
+		const label = this.#label;
+		const pts = (spec.score + (head ? 75 : 0) + (label ? 150 : 0)) * mult;
 		this.score += pts;
-		this.holk = Math.min(100, this.holk + (head ? 14 : 9));
-		this.popups.push({ x: f.x, y: f.y - 100 * f.scale, text: head ? `HEADSHOT +${pts}` : `+${pts}`, t: 0, tone: head ? 'head' : 'kill' });
+		this.holk = Math.min(100, this.holk + (head ? 14 : 9) + (label ? 10 : 0));
+		this.popups.push({ x: f.x, y: f.y - 100 * f.scale, text: label ? `${label} +${pts}` : head ? `HEADSHOT +${pts}` : `+${pts}`, t: 0, tone: label ? 'stealth' : head ? 'head' : 'kill' });
 		if (this.combo >= 2) this.popups.push({ x: f.x, y: f.y - 124 * f.scale, text: `×${mult} COMBO`, t: 0, tone: 'combo' });
 		this.events.push({ t: 'kill', head });
 		if (this.r() < (f.kind === 'jugg' ? 1 : 0.12)) this.pickups.push({ uid: this.uid++, x: f.x, y: f.y - 40, vx: 0, vy: -300, gun: null, heal: f.kind === 'jugg' ? 60 : 30, life: 20, spin: 0, onGround: false });
@@ -1452,6 +1601,7 @@ export class Mayhem {
 
 	#boom(x: number, y: number, mine: boolean, size = 1) {
 		this.events.push({ t: 'boom' });
+		this.#noise(x, y, 600);
 		this.shake = 14 * size;
 		for (let i = 0; i < 30; i++) {
 			const a = this.r() * Math.PI * 2;
@@ -1497,6 +1647,7 @@ export class Mayhem {
 			const x0 = b.x;
 			const y0 = b.y;
 			if (b.kind === 'thrown' || b.kind === 'frag') b.vy += GRAV * 0.55 * dt;
+			if (b.kind === 'knife') b.vy += GRAV * 0.32 * dt;
 			if (b.kind === 'rocket') this.parts.push({ x: b.x, y: b.y, vx: -b.vx * 0.05, vy: -30, life: 0.5, max: 0.5, kind: 'smoke', r: 5 });
 			b.x += b.vx * dt;
 			b.y += b.vy * dt;
@@ -1523,7 +1674,11 @@ export class Mayhem {
 					b.life = 0;
 				}
 			}
-			if (b.life <= 0) continue;
+			if (b.life <= 0) {
+				// a knife that ran out of air (or hit a switch / barrel) drops to the floor
+				if (b.kind === 'knife') this.#dropKnife(b.x, b.y, false, 0);
+				continue;
+			}
 			for (const f of fighters) {
 				if (f.hp <= 0 || f.uid === b.from || b.hit.includes(f.uid)) continue;
 				if (b.mine === f.player) continue;
@@ -1532,6 +1687,22 @@ export class Mayhem {
 				b.hit.push(f.uid);
 				if (b.kind === 'rocket') {
 					this.#boom(b.x, b.y, b.mine);
+					b.life = 0;
+					break;
+				}
+				if (b.kind === 'knife') {
+					const head = where === 'head';
+					const unaware = f.asleep;
+					const dir = Math.sign(b.vx) || 1;
+					if (head || unaware) {
+						this.#label = head ? 'KNIFE HEADSHOT' : 'SILENT KILL';
+						this.slowT = 0.55;
+					} else {
+						f.stun = 0.5;
+						f.vx += dir * 160;
+					}
+					this.#damage(f, head || unaware ? 9999 : b.dmg, head, this.player, dir * 240, -160);
+					this.#dropKnife(b.x, b.y, false, 0);
 					b.life = 0;
 					break;
 				}
@@ -1558,6 +1729,8 @@ export class Mayhem {
 					b.x = x0;
 					b.y = Math.min(y0, FLOOR - 8);
 				}
+				// a knife sticks where it hit
+				if (b.kind === 'knife') this.#dropKnife(b.x - (b.vx / (Math.hypot(b.vx, b.vy) || 1)) * 4, Math.min(b.y, FLOOR - 2), true, Math.atan2(b.vy, b.vx));
 				b.life = 0;
 			}
 			if (b.life <= 0 && b.kind === 'thrown' && b.gun) {
@@ -1591,6 +1764,13 @@ export class Mayhem {
 					k.vx = -k.vx * 0.4;
 				}
 				if (k.y > H + 100) k.life = 0;
+			}
+			if (k.knife && p.hp > 0 && this.knives < KNIVES_MAX && Math.abs(k.x - p.x) < 26 && k.y > p.y - BODY.top - 14 && k.y < p.y + 12) {
+				this.knives++;
+				k.life = 0;
+				this.events.push({ t: 'pickup', id: null });
+				this.popups.push({ x: p.x, y: p.y - 110, text: `KNIFE ${this.knives}/${KNIVES_MAX}`, t: 0, tone: 'gun' });
+				continue;
 			}
 			if (k.heal > 0 && p.hp > 0 && Math.hypot(k.x - p.x, k.y - (p.y - 20)) < 40 && p.hp < p.maxHp) {
 				p.hp = Math.min(p.maxHp, p.hp + k.heal);

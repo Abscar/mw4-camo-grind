@@ -202,12 +202,88 @@ test('killing an enemy scores, drops its gun, and the gun can be picked up', () 
 	assert.ok(g.player.held, 'walking over a gun with empty hands picks it up');
 });
 
-test('enemies sleep until you come close', () => {
+/** one enemy standing on open ground at x, facing `facing` */
+const lone = (x, facing, kind = 'random') => {
+	const g = new Mayhem('o2', STARTER, [], 3);
+	const e = g.enemies.find((q) => q.kind === kind) ?? g.enemies[0];
+	g.enemies = [e];
+	Object.assign(e, { x, y: FLOOR, home: x, facing, pause: 99, asleep: true, spot: 0, vx: 0 });
+	return { g, e };
+};
+
+test('enemies have to see you: in front they spot you, behind they do not, a gunshot wakes them', () => {
 	const g = new Mayhem('o1', STARTER, [], 6);
 	const far = g.enemies.find((e) => e.x > 2000);
 	run(g, 1);
-	assert.ok(far.asleep);
-	assert.ok(g.enemies.find((e) => e.x < 700).asleep === false);
+	assert.ok(far.asleep, 'far away = still patrolling');
+	// in front, close: the ? fills and they wake within a second or so
+	let { g: a, e } = lone(500, -1);
+	put(a, 380);
+	run(a, 0.3);
+	assert.ok(e.asleep && e.spot > 0.3, 'the ? is filling');
+	run(a, 0.8);
+	assert.ok(!e.asleep, 'spotted');
+	assert.ok(a.popups.some((u) => u.text === '!'));
+	// behind them, standing still: never noticed
+	({ g: a, e } = lone(500, 1));
+	put(a, 380);
+	run(a, 3);
+	assert.ok(e.asleep && e.spot === 0, 'behind = unseen');
+	// a shot fired behind them is heard
+	a.step(1 / 60, { ...idle, fire: true, aimX: 100, aimY: FLOOR - 60 });
+	assert.ok(!e.asleep, 'the shot woke them');
+});
+
+test('takedown: click behind an unaware enemy, gun in hand, for a silent kill', () => {
+	const { g, e } = lone(500, 1);
+	put(g, 474);
+	run(g, 0.1, { ...idle, aimX: 700, aimY: FLOOR - 60 });
+	assert.equal(g.canTakedown(), e);
+	const ammo = g.player.held.ammo;
+	g.step(1 / 60, { ...idle, fire: true, aimX: 700, aimY: FLOOR - 60 });
+	assert.ok(!g.enemies.includes(e), 'dead');
+	assert.equal(g.player.held.ammo, ammo, 'no shot fired');
+	assert.ok(g.popups.some((u) => u.text.startsWith('TAKEDOWN')));
+	assert.ok(g.slowT > 0, 'kill cam');
+	// facing you: no takedown
+	const b = lone(500, -1);
+	put(b.g, 474);
+	run(b.g, 0.05, { ...idle, aimX: 700, aimY: FLOOR - 60 });
+	assert.equal(b.g.canTakedown(), null);
+});
+
+test('throwing knives: silent kill on the unaware, they stick in walls and get picked back up', () => {
+	const { g, e } = lone(600, 1);
+	put(g, 400);
+	run(g, 0.1, { ...idle, aimX: 600, aimY: FLOOR - 50 });
+	const n = g.knives;
+	g.step(1 / 60, { ...idle, knife: true, aimX: 600, aimY: FLOOR - 50 });
+	assert.equal(g.knives, n - 1);
+	run(g, 0.6, { ...idle, aimX: 600, aimY: FLOOR - 50 });
+	assert.ok(!g.enemies.includes(e), 'one knife kills an unaware enemy');
+	assert.ok(g.popups.some((u) => u.text.startsWith('SILENT KILL')));
+	const k = g.pickups.find((q) => q.knife);
+	assert.ok(k, 'the knife dropped');
+	run(g, 1.5);
+	put(g, k.x);
+	run(g, 0.1);
+	assert.equal(g.knives, n, 'picked back up');
+	// into a wall: it sticks there
+	const w = empty('o2');
+	put(w, 300);
+	run(w, 0.2);
+	w.step(1 / 60, { ...idle, knife: true, aimX: 520, aimY: FLOOR + 60 });
+	run(w, 0.5);
+	const stuck = w.pickups.find((q) => q.knife);
+	assert.ok(stuck && stuck.onGround, 'stuck in the floor');
+	// an aware enemy takes a body hit and survives
+	const c = lone(560, -1, 'sweat');
+	c.e.asleep = false;
+	c.e.react = 9;
+	put(c.g, 420);
+	c.g.step(1 / 60, { ...idle, knife: true, aimX: 560, aimY: FLOOR - 40 });
+	run(c.g, 0.5, { ...idle, aimX: 560, aimY: FLOOR - 40 });
+	assert.ok(c.g.enemies.includes(c.e) && c.e.hp < c.e.maxHp, 'hurt, not dead');
 });
 
 test('movement for everyone: coyote jump, held jump goes higher, double jump, dash, wall jump', () => {
@@ -239,7 +315,8 @@ test('movement for everyone: coyote jump, held jump goes higher, double jump, da
 	const c = empty('o1');
 	put(c, 880);
 	run(c, 0.2);
-	run(c, 0.3, { ...idle, right: true });
+	for (let i = 0; i < 120 && c.player.onGround; i++) c.step(1 / 60, { ...idle, right: true });
+	run(c, 0.05, { ...idle, right: true });
 	assert.ok(c.player.x > 900 && !c.player.onGround);
 	const e0 = c.player.vy;
 	c.step(1 / 60, { ...idle, jump: true, right: true });

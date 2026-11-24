@@ -857,6 +857,27 @@ function sludge(c: Ctx, y: number, x0: number, x1: number, t: number) {
 	}
 }
 
+/** a throwing knife, pointing along +x, centred on its balance point */
+function knife(c: Ctx) {
+	c.fillStyle = '#1c1d20';
+	c.fillRect(-10, -1.8, 8, 3.6);
+	c.fillStyle = '#6b5a3a';
+	c.fillRect(-9, -0.6, 6, 1.2);
+	c.fillStyle = '#9aa1a8';
+	c.fillRect(-2.5, -3, 1.6, 6);
+	const bl = c.createLinearGradient(0, -2.4, 0, 2.4);
+	bl.addColorStop(0, '#f2f5f8');
+	bl.addColorStop(1, '#8c949c');
+	c.fillStyle = bl;
+	c.beginPath();
+	c.moveTo(-1, -2.2);
+	c.lineTo(9, -1.2);
+	c.lineTo(12, 0.4);
+	c.lineTo(-1, 2.2);
+	c.closePath();
+	c.fill();
+}
+
 export interface View {
 	op: string;
 	/** device px per world px (the camera's VW wide view fills the canvas) */
@@ -924,6 +945,18 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	}
 	for (const k of g.corpses) drawCorpse(c, k, v.op);
 	for (const k of g.pickups) if (k.heal > 0) burger(c, k.x, k.y, g.t);
+	for (const k of g.pickups) {
+		if (!k.knife || !inView(k.x - 20, k.x + 20)) continue;
+		c.save();
+		c.translate(k.x, k.y);
+		// stuck in a wall / the floor at the angle it hit; loose ones spin, then lie flat
+		c.rotate(k.onGround ? (k.ang ?? 0) : g.t * k.spin);
+		if (k.onGround && k.ang) c.translate(-6, 0);
+		c.shadowColor = 'rgba(255,255,255,0.7)';
+		c.shadowBlur = 4 + Math.sin(g.t * 5) * 3;
+		knife(c);
+		c.restore();
+	}
 
 	// a camper's laser while they line up a shot
 	for (const e of g.enemies) {
@@ -953,6 +986,38 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 
 	if (g.flood < Infinity && g.flood < cy + VH + 40) sludge(c, g.flood, cx - 20, cx + VW + 20, g.t);
 
+	// who hasn't seen you yet: a "?" that fills up while they're seeing you; who you can take down
+	const td = g.canTakedown();
+	c.textAlign = 'center';
+	for (const e of g.enemies) {
+		if (!e.asleep || !inView(e.x - 20, e.x + 20)) continue;
+		const hx = e.x, hy = e.y - 120 * e.scale;
+		if (e === td) {
+			c.font = '800 9px Bahnschrift, Arial Black, sans-serif';
+			c.fillStyle = `rgba(190,140,255,${0.75 + Math.sin(g.t * 8) * 0.25})`;
+			c.strokeStyle = 'rgba(0,0,0,0.75)';
+			c.lineWidth = 3;
+			c.strokeText('CLICK: TAKEDOWN', hx, hy - 4);
+			c.fillText('CLICK: TAKEDOWN', hx, hy - 4);
+			continue;
+		}
+		if (e.spot <= 0.02) continue;
+		c.font = '800 15px Bahnschrift, Arial Black, sans-serif';
+		c.lineWidth = 3;
+		c.strokeStyle = 'rgba(0,0,0,0.8)';
+		c.strokeText('?', hx, hy);
+		c.fillStyle = 'rgba(255,255,255,0.35)';
+		c.fillText('?', hx, hy);
+		// the meter: the ? fills from the bottom in yellow → red
+		c.save();
+		c.beginPath();
+		c.rect(hx - 8, hy - 12 * e.spot + 1, 16, 14);
+		c.clip();
+		c.fillStyle = e.spot > 0.7 ? '#ff4a30' : '#ffd23a';
+		c.fillText('?', hx, hy);
+		c.restore();
+	}
+
 	c.lineCap = 'round';
 	for (const b of g.bullets) {
 		if (b.kind === 'rocket') {
@@ -965,6 +1030,13 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 			c.beginPath();
 			c.arc(-12, 0, 4, 0, Math.PI * 2);
 			c.fill();
+			c.restore();
+		} else if (b.kind === 'knife') {
+			c.save();
+			c.translate(b.x, b.y);
+			c.rotate(g.t * (b.spin ?? 20));
+			c.scale(1.15, 1.15);
+			knife(c);
 			c.restore();
 		} else if (b.kind === 'thrown') {
 			c.save();
@@ -1057,9 +1129,9 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	const text = (u: (typeof g.popups)[number], x: number, y: number) => {
 		const a = Math.max(0, 1 - u.t / 1.3);
 		const big = u.tone === 'wave';
-		c.font = big ? '800 44px Bahnschrift, Arial Black, sans-serif' : `800 ${u.screen ? 18 : u.tone === 'head' ? 13 : 11}px Bahnschrift, Arial Black, sans-serif`;
+		c.font = big ? '800 44px Bahnschrift, Arial Black, sans-serif' : `800 ${u.screen ? 18 : u.tone === 'alert' ? 20 : u.tone === 'head' || u.tone === 'stealth' ? 13 : 11}px Bahnschrift, Arial Black, sans-serif`;
 		c.fillStyle =
-			u.tone === 'head' ? `rgba(255,70,50,${a})` : u.tone === 'combo' ? `rgba(255,214,60,${a})` : u.tone === 'heal' ? `rgba(110,255,120,${a})` : u.tone === 'gun' ? `rgba(160,220,255,${a})` : `rgba(255,255,255,${a})`;
+			u.tone === 'head' || u.tone === 'alert' ? `rgba(255,70,50,${a})` : u.tone === 'stealth' ? `rgba(190,140,255,${a})` : u.tone === 'combo' ? `rgba(255,214,60,${a})` : u.tone === 'heal' ? `rgba(110,255,120,${a})` : u.tone === 'gun' ? `rgba(160,220,255,${a})` : `rgba(255,255,255,${a})`;
 		c.strokeStyle = `rgba(0,0,0,${a * 0.7})`;
 		c.lineWidth = big ? 6 : 3;
 		const yy = y - u.t * (big ? 8 : 24);
