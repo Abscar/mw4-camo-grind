@@ -281,27 +281,12 @@ html[data-theme='matrix'] ::selection {
 	color: #fff;
 }
 
-/* headings glow like phosphor; the title ends in a blinking cursor */
+/* headings glow like phosphor */
 html[data-theme='matrix'] h1,
 html[data-theme='matrix'] h2,
 html[data-theme='matrix'] h3 {
 	text-shadow: 0 0 10px rgb(0 255 65 / 0.4);
 }
-html[data-theme='matrix'] h1 .text-brand {
-	text-shadow: 0 0 14px rgb(0 255 65 / 0.75);
-}
-html[data-theme='matrix'] .title-skin::after {
-	content: '_' / '';
-	margin-left: 0.08em;
-	color: var(--t-accent);
-	animation: mx-blink 1.1s steps(1) infinite;
-}
-@keyframes mx-blink {
-	50% {
-		opacity: 0;
-	}
-}
-
 /* the page tabs: every tab in the same green (their own colours would break the look) */
 html[data-theme='matrix'] .page-tabs {
 	--sel: var(--t-accent) !important;

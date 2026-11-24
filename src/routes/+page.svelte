@@ -321,14 +321,9 @@
 			<div class="hdr-squad abscar-only compact-hide relative z-[1] min-w-0" hidden={hidden.is('squad')}>
 				<OperatorTag />
 			</div>
-			<div class="hdr-title relative z-[1] min-w-0">
-				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
-					<span class="brand-glow text-brand">{t.title.game}</span><span
-						class="mx-[0.3em] font-normal text-band-muted"
-						aria-hidden="true">//</span
-					><span class="sr-only"> </span><span class="title-skin">{t.title.app}</span>
-				</h1>
-			</div>
+			<!-- the visible MW4 // CAMO GRIND title was removed at the user's ask (2026-11-24); the heading stays
+			     for screen readers only -->
+			<h1 class="sr-only">{t.pageTitle}</h1>
 			<!-- the old TV with CoD montages; z above the fixed scanline layer (z 30), so nothing is
 			     drawn over the video -->
 			<div class="hdr-tv abscar-only compact-hide relative z-[31]" hidden={hidden.is('tv')}><RetroTv /></div>
@@ -775,10 +770,6 @@
 	}
 	:global([data-theme='blackout']) .hdr-squad {
 		grid-area: squad;
-	}
-	:global([data-theme='blackout']) .hdr-title {
-		grid-area: title;
-		justify-self: start; /* as wide as its content, so the HUD box keeps its own width */
 	}
 	:global([data-theme='blackout']) .hdr-tv {
 		grid-area: tv;

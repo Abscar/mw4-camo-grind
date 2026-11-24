@@ -2,7 +2,7 @@
 	The secret Abscar OS terminal (2026-11-11, the user's pick from a brainstorm: "a secret key combo
 	opens a red terminal where you can type commands like status, nuke, holk, phillestar … with fun
 	answers"). Abscar theme only. Opens when you type "abscar" (or press § / `, the classic console key)
-	anywhere outside a text field, or tap the MW4 // CAMO GRIND title 5 times (phones). Commands read
+	anywhere outside a text field, or tap the SQUAD pill on the squad frame 5 times (phones). Commands read
 	your real progress (status, next, weapon, season, buddy); the rest is just for fun and changes
 	nothing. A modal dialog: Esc, "exit" or the × closes it and focus goes back where it was.
 -->
@@ -90,7 +90,7 @@
 			}
 		};
 		const onClick = (e: MouseEvent) => {
-			if (open || !abscar() || !(e.target instanceof Element) || !e.target.closest('.hdr-title h1')) return;
+			if (open || !abscar() || !(e.target instanceof Element) || !e.target.closest('.squad-legend')) return;
 			const now = Date.now();
 			taps = [...taps.filter((x) => now - x < 3000), now];
 			if (taps.length >= 5) {

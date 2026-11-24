@@ -94,23 +94,26 @@ export const KEEP_CAMOS_META: readonly HideId[] = [
 
 export const onlyCamosMeta = (): HideId[] => HIDE_SECTIONS.map((s) => s.id).filter((id) => !KEEP_CAMOS_META.includes(id));
 
-export type HeaderPart = 'squad' | 'title' | 'tv' | 'buddy';
+export type HeaderPart = 'squad' | 'tv' | 'buddy';
 
 /**
- * Abscar's header grid without the hidden parts (the title always stays), as grid-template-areas for its
- * three layouts: phones (one column), 820–1139 px (TV beside title + buddy) and ≥ 1140 px (TV beside
+ * Abscar's header grid without the hidden parts (the visible title is gone since 2026-11-24), as
+ * grid-template-areas for its three layouts: phones (one column), 820–1139 px (TV beside the buddy) and ≥ 1140 px (TV beside
  * everything). An empty grid row would still keep its 20 px gap, so hidden parts' rows are left out, and
  * without the TV the wide layouts drop to one column.
  */
 export function headerAreas(hidden: ReadonlySet<string>) {
 	// the buddy's row also holds the "What's new" billboard (2026-11-23): it stays while either is shown
-	const on = (p: HeaderPart) => p === 'title' || !hidden.has(p) || (p === 'buddy' && !hidden.has('whatsNew'));
-	const left = (['squad', 'title', 'buddy'] as const).filter(on);
+	const on = (p: HeaderPart) => !hidden.has(p) || (p === 'buddy' && !hidden.has('whatsNew'));
+	const left = (['squad', 'buddy'] as const).filter(on);
 	const quote = (row: string[]) => `'${row.join(' ')}'`;
-	const phone = (['squad', 'title', 'tv', 'buddy'] as const).filter(on).map((p) => quote([p])).join(' ');
-	if (!on('tv')) return { phone, mid: phone, wide: phone, midCols: 'minmax(0, 1fr)', wideCols: 'minmax(0, 1fr)' };
-	// 820–1139: the squad frame needs the full width, the TV sits beside the title (+ buddy)
-	const mid = [...(on('squad') ? [quote(['squad', 'squad'])] : []), ...left.filter((p) => p !== 'squad').map((p) => quote([p, 'tv']))].join(' ');
+	// everything hidden: no areas at all (an empty string isn't valid CSS)
+	const phone = (['squad', 'tv', 'buddy'] as const).filter(on).map((p) => quote([p])).join(' ') || 'none';
+	if (!on('tv') || !left.length) return { phone, mid: phone, wide: phone, midCols: 'minmax(0, 1fr)', wideCols: 'minmax(0, 1fr)' };
+	// 820–1139: the squad frame needs the full width, the TV sits beside the buddy (on the right in its own
+	// row when he's hidden)
+	const below = left.filter((p) => p !== 'squad').map((p) => quote([p, 'tv']));
+	const mid = [...(on('squad') ? [quote(['squad', 'squad'])] : []), ...(below.length ? below : [quote(['.', 'tv'])])].join(' ');
 	// ≥ 1140: with the squad frame on, the TV ends above the buddy's row, so that row takes the full width
 	// (room for the "What's new" billboard beside the buddy, 2026-11-23)
 	const wide = left.map((p) => quote(p === 'buddy' && on('squad') ? ['buddy', 'buddy'] : [p, 'tv'])).join(' ');

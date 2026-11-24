@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'title-removed',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Even cleaner header',
+		text: 'The big MW4 // CAMO GRIND title is gone too, so the squad, the TV and the news sit closer together.',
+		tab: 'grind'
+	},
+	{
 		id: 'hud-box-removed',
 		date: '2026-11-24',
 		kind: 'update',
