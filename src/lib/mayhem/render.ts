@@ -8,11 +8,14 @@
  * - the level pieces (levels.ts): pits, walkways, walls, doors with lock lights, cracked walls, crates, red
  *   barrels, laser gates, switches, key cards, checkpoint flags and the EXIT;
  * - bullets, ketchup, explosions, floating texts, arrows for enemies off camera.
+ * - chapter 2 (2026-11-23): two more arenas, a skyscraper going up at night (tower) and the depths under the
+ *   city (sewer bricks, pipes, glowing slime), each with a tile that repeats upwards for the tall levels; moving
+ *   platforms, jump pads, spikes and the rising sludge.
  * The arena picture is one W-wide tile, repeated along the level (its patterns repeat every W).
  * The camera (engine `cam`, VW × VH) is zoomed in and follows the player. The player's head + gun and the guns
  * on the floor are SVG on top (MayhemPage); every character is painted by painter.ts.
  */
-import { CEIL, FLOOR, H, VH, VW, W, type Arena, type Corpse, type Fighter, type Mayhem, type Platform } from './engine.ts';
+import { CEIL, FLOOR, H, PAD_W, SPIKE_H, VH, VW, W, type Arena, type Corpse, type Fighter, type Mayhem, type Platform } from './engine.ts';
 import { gunOf, type GunKind } from './guns.ts';
 import { contactShadow, gunPaint, LOOKS, paintFigure, RIG, type GunPic, type Pose } from './painter.ts';
 
@@ -166,6 +169,152 @@ function drawWarehouse(c: Ctx) {
 	}
 }
 
+// ---------- chapter 2 arenas: a tile UH tall that repeats upwards (the base picture uses it too) ----------
+const UH = 480;
+
+function towerTile(c: Ctx) {
+	c.fillStyle = '#0a1230';
+	c.fillRect(0, 0, W, UH);
+	// distant skyscrapers with lit windows (rows every 24, so the tile repeats cleanly)
+	const r = seeded(31);
+	for (const [x, w, shade] of [[40, 130, '#121c3e'], [230, 90, '#0f1736'], [390, 160, '#141f44'], [610, 110, '#101a3a'], [790, 140, '#131d40']] as const) {
+		c.fillStyle = shade;
+		c.fillRect(x, 0, w, UH);
+		for (let y = 6; y < UH; y += 24)
+			for (let wx = x + 8; wx < x + w - 10; wx += 16) {
+				if (r() < 0.32) {
+					c.fillStyle = r() < 0.75 ? 'rgba(255,214,140,0.55)' : 'rgba(140,200,255,0.45)';
+					c.fillRect(wx, y, 7, 10);
+				}
+			}
+	}
+	// the tower's own steel frame in front: columns, X-bracing and a girder at the tile's foot
+	c.strokeStyle = 'rgba(150,160,175,0.18)';
+	c.lineWidth = 5;
+	for (const x0 of [0, 480]) {
+		c.beginPath();
+		c.moveTo(x0 + 26, 0);
+		c.lineTo(x0 + 480, UH - 20);
+		c.moveTo(x0 + 480, 0);
+		c.lineTo(x0 + 26, UH - 20);
+		c.stroke();
+	}
+	for (const x of [0, 480]) {
+		const g = c.createLinearGradient(x, 0, x + 26, 0);
+		g.addColorStop(0, '#2a3038');
+		g.addColorStop(0.5, '#4a525c');
+		g.addColorStop(1, '#2a3038');
+		c.fillStyle = g;
+		c.fillRect(x, 0, 26, UH);
+		c.fillStyle = 'rgba(0,0,0,0.4)';
+		for (let y = 12; y < UH; y += 40) c.fillRect(x + 5, y, 3, 3), c.fillRect(x + 18, y, 3, 3);
+	}
+	c.fillStyle = '#6a2a1c';
+	c.fillRect(0, UH - 20, W, 20);
+	c.fillStyle = '#8a3a24';
+	c.fillRect(0, UH - 20, W, 4);
+	c.fillStyle = 'rgba(0,0,0,0.35)';
+	for (let x = 10; x < W; x += 30) c.fillRect(x, UH - 12, 3, 3);
+	// a red warning light on each column
+	c.fillStyle = '#ff3b3b';
+	for (const x of [13, 493]) {
+		c.beginPath();
+		c.arc(x, 200, 3, 0, Math.PI * 2);
+		c.fill();
+	}
+}
+
+function depthsTile(c: Ctx) {
+	c.fillStyle = '#101510';
+	c.fillRect(0, 0, W, UH);
+	// old bricks (30 tall, 16 rows a tile)
+	for (let y = 0; y < UH; y += 30)
+		for (let x = (y / 30) % 2 ? -30 : 0; x < W; x += 60) {
+			c.fillStyle = ((x + y) / 30) % 3 === 0 ? '#1a2219' : '#161d15';
+			c.fillRect(x + 1, y + 1, 58, 28);
+		}
+	// slime running down from the joints
+	const r = seeded(53);
+	for (let i = 0; i < 26; i++) {
+		const x = r() * W, y = r() * UH, h = 20 + r() * 70;
+		const g = c.createLinearGradient(0, y, 0, y + h);
+		g.addColorStop(0, 'rgba(90,255,90,0.25)');
+		g.addColorStop(1, 'rgba(90,255,90,0)');
+		c.fillStyle = g;
+		c.fillRect(x, y, 3 + r() * 4, h);
+	}
+	// pipes: two going up, one across
+	for (const x of [190, 730]) {
+		c.fillStyle = '#25332a';
+		c.fillRect(x, 0, 30, UH);
+		c.fillStyle = 'rgba(255,255,255,0.08)';
+		c.fillRect(x + 5, 0, 5, UH);
+		for (let y = 40; y < UH; y += 120) {
+			c.fillStyle = '#37473b';
+			c.fillRect(x - 4, y, 38, 12);
+		}
+	}
+	c.fillStyle = '#2c3a30';
+	c.fillRect(0, 236, W, 22);
+	c.fillStyle = 'rgba(255,255,255,0.07)';
+	c.fillRect(0, 240, W, 4);
+	// glowing fungus
+	for (let i = 0; i < 18; i++) {
+		const x = r() * W, y = r() * UH;
+		const g = c.createRadialGradient(x, y, 0, x, y, 12);
+		g.addColorStop(0, 'rgba(140,255,120,0.55)');
+		g.addColorStop(1, 'rgba(140,255,120,0)');
+		c.fillStyle = g;
+		c.fillRect(x - 12, y - 12, 24, 24);
+	}
+}
+
+const TILES: Partial<Record<Arena['id'], (c: Ctx) => void>> = { tower: towerTile, depths: depthsTile };
+
+function drawTall(c: Ctx, id: Arena['id']) {
+	const tile = TILES[id]!;
+	for (const y of [40 - UH, 40]) {
+		c.save();
+		c.translate(0, y);
+		tile(c);
+		c.restore();
+	}
+	if (id === 'tower') {
+		c.fillStyle = '#2c3034';
+		c.fillRect(0, FLOOR, W, H - FLOOR);
+		for (let x = 0; x < W; x += 40) {
+			c.fillStyle = (x / 40) % 2 ? '#ffcc22' : '#1a1a1a';
+			c.fillRect(x, FLOOR, 40, 5);
+		}
+	} else {
+		c.fillStyle = '#1c241c';
+		c.fillRect(0, FLOOR, W, H - FLOOR);
+		c.fillStyle = 'rgba(90,255,90,0.18)';
+		c.fillRect(0, FLOOR, W, 3);
+	}
+}
+
+/** the repeating tile above the base picture (tall levels) */
+function upperTile(id: Arena['id'], scale: number): HTMLCanvasElement | null {
+	const tile = TILES[id];
+	if (!tile) return null;
+	const sc = Math.min(scale, 2.2);
+	const key = `up:${id}:${sc.toFixed(3)}`;
+	const hit = bgCache.get(key);
+	if (hit) return hit;
+	const cv = document.createElement('canvas');
+	cv.width = Math.ceil(W * sc);
+	cv.height = Math.ceil(UH * sc);
+	const c = cv.getContext('2d')!;
+	c.setTransform(sc, 0, 0, sc, 0, 0);
+	tile(c);
+	c.fillStyle = 'rgba(0,0,0,0.12)';
+	c.fillRect(0, 0, W, UH);
+	bgCache.set(key, cv);
+	if (bgCache.size > 10) bgCache.delete(bgCache.keys().next().value!);
+	return cv;
+}
+
 function background(a: Arena, scale: number): HTMLCanvasElement {
 	const s = Math.min(scale, 2.2);
 	const key = `${a.id}:${s.toFixed(3)}`; // the picture has no level pieces: one per theme
@@ -178,7 +327,8 @@ function background(a: Arena, scale: number): HTMLCanvasElement {
 	c.setTransform(s, 0, 0, s, 0, 0);
 	if (a.id === 'office') drawOffice(c);
 	else if (a.id === 'diner') drawDiner(c);
-	else drawWarehouse(c);
+	else if (a.id === 'warehouse') drawWarehouse(c);
+	else drawTall(c, a.id);
 	// less flat: a haze that thickens towards the back wall, a sheen on the floor, film grain, darker corners
 	const haze = c.createLinearGradient(0, 0, 0, FLOOR);
 	haze.addColorStop(0, 'rgba(0,0,0,0.25)');
@@ -232,6 +382,29 @@ function platform(c: Ctx, theme: Arena['id'], p: Platform) {
 		c.fillRect(p.x, p.y + 9, p.w, 3);
 		c.fillStyle = '#7a1218';
 		c.fillRect(p.x + 8, p.y + 12, p.w - 16, 20);
+	} else if (theme === 'tower') {
+		// a steel I-beam with rivets
+		c.fillStyle = '#7a838c';
+		c.fillRect(p.x, p.y, p.w, 6);
+		c.fillStyle = '#3a4048';
+		c.fillRect(p.x + 4, p.y + 6, p.w - 8, 12);
+		c.fillStyle = '#5a636c';
+		c.fillRect(p.x, p.y + 18, p.w, 5);
+		c.fillStyle = 'rgba(0,0,0,0.45)';
+		for (let x = p.x + 8; x < p.x + p.w - 4; x += 18) c.fillRect(x, p.y + 10, 3, 3);
+	} else if (theme === 'depths') {
+		// a rusty grate with a green glow under it
+		const g = c.createLinearGradient(0, p.y, 0, p.y + 40);
+		g.addColorStop(0, 'rgba(90,255,90,0.18)');
+		g.addColorStop(1, 'rgba(90,255,90,0)');
+		c.fillStyle = g;
+		c.fillRect(p.x, p.y + 10, p.w, 30);
+		c.fillStyle = '#6a5038';
+		c.fillRect(p.x, p.y, p.w, 10);
+		c.fillStyle = '#2a1e14';
+		for (let x = p.x + 5; x < p.x + p.w - 6; x += 12) c.fillRect(x, p.y + 3, 6, 4);
+		c.fillStyle = '#8a6a48';
+		c.fillRect(p.x, p.y, p.w, 2);
 	} else {
 		c.fillStyle = '#8a6438';
 		c.fillRect(p.x, p.y, p.w, 30);
@@ -338,7 +511,7 @@ function pit(c: Ctx, x0: number, x1: number) {
 }
 
 function wallBlock(c: Ctx, theme: Arena['id'], b: { x: number; y: number; w: number; h: number; kind: string }) {
-	const base = theme === 'office' ? '#4a5358' : theme === 'diner' ? '#5a2a26' : '#5a4a34';
+	const base = theme === 'office' ? '#4a5358' : theme === 'diner' ? '#5a2a26' : theme === 'tower' ? '#3a4048' : theme === 'depths' ? '#24302a' : '#5a4a34';
 	const g = c.createLinearGradient(b.x, 0, b.x + b.w, 0);
 	g.addColorStop(0, base);
 	g.addColorStop(0.5, '#6d777c');
@@ -409,7 +582,7 @@ function door(c: Ctx, b: { x: number; y: number; w: number; h: number; openT: nu
 	// the lock light: key colour, red = clear the area, cyan = a switch, green = open
 	const L = b.lock as { key?: keyof typeof KEY_COL; kill?: string; sw?: string } | undefined;
 	const col = b.openT > 0 ? '#3bff6a' : L?.key ? KEY_COL[L.key] : L?.sw ? '#3be8ff' : '#ff3b3b';
-	const ly = FLOOR - 120;
+	const ly = b.w > b.h ? b.y - 12 : b.y + b.h - 120;
 	c.save();
 	c.shadowColor = col;
 	c.shadowBlur = 10 + Math.sin(t * 5) * 3;
@@ -537,7 +710,9 @@ function keyCard(c: Ctx, k: { colour: keyof typeof KEY_COL; x: number; y: number
 	c.fillRect(k.x + 3, y - 4, 4, 5);
 }
 
-function flag(c: Ctx, x: number, got: boolean, t: number) {
+function flag(c: Ctx, x: number, got: boolean, t: number, fy = FLOOR) {
+	c.save();
+	c.translate(0, fy - FLOOR);
 	c.fillStyle = '#9aa3a9';
 	c.fillRect(x - 1.5, FLOOR - 80, 3, 80);
 	c.fillStyle = got ? '#3bff6a' : '#6a7378';
@@ -547,9 +722,12 @@ function flag(c: Ctx, x: number, got: boolean, t: number) {
 	c.quadraticCurveTo(x + 14, FLOOR - 76 + wave, x + 28, FLOOR - 72);
 	c.lineTo(x + 1.5, FLOOR - 62);
 	c.fill();
+	c.restore();
 }
 
-function exitDoor(c: Ctx, x: number, t: number) {
+function exitDoor(c: Ctx, x: number, t: number, ey = FLOOR) {
+	c.save();
+	c.translate(0, ey - FLOOR);
 	c.fillStyle = '#0c1a10';
 	c.fillRect(x - 6, FLOOR - 120, 60, 120);
 	const g = c.createLinearGradient(x, FLOOR - 120, x, FLOOR);
@@ -577,6 +755,106 @@ function exitDoor(c: Ctx, x: number, t: number) {
 	c.lineTo(ax, FLOOR - 48);
 	c.closePath();
 	c.fill();
+	c.restore();
+}
+
+// ---------- chapter 2 pieces ----------
+
+function moverDeco(c: Ctx, m: Platform, t: number) {
+	// hazard stripes on its edge + lights so you can tell it moves
+	c.save();
+	c.beginPath();
+	c.rect(m.x, m.y - 3, m.w, 4);
+	c.clip();
+	for (let x = m.x - 10; x < m.x + m.w; x += 10) {
+		c.fillStyle = (x / 10) % 2 ? '#ffcc22' : '#1a1a1a';
+		c.fillRect(x, m.y - 3, 10, 4);
+	}
+	c.restore();
+	const on = Math.sin(t * 6) > 0;
+	c.fillStyle = on ? '#3bff6a' : '#1a5a2a';
+	c.fillRect(m.x + 3, m.y + 6, 4, 4);
+	c.fillRect(m.x + m.w - 7, m.y + 6, 4, 4);
+}
+
+function pad(c: Ctx, x: number, y: number, t: number) {
+	c.fillStyle = '#20262c';
+	c.fillRect(x, y - 8, PAD_W, 8);
+	c.strokeStyle = '#9aa3a9';
+	c.lineWidth = 2;
+	c.beginPath();
+	for (let i = 0; i < 4; i++) {
+		c.moveTo(x + 8 + i * 9, y - 8);
+		c.lineTo(x + 12 + i * 9, y - 12);
+	}
+	c.stroke();
+	c.save();
+	c.shadowColor = '#3be8ff';
+	c.shadowBlur = 10 + Math.sin(t * 6) * 4;
+	c.fillStyle = '#3be8ff';
+	c.fillRect(x - 2, y - 15, PAD_W + 4, 4);
+	c.restore();
+	// chevrons pulsing upwards
+	for (let i = 0; i < 3; i++) {
+		const k = (t * 1.6 + i / 3) % 1;
+		c.strokeStyle = `rgba(59,232,255,${0.7 * (1 - k)})`;
+		c.lineWidth = 2;
+		const cy = y - 22 - k * 40;
+		c.beginPath();
+		c.moveTo(x + PAD_W / 2 - 9, cy + 6);
+		c.lineTo(x + PAD_W / 2, cy);
+		c.lineTo(x + PAD_W / 2 + 9, cy + 6);
+		c.stroke();
+	}
+}
+
+function spikes(c: Ctx, x: number, w: number, y: number) {
+	const n = Math.max(1, Math.round(w / 12));
+	const sw = w / n;
+	for (let i = 0; i < n; i++) {
+		const x0 = x + i * sw;
+		const g = c.createLinearGradient(x0, 0, x0 + sw, 0);
+		g.addColorStop(0, '#5a6066');
+		g.addColorStop(0.5, '#c8ced4');
+		g.addColorStop(1, '#4a5056');
+		c.fillStyle = g;
+		c.beginPath();
+		c.moveTo(x0, y);
+		c.lineTo(x0 + sw / 2, y - SPIKE_H);
+		c.lineTo(x0 + sw, y);
+		c.fill();
+		c.fillStyle = '#c8161e';
+		c.beginPath();
+		c.moveTo(x0 + sw / 2 - 2, y - SPIKE_H + 4);
+		c.lineTo(x0 + sw / 2, y - SPIKE_H);
+		c.lineTo(x0 + sw / 2 + 2, y - SPIKE_H + 4);
+		c.fill();
+	}
+	c.fillStyle = '#2a2e32';
+	c.fillRect(x, y - 2, w, 2);
+}
+
+function sludge(c: Ctx, y: number, x0: number, x1: number, t: number) {
+	const g = c.createLinearGradient(0, y - 30, 0, y + 260);
+	g.addColorStop(0, 'rgba(120,255,80,0)');
+	g.addColorStop(0.12, 'rgba(120,255,80,0.35)');
+	g.addColorStop(0.2, '#4ad62a');
+	g.addColorStop(1, '#0c3a08');
+	c.fillStyle = g;
+	c.beginPath();
+	c.moveTo(x0, y + 400);
+	for (let x = x0; x <= x1 + 20; x += 20) c.lineTo(x, y + Math.sin(x * 0.03 + t * 3) * 5 + Math.sin(x * 0.011 - t * 2) * 4);
+	c.lineTo(x1 + 20, y + 400);
+	c.closePath();
+	c.fill();
+	c.fillStyle = 'rgba(200,255,160,0.7)';
+	for (let i = 0; i < 14; i++) {
+		const bx = x0 + ((i * 97.3 + t * 20 * (1 + (i % 3))) % (x1 - x0 + 40));
+		const by = y + 14 + ((i * 37 + t * 30) % 60);
+		c.beginPath();
+		c.arc(bx, by, 1.5 + (i % 3), 0, Math.PI * 2);
+		c.fill();
+	}
 }
 
 export interface View {
@@ -601,6 +879,11 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	const bg = background(g.arena, s);
 	c.setTransform(s, 0, 0, s, -cx * s, -cy * s);
 	for (let tx = Math.floor(cx / W) * W; tx < cx + VW; tx += W) c.drawImage(bg, tx, 0, W, H);
+	// tall levels: the arena's tile keeps going up to the world's top
+	const up = g.top < 0 && cy < 40 ? upperTile(g.arena.id, s) : null;
+	if (up)
+		for (let ty = 40 - UH; ty + UH > Math.max(cy, g.top - UH); ty -= UH)
+			for (let tx = Math.floor(cx / W) * W; tx < cx + VW; tx += W) c.drawImage(up, tx, ty, W, UH);
 	const L = g.level;
 	const inView = (x0: number, x1: number) => x1 > cx - 40 && x0 < cx + VW + 40;
 	// pits: the gaps between ground segments (and before / after them)
@@ -611,8 +894,15 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	}
 	if (gx < g.w && inView(gx, g.w)) pit(c, gx, g.w + 60);
 	for (const p of L.platforms) if (inView(p.x, p.x + p.w)) platform(c, g.arena.id, p);
-	for (let i = 0; i < L.checkpoints.length; i++) if (inView(L.checkpoints[i] - 10, L.checkpoints[i] + 40)) flag(c, L.checkpoints[i], g.checkpoint > i, g.t);
-	if (inView(L.exit - 50, L.exit + 60)) exitDoor(c, L.exit, g.t);
+	for (const m of g.movers)
+		if (inView(m.x, m.x + m.w)) {
+			platform(c, g.arena.id, m);
+			moverDeco(c, m, g.t);
+		}
+	for (const pd of L.pads ?? []) if (inView(pd.x, pd.x + PAD_W)) pad(c, pd.x, pd.y ?? FLOOR, g.t);
+	for (const sp of L.spikes ?? []) if (inView(sp.x, sp.x + sp.w)) spikes(c, sp.x, sp.w, sp.y ?? FLOOR);
+	for (let i = 0; i < g.cps.length; i++) if (inView(g.cps[i].x - 10, g.cps[i].x + 40)) flag(c, g.cps[i].x, g.checkpoint > i, g.t, g.cps[i].y);
+	if (inView(L.exit - 50, L.exit + 60)) exitDoor(c, L.exit, g.t, L.exitY ?? FLOOR);
 	for (const l of g.lasers) if (inView(l.x - 10, l.x + 10)) laser(c, l, g.t);
 	for (const b of g.blocks) {
 		if (b.gone || !inView(b.x, b.x + b.w)) continue;
@@ -650,16 +940,18 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	// soft contact shadows on whatever they stand over
 	const groundUnder = (x: number, y: number) => {
 		let gy = L.ground.some(([a, b]) => x >= a && x <= b) ? FLOOR : H + 200;
-		for (const pl of g.arena.platforms) if (x > pl.x && x < pl.x + pl.w && pl.y >= y - 1 && pl.y < gy) gy = pl.y;
+		for (const pl of g.plats) if (x > pl.x && x < pl.x + pl.w && pl.y >= y - 1 && pl.y < gy) gy = pl.y;
 		for (const sd of g.solids()) if (x > sd.x && x < sd.x + sd.w && sd.y >= y - 1 && sd.y < gy) gy = sd.y;
 		return gy;
 	};
 	for (const f of [...g.enemies, ...(g.player.hp > 0 ? [g.player] : [])]) {
 		const gy = groundUnder(f.x, f.y);
-		if (gy < H) contactShadow(c, f.x, gy, f.scale, gy - f.y);
+		if (gy < H && gy - f.y < 400) contactShadow(c, f.x, gy, f.scale, gy - f.y);
 	}
 	for (const e of g.enemies) drawEnemy(c, e, g.t);
 	if (g.player.hp > 0) drawPlayer(c, g.player, v.op, g.t, v.gun ?? null);
+
+	if (g.flood < Infinity && g.flood < cy + VH + 40) sludge(c, g.flood, cx - 20, cx + VW + 20, g.t);
 
 	c.lineCap = 'round';
 	for (const b of g.bullets) {
@@ -782,7 +1074,7 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	c.globalCompositeOperation = 'lighter';
 	for (let i = 0; i < 46; i++) {
 		const dx2 = cx + ((((i * 137.5 + g.t * (6 + (i % 5))) % VW) + VW) % VW);
-		const dy2 = 60 + ((i * 89.3 + Math.sin(g.t * 0.6 + i) * 14) % (FLOOR - 80));
+		const dy2 = g.top < 0 ? cy + 10 + ((i * 89.3 + Math.sin(g.t * 0.6 + i) * 14) % (VH - 20)) : 60 + ((i * 89.3 + Math.sin(g.t * 0.6 + i) * 14) % (FLOOR - 80));
 		c.fillStyle = `rgba(255,240,210,${0.05 + (i % 4) * 0.025})`;
 		c.beginPath();
 		c.arc(dx2, dy2, 0.6 + (i % 3) * 0.35, 0, Math.PI * 2);

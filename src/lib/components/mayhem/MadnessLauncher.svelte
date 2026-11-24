@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
 	import { mayhemText as M } from '#lib/i18n/mayhem.ts';
+	import { LEVELS } from '#lib/mayhem/levels.ts';
 	import MayhemPage from './MayhemPage.svelte';
 
 	let open = $state(false);
@@ -116,7 +117,7 @@
 	</span>
 	<span class="mx-side" aria-hidden="true">
 		<span class="mx-play font-head">{M.launch.play} <b>▶</b></span>
-		<span class="mx-sub">{M.launch.sub}</span>
+		<span class="mx-sub">{M.launch.sub(LEVELS.length)}</span>
 	</span>
 </button>
 

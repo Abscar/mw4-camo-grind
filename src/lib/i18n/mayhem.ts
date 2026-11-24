@@ -1,10 +1,15 @@
 /** Abscars Madness' words (2026-11-23; was Squad Mayhem). Kept apart from en.ts like the arcade's, so sessions editing en.ts don't collide. */
 export const mayhemText = {
 	title: 'Abscars Madness',
-	kicker: '12 levels · skill tree · your own operator',
+	kicker: (n: number) => `${n} levels · skill tree · your own operator`,
 	close: 'Close',
 	progress: (cleared: number, total: number, pts: number, max: number) => `${cleared} / ${total} levels cleared · ${pts} / ${max} skill points earned`,
 	levelNo: (n: number, total: number) => `Level ${n} of ${total}`,
+	chapter: (n: number, name: string) => `Chapter ${n} · ${name}`,
+	chapterNote: {
+		1: 'Fight your way through the office, the diner and the warehouse.',
+		2: 'Up a skyscraper, down into the depths: double jumps, dashes, wall jumps, lifts, springs and rising sludge. Open from the start.'
+	} as Record<number, string>,
 	menuLabel: 'Game menu',
 	tabs: { levels: 'Levels', skills: 'Skill tree', loadout: 'Operator & gun', settings: 'Settings' },
 	set: {
@@ -80,7 +85,7 @@ export const mayhemText = {
 	},
 	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Drop down', pick: 'Pick up or use', throw: 'Throw', holk: 'Holk Time', dash: 'Dash', nade: 'Grenade' },
 	done: {
-		kicker: (n: number) => `Level ${n}`,
+		kicker: (n: string) => `Level ${n}`,
 		title: 'LEVEL CLEARED',
 		points: (n: number) => `+${n} skill point${n === 1 ? '' : 's'}!`,
 		time: 'Time',
@@ -97,7 +102,7 @@ export const mayhemText = {
 	stageLabel: 'Abscars Madness game. Needs a mouse and keyboard, or touch.',
 	launch: {
 		label: 'Play Abscars Madness: opens the game full screen',
-		sub: '12 levels · puzzles · skill tree',
+		sub: (n: number) => `${n} levels · puzzles · skill tree`,
 		play: 'PLAY'
 	}
 } as const;

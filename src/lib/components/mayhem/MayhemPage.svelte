@@ -16,7 +16,7 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { H, Mayhem, NO_INPUT, VH, VW, W, type GameEvent, type Input } from '#lib/mayhem/engine.ts';
 	import { gunOf, OUT_WEAPONS, STARTER } from '#lib/mayhem/guns.ts';
-	import { LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, type LevelRecord } from '#lib/mayhem/levels.ts';
+	import { CHAPTERS, chapterOf, LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, type LevelRecord } from '#lib/mayhem/levels.ts';
 	import { BRANCHES, canBuy, cleanSkills, SKILLS, skillCost, type SkillId } from '#lib/mayhem/skills.ts';
 	import { render } from '#lib/mayhem/render.ts';
 	import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, inputOf, keyLabel, keyMap, unbind, type Action, type Settings } from '#lib/mayhem/controls.ts';
@@ -70,7 +70,14 @@
 	const cleared = $derived(LEVELS.filter((l) => done[l.id]?.clear).length);
 	let levelId = $state(LEVELS[0].id);
 	const level = $derived(LEVEL_BY_ID.get(levelId) ?? LEVELS[0]);
-	const levelNo = $derived(LEVELS.indexOf(level) + 1);
+	const chapterLevels = $derived(LEVELS.filter((l) => chapterOf(l) === chapterOf(level)));
+	const levelNo = $derived(chapterLevels.indexOf(level) + 1);
+	/** a level's number inside its chapter (chapter 2 shows "2-3") */
+	const shortNo = (i: number) => {
+		const l = LEVELS[i];
+		const n = LEVELS.filter((x, j) => j <= i && chapterOf(x) === chapterOf(l)).length;
+		return chapterOf(l) === 1 ? String(n) : `${chapterOf(l)}-${n}`;
+	};
 	function setCamp(c: Camp) {
 		saved = { ...saved, camp: { ...camp, ...c } };
 		writeSaved(saved);
@@ -206,7 +213,7 @@
 	const dropEls = new Map<number, HTMLElement>();
 	type Result = {
 		name: string;
-		no: number;
+		no: string;
 		time: number;
 		kills: number;
 		total: number;
@@ -373,7 +380,7 @@
 		const i = LEVELS.findIndex((l) => l.id === id);
 		result = {
 			name: g.level.name,
-			no: i + 1,
+			no: shortNo(i),
 			time,
 			kills: g.stats.kills,
 			total: g.totalEnemies,
@@ -619,7 +626,8 @@
 	const fmt = (n: number) => n.toLocaleString('en-US');
 	const hpTone = $derived(hud.hp > hud.maxHp * 0.6 ? 'ok' : hud.hp > hud.maxHp * 0.3 ? 'mid' : 'low');
 	const KEY_COL: Record<string, string> = { red: '#ff3b3b', blue: '#3b8bff', yellow: '#ffd23b' };
-	const THEME_NAME = { office: 'Office', diner: 'Diner', warehouse: 'Warehouse' } as const;
+	const THEME_NAME = { office: 'Office', diner: 'Diner', warehouse: 'Warehouse', tower: 'Skyscraper', depths: 'The Depths' } as const;
+	const chapterName = (n: number) => CHAPTERS.find((c) => c.n === n)?.name ?? '';
 </script>
 
 {#snippet settingsUi()}
@@ -691,7 +699,7 @@
 <section class="mh" class:immersive={screen !== 'menu'} aria-labelledby="mh-h">
 	<header class="mh-head">
 		<div>
-			<p class="mh-kicker font-head">{M.kicker}</p>
+			<p class="mh-kicker font-head">{M.kicker(LEVELS.length)}</p>
 			<h2 id="mh-h" class="mh-logo font-head" aria-label={M.title}><span>ABSCARS</span><b>MADNESS</b></h2>
 		</div>
 		<p class="mh-best num">{M.progress(cleared, LEVELS.length, earned, LEVELS.length * 4)}</p>
@@ -734,7 +742,7 @@
 				<!-- HUD -->
 				<div class="mh-hud" aria-hidden="true">
 					<div class="mh-hud-l">
-						<span class="mh-wave-sm font-head">{levelNo}. {level.name}</span>
+						<span class="mh-wave-sm font-head">{shortNo(LEVELS.indexOf(level))}. {level.name}</span>
 						<div class="mh-hp" data-tone={hpTone}><i style:width="{(hud.hp / hud.maxHp) * 100}%"></i><span class="num">{hud.hp} HP</span></div>
 						<div class="mh-holk" class:on={hud.holkOn} class:ready={hud.holk >= 20}>
 							<i style:width="{hud.holk}%"></i><span>{M.hud.holk}{#if !touchy}<em> · {M.hud.holkReady}</em>{/if}</span>
@@ -745,7 +753,7 @@
 						</div>
 					</div>
 					<div class="mh-hud-c">
-						<span class="mh-wave font-head">{levelNo}. {level.name}</span>
+						<span class="mh-wave font-head">{shortNo(LEVELS.indexOf(level))}. {level.name}</span>
 						<span class="mh-left num">{M.hud.kills(hud.kills, hud.total)} · {M.hud.cp(hud.cp, level.checkpoints.length)}</span>
 					</div>
 					<div class="mh-hud-r">
@@ -847,7 +855,7 @@
 					<!-- your operator, whole body, holding the starting gun: the same drawing as in the game -->
 					<canvas class="mh-menu-hero" bind:this={heroCanvas} aria-hidden="true" style:width="{70 * heroK}px" style:height="{104 * heroK}px"></canvas>
 					<div class="mh-menu-info">
-						<p class="mh-cover-k font-head">{M.levelNo(levelNo, LEVELS.length)} · {THEME_NAME[level.theme]}</p>
+						<p class="mh-cover-k font-head">{#if chapterOf(level) > 1}{M.chapter(chapterOf(level), chapterName(chapterOf(level)))} · {/if}{M.levelNo(levelNo, chapterLevels.length)} · {THEME_NAME[level.theme]}</p>
 						<p class="mh-menu-name font-head">{level.name}</p>
 						<p class="mh-intro">{level.hint}</p>
 						<button type="button" class="mh-btn primary big" onclick={() => begin()}>{done[level.id]?.clear ? M.playAgain : M.play}</button>
@@ -872,8 +880,14 @@
 				{#each LEVELS as l, i (l.id)}
 					{@const open = levelOpen(i, done)}
 					{@const r = done[l.id]}
+					{#if i === 0 || chapterOf(LEVELS[i - 1]) !== chapterOf(l)}
+						<div class="mh-chapter" data-ch={chapterOf(l)}>
+							<h3 class="font-head">{M.chapter(chapterOf(l), chapterName(chapterOf(l)))}</h3>
+							<p>{M.chapterNote[chapterOf(l)] ?? ''}</p>
+						</div>
+					{/if}
 					<button type="button" class="mh-level" data-theme-l={l.theme} aria-pressed={levelId === l.id} disabled={!open} onclick={() => pickLevel(l.id)}>
-						<span class="mh-lv-no num">{i + 1}</span>
+						<span class="mh-lv-no num">{shortNo(i)}</span>
 						<span class="mh-lv-name font-head">{l.name}</span>
 						<span class="mh-lv-hint">{open ? l.hint : M.locked}</span>
 						<span class="mh-lv-stars" aria-label={M.starsLabel(pointsOf(r))}>
@@ -1919,6 +1933,40 @@
 	}
 	.mh-level[data-theme-l='warehouse'] {
 		border-left: 4px solid #c48a3a;
+	}
+	.mh-level[data-theme-l='tower'] {
+		border-left: 4px solid #3b8bff;
+	}
+	.mh-level[data-theme-l='depths'] {
+		border-left: 4px solid #4ad62a;
+	}
+	.mh-chapter {
+		grid-column: 1 / -1;
+		margin-top: 8px;
+		padding: 6px 2px 2px;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+	}
+	.mh-chapter:first-child {
+		margin-top: 0;
+	}
+	.mh-chapter h3 {
+		margin: 0;
+		font-size: 15px;
+		font-weight: 900;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: #ffb27a;
+	}
+	.mh-chapter[data-ch='2'] h3 {
+		background: linear-gradient(90deg, #6ab8ff, #8aff6a);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+	.mh-chapter p {
+		margin: 2px 0 4px;
+		font-size: 12px;
+		opacity: 0.75;
 	}
 	.mh-level[aria-pressed='true'] {
 		border-color: #ff6a1a;

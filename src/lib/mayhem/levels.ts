@@ -11,7 +11,7 @@ import type { EnemyKind } from './engine.ts';
 import type { GunKind } from './guns.ts';
 
 export const FLOOR = 500;
-export type Theme = 'office' | 'diner' | 'warehouse';
+export type Theme = 'office' | 'diner' | 'warehouse' | 'tower' | 'depths';
 export type KeyColour = 'red' | 'blue' | 'yellow';
 
 export interface Block {
@@ -49,9 +49,25 @@ export interface Level {
 	guns: { kind: GunKind; x: number; y?: number }[];
 	burgers: { x: number; y?: number }[];
 	enemies: Spawn[];
-	checkpoints: number[];
+	/** chapter 1: x lines you pass; chapter 2 also [x, y] spots you stand on */
+	checkpoints: (number | [number, number])[];
 	start: number;
 	exit: number;
+	/** chapter (default 1); each chapter's first level is open from the start */
+	chapter?: 1 | 2;
+	/** tall levels: the world's top edge (negative = above the usual screen) */
+	top?: number;
+	/** where you start / where the EXIT stands, when not on the ground */
+	startY?: number;
+	exitY?: number;
+	/** moving platforms: go back and forth between (x, y) and (x + dx, y + dy) every `period` seconds */
+	movers?: { x: number; y: number; w: number; dx: number; dy: number; period: number; phase?: number }[];
+	/** jump pads (44 wide) that throw you up; power ≈ px/s up (1450 ≈ 500 px high) */
+	pads?: { x: number; y?: number; power?: number }[];
+	/** spikes on a surface (y = the surface, default the ground) */
+	spikes?: { x: number; w: number; y?: number }[];
+	/** rising sludge: climbs `speed` px/s after `delay` s; touching it kills */
+	flood?: { speed: number; delay?: number };
 	/** a line under the name on the level card */
 	hint: string;
 }
@@ -300,6 +316,276 @@ export const LEVELS: Level[] = [
 			e('jugg', 3150, 'boss'), e('jugg', 3450, 'boss'), e('jugg', 3700, 'boss'), e('camper', 3600, 'boss', 290), e('shotty', 3300, 'boss')
 		],
 		checkpoints: [1360, 3000]
+	}),
+
+	// ===================== CHAPTER 2: GOING VERTICAL =====================
+	// (2026-11-23, the user: "banorna är väldigt enformiga, bara från vänster till höger … fler banor där man använder
+	// movement … uppåt eller neråt … mer fantasi"). Gaps that need the double jump and the dash, moving platforms,
+	// jump pads, wall-jump shafts, climbs up a tower, a fall down into the depths, rising sludge.
+	// Reach (measured on the engine, scripts/madness-levels.test.js): one jump ≈ 180 up / 240 across, the double
+	// jump ≈ 300 up / 390 across, double jump + dash ≈ 550 across. The levels stay well inside those.
+	lvl({
+		id: 'v1',
+		chapter: 2,
+		name: 'Double Trouble',
+		theme: 'tower',
+		w: 3200,
+		hint: 'Too wide for one jump? Jump again in the air.',
+		ground: [[0, 700], [960, 1500], [1800, 2300], [2620, 3200]],
+		platforms: [{ x: 1220, y: 380, w: 160 }, { x: 2020, y: 370, w: 180 }, { x: 2700, y: 360, w: 160 }],
+		spikes: [{ x: 1080, w: 90 }],
+		guns: [{ kind: 'smg', x: 300 }],
+		burgers: [{ x: 1900 }],
+		enemies: [e('random', 520), e('sweat', 1300, undefined, 380), e('random', 1420), e('sweat', 2100, undefined, 370), e('shotty', 2250), e('random', 2780, 'a', 360), e('sweat', 2850, 'a')],
+		blocks: [door('d1', 2980, { kill: 'a' })],
+		checkpoints: [980, 1820, 2640]
+	}),
+	lvl({
+		id: 'v2',
+		chapter: 2,
+		name: 'Mind the Gap',
+		theme: 'tower',
+		w: 3600,
+		hint: 'Jump, jump again, then dash (C) to fly across. Moving platforms carry you.',
+		ground: [[0, 600], [1040, 1500], [1950, 2300], [2800, 3600]],
+		movers: [
+			{ x: 1505, y: 420, w: 120, dx: 325, dy: 0, period: 4.5 },
+			{ x: 2490, y: 450, w: 120, dx: 0, dy: -150, period: 3 }
+		],
+		spikes: [{ x: 1200, w: 100 }, { x: 3000, w: 120 }],
+		platforms: [{ x: 1320, y: 380, w: 160 }, { x: 3150, y: 370, w: 200 }],
+		guns: [{ kind: 'ar', x: 300 }],
+		burgers: [{ x: 2100 }],
+		enemies: [e('random', 450), e('sweat', 1100), e('camper', 1400, undefined, 380), e('random', 2100), e('shotty', 2200), e('sweat', 2900), e('sweat', 3250, undefined, 370), e('shotty', 3400)],
+		checkpoints: [1060, 1970, 2820]
+	}),
+	lvl({
+		id: 'v3',
+		chapter: 2,
+		name: 'The Climb',
+		theme: 'tower',
+		w: 1400,
+		top: -1700,
+		hint: 'Up is the way out. Springs throw you high.',
+		exit: 1220,
+		exitY: -1420,
+		platforms: [
+			{ x: 300, y: 380, w: 200 },
+			{ x: 620, y: 260, w: 180 },
+			{ x: 300, y: 140, w: 200 },
+			{ x: 380, y: -200, w: 220 },
+			{ x: 760, y: -330, w: 200 },
+			{ x: 1180, y: -450, w: 200 },
+			{ x: 820, y: -590, w: 180 },
+			{ x: 450, y: -720, w: 200 },
+			{ x: 120, y: -860, w: 200 },
+			{ x: 260, y: -1280, w: 240 },
+			{ x: 640, y: -1420, w: 760 }
+		],
+		pads: [{ x: 330, y: 140, power: 1350 }, { x: 150, y: -860, power: 1500 }],
+		guns: [{ kind: 'smg', x: 180 }],
+		burgers: [{ x: 900, y: -590 }, { x: 380, y: -1280 }],
+		enemies: [
+			e('random', 700, undefined, 260),
+			e('sweat', 880, undefined, -330),
+			e('camper', 1250, undefined, -450),
+			e('sweat', 560, undefined, -720),
+			e('random', 440, undefined, -1280),
+			e('sweat', 900, undefined, -1420),
+			e('camper', 1300, undefined, -1420)
+		],
+		checkpoints: [[480, -200], [860, -330], [550, -720], [360, -1280]]
+	}),
+	lvl({
+		id: 'v4',
+		chapter: 2,
+		name: 'Elevator Shaft',
+		theme: 'tower',
+		w: 1500,
+		top: -1900,
+		hint: 'Ride the lifts. Jump from wall to wall to climb the shaft.',
+		exit: 1300,
+		exitY: -1700,
+		movers: [
+			{ x: 400, y: 470, w: 140, dx: 0, dy: -560, period: 7 },
+			{ x: 300, y: -1000, w: 140, dx: 0, dy: -500, period: 6 }
+		],
+		platforms: [
+			{ x: 545, y: -90, w: 475 },
+			{ x: 560, y: -960, w: 300 },
+			{ x: 0, y: -1540, w: 295 },
+			{ x: 480, y: -1620, w: 200 },
+			{ x: 880, y: -1700, w: 620 }
+		],
+		blocks: [
+			// the shaft: walk in under the left wall, then wall-jump up between the two
+			{ id: 'sl', x: 860, y: -900, w: 40, h: 710, kind: 'wall' },
+			{ id: 'sr', x: 1020, y: -1040, w: 40, h: 950, kind: 'wall' }
+		],
+		spikes: [{ x: 700, w: 60, y: -960 }],
+		guns: [{ kind: 'ar', x: 200 }],
+		burgers: [{ x: 640, y: -960 }, { x: 1000, y: -1700 }],
+		enemies: [
+			e('random', 900),
+			e('sweat', 760, undefined, -90),
+			e('camper', 600, undefined, -960),
+			e('sweat', 150, undefined, -1540),
+			e('random', 580, undefined, -1620),
+			e('shotty', 1100, undefined, -1700),
+			e('sweat', 1250, undefined, -1700)
+		],
+		checkpoints: [[660, -90], [620, -960], [100, -1540]]
+	}),
+	lvl({
+		id: 'v5',
+		chapter: 2,
+		name: 'Free Fall',
+		theme: 'depths',
+		w: 1600,
+		top: -1800,
+		startY: -1500,
+		hint: 'Down is the way out. Press S on a ledge to drop. Shoot the barrel on the cracked floor.',
+		ground: [[0, 600], [800, 1600]],
+		platforms: [
+			{ x: 0, y: -1500, w: 500 },
+			{ x: 600, y: -1380, w: 200 },
+			{ x: 900, y: -1250, w: 240 },
+			{ x: 1200, y: -860, w: 200 },
+			{ x: 800, y: -760, w: 240 },
+			{ x: 350, y: -640, w: 240 },
+			{ x: 150, y: -300, w: 260 },
+			{ x: 500, y: -140, w: 200 },
+			{ x: 850, y: 40, w: 220 },
+			{ x: 1150, y: 220, w: 200 }
+		],
+		blocks: [
+			// floor 1: a cracked patch in a solid slab
+			{ id: 'f1a', x: 0, y: -1000, w: 1100, h: 30, kind: 'wall' },
+			{ id: 'c1', x: 1100, y: -1000, w: 160, h: 30, kind: 'cracked' },
+			{ id: 'f1b', x: 1260, y: -1000, w: 340, h: 30, kind: 'wall' },
+			// floor 2: a hatch that opens when the floor above it is cleared
+			{ id: 'f2a', x: 0, y: -500, w: 200, h: 26, kind: 'wall' },
+			{ id: 'h1', x: 200, y: -500, w: 160, h: 26, kind: 'door', lock: { kill: 'b' } },
+			{ id: 'f2b', x: 360, y: -500, w: 1240, h: 26, kind: 'wall' }
+		],
+		barrels: [{ x: 1060, y: -1000 }],
+		spikes: [{ x: 1000, w: 140 }],
+		guns: [{ kind: 'shotgun', x: 300, y: -1500 }],
+		burgers: [{ x: 700, y: -1380 }, { x: 600, y: -140 }],
+		enemies: [
+			e('random', 1000, undefined, -1250),
+			e('sweat', 1300, 'b', -860),
+			e('random', 900, 'b', -760),
+			e('shotty', 460, 'b', -640),
+			e('sweat', 270, undefined, -300),
+			e('camper', 950, undefined, 40),
+			e('sweat', 1250),
+			e('shotty', 1400)
+		],
+		checkpoints: [[1000, -1250], [450, -640], [280, -300]]
+	}),
+	lvl({
+		id: 'v6',
+		chapter: 2,
+		name: 'Slam Dunk',
+		theme: 'depths',
+		w: 3400,
+		hint: 'Ground slam (S in the air) knocks everyone flat. Don’t touch the spikes.',
+		spikes: [{ x: 500, w: 200 }, { x: 1320, w: 280 }, { x: 2200, w: 360 }],
+		movers: [{ x: 2190, y: 400, w: 120, dx: 260, dy: 0, period: 4 }],
+		pads: [{ x: 880 }],
+		platforms: [{ x: 980, y: 150, w: 300 }, { x: 1750, y: 380, w: 180 }],
+		barrels: [{ x: 2640 }],
+		blocks: [cracked('c1', 2700), door('d1', 3150, { kill: 'z' })],
+		guns: [{ kind: 'pistol', x: 250 }, { kind: 'shotgun', x: 1200, y: 150 }],
+		burgers: [{ x: 1080, y: 150 }, { x: 2000 }],
+		enemies: [
+			e('random', 1000),
+			e('random', 1060),
+			e('random', 1120),
+			e('sweat', 1700),
+			e('camper', 1840, undefined, 380),
+			e('shotty', 1950),
+			e('jugg', 2950, 'z'),
+			e('sweat', 3050, 'z')
+		],
+		checkpoints: [800, 1680, 2620]
+	}),
+	lvl({
+		id: 'v7',
+		chapter: 2,
+		name: 'Rising Sludge',
+		theme: 'depths',
+		w: 1300,
+		top: -2000,
+		hint: 'The sludge is rising. Climb, and don’t stop.',
+		exit: 1150,
+		exitY: -1750,
+		flood: { speed: 42, delay: 4 },
+		movers: [{ x: 70, y: -500, w: 150, dx: 0, dy: -400, period: 5 }],
+		pads: [{ x: 980, y: 140, power: 1400 }],
+		platforms: [
+			{ x: 250, y: 380, w: 200 },
+			{ x: 550, y: 260, w: 200 },
+			{ x: 850, y: 140, w: 200 },
+			{ x: 900, y: -200, w: 250 },
+			{ x: 560, y: -330, w: 200 },
+			{ x: 220, y: -460, w: 200 },
+			{ x: 240, y: -960, w: 200 },
+			{ x: 560, y: -1080, w: 200 },
+			{ x: 900, y: -1200, w: 250 },
+			{ x: 520, y: -1440, w: 200 },
+			{ x: 160, y: -1560, w: 220 },
+			{ x: 450, y: -1750, w: 850 }
+		],
+		guns: [{ kind: 'smg', x: 150 }],
+		burgers: [{ x: 1050, y: -200 }, { x: 1000, y: -1200 }],
+		enemies: [
+			e('random', 650, undefined, 260),
+			e('sweat', 640, undefined, -330),
+			e('camper', 660, undefined, -1080),
+			e('random', 600, undefined, -1440),
+			e('sweat', 900, undefined, -1750)
+		],
+		checkpoints: [[1000, -200], [320, -960], [1000, -1200]]
+	}),
+	lvl({
+		id: 'v8',
+		chapter: 2,
+		name: 'Penthouse',
+		theme: 'tower',
+		w: 2200,
+		top: -1500,
+		hint: 'BOSS: climb the tower. Two Juggernauts own the roof.',
+		exit: 2090,
+		exitY: -1200,
+		pads: [{ x: 120, power: 1550 }],
+		movers: [{ x: 505, y: -1000, w: 140, dx: 400, dy: -150, period: 5 }],
+		platforms: [
+			{ x: 150, y: 0, w: 450 },
+			{ x: 150, y: -820, w: 240 },
+			{ x: 300, y: -960, w: 200 },
+			{ x: 1050, y: -1200, w: 1150 },
+			{ x: 1600, y: -1330, w: 180 }
+		],
+		blocks: [
+			// the shaft up the side of the tower
+			{ id: 'sl', x: 440, y: -760, w: 40, h: 660, kind: 'wall' },
+			{ id: 'sr', x: 600, y: -860, w: 40, h: 860, kind: 'wall' },
+			{ id: 'd1', x: 1980, y: -1460, w: 22, h: 260, kind: 'door', lock: { kill: 'boss' } }
+		],
+		barrels: [{ x: 1420, y: -1200 }],
+		guns: [{ kind: 'lmg', x: 900 }, { kind: 'launcher', x: 1680, y: -1330 }],
+		burgers: [{ x: 250, y: -820 }, { x: 1150, y: -1200 }],
+		enemies: [
+			e('random', 900),
+			e('sweat', 1200),
+			e('sweat', 1300, 'boss', -1200),
+			e('jugg', 1550, 'boss', -1200),
+			e('jugg', 1850, 'boss', -1200),
+			e('camper', 1700, 'boss', -1330)
+		],
+		checkpoints: [[300, 0], [250, -820], [1150, -1200]]
 	})
 ];
 
@@ -313,5 +599,12 @@ export interface LevelRecord {
 	best?: number;
 }
 export const pointsOf = (r: LevelRecord | undefined) => (r?.clear ? 2 : 0) + (r?.all ? 1 : 0) + (r?.clean ? 1 : 0);
-/** A level is open when it's the first or the one before it is cleared. */
-export const levelOpen = (i: number, rec: Record<string, LevelRecord>) => i === 0 || !!rec[LEVELS[i - 1].id]?.clear;
+/** A level is open when it starts its chapter or the one before it is cleared. */
+export const levelOpen = (i: number, rec: Record<string, LevelRecord>) =>
+	i === 0 || (LEVELS[i - 1].chapter ?? 1) !== (LEVELS[i]?.chapter ?? 1) || !!rec[LEVELS[i - 1].id]?.clear;
+/** the chapter a level belongs to */
+export const chapterOf = (l: Level) => l.chapter ?? 1;
+export const CHAPTERS = [
+	{ n: 1, name: 'Clocking In' },
+	{ n: 2, name: 'Going Vertical' }
+] as const;

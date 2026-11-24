@@ -12,6 +12,9 @@
  * before landing still counts, holding jump goes higher, a little hang at the top, falling faster than rising.
  * Pure game logic: no DOM, no drawing (render.ts + painter.ts draw it, MayhemPage.svelte runs it).
  * Coordinates: world px, y down; a fighter's `y` is where their feet are.
+ * Chapter 2 (2026-11-23, the user: "fler banor där man använder movement … uppåt eller neråt … mer fantasi"):
+ * tall levels (`top` above 0: the camera follows up and down), moving platforms that carry you, jump pads,
+ * spikes, horizontal cracked floors, and rising sludge that chases you up (see levels.ts).
  */
 import { gunOf, OUT_WEAPONS, STARTER, weaponsOfKind, type GunKind, type GunStats } from './guns.ts';
 import { CEIL, FLOOR, LEVELS, type Block, type KeyColour, type Level } from './levels.ts';
@@ -109,6 +112,8 @@ export interface Fighter {
 	safeT: number;
 	laserCool: number;
 	quiet: number;
+	/** launched by a jump pad: the rise isn't cut short by letting go of jump */
+	boost: number;
 }
 
 export interface Bullet {
@@ -225,6 +230,18 @@ export interface KeyCard {
 	taken: boolean;
 }
 
+/** a moving platform's place this frame (and how far it moved since the last one) */
+export interface MoverState extends Platform {
+	dx: number;
+	dy: number;
+}
+/** a checkpoint: an x line (chapter 1) or a spot to stand on (chapter 2) */
+export interface CheckpointSpot {
+	x: number;
+	y: number;
+	line: boolean;
+}
+
 export type GameEvent =
 	| { t: 'shot'; kind: GunKind; mine: boolean }
 	| { t: 'hit'; head: boolean; mine: boolean }
@@ -306,6 +323,9 @@ export interface Stats {
 
 type Rect = { x: number; y: number; w: number; h: number };
 const CRATE = 44;
+/** jump pads are this wide; spikes this tall */
+export const PAD_W = 44;
+export const SPIKE_H = 14;
 
 export class Mayhem {
 	r: () => number;
@@ -349,7 +369,18 @@ export class Mayhem {
 	time = 0;
 	checkpoint = 0;
 	respawnX: number;
+	respawnY = FLOOR;
 	respawnT = 0;
+	/** the world's top edge (0 for chapter 1; tall levels go up into negative y) */
+	top = 0;
+	movers: MoverState[] = [];
+	/** static platforms + the moving ones where they are now */
+	plats: Platform[] = [];
+	cps: CheckpointSpot[] = [];
+	/** rising sludge: its surface y (Infinity = none) and a pause after a respawn */
+	flood = Infinity;
+	floodWait = 0;
+	#camLook = 0;
 	windUsed = false;
 	complete = false;
 	/** the run is over: true after the level is completed (the page shows the result) */
@@ -378,10 +409,20 @@ export class Mayhem {
 		this.lasers = L.lasers.map((l) => ({ id: l.id, x: l.x, top: l.top, bottom: l.bottom ?? FLOOR, on: true }));
 		this.switches = L.switches.map((s) => ({ ...s, on: false }));
 		this.keys = L.keys.map((k) => ({ ...k, taken: false }));
+		this.top = L.top ?? 0;
+		this.movers = (L.movers ?? []).map((m) => ({ x: m.x, y: m.y, w: m.w, dx: 0, dy: 0 }));
+		this.#placeMovers();
+		this.cps = L.checkpoints.map((c) => (typeof c === 'number' ? { x: c, y: FLOOR, line: true } : { x: c[0], y: c[1], line: false }));
+		if (L.flood) {
+			this.flood = FLOOR + 40;
+			this.floodWait = L.flood.delay ?? 3;
+		}
 		this.#startGun = start;
-		this.player = this.#fighter(true, 'player', L.start, FLOOR, this.#playerGun());
+		const sy = L.startY ?? FLOOR;
+		this.player = this.#fighter(true, 'player', L.start, sy, this.#playerGun());
 		this.player.hp = this.player.maxHp = this.skills.has('skin') ? 140 : 100;
 		this.respawnX = L.start;
+		this.respawnY = sy;
 		this.grenades = this.skills.has('frag') ? 3 : 0;
 		for (const s of L.enemies) this.#spawn(s.kind, s.x, s.y ?? FLOOR, s.zone, s.gun);
 		this.totalEnemies = this.enemies.length;
@@ -393,6 +434,7 @@ export class Mayhem {
 		}
 		for (const b of L.burgers) this.pickups.push({ uid: this.uid++, x: b.x, y: (b.y ?? FLOOR) - 6, vx: 0, vy: 0, gun: null, heal: 35, life: 1e9, spin: 0, onGround: true });
 		this.cam.x = Math.max(0, Math.min(this.w - VW, L.start - VW / 3));
+		this.cam.y = Math.max(this.top, Math.min(H - VH, sy - 60 - VH * 0.55));
 		this.popups.push({ x: 0, y: 0, text: L.name.toUpperCase(), t: 0, tone: 'wave', screen: true });
 	}
 
@@ -451,7 +493,8 @@ export class Mayhem {
 			slam: false,
 			safeT: 0,
 			laserCool: 0,
-			quiet: 99
+			quiet: 99,
+			boost: 0
 		};
 	}
 
@@ -483,6 +526,41 @@ export class Mayhem {
 		return this.enemies.length;
 	}
 
+	/** where each moving platform is at world time t (a smooth back-and-forth) */
+	#placeMovers() {
+		const list = this.level.movers ?? [];
+		for (let i = 0; i < list.length; i++) {
+			const m = list[i];
+			const k = (1 - Math.cos(((this.t / m.period + (m.phase ?? 0)) % 1) * Math.PI * 2)) / 2;
+			const st = this.movers[i];
+			const nx = m.x + m.dx * k,
+				ny = m.y + m.dy * k;
+			st.dx = nx - st.x;
+			st.dy = ny - st.y;
+			st.x = nx;
+			st.y = ny;
+		}
+		this.plats = this.movers.length ? [...this.level.platforms, ...this.movers] : this.level.platforms;
+	}
+
+	/** move the platforms and carry whoever stands on them */
+	#moveMovers() {
+		if (!this.movers.length) return;
+		const before = this.movers.map((m) => ({ x: m.x, y: m.y, w: m.w }));
+		this.#placeMovers();
+		for (const f of [this.player, ...this.enemies]) {
+			if (f.hp <= 0 || !f.onGround) continue;
+			for (let i = 0; i < before.length; i++) {
+				const b = before[i];
+				if (Math.abs(f.y - b.y) < 2 && f.x > b.x - 4 && f.x < b.x + b.w + 4) {
+					f.x += this.movers[i].dx;
+					f.y = this.movers[i].y;
+					break;
+				}
+			}
+		}
+	}
+
 	/** solid rectangles: walls, shut doors, standing cracked walls, crates */
 	solids(except?: Crate): Rect[] {
 		const out: Rect[] = [];
@@ -506,7 +584,7 @@ export class Mayhem {
 	/** Is there something to stand on just below (x, y)? (for the AI's edge check) */
 	#footing(x: number, y: number) {
 		if (y >= FLOOR - 2 && this.#onGroundAt(x)) return true;
-		for (const p of this.level.platforms) if (x > p.x && x < p.x + p.w && Math.abs(p.y - y) < 6) return true;
+		for (const p of this.plats) if (x > p.x && x < p.x + p.w && Math.abs(p.y - y) < 6) return true;
 		for (const s of this.solids()) if (x > s.x && x < s.x + s.w && Math.abs(s.y - y) < 6) return true;
 		return false;
 	}
@@ -553,6 +631,7 @@ export class Mayhem {
 		const pdt = this.holkOn ? dt * 0.75 : dt;
 		this.t += wdt;
 
+		this.#moveMovers();
 		this.#playerStep(pdt, inp, press);
 		for (const e of this.enemies) this.#ai(e, wdt);
 		for (const f of [this.player, ...this.enemies]) this.#physics(f, f.player ? pdt : wdt);
@@ -575,7 +654,11 @@ export class Mayhem {
 
 	#respawn() {
 		const p = this.player;
-		const fresh = this.#fighter(true, 'player', this.respawnX, FLOOR - 1, p.held ?? this.#playerGun());
+		const fresh = this.#fighter(true, 'player', this.respawnX, this.respawnY - 1, p.held ?? this.#playerGun());
+		if (this.flood < Infinity) {
+			this.flood = Math.max(this.flood, this.respawnY + 260);
+			this.floodWait = 2.5;
+		}
 		fresh.hp = fresh.maxHp = p.maxHp;
 		fresh.safeT = 1.5;
 		this.player = fresh;
@@ -590,7 +673,10 @@ export class Mayhem {
 		const p = this.player.hp > 0 ? this.player : (this.corpses.find((c) => c.f.player) ?? this.player);
 		const ahead = Math.max(-90, Math.min(90, (inp.aimX - p.x) * 0.25));
 		const tx = Math.max(0, Math.min(this.w - VW, p.x + ahead - VW / 2));
-		const ty = Math.max(0, Math.min(H - VH, p.y - 60 - VH * 0.55));
+		// tall levels: look the way you're going (up while rising, down while falling)
+		const look = p.vy > 380 ? 90 : p.vy < -380 ? -50 : 0;
+		this.#camLook += (look - this.#camLook) * Math.min(1, dt * 3);
+		const ty = Math.max(this.top, Math.min(H - VH, p.y - 60 - VH * 0.55 + (this.top < 0 ? this.#camLook : 0)));
 		const k = Math.min(1, dt * 6);
 		this.cam.x += (tx - this.cam.x) * k;
 		this.cam.y += (ty - this.cam.y) * k;
@@ -694,7 +780,7 @@ export class Mayhem {
 				}
 			}
 			// a short tap of jump gives a short hop
-			if (this.shortHop && !inp.jump && p.vy < -P_JUMP * 0.45 && !p.onGround && prevJumpHeld(p)) p.vy = -P_JUMP * 0.45;
+			if (this.shortHop && !inp.jump && p.vy < -P_JUMP * 0.45 && !p.onGround && prevJumpHeld(p) && p.boost <= 0) p.vy = -P_JUMP * 0.45;
 			if (press('down')) {
 				if (p.onGround && p.y < FLOOR - 1) p.drop = 0.25;
 				else if (!p.onGround && !p.slam) {
@@ -906,7 +992,7 @@ export class Mayhem {
 			// don't walk off ledges into pits; hop small walls
 			if (move && e.onGround) {
 				const ahead = e.x + move * 18;
-				if (!this.#footing(ahead, e.y) && !(p.y > e.y + 30 && this.#onGroundAt(ahead))) move = 0;
+				if (!this.#footing(ahead, e.y) && !(p.y > e.y + 30 && e.y > FLOOR - 200 && this.#onGroundAt(ahead))) move = 0;
 				if (move && e.wall === move && e.think <= 0) {
 					e.vy = -JUMP;
 					e.onGround = false;
@@ -986,7 +1072,8 @@ export class Mayhem {
 		const fallV = f.vy;
 		if (!f.player) f.vy += GRAV * dt;
 		else if (f.dashT <= 0) {
-			const held = this.#held || !this.shortHop;
+			f.boost -= dt;
+			const held = this.#held || !this.shortHop || (f.boost > 0 && f.vy < 0);
 			let k = f.vy < 0 ? (held ? 1 : 1.9) : 1.6;
 			if (held && Math.abs(f.vy) < 130 && !f.slam) k = 0.5; // a little hang at the top
 			if (f.slam) k = 2.4;
@@ -1041,7 +1128,7 @@ export class Mayhem {
 		if (f.vy >= 0) {
 			let land = Infinity;
 			if (this.#onGroundAt(f.x) && py <= FLOOR + 0.5 && f.y >= FLOOR) land = FLOOR;
-			if (f.drop <= 0) for (const p of this.level.platforms) if (py <= p.y + 0.5 && f.y >= p.y && f.x > p.x - 4 && f.x < p.x + p.w + 4) land = Math.min(land, p.y);
+			if (f.drop <= 0) for (const p of this.plats) if (py <= p.y + 0.5 && f.y >= p.y && f.x > p.x - 4 && f.x < p.x + p.w + 4) land = Math.min(land, p.y);
 			for (const s of this.solids()) if (py <= s.y + 0.5 && f.y >= s.y && f.x + hw * 0.7 > s.x && f.x - hw * 0.7 < s.x + s.w) land = Math.min(land, s.y);
 			if (land < Infinity) {
 				f.y = land;
@@ -1054,11 +1141,29 @@ export class Mayhem {
 					f.y = s.y + s.h + top;
 					f.vy = 0;
 				}
-			if (f.y - top < CEIL - 30) {
-				f.y = CEIL - 30 + top;
+			const ceil = this.top < 0 ? this.top + 20 : CEIL - 30;
+			if (f.y - top < ceil) {
+				f.y = ceil + top;
 				f.vy = 0;
 			}
 		}
+		// a jump pad under the feet throws you up
+		if (f.onGround)
+			for (const pd of this.level.pads ?? []) {
+				if (Math.abs(f.y - (pd.y ?? FLOOR)) > 2 || f.x < pd.x - 4 || f.x > pd.x + PAD_W + 4) continue;
+				f.vy = -(pd.power ?? 1450);
+				f.onGround = false;
+				f.boost = 0.7;
+				f.slam = false;
+				if (f.player) {
+					f.jumps = 1;
+					f.airDash = 0;
+					f.coyote = 0;
+					this.events.push({ t: 'jump', n: 2 });
+					this.parts.push({ x: pd.x + PAD_W / 2, y: pd.y ?? FLOOR, vx: 0, vy: 0, life: 0.4, max: 0.4, kind: 'ring', r: 16 });
+				}
+				break;
+			}
 		// the ground slam lands; a hard landing puffs dust
 		if (f.player && f.onGround && wasAir) {
 			if (f.slam) {
@@ -1106,7 +1211,7 @@ export class Mayhem {
 			const cx = c.x + c.w / 2;
 			let land = Infinity;
 			if ((this.#onGroundAt(c.x + 8) || this.#onGroundAt(c.x + c.w - 8)) && py + c.h <= FLOOR + 0.5 && c.y + c.h >= FLOOR) land = FLOOR;
-			for (const p of this.level.platforms) if (py + c.h <= p.y + 0.5 && c.y + c.h >= p.y && cx > p.x && cx < p.x + p.w) land = Math.min(land, p.y);
+			for (const p of this.plats) if (py + c.h <= p.y + 0.5 && c.y + c.h >= p.y && cx > p.x && cx < p.x + p.w) land = Math.min(land, p.y);
 			for (const s of this.solids(c)) if (py + c.h <= s.y + 0.5 && c.y + c.h >= s.y && c.x + c.w > s.x + 4 && c.x < s.x + s.w - 4) land = Math.min(land, s.y);
 			if (land < Infinity) {
 				c.y = land - c.h;
@@ -1155,7 +1260,7 @@ export class Mayhem {
 				}
 				if (b.open) {
 					this.events.push({ t: 'door' });
-					this.popups.push({ x: b.x + b.w / 2, y: FLOOR - 170, text: 'DOOR OPEN', t: 0, tone: 'info' });
+					this.popups.push({ x: b.x + b.w / 2, y: b.y + b.h - 170, text: 'DOOR OPEN', t: 0, tone: 'info' });
 				}
 			}
 			if (b.open && b.openT < 1) b.openT = Math.min(1, b.openT + dt * 1.6);
@@ -1196,17 +1301,52 @@ export class Mayhem {
 			if (b.fuse <= 0) this.#blowBarrel(b);
 		}
 		// checkpoints
-		const cps = this.level.checkpoints;
-		while (this.checkpoint < cps.length && p.x >= cps[this.checkpoint]) {
-			this.respawnX = cps[this.checkpoint];
-			this.checkpoint++;
+		for (let i = this.cps.length - 1; i >= this.checkpoint; i--) {
+			const c = this.cps[i];
+			const hit = c.line ? p.x >= c.x : p.onGround && Math.abs(p.x - c.x) < 60 && Math.abs(p.y - c.y) < 30;
+			if (!hit) continue;
+			this.respawnX = c.x;
+			this.respawnY = c.y;
+			this.checkpoint = i + 1;
 			this.windUsed = false;
 			this.grenades = this.skills.has('frag') ? 3 : 0;
 			this.events.push({ t: 'checkpoint' });
 			this.popups.push({ x: 0, y: 0, text: 'CHECKPOINT', t: 0, tone: 'combo', screen: true });
+			break;
+		}
+		// spikes
+		for (const f of [p, ...this.enemies]) {
+			if (f.hp <= 0 || f.laserCool > 0 || (f.player && f.safeT > 0)) continue;
+			const b = this.#box(f);
+			for (const sp of this.level.spikes ?? []) {
+				const sy = sp.y ?? FLOOR;
+				if (b.x < sp.x + sp.w && b.x + b.w > sp.x && b.y < sy && b.y + b.h > sy - SPIKE_H) {
+					f.laserCool = 0.5;
+					f.vy = -620;
+					f.onGround = false;
+					f.stun = 0.2;
+					this.#damage(f, f.player ? 34 : 70, false, null, 0, -300);
+					for (let i = 0; i < 6; i++) this.parts.push({ x: f.x, y: sy - 8, vx: (this.r() - 0.5) * 200, vy: -this.r() * 200, life: 0.3, max: 0.3, kind: 'spark', r: 1.6 });
+					break;
+				}
+			}
+		}
+		// rising sludge
+		if (this.flood < Infinity && !this.complete) {
+			if (this.floodWait > 0) this.floodWait -= dt;
+			else this.flood = Math.max((this.level.exitY ?? this.top + 100) + 60, this.flood - (this.level.flood?.speed ?? 40) * dt);
+			if (p.y - 12 > this.flood) this.#kill(p, 0, 0, false, true);
+			for (const e of [...this.enemies])
+				if (e.hp > 0 && e.y - 20 > this.flood) {
+					e.hp = 0;
+					this.enemies = this.enemies.filter((x) => x !== e);
+					this.stats.kills++;
+				}
 		}
 		// the exit
-		if (!this.complete && p.x >= this.level.exit && p.onGround) {
+		const ey = this.level.exitY;
+		const atExit = ey === undefined ? p.x >= this.level.exit : p.x >= this.level.exit - 6 && p.x <= this.level.exit + 54 && Math.abs(p.y - ey) < 4;
+		if (!this.complete && atExit && p.onGround) {
 			this.complete = true;
 			this.over = true;
 			p.vx = 0;
@@ -1339,7 +1479,7 @@ export class Mayhem {
 			if (Math.hypot(nx - x, ny - y) < R + 10) {
 				b.gone = true;
 				this.events.push({ t: 'door' });
-				this.popups.push({ x: b.x + b.w / 2, y: FLOOR - 170, text: 'WALL DOWN', t: 0, tone: 'info' });
+				this.popups.push({ x: b.x + b.w / 2, y: b.y + b.h - 170, text: 'WALL DOWN', t: 0, tone: 'info' });
 				for (let i = 0; i < 28; i++) this.parts.push({ x: b.x + this.r() * b.w, y: b.y + this.r() * b.h, vx: (this.r() - 0.5) * 520, vy: -this.r() * 420, life: 1.2, max: 1.2, kind: 'debris', r: 2 + this.r() * 3.5 });
 			}
 		}
@@ -1424,7 +1564,7 @@ export class Mayhem {
 				const usable = b.gun.ammo > 0 || gunOf(b.gun.id).kind === 'melee';
 				this.pickups.push({ uid: this.uid++, x: Math.max(20, Math.min(this.w - 20, b.x)), y: Math.min(b.y, FLOOR - 8), vx: -b.vx * 0.15, vy: -200, gun: b.gun, heal: usable ? 0 : -1, life: usable ? 30 : 1.2, spin: b.spin ?? 10, onGround: false });
 			}
-			if (b.x < -200 || b.x > this.w + 200 || b.y < -300 || b.y > H + 200) b.life = 0;
+			if (b.x < -200 || b.x > this.w + 200 || b.y < this.top - 300 || b.y > H + 200) b.life = 0;
 		}
 		this.bullets = this.bullets.filter((b) => b.life > 0);
 
@@ -1440,7 +1580,7 @@ export class Mayhem {
 				k.spin *= 0.99;
 				let land = Infinity;
 				if (this.#onGroundAt(k.x) && py <= FLOOR - 6 && k.y >= FLOOR - 6) land = FLOOR - 6;
-				for (const pl of this.level.platforms) if (py <= pl.y - 6 && k.y >= pl.y - 6 && k.x > pl.x && k.x < pl.x + pl.w) land = Math.min(land, pl.y - 6);
+				for (const pl of this.plats) if (py <= pl.y - 6 && k.y >= pl.y - 6 && k.x > pl.x && k.x < pl.x + pl.w) land = Math.min(land, pl.y - 6);
 				for (const s of sol) if (py <= s.y - 6 && k.y >= s.y - 6 && k.x > s.x && k.x < s.x + s.w) land = Math.min(land, s.y - 6);
 				if (land < Infinity) {
 					k.y = land;
@@ -1494,7 +1634,7 @@ export class Mayhem {
 			const off = 9 * c.f.scale;
 			if (this.#onGroundAt(c.x) && py <= FLOOR - off + 1 && c.y >= FLOOR - off) ground(FLOOR - off);
 			else if (c.vy > 0) {
-				for (const pl of this.level.platforms) if (py <= pl.y - off && c.y >= pl.y - off && c.x > pl.x && c.x < pl.x + pl.w) ground(pl.y - off);
+				for (const pl of this.plats) if (py <= pl.y - off && c.y >= pl.y - off && c.x > pl.x && c.x < pl.x + pl.w) ground(pl.y - off);
 				for (const s of sol) if (py <= s.y - off && c.y >= s.y - off && c.x > s.x && c.x < s.x + s.w) ground(s.y - off);
 			}
 			if (inSolid(c.x, c.y)) {
@@ -1517,7 +1657,7 @@ export class Mayhem {
 			q.y += q.vy * dt;
 			if ((q.kind === 'ketchup' || q.kind === 'debris') && q.vy > 0) {
 				let land = q.y >= FLOOR && this.#onGroundAt(q.x) ? FLOOR : 0;
-				if (!land) for (const pl of this.level.platforms) if (py <= pl.y && q.y >= pl.y && q.x > pl.x && q.x < pl.x + pl.w) land = pl.y;
+				if (!land) for (const pl of this.plats) if (py <= pl.y && q.y >= pl.y && q.x > pl.x && q.x < pl.x + pl.w) land = pl.y;
 				if (land) {
 					if (q.kind === 'ketchup') {
 						this.splats.push({ x: q.x, y: land, r: q.r * (1.6 + this.r()), a: 0.85 });

@@ -40,8 +40,9 @@ test('every level loads, the player lands and the camera stays inside the level'
 	for (const l of LEVELS) {
 		const g = new Mayhem(l.id, STARTER, [], 2);
 		run(g, 1);
-		assert.equal(g.player.y, FLOOR, l.id);
+		assert.equal(g.player.y, l.startY ?? FLOOR, l.id);
 		assert.ok(g.cam.x >= 0 && g.cam.x <= g.w, l.id);
+		assert.ok(g.cam.y >= (l.top ?? 0) - 1 && g.cam.y <= FLOOR, l.id);
 		assert.equal(g.totalEnemies, l.enemies.length, l.id);
 	}
 });
@@ -380,7 +381,9 @@ test('the skill tree: chains, costs, cleaning', () => {
 	assert.equal(cleanSkills(null).length, 0);
 	const total = skillCost(SKILLS.map((s) => s.id));
 	assert.ok(total <= LEVELS.length * 4, `the whole tree (${total}) fits the ${LEVELS.length * 4} points the levels give`);
-	assert.ok(total >= LEVELS.length * 2, 'clearing every level pays for the whole tree');
+	// the tree was sized for chapter 1: clearing it there still doesn't buy everything (chapter 2 adds more points)
+	const ch1 = LEVELS.filter((l) => (l.chapter ?? 1) === 1).length;
+	assert.ok(total >= ch1 * 2, 'clearing chapter 1 alone does not buy the whole tree');
 });
 
 test('a dash never goes through a closed door', () => {

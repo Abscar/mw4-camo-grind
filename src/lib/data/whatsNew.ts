@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-chapter-2',
+		date: '2026-11-24',
+		kind: 'new',
+		title: 'Abscars Madness: Chapter 2',
+		text: '8 new levels: climb a skyscraper, fall into the depths, wall-jump up shafts, ride lifts, outrun rising sludge. Open now.',
+		tab: 'madness'
+	},
+	{
 		id: 'casino-stats-reset',
 		date: '2026-11-24',
 		kind: 'update',
