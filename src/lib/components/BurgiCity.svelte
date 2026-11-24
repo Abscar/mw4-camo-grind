@@ -21,6 +21,7 @@
 	import { BLOCKS, BLOCK, GRID, LANES, TH, TW, VB_H, VB_W, blockArt, groundArt, hitArea, origin, p, type Block } from '#lib/burgiCity.ts';
 	import SquadAvatar from './SquadAvatar.svelte';
 	import HideButton from './HideButton.svelte';
+	import HolkPark from './HolkPark.svelte';
 
 	type Tab = 'grind' | 'ranked' | 'cosmetics' | 'casino' | 'shop' | 'arcade' | 'mayhem' | 'squad';
 	let {
@@ -115,6 +116,8 @@
 	}
 
 	let hot = $state<string | null>(null);
+	/** Holk Park opens as a place of its own (HolkPark.svelte) */
+	let parkOpen = $state(false);
 
 	// scale of the HTML layers = stage width / 1200
 	let stage = $state<HTMLDivElement>();
@@ -201,7 +204,24 @@
 								<small>{live[b.id] ?? t.city.b[b.id].sub}</small>
 							</span>
 						{:else if b.id === 'park'}
-							<span class="sign park" style:left="{s[0]}px" style:top="{s[1]}px" aria-hidden="true">
+							<button
+								type="button"
+								class="bld"
+								data-b="park"
+								style:left="{a.x}px"
+								style:top="{a.y}px"
+								style:width="{a.w}px"
+								style:height="{a.h}px"
+								style:clip-path={a.clip}
+								aria-haspopup="dialog"
+								aria-label={t.city.go(t.city.park)}
+								onclick={() => (parkOpen = true)}
+								onpointerenter={() => (hot = 'park')}
+								onpointerleave={() => (hot = hot === 'park' ? null : hot)}
+								onfocus={() => (hot = 'park')}
+								onblur={() => (hot = hot === 'park' ? null : hot)}
+							></button>
+							<span class="sign park" class:on={hot === 'park'} style:left="{s[0]}px" style:top="{s[1]}px" aria-hidden="true">
 								<b>{t.city.park}</b>
 								<small>{t.city.parkSub}</small>
 							</span>
@@ -212,6 +232,8 @@
 		</div>
 	{/if}
 </section>
+
+<HolkPark bind:open={parkOpen} />
 
 {#snippet walkLane(l: number)}
 	{@const [sx, sy] = start(l)}
@@ -437,7 +459,6 @@
 	}
 	.sign.park {
 		--c: #6fd27a;
-		opacity: 0.85;
 	}
 	.sign.cur {
 		background: color-mix(in srgb, var(--c) 24%, #0a0814);
@@ -563,8 +584,10 @@
 		transform-origin: center bottom;
 		animation: sway 4s ease-in-out infinite alternate;
 	}
-	.lay :global(.fountain) {
-		animation: blink 0.5s steps(2) infinite;
+	.lay :global(.fire) {
+		transform-box: fill-box;
+		transform-origin: center bottom;
+		animation: fire 0.45s ease-in-out infinite alternate;
 	}
 
 	@keyframes walk {
@@ -573,6 +596,11 @@
 		}
 		to {
 			transform: translate(var(--sx), var(--sy));
+		}
+	}
+	@keyframes fire {
+		to {
+			transform: scale(0.85, 1.15);
 		}
 	}
 	@keyframes bob {

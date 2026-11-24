@@ -327,11 +327,16 @@
 			<!-- the old TV with CoD montages; z above the fixed scanline layer (z 30), so nothing is
 			     drawn over the video -->
 			<div class="hdr-tv abscar-only compact-hide relative z-[31]" hidden={hidden.is('tv')}><RetroTv /></div>
-			<!-- the buddy's row: the news buddy and, beside him, the "What's new" billboard (2026-11-23; every theme) -->
-			<div class="hdr-buddy compact-hide relative z-[1]" hidden={hidden.is('buddy') && hidden.is('whatsNew')}>
-				<div class="hdr-buddy-in abscar-only relative" hidden={hidden.is('buddy')}><NewsBuddy /><HideButton id="buddy" /></div>
-				<div class="hdr-board relative" hidden={hidden.is('whatsNew')}>
-					<WhatsNewBoard ongo={goTab} /><HideButton id="whatsNew" />
+			<!-- the buddy's row (2026-11-24, the user: "drag What's new and my grass buddy to the right, squeeze Burgi City in
+			     the middle, on the main theme"): Burgi City (Abscar only) on the left, the news buddy with the "What's new"
+			     billboard under him on the right; on narrow screens buddy + board first, the town under them -->
+			<div class="hdr-buddy compact-hide relative z-[1]" hidden={hidden.is('buddy') && hidden.is('whatsNew') && hidden.is('city')}>
+				<div class="hdr-city abscar-only" hidden={hidden.is('city')}><BurgiCity {view} shown={shownTabs} ongo={goTab} /></div>
+				<div class="hdr-right" hidden={hidden.is('buddy') && hidden.is('whatsNew')}>
+					<div class="hdr-buddy-in abscar-only relative" hidden={hidden.is('buddy')}><NewsBuddy /><HideButton id="buddy" /></div>
+					<div class="hdr-board relative" hidden={hidden.is('whatsNew')}>
+						<WhatsNewBoard ongo={goTab} /><HideButton id="whatsNew" />
+					</div>
 				</div>
 			</div>
 		</header>
@@ -354,8 +359,6 @@
 		<!-- Abscars Madness: the game's own big title button (2026-11-23, the user: "a button of its own high up on the
 		     page"); a tap opens the game full screen -->
 		<div id="madness" class="relative mt-4" hidden={hidden.is('madness')}><MadnessLauncher /><HideButton id="madness" /></div>
-		<!-- Burgi City: the page as a town, one building per tab (2026-11-23); only in the Burgi City theme -->
-		<div class="city-only compact-hide" hidden={hidden.is('city')}><BurgiCity {view} shown={shownTabs} ongo={goTab} /></div>
 
 		<!-- page tabs: the tracker, Ranked prep, Cosmetics & camos, BurgiCasino, BurgiShop, BurgiArcade, the Squad (last, lit green) -->
 		<!-- every other tab hidden: no row for Camo grind alone (it stays in the page for the panel's label) -->
@@ -764,7 +767,7 @@
 	:global([data-theme='blackout']) .abscar-header {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas: var(--hdr-phone, 'squad' 'title' 'tv' 'buddy');
+		grid-template-areas: var(--hdr-phone, 'squad' 'tv' 'buddy' 'city');
 		gap: 20px 24px;
 		align-items: start;
 	}
@@ -780,32 +783,68 @@
 		justify-self: stretch;
 		max-width: 100%;
 	}
-	/* the buddy and the billboard side by side where they fit, the billboard under him otherwise */
+	/* Burgi City on the left, the buddy + billboard on the right (2026-11-24). wrap-reverse: when they don't fit
+	   side by side, the right group's line goes on top and the town under it */
 	.hdr-buddy {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-start;
+		flex-wrap: wrap-reverse;
+		align-items: flex-end;
 		gap: 16px 20px;
 		width: 100%;
 	}
 	.hdr-buddy[hidden],
-	.hdr-buddy > [hidden] {
+	.hdr-buddy > [hidden],
+	.hdr-right > [hidden] {
 		display: none;
 	}
+	.hdr-city {
+		flex: 1 1 620px;
+		min-width: min(100%, 620px);
+	}
+	.hdr-city :global(.city) {
+		margin-top: 0;
+	}
+	.hdr-right {
+		flex: 0 1 460px;
+		margin-left: auto;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 14px;
+		max-width: 100%;
+		min-width: 0;
+	}
 	.hdr-buddy-in {
-		flex: 0 1 auto;
 		max-width: 100%;
 	}
 	.hdr-board {
-		flex: 1 1 300px;
+		width: 100%;
 		max-width: 460px;
 		min-width: 0;
+	}
+	/* below 1140 px (Abscar): the row splits into two grid items, the town gets a full-width row of its own
+	   (`city` in headerAreas); the buddy + board sit left like before */
+	@media (max-width: 1139px) {
+		:global([data-theme='blackout']) .hdr-buddy {
+			display: contents;
+		}
+		:global([data-theme='blackout']) .hdr-right {
+			grid-area: buddy;
+			margin-left: 0;
+			align-items: flex-start;
+			width: 100%;
+			flex-basis: auto;
+		}
+		:global([data-theme='blackout']) .hdr-city {
+			grid-area: city;
+			min-width: 0;
+		}
 	}
 	/* two columns once the title (≈ 425 px) and the TV (304 px) fit side by side */
 	@media (min-width: 820px) {
 		:global([data-theme='blackout']) .abscar-header {
 			grid-template-columns: var(--hdr-mid-cols, minmax(0, 1fr) auto);
-			grid-template-areas: var(--hdr-mid, 'squad squad' 'title tv' 'buddy tv');
+			grid-template-areas: var(--hdr-mid, 'squad squad' 'buddy tv' 'city city');
 		}
 		:global([data-theme='blackout']) .hdr-tv {
 			justify-self: end;
@@ -816,7 +855,7 @@
 	@media (min-width: 1140px) {
 		:global([data-theme='blackout']) .abscar-header {
 			grid-template-columns: var(--hdr-wide-cols, minmax(0, 1fr) auto);
-			grid-template-areas: var(--hdr-wide, 'squad tv' 'title tv' 'buddy tv');
+			grid-template-areas: var(--hdr-wide, 'squad tv' 'buddy buddy');
 		}
 		:global([data-theme='blackout']) .hdr-tv {
 			margin-top: -8px;

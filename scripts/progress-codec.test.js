@@ -310,14 +310,13 @@ test('themes: the three removed looks open in Steel, anything unknown in the def
 	const { THEMES, DEFAULT_THEME, themeFrom } = await import('../src/lib/themes.ts');
 	assert.deepEqual(
 		THEMES.map((x) => x.id),
-		['blackout', 'steel', 'matrix', 'city']
+		['blackout', 'steel', 'matrix']
 	);
 	for (const old of ['field', 'neon', 'command']) {
 		assert.equal(themeFrom(old), 'steel');
 		assert.equal(normalisePrefs({ theme: old }).theme, 'steel');
 	}
 	assert.equal(themeFrom('matrix'), 'matrix');
-	assert.equal(themeFrom('city'), 'city');
 	assert.equal(themeFrom('blackout'), 'blackout');
 	assert.equal(themeFrom('nope'), DEFAULT_THEME);
 	assert.equal(themeFrom(undefined), DEFAULT_THEME);

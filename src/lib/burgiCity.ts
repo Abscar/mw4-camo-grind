@@ -361,27 +361,42 @@ function mayhem(o: number, q: number): string {
 }
 
 function park(o: number, q: number): string {
+	// Holk Park (2026-11-24, a place of its own: tap = HolkPark.svelte): paths, the pond with the Golden Holk
+	// monument in the middle, the Munchie Truck, a campfire, cannabis-leaf trees and a smoke ring
 	let s = flat(fz(o + 2.7, q + 0.2, o + 3.3, q + 5.8, 3), '#c9b98a');
 	s += flat(fz(o + 0.2, q + 2.7, o + 5.8, q + 3.3, 3), '#c9b98a');
 	s += ground(o + 3, q + 3, 3, 40, '#2a6fb0', `stroke="${INK}" stroke-width="1.6"`);
 	s += ground(o + 3, q + 3, 3, 30, '#4a98d8', 'opacity=".5"');
-	const [fxp, fyp] = p(o + 3, q + 3, 3);
-	s += `<path d="M${r(fxp)} ${r(fyp)}V${r(fyp - 22)}M${r(fxp - 8)} ${r(fyp - 12)}q8-14 16 0" stroke="#bfe6ff" stroke-width="2.5" fill="none" class="fountain"/>`;
+	// the monument: a stone plinth and a golden cone joint standing on it, ember on top
+	s += box(o + 2.6, q + 2.6, o + 3.4, q + 3.4, 3, 16, '#8f8aa0', '#b9b4c8');
+	const [bx, by] = p(o + 3, q + 3, 16);
+	s += at([bx, by], `<polygon points="-4,0 4,0 15,-46 1,-50" fill="#f6cf5a" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><polygon points="-4,0 4,0 5,-9 -2,-10" fill="#2e1d05"/><path d="M2 -14 L9 -44" stroke="#fff4c0" stroke-width="1.6" opacity=".8"/><circle cx="8" cy="-48" r="5" fill="#ff8a1a" class="blink"/>`);
+	// the Munchie Truck (pink, yellow cab) on the left corner
+	s += box(o + 0.4, q + 1.4, o + 1.9, q + 2.3, 3, 16, '#ff5cb8', '#ff8ad0');
+	s += box(o + 0.4, q + 2.3, o + 1.9, q + 2.6, 3, 12, '#ffd54a');
+	s += flat(fy(o + 0.7, o + 1.6, q + 2.3, 7, 13), '#ffe7a0', 'class="win"');
+	// the campfire with two logs
+	s += box(o + 3.9, q + 1.2, o + 4.9, q + 1.45, 3, 6, '#7a4a22');
+	s += box(o + 3.9, q + 2.15, o + 4.9, q + 2.4, 3, 6, '#7a4a22');
+	s += ground(o + 4.4, q + 1.8, 3, 18, '#ff8a1a', 'opacity=".25" class="beam"');
+	s += at(p(o + 4.4, q + 1.8, 4), `<path d="M-6 0q-2-12 5-20q1 8 4 10q2-8 6-12q3 13-3 22z" fill="#ff5a1a"/><path d="M-3 0q0-8 3-12q3 6 2 12z" fill="#ffd54a"/>`, 'fire');
 	const leaf = LEAF_PATHS.map((d) => `<path d="${d}"/>`).join('');
 	for (const [x, y] of [
 		[1, 1],
 		[5, 1],
 		[1, 5],
 		[5, 5],
-		[1.2, 3.8]
+		[1.2, 3.9]
 	]) {
 		const [tx, ty] = p(o + x, q + y, 3);
 		s += `<path d="M${r(tx)} ${r(ty)}V${r(ty - 26)}" stroke="#5a3a1a" stroke-width="4"/>`;
 		s += at([tx, ty - 26], `<g fill="#3ec24a" stroke="#0e3312" stroke-width=".6" transform="translate(-30 -46) scale(2.5)">${leaf}</g>`, 'tree');
 	}
-	// a bench, and a smoke ring drifting up
-	s += box(o + 4.3, q + 3.9, o + 5.4, q + 4.2, 3, 9, '#6b4422');
-	s += at(p(o + 4.6, q + 4.4, 40), `<circle r="7" fill="none" stroke="#cfd8cf" stroke-width="3" opacity=".6" class="ring"/>`);
+	// a hammock between the two front trees, and a smoke ring drifting up from the monument
+	const [h1x, h1y] = p(o + 1, q + 5, 22);
+	const [h2x, h2y] = p(o + 5, q + 5, 22);
+	s += `<path d="M${r(h1x)} ${r(h1y)}Q${r((h1x + h2x) / 2)} ${r((h1y + h2y) / 2 + 14)} ${r(h2x)} ${r(h2y)}" stroke="#e05a3a" stroke-width="4" fill="none"/>`;
+	s += at(p(o + 3.2, q + 3, 80), `<circle r="7" fill="none" stroke="#cfd8cf" stroke-width="3" opacity=".6" class="ring"/>`);
 	return s;
 }
 
@@ -394,7 +409,7 @@ export const BLOCKS: readonly Block[] = [
 	{ id: 'shop', bx: 2, by: 1, h: 88, slab: '#4b4658', art: shop },
 	{ id: 'squad', bx: 0, by: 2, h: 100, slab: '#4b4658', art: squad },
 	{ id: 'mayhem', bx: 1, by: 2, h: 96, slab: '#3a5226', art: mayhem },
-	{ id: 'park', bx: 2, by: 2, h: 60, slab: '#2f7a34', art: park }
+	{ id: 'park', bx: 2, by: 2, h: 84, slab: '#2f7a34', art: park }
 ];
 
 /** a block's slab (raised sidewalk) and its drawing */

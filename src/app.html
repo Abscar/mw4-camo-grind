@@ -27,7 +27,7 @@
 					}
 					// the three removed looks (Field Manual, Neon Grid, Command Center) open in Steel (themes.ts themeFrom)
 					if (t === 'field' || t === 'neon' || t === 'command') t = 'steel';
-					if (t === 'blackout' || t === 'steel' || t === 'matrix' || t === 'city') html.setAttribute('data-theme', t);
+					if (t === 'blackout' || t === 'steel' || t === 'matrix') html.setAttribute('data-theme', t);
 				} catch (e) {}
 				if (compact) html.setAttribute('data-compact', '');
 				// Battery saver (src/lib/motion.svelte.ts; the old pause button's "1" counts as on)

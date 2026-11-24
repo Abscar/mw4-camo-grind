@@ -23,6 +23,13 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'burgi-city',
+		date: '2026-11-24',
+		kind: 'new',
+		title: 'Burgi City',
+		text: 'A little town on the front page: tap a building to go in, the squad walks the streets, and Holk Park is open for a smoke break.'
+	},
+	{
 		id: 'title-removed',
 		date: '2026-11-24',
 		kind: 'update',
@@ -61,13 +68,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
 		title: 'Madness: slower, sneakier, knives',
 		text: 'Calmer pace and a closer camera. Sneak up behind enemies for silent takedowns, or throw knives (F) and pick them back up.',
 		tab: 'madness'
-	},
-	{
-		id: 'burgi-city-theme',
-		date: '2026-11-24',
-		kind: 'new',
-		title: 'New theme: Burgi City',
-		text: 'Pick it in the theme menu: the page turns into a town at night, one building per tab, the squad walking the streets.'
 	},
 	{
 		id: 'madness-chapter-2',

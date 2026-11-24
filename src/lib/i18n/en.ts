@@ -206,7 +206,7 @@ export const en = {
 			buddy: 'News buddy',
 			whatsNew: 'What’s new billboard',
 			madness: 'Abscars Madness button (the game)',
-			city: 'Burgi City map',
+			city: 'Burgi City (the town)',
 			news: 'News radar',
 			season: 'Season countdown',
 			kpi: 'Progress tiles',
@@ -325,7 +325,7 @@ export const en = {
 		here: 'You are here',
 		go: (name: string) => `Go to ${name}`,
 		park: 'Holk Park',
-		parkSub: 'Smoke break',
+		parkSub: 'Chill zone · tap to visit',
 		b: {
 			grind: { name: 'Abscar’s Base', sub: 'Camo grind HQ' },
 			ranked: { name: 'Ranked Tower', sub: 'CDL rules & classes' },
@@ -339,6 +339,99 @@ export const en = {
 		hbLeft: (n: number) => (n <= 0 ? 'Divergence unlocked' : `${n} HB to Divergence`),
 		inSquad: (n: number) => `${n} online now`,
 		burgers: (n: string) => `You have ${n} 🍔`
+	},
+
+	/** Holk Park, the park in Burgi City as a place of its own (HolkPark.svelte, drawing in holkPark.ts). */
+	park: {
+		title: 'Holk Park',
+		kicker: 'Burgi City’s finest chill zone. Tap anything.',
+		close: 'Leave the park',
+		scene: 'Holk Park at night: the Munchie Truck, a boombox, a campfire with the squad, the Golden Holk monument, a wishing pond, a hammock with the weed buddy and grass to touch',
+		swipe: 'Swipe to look around the park',
+		welcome: 'Welcome to Holk Park. No campaign players, no ranked stress, no randoms.',
+		act: {
+			fire: 'Stoke the fire',
+			monument: 'Light the monument',
+			pond: 'Make a wish',
+			truck: 'Order munchies',
+			radioOn: 'Radio on',
+			radioOff: 'Radio off',
+			grass: 'Touch grass',
+			buddy: 'Poke the buddy'
+		},
+		radioOnSay: 'Lo-fi beats to grind camos to 📻',
+		radioOffSay: 'The radio clicks off. The crickets take over.',
+		monumentSay: [
+			'You light the Golden Holk. The whole park smells like a Sunday.',
+			'The monument puffs a smoke ring the size of a Hardpoint.',
+			'A gold glow lights up the park. Somewhere a camo unlocks itself.',
+			'Smoke break taken. The grind can wait five minutes.',
+			'The statue coughs. Even statues need a break.'
+		],
+		monument420: 'It’s 4:20: the monument is lit for everyone 🌿',
+		fireSay: (name: string, story: string) => `${name}: “${story}”`,
+		stories: [
+			'Back in the day I hit a nuke with a riot shield. Nobody believes me.',
+			'I once got Gold on a launcher by accident. Still don’t know how.',
+			'Harmonic Break on a sniper took me a week. I dream in headshots now.',
+			'The trick with Hardpoint is simple: stand on the hill and refuse to die.',
+			'One time a random revived me. I still think about him.',
+			'I don’t camp. I hold angles. Big difference.',
+			'My K/D is a state of mind.',
+			'If you hear footsteps, it’s me. If you don’t, it’s also me.',
+			'I rage quit once. The controller had it coming.',
+			'Mastery camos are just a feeling you get after 25,000 kills.',
+			'Campaign? Never heard of her.',
+			'I put a burger on black in the casino and it paid my rent. In burgers.',
+			'The best loadout is whatever you’re having fun with. Unless it’s nerfed.',
+			'Divergence is a myth. I’ve seen it though.'
+		],
+		someone: 'A stranger',
+		wishSay: [
+			'The pond whispers: your next match is 30 kills and zero deaths.',
+			'The pond says: the next patch buffs your favourite gun.',
+			'A fish surfaces and mouths: “one more game”.',
+			'Your wish is granted: your next 15 headshots will feel very satisfying.',
+			'The pond predicts: a Gold camo within three matches.',
+			'The water ripples into a crown. Is that… a weekly MVP?',
+			'The pond says: Abscar will not be last this week. Probably.',
+			'A frog croaks “GG”. That’s a good sign.',
+			'The pond is quiet. Wishes for Divergence take a while to process.',
+			'Wish received. Delivery in one to three business grinds.'
+		],
+		munchies: [
+			'Order up: a double cheeseburger with extra holk sauce 🍔',
+			'Order up: loaded fries, extra cheese, no regrets 🍟',
+			'Order up: a space brownie (it’s just a brownie, officer) 🍫',
+			'Order up: three tacos and a lime soda 🌮',
+			'Order up: a box of glazed donuts for the squad 🍩',
+			'Order up: a pizza slice the size of a riot shield 🍕',
+			'Order up: a milkshake so thick it needs a second straw 🥤',
+			'Order up: nachos with everything, and then more everything 🧀'
+		],
+		grassSay: [
+			'You touch the grass. It’s cold and wet. Incredible.',
+			'Grass touched. Your mum would be proud.',
+			'You run your hand through the grass. A tiny flower pops up.',
+			'The grass is real. The grass has always been real.',
+			'You touch grass. Somewhere a K/D goes up by 0.01.'
+		],
+		grassRank: ['Has never touched grass', 'Touched grass once', 'Grass enjoyer', 'Certified outdoorsman', 'Has a sunburn', 'Basically a farmer', 'One with the grass'],
+		buddySay: [
+			'Mmh… five more minutes…',
+			'Zzz… nerf the shotguns… zzz…',
+			'Huh? Oh. Hey. Nice park, right?',
+			'I was dreaming about a gold camo. On me.',
+			'Shh. I’m photosynthesising.'
+		],
+		buddyAwake: 'The buddy waves from the hammock. It’s 4:20, nobody sleeps now.',
+		log: 'Park log',
+		breaks: 'Smoke breaks',
+		grass: 'Grass touched',
+		wishes: 'Wishes',
+		munchiesN: 'Munchies',
+		fires: 'Fire stoked',
+		logNote: 'Just for fun, saved on this device.'
 	},
 
 	/** The "What's new" billboard beside the news buddy (WhatsNewBoard, data in data/whatsNew.ts). */
