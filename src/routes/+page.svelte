@@ -16,7 +16,6 @@
 	import ClassSection from '#lib/components/ClassSection.svelte';
 	import CollectionsSection from '#lib/components/CollectionsSection.svelte';
 	import Dialog from '#lib/components/Dialog.svelte';
-	import HudReadout from '#lib/components/HudReadout.svelte';
 	import DamascusSteel from '#lib/components/DamascusSteel.svelte';
 	import NewsBanner from '#lib/components/NewsBanner.svelte';
 	import NewsBuddy from '#lib/components/NewsBuddy.svelte';
@@ -323,7 +322,6 @@
 				<OperatorTag />
 			</div>
 			<div class="hdr-title relative z-[1] min-w-0">
-				<div class="hdr-hud compact-hide relative mb-5" hidden={hidden.is('hud')}><HudReadout /><HideButton id="hud" abscar /></div>
 				<h1 class="font-head text-[clamp(28px,7vw,42px)] leading-none font-bold tracking-wide uppercase">
 					<span class="brand-glow text-brand">{t.title.game}</span><span
 						class="mx-[0.3em] font-normal text-band-muted"

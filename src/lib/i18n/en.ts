@@ -202,7 +202,6 @@ export const en = {
 		allPictures: 'All pictures',
 		names: {
 			squad: 'Squad frame (operators)',
-			hud: 'Red HUD box',
 			tv: 'Old TV',
 			buddy: 'News buddy',
 			whatsNew: 'What’s new billboard',
@@ -512,15 +511,6 @@ export const en = {
 		minutesAgo: (n: number) => `${n} min ago`,
 		hoursAgo: (n: number) => `${n} h ago`,
 		yesterday: 'yesterday'
-	},
-	hud: {
-		mode: 'Analysis: camo grind',
-		target: 'Target',
-		allDone: 'None, every Mastery camo is complete',
-		maxed: 'Weapons maxed',
-		status: 'Status',
-		grinding: 'Grinding',
-		complete: 'Complete'
 	},
 
 	kpi: {

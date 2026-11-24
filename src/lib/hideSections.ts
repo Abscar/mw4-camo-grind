@@ -13,7 +13,6 @@ export type HideGroup = 'header' | 'grind' | 'pictures' | 'tabs';
 export const HIDE_SECTIONS = [
 	// the top of the page (Abscar's header extras; the title itself always stays)
 	{ id: 'squad', group: 'header', abscar: true },
-	{ id: 'hud', group: 'header', abscar: true },
 	{ id: 'tv', group: 'header', abscar: true },
 	{ id: 'buddy', group: 'header', abscar: true },
 	{ id: 'whatsNew', group: 'header' },

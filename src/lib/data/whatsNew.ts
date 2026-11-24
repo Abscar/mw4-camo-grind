@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'hud-box-removed',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Tidier header',
+		text: 'The little red “Status: Grinding” box above the title is gone, so the header is cleaner.',
+		tab: 'grind'
+	},
+	{
 		id: 'madness-death-sounds',
 		date: '2026-11-24',
 		kind: 'update',

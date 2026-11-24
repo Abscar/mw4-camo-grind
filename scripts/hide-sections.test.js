@@ -61,7 +61,7 @@ test('header grid: hidden parts leave no rows, no TV = one column', () => {
 	assert.equal(noTv.wide, noTv.phone);
 	assert.equal(noTv.wideCols, 'minmax(0, 1fr)');
 
-	const onlyTitle = headerAreas(new Set(['squad', 'tv', 'buddy', 'whatsNew', 'hud']));
+	const onlyTitle = headerAreas(new Set(['squad', 'tv', 'buddy', 'whatsNew']));
 	const boardOnly = headerAreas(new Set(['buddy']));
 	assert.equal(boardOnly.phone, all.phone, 'the billboard keeps the buddy row');
 	assert.equal(onlyTitle.phone, "'title'");
