@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, keyLabel, keyMap, unbind } from '../src/lib/mayhem/controls.ts';
 import { FLOOR, Mayhem, NO_INPUT } from '../src/lib/mayhem/engine.ts';
+import { STARTER } from '../src/lib/mayhem/guns.ts';
 
 test('defaults: every action has a key, no key twice, Esc never bound', () => {
 	const all = ACTIONS.flatMap(({ a }) => DEFAULT_KEYS[a].filter(Boolean));
@@ -60,4 +61,20 @@ test('short hops off: a tapped jump goes as high as a held one', () => {
 	};
 	assert.ok(peak(true, 2) < peak(true, 40) - 60);
 	assert.ok(Math.abs(peak(false, 2) - peak(false, 40)) < 2);
+});
+
+test('game speed: saved, checked, and the engine slows evenly', async () => {
+	const { PACE } = await import('../src/lib/mayhem/controls.ts');
+	assert.equal(cleanSettings({ speed: 'slow' }).speed, 'slow');
+	assert.equal(cleanSettings({ speed: 'warp' }).speed, DEFAULT_SETTINGS.speed);
+	assert.equal(DEFAULT_SETTINGS.speed, 'calm');
+	assert.ok(PACE.slow < PACE.calm && PACE.calm < PACE.fast && PACE.fast === 1);
+	const run = (pace) => {
+		const g = new Mayhem('o1', STARTER, [], 1);
+		g.pace = pace;
+		const x0 = g.player.x;
+		for (let i = 0; i < 30; i++) g.step(1 / 60, { ...NO_INPUT, right: true });
+		return g.player.x - x0;
+	};
+	assert.ok(run(0.7) < run(1) * 0.85, 'calm moves less in the same real time');
 });

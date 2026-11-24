@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-speed',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Madness: calmer pace + game speed',
+		text: 'Abscars Madness runs about a third slower now. Pick Slow, Calm or Fast under Settings; jumps reach just as far.',
+		tab: 'madness'
+	},
+	{
 		id: 'burgi-city',
 		date: '2026-11-24',
 		kind: 'new',

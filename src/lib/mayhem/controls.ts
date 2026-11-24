@@ -43,8 +43,14 @@ export interface Settings {
 	hints: boolean;
 	/** let go of jump early for a short hop (off = every jump is a full jump) */
 	shortHop: boolean;
+	/** game speed: everything (you, enemies, bullets, timers) runs at this pace; jumps reach just as far */
+	speed: Speed;
 }
-export const DEFAULT_SETTINGS: Settings = { keys: DEFAULT_KEYS, volume: 0.8, shake: true, hints: true, shortHop: true };
+export type Speed = 'slow' | 'calm' | 'fast';
+export const SPEEDS: readonly Speed[] = ['slow', 'calm', 'fast'];
+/** 'fast' = the speed before 2026-11-24's second "too fast" (1 ×) */
+export const PACE: Record<Speed, number> = { slow: 0.55, calm: 0.7, fast: 1 };
+export const DEFAULT_SETTINGS: Settings = { keys: DEFAULT_KEYS, volume: 0.8, shake: true, hints: true, shortHop: true, speed: 'calm' };
 
 const CODE = /^[A-Za-z0-9]{1,24}$/;
 /** a saved copy, checked: unknown bits fall back to the defaults, a key used twice keeps its first place */
@@ -65,7 +71,8 @@ export function cleanSettings(v: unknown): Settings {
 	}
 	const vol = typeof o.volume === 'number' && Number.isFinite(o.volume) ? Math.min(1, Math.max(0, o.volume)) : DEFAULT_SETTINGS.volume;
 	const flag = (k: 'shake' | 'hints' | 'shortHop') => (typeof o[k] === 'boolean' ? (o[k] as boolean) : DEFAULT_SETTINGS[k]);
-	return { keys, volume: vol, shake: flag('shake'), hints: flag('hints'), shortHop: flag('shortHop') };
+	const speed = SPEEDS.includes(o.speed as Speed) ? (o.speed as Speed) : DEFAULT_SETTINGS.speed;
+	return { keys, volume: vol, shake: flag('shake'), hints: flag('hints'), shortHop: flag('shortHop'), speed };
 }
 
 /** put `code` on an action's slot; the key leaves any other place it had */

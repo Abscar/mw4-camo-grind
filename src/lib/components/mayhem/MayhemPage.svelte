@@ -19,7 +19,7 @@
 	import { CHAPTERS, chapterOf, LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, type LevelRecord } from '#lib/mayhem/levels.ts';
 	import { BRANCHES, canBuy, cleanSkills, SKILLS, skillCost, type SkillId } from '#lib/mayhem/skills.ts';
 	import { render } from '#lib/mayhem/render.ts';
-	import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, inputOf, keyLabel, keyMap, unbind, type Action, type Settings } from '#lib/mayhem/controls.ts';
+	import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, inputOf, keyLabel, keyMap, PACE, SPEEDS, unbind, type Action, type Settings } from '#lib/mayhem/controls.ts';
 	import { LOOKS, paintFigure, type GunPic } from '#lib/mayhem/painter.ts';
 	import { MayhemSound } from '#lib/mayhem/sound.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -171,7 +171,10 @@
 		saved = { ...saved, settings: s };
 		writeSaved(saved);
 		sfx.volume = s.volume;
-		if (game) game.shortHop = s.shortHop;
+		if (game) {
+			game.shortHop = s.shortHop;
+			game.pace = PACE[s.speed];
+		}
 	}
 	const keysChanged = $derived(JSON.stringify(settings.keys) !== JSON.stringify(DEFAULT_KEYS));
 
@@ -316,6 +319,7 @@
 		writeSaved(saved);
 		game = new Mayhem(id, start, skills, Date.now());
 		game.shortHop = settings.shortHop;
+		game.pace = PACE[settings.speed];
 		pauseSettings = false;
 		// for the check scripts (read only; like the frame cap's window.__mw4fx)
 		(window as unknown as { __mayhem: Mayhem }).__mayhem = game;
@@ -692,6 +696,14 @@
 				<input type="checkbox" checked={!muted} onchange={toggleMute} />
 				<span>{M.set.sound}</span>
 			</label>
+			<div class="mh-speed" role="radiogroup" aria-label={M.set.speed}>
+				<span class="mh-speed-l">{M.set.speed}<small>{M.set.speedHelp}</small></span>
+				<div class="mh-speed-b">
+					{#each SPEEDS as sp (sp)}
+						<button type="button" role="radio" aria-checked={settings.speed === sp} class:on={settings.speed === sp} onclick={() => saveSettings({ ...settings, speed: sp })}>{M.set.speeds[sp]}</button>
+					{/each}
+				</div>
+			</div>
 			<label class="mh-check">
 				<input type="checkbox" checked={settings.shake} onchange={(e) => saveSettings({ ...settings, shake: e.currentTarget.checked })} />
 				<span>{M.set.shake}</span>
@@ -1795,6 +1807,42 @@
 		height: 20px;
 		accent-color: #ff6a1a;
 		flex: none;
+	}
+	.mh-speed {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin: 4px 0 6px;
+		font-size: 13px;
+	}
+	.mh-speed-l small {
+		display: block;
+		font-size: 11px;
+		opacity: 0.65;
+	}
+	.mh-speed-b {
+		display: flex;
+		border: 1px solid rgba(255, 106, 26, 0.6);
+		border-radius: 8px;
+		overflow: hidden;
+	}
+	.mh-speed-b button {
+		min-width: 64px;
+		min-height: 44px;
+		padding: 0 12px;
+		font-size: 13px;
+		font-weight: 700;
+		color: inherit;
+		background: transparent;
+	}
+	.mh-speed-b button + button {
+		border-left: 1px solid rgba(255, 106, 26, 0.35);
+	}
+	.mh-speed-b button.on {
+		background: #ff6a1a;
+		color: #160a02;
 	}
 	.mh-check small {
 		display: block;

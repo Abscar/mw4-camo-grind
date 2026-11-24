@@ -425,6 +425,8 @@ export class Mayhem {
 	#held = false;
 	/** settings: let go of jump early for a short hop (off = every jump is a full jump) */
 	shortHop = true;
+	/** game speed (Settings): the whole step runs on dt × pace, so everything slows evenly and jumps reach as far */
+	pace = 1;
 	#wasHeld = false;
 	#want = 0;
 	#startGun: string;
@@ -639,6 +641,7 @@ export class Mayhem {
 
 	/** One step. `dt` in seconds (capped by the caller). */
 	step(dt: number, inp: Input) {
+		dt *= this.pace;
 		const prev = this.#prev;
 		this.#wasHeld = prev.jump;
 		this.#prev = { ...inp }; // a copy: the page mutates one input object in place
