@@ -23,7 +23,7 @@ const abs = (path: string) => BASE + path.replace(/^\//, '');
  * (it used to fetch all ≈ 6 MB again after every deploy, and the news deploys run hourly).
  */
 /** pictures + sound files (Abscars Madness' gunshots) are cached when first used, not on install */
-const PICTURE = /\.(webp|png|jpe?g|gif|avif|wav)$/i;
+const PICTURE = /\.(webp|png|jpe?g|gif|avif|wav|mp3)$/i;
 const PRECACHE = [...immutable, ...assets, ...prerendered]
 	.map((f) => abs(f.path))
 	.filter((path) => !PICTURE.test(path));

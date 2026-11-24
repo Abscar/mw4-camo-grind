@@ -23,6 +23,22 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-death-sounds',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Madness: oof and wasted',
+		text: 'Enemies go “oof” when they drop, and you get the classic “wasted” sting when you die yourself.',
+		tab: 'madness'
+	},
+	{
+		id: 'madness-hitmarkers',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Hitmarkers in Abscars Madness',
+		text: 'An X flashes on your crosshair with a crisp tick every time a shot lands, and turns red on a kill.',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-stealth',
 		date: '2026-11-24',
 		kind: 'update',

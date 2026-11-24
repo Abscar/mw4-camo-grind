@@ -360,8 +360,21 @@
 		raf = requestAnimationFrame(frame);
 	}
 
+	/** the hitmarker: an X at the crosshair when your shot lands (white), red on a kill (2026-11-24, the user's ask) */
+	let hm = $state<{ n: number; x: number; y: number; kind: 'hit' | 'head' | 'kill' } | null>(null);
+	let hmTimer = 0;
+	function hitmark(kind: 'hit' | 'head' | 'kill') {
+		// a kill keeps its red X even if a hit lands in the same frame
+		if (hm && hm.kind === 'kill' && kind !== 'kill' && performance.now() - hm.n < 120) return;
+		hm = { n: performance.now(), x: mfx * 100, y: mfy * 100, kind };
+		clearTimeout(hmTimer);
+		hmTimer = window.setTimeout(() => (hm = null), kind === 'kill' ? 420 : 300);
+	}
+
 	function onEvent(e: GameEvent) {
 		sfx.play(e);
+		if (e.t === 'hit' && e.mine) hitmark(e.head ? 'head' : 'hit');
+		else if (e.t === 'kill') hitmark('kill');
 		if (e.t === 'complete') setTimeout(finish, 1500);
 	}
 
@@ -740,6 +753,15 @@
 				{/each}
 			</div>
 
+			{#if screen === 'play' && hm}
+				{#key hm.n}
+					<svg class="mh-hitmark" data-kind={hm.kind} style:left="{hm.x}%" style:top="{hm.y}%" viewBox="-20 -20 40 40" aria-hidden="true">
+						<g>
+							<path d="M-14-14L-5-5M14-14L5-5M-14 14L-5 5M14 14L5 5" />
+						</g>
+					</svg>
+				{/key}
+			{/if}
 			{#if screen === 'play'}
 				<!-- HUD -->
 				<div class="mh-hud" aria-hidden="true">
@@ -1045,6 +1067,67 @@
 		touch-action: manipulation;
 		user-select: none;
 		-webkit-user-select: none;
+	}
+	/* the hitmarker: four short diagonal strokes round the crosshair, a dark edge so it reads on light walls */
+	.mh-hitmark {
+		position: absolute;
+		z-index: 6;
+		width: 34px;
+		height: 34px;
+		margin: -17px 0 0 -17px;
+		pointer-events: none;
+		overflow: visible;
+		animation: mh-hm 0.3s ease-out forwards;
+	}
+	.mh-hitmark path {
+		fill: none;
+		stroke: #fff;
+		stroke-width: 3.2;
+		stroke-linecap: square;
+		filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
+	}
+	.mh-hitmark[data-kind='head'] {
+		width: 40px;
+		height: 40px;
+		margin: -20px 0 0 -20px;
+	}
+	.mh-hitmark[data-kind='kill'] {
+		width: 42px;
+		height: 42px;
+		margin: -21px 0 0 -21px;
+		animation-duration: 0.42s;
+	}
+	.mh-hitmark[data-kind='kill'] path {
+		stroke: #ff2a2a;
+		stroke-width: 3.6;
+	}
+	@keyframes mh-hm {
+		0% {
+			transform: scale(1.35);
+			opacity: 1;
+		}
+		25% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.mh-hitmark {
+			animation-name: mh-hm-still;
+		}
+		@keyframes mh-hm-still {
+			0%,
+			40% {
+				opacity: 1;
+			}
+			100% {
+				opacity: 0;
+			}
+		}
 	}
 	.mh-stage.playing {
 		cursor: crosshair;

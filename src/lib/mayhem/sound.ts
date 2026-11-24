@@ -24,6 +24,13 @@ import lmgWav from '#lib/assets/mayhem/lmg.wav';
 import shotgunWav from '#lib/assets/mayhem/shotgun.wav';
 import marksmanWav from '#lib/assets/mayhem/marksman.wav';
 import sniperWav from '#lib/assets/mayhem/sniper.wav';
+/** the hitmarker sound the user picked (2026-11-24: "använd detta ljudet", a QuickSounds.com file they downloaded;
+ *  told it is most likely the game's own sound, they chose it anyway). Synth tick until it has loaded. */
+import hitmarkerMp3 from '#lib/assets/mayhem/hitmarker.mp3';
+/** death sounds the user sent (2026-11-24): the classic "oof" when an enemy dies, the "wasted" sting when the
+ *  player dies. Synth sounds until they have loaded. */
+import oofMp3 from '#lib/assets/mayhem/oof.mp3';
+import wastedMp3 from '#lib/assets/mayhem/wasted.mp3';
 
 /** recorded shots: file, loudness, base playback rate, and which synth layers (by index) still play on top */
 const REC: Partial<Record<GunKind, { url: string; vol: number; rate: number; keep: number[] }>> = {
@@ -114,9 +121,25 @@ export class MayhemSound {
 	#out: GainNode | null = null;
 	#last = new Map<string, number>();
 	#rec = new Map<GunKind, AudioBuffer>();
+	#hitBuf: AudioBuffer | null = null;
+	#oofBuf: AudioBuffer | null = null;
+	#wastedBuf: AudioBuffer | null = null;
 
 	/** fetch + decode the recorded shots (once); a failure just leaves that gun on its synth sound */
 	#loadRecordings(ctx: AudioContext) {
+		fetch(hitmarkerMp3)
+			.then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+			.then((data) => new Promise<AudioBuffer>((ok, bad) => ctx.decodeAudioData(data, ok, bad)))
+			.then((buf) => (this.#hitBuf = buf))
+			.catch(() => {});
+		const one = (url: string, set: (b: AudioBuffer) => void) =>
+			fetch(url)
+				.then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+				.then((data) => new Promise<AudioBuffer>((ok, bad) => ctx.decodeAudioData(data, ok, bad)))
+				.then(set)
+				.catch(() => {});
+		one(oofMp3, (b) => (this.#oofBuf = b));
+		one(wastedMp3, (b) => (this.#wastedBuf = b));
 		for (const [kind, r] of Object.entries(REC) as [GunKind, NonNullable<(typeof REC)[GunKind]>][]) {
 			fetch(r.url)
 				.then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
@@ -218,6 +241,18 @@ export class MayhemSound {
 		}
 	}
 
+	/** a crisp tick: a very short bright noise snap + a quick metallic ping that dies at once */
+	#hitmark(pitch = 1, loud = 1) {
+		if (this.#hitBuf) {
+			this.#sample(this.#hitBuf, 0.7 * loud, pitch, false);
+			return;
+		}
+		this.#layer({ n: 'noise', type: 'highpass', f: 4200 * pitch, q: 0.9, len: 0.012, vol: 0.32 * loud });
+		this.#layer({ n: 'noise', type: 'bandpass', f: 3100 * pitch, q: 6, len: 0.035, vol: 0.34 * loud });
+		this.#layer({ n: 'tone', wave: 'square', f: 2350 * pitch, to: 2150 * pitch, len: 0.028, vol: 0.09 * loud });
+		this.#layer({ n: 'tone', wave: 'triangle', f: 4700 * pitch, to: 4500 * pitch, len: 0.02, vol: 0.07 * loud });
+	}
+
 	#burst(f: number, q: number, len: number, vol: number, type: BiquadFilterType = 'bandpass', to?: number) {
 		this.#layer({ n: 'noise', type, f, q, len, vol, to });
 	}
@@ -248,11 +283,16 @@ export class MayhemSound {
 				break;
 			}
 			case 'hit':
-				if (this.#ok('hit', 0.03)) this.#tone(e.head ? 1700 : 1200, e.head ? 1500 : 1000, 0.05, 0.12, 'square');
+				// the hitmarker (2026-11-24): the user's hitmarker.mp3 (synth tick until it has loaded)
+				if (e.mine && this.#ok('hit', 0.035)) this.#hitmark(e.head ? 1.12 : 1);
+				else if (!e.mine && this.#ok('hitE', 0.06)) this.#tone(1200, 1000, 0.04, 0.05, 'square');
 				break;
 			case 'kill':
-				this.#tone(2200, 1800, 0.07, 0.14, 'square');
-				this.#tone(2600, 2200, 0.06, 0.1, 'square', 0.045);
+				this.#hitmark(1, 1.4);
+				// the enemy's "oof" (the user's file); the old low thump until it has loaded
+				if (this.#oofBuf) {
+					if (this.#ok('oof', 0.12)) this.#sample(this.#oofBuf, 0.75, 0.95 + Math.random() * 0.1, false);
+				} else this.#tone(380, 150, 0.12, 0.22, 'triangle', 0.005);
 				break;
 			case 'hurt':
 				if (this.#ok('hurt', 0.12)) this.#tone(220, 90, 0.18, 0.25, 'sawtooth');
@@ -312,7 +352,8 @@ export class MayhemSound {
 				this.#tone(750, 1500, 0.3, 0.18, 'triangle', 0.14);
 				break;
 			case 'dead':
-				this.#tone(400, 50, 1.1, 0.35, 'sawtooth');
+				if (this.#wastedBuf) this.#sample(this.#wastedBuf, 0.9, 1, false);
+				else this.#tone(400, 50, 1.1, 0.35, 'sawtooth');
 				break;
 			case 'door':
 				this.#burst(300, 0.6, 0.5, 0.25);
