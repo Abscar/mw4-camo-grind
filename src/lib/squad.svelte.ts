@@ -116,6 +116,7 @@ import { is420 } from './four20.ts';
 import { addDuel, bestOfOthers, cleanArcade, mergeArcade, playDuel, recordPlay, ticketsOf, duelsFor, duelOutcome, type ArcadeGame, type ArcadeState, type PlayResult, type Tickets } from './arcade.ts';
 import { buyPrize as arcadeBuy, ownPrizes, PRIZE_BY_ID, type PrizeBuyResult } from './arcade-prizes.ts';
 import { GAME_WORDS } from './i18n/arcade/index.ts';
+import { makeZero } from './casino-zero.ts';
 import { cleanTune, forcedFor, karmaLuck, luckFor, withUsed, type CasinoTune, type ForceKind, type KarmaLuck, type RigGame } from './casino-rig.ts';
 
 const KEY = 'mw4-camo-grind:squad';
@@ -1043,6 +1044,24 @@ class Squad {
 		});
 		this.#done(outcome);
 		if (outcome === 'ok') await this.#event(delta > 0 ? t.admin.gaveEvent(name, delta) : t.admin.tookEvent(name, -delta));
+		return outcome === 'ok';
+	}
+
+	/**
+	 * Reset the casino stats (casino-zero.ts): the leaderboard, the house line and the admin totals start
+	 * from 0. Nobody's burgers change. Only Abscar may.
+	 */
+	async resetCasinoStats(): Promise<boolean> {
+		if (this.me?.op !== HOUSE_OP) return false;
+		const at = Math.round(this.serverNow());
+		const outcome = await this.#squad.write((doc) => {
+			const members = this.#members(doc);
+			const bank = burgerBank(doc, members, at);
+			const house = Object.fromEntries(Object.entries(bank).map(([id, r]) => [id, r.house]));
+			return { ...doc, zero: makeZero(at, members, doc.grants, house) };
+		});
+		this.#done(outcome);
+		if (outcome === 'ok') await this.#event(t.admin.resetEvent);
 		return outcome === 'ok';
 	}
 

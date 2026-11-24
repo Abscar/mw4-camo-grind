@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'casino-stats-reset',
+		date: '2026-11-24',
+		kind: 'update',
+		title: 'Casino leaderboard can start over',
+		text: 'Abscar can now put everyone’s casino stats back at 0 for a fresh race. Nobody loses a single burger.',
+		tab: 'casino'
+	},
+	{
 		id: 'madness-real-guns',
 		date: '2026-11-24',
 		kind: 'update',

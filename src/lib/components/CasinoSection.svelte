@@ -26,8 +26,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/en.ts';
 	import { squad } from '#lib/squad.svelte.ts';
-	import { bonus420, casinoTotal, daysToNextRate, dailyRate, dailyTotal, DAILY } from '#lib/squad-casino.ts';
+	import { bonus420, daysToNextRate, dailyRate, dailyTotal, DAILY } from '#lib/squad-casino.ts';
 	import { burgerBank, houseOf } from '#lib/squad-fun.ts';
+	import { casinoSince, houseSince } from '#lib/casino-zero.ts';
 	import { bonusMeter, floorNews, hotGame } from '#lib/casinoFloor.ts';
 	import CasinoSign from './CasinoSign.svelte';
 	import CasinoTicker from './CasinoTicker.svelte';
@@ -102,7 +103,7 @@
 	const members = $derived(Object.fromEntries(squad.entries.map((e) => [e.id, e.member])));
 	const houseId = $derived(houseOf(members));
 	const houseEntry = $derived(houseId ? (squad.entries.find((e) => e.id === houseId) ?? null) : null);
-	const houseTake = $derived(houseId && squad.doc ? (burgerBank(squad.doc, members, squad.now)[houseId]?.house ?? 0) : 0);
+	const houseTake = $derived(houseId && squad.doc ? houseSince(houseId, burgerBank(squad.doc, members, squad.now)[houseId]?.house ?? 0, squad.doc.zero) : 0);
 	/** The tiles: Admin (Abscar's control room, CasinoRig) only for the member who is the house. */
 	const GAMES = $derived(houseEntry?.mine ? ALL_GAMES : ALL_GAMES.filter((g) => g !== 'admin'));
 	const PLAY = $derived(GAMES.filter((g) => !UTIL.includes(g)));
@@ -122,7 +123,7 @@
 	const board = $derived(
 		squad.entries
 			.map((e) => {
-				const tally = casinoTotal(e.member.casino);
+				const tally = casinoSince(e.id, e.member.casino, squad.doc?.zero);
 				return { e, ...tally, net: e.mine ? tally.net - pending : tally.net };
 			})
 			.filter((x) => x.games > 0)

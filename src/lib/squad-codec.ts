@@ -28,6 +28,7 @@ import { CLASSES, WEAPONS } from './data/weapons.ts';
 import { APP_ID } from './progress-codec.ts';
 import { cleanBans, type Bans } from './squad-bans.ts';
 import { cleanTune, type CasinoTune } from './casino-rig.ts';
+import { cleanZero, type CasinoZero } from './casino-zero.ts';
 import { cleanCasino, cleanOnline, NET_MAX, type CasinoLedger, type OnlineDays } from './squad-casino.ts';
 import { cleanShop, type ShopState } from './shop.ts';
 import { cleanLoans, type LoanBook } from './loans.ts';
@@ -222,6 +223,8 @@ export interface SquadDoc {
 	grants?: Record<string, number>;
 	/** Abscar's casino control room (casino-rig.ts; 2026-11-19): odds, luck and forced results. */
 	tune?: CasinoTune;
+	/** Abscar's reset of the casino stats (casino-zero.ts; 2026-11-24): numbers at the reset, shown as now − then. */
+	zero?: CasinoZero;
 	/**
 	 * BurgiGives' karma bank (donations.ts; 2026-11-21): every donated burger becomes a heart only Abscar
 	 * sees. What Abscar sent back until 2026-11-22 (it arrived as burgers; member id → total), with a log of
@@ -257,7 +260,7 @@ export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
 const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans', 'donations', 'karmaShop', 'arcade']);
-const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune', 'karma', 'karmaHearts']);
+const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune', 'karma', 'karmaHearts', 'zero']);
 
 /** Admin grants: member id → whole burgers (±), within a sane range. */
 export function cleanGrants(raw: unknown): Record<string, number> | undefined {
@@ -502,6 +505,8 @@ export function fromSquadWire(raw: unknown): SquadDoc | null {
 	if (grants) doc.grants = grants;
 	const tune = cleanTune(raw.tune);
 	if (tune) doc.tune = tune;
+	const zero = cleanZero(raw.zero);
+	if (zero) doc.zero = zero;
 	const karma = cleanKarma(raw.karma);
 	if (karma) doc.karma = karma;
 	const karmaHearts = cleanKarma(raw.karmaHearts);
@@ -524,6 +529,7 @@ export function toSquadWire(doc: SquadDoc): SquadWire {
 	if (doc.bans) wire.bans = doc.bans;
 	if (doc.grants) wire.grants = doc.grants;
 	if (doc.tune) wire.tune = doc.tune;
+	if (doc.zero) wire.zero = doc.zero;
 	if (doc.karma) wire.karma = doc.karma;
 	if (doc.karmaHearts) wire.karmaHearts = doc.karmaHearts;
 	return wire;

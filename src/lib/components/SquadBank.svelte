@@ -13,6 +13,7 @@
 	import { duelResult } from '#lib/squad-codec.ts';
 	import { betOutcome, burgerBank, debts, raceWinner, BURGERS } from '#lib/squad-fun.ts';
 	import { toast } from '#lib/toast.svelte.ts';
+	import { houseSince } from '#lib/casino-zero.ts';
 	import Dialog from './Dialog.svelte';
 
 	const b = t.squad.bank;
@@ -97,7 +98,7 @@
 			<li class="bk-row flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5" class:bk-mine={r.id === squad.me?.id}>
 				<span class="num w-5 flex-none text-[12px] text-muted">{i + 1}</span>
 				<b class="min-w-0 flex-1 truncate text-[13px]">{r.name}</b>
-				{#if r.row?.house}<span class="bk-house font-head" title={t.casino.house.heading}>🏦 {b.houseTag(r.row.house)}</span>{/if}
+				{#if r.row && houseSince(r.id, r.row.house, squad.doc?.zero) > 0}<span class="bk-house font-head" title={t.casino.house.heading}>🏦 {b.houseTag(houseSince(r.id, r.row.house, squad.doc?.zero))}</span>{/if}
 				{#if r.row?.held}<span class="text-[11px] text-muted">{b.onBets(r.row.held)}</span>{/if}
 				<span class="bk-n num flex flex-none items-center gap-1 font-head">{@render burger(14)}{(r.row?.balance ?? 0).toLocaleString('en-US')}<span class="sr-only"> {b.icon}</span></span>
 			</li>

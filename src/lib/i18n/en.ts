@@ -1135,7 +1135,16 @@ export const en = {
 		},
 		signed: (n: number) => `${n < 0 ? '−' : '+'}${Math.abs(n).toLocaleString('en-US')}`,
 		gaveEvent: (name: string, n: number) => `gave ${name} ${n.toLocaleString('en-US')} 🍔 (admin) 🎁`,
-		tookEvent: (name: string, n: number) => `took ${n.toLocaleString('en-US')} 🍔 from ${name} (admin) 🔨`
+		tookEvent: (name: string, n: number) => `took ${n.toLocaleString('en-US')} 🍔 from ${name} (admin) 🔨`,
+		reset: 'Reset casino stats',
+		resetHelp: 'The leaderboard, the house income and the admin totals start again from 0. Nobody’s burgers change.',
+		resetAsk: 'Reset everyone’s casino stats?',
+		resetYes: 'Yes, reset',
+		resetNo: 'Cancel',
+		resetDone: 'Casino stats reset: the leaderboard starts from 0',
+		resetSince: (d: string) => `Counting since the reset on ${d}`,
+		beforeReset: 'Before the reset (casino + admin + house)',
+		resetEvent: 'reset the casino leaderboard: everyone starts from 0 🔄'
 	},
 	/** Abscar's control room in BurgiCasino (casino-rig.ts, CasinoRig.svelte; 2026-11-19). */
 	rig: {
