@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'case-battles',
+		date: '2026-11-24',
+		kind: 'new',
+		title: 'Case Battles in BurgiCasino',
+		text: '47 CS2 cases: open them, or open a lobby the squad can join (1v1 up to 2v2). All cases open at once; the best total takes it all.',
+		tab: 'casino'
+	},
+	{
 		id: 'madness-speed',
 		date: '2026-11-24',
 		kind: 'update',

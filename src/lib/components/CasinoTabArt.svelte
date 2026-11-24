@@ -22,7 +22,7 @@
 	its name in words. The selected tab's picture moves a little (the wheel turns, the bulbs blink …).
 -->
 <script module lang="ts">
-	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
+	export type CasinoTab = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'cases' | 'roulette' | 'blackjack' | 'shop' | 'bank' | 'donate' | 'admin';
 </script>
 
 <script lang="ts">

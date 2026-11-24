@@ -39,8 +39,8 @@ import { randInt } from './squad-casino.ts';
 import type { StashPlay } from './stash.ts';
 import { SKW_FORCES, type SkwForce } from './skeddwood.ts';
 
-export type RigGame = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'roulette' | 'blackjack';
-export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'roulette', 'blackjack'];
+export type RigGame = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'cases' | 'roulette' | 'blackjack';
+export const RIG_GAMES: RigGame[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'cases', 'roulette', 'blackjack'];
 /** Luck and odds run from −LUCK_MAX to +LUCK_MAX. */
 export const LUCK_MAX = 100;
 /** Draws per ±50 of luck past the first: +50 = best of two, +100 = best of three. */

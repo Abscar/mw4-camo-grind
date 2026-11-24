@@ -226,6 +226,10 @@
 		color: #ffb347;
 		text-shadow: 0 0 6px rgb(255 160 60 / 0.8);
 	}
+	.tk-item[data-game='cases'] .tk-star {
+		color: #ffd23a;
+		text-shadow: 0 0 6px rgb(255 210 58 / 0.8);
+	}
 	.tk-item[data-game='roulette'] .tk-star {
 		color: #3ee06a;
 	}

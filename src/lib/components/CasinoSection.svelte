@@ -45,6 +45,8 @@
 	import CasinoKushburst from './CasinoKushburst.svelte';
 	import CasinoStash from './CasinoStash.svelte';
 	import CasinoSkeddwood from './CasinoSkeddwood.svelte';
+	import CasinoCases from './cases/CasinoCases.svelte';
+	import CasesTileArt from './cases/CasesTileArt.svelte';
 	import CasinoTabArt, { type CasinoTab } from './CasinoTabArt.svelte';
 	import MybotsLogo from './MybotsLogo.svelte';
 	import FortuneLogo from './FortuneLogo.svelte';
@@ -66,7 +68,7 @@
 	const atTable = $derived(squad.on && bjTable.online ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
 	type Game = Exclude<CasinoTab, 'shop'>;
-	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
+	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'cases', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
 	/** Not games: a row of smaller tiles of their own under the game tiles. */
 	const UTIL: Game[] = ['bank', 'donate', 'admin'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
@@ -140,7 +142,7 @@
 </script>
 
 <section bind:this={casinoEl} class="class-card meta-list casino overflow-hidden rounded-card bg-panel shadow-card" style:--c="#ffc928" aria-labelledby="casino-h">
-	<CasinoFloorFx neon={squad.on && ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'roulette', 'blackjack'].includes(game)} />
+	<CasinoFloorFx neon={squad.on && ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'cases', 'roulette', 'blackjack'].includes(game)} />
 	<CasinoSign on={squad.on} value={shown} snapKey={game} onbig={() => confetti?.fire()} />
 	<CasinoConfetti bind:this={confetti} />
 
@@ -177,7 +179,7 @@
 				<button type="button" class="casino-game" class:util={!span} data-game={g} aria-pressed={game === g} style:--span={span || undefined} onclick={() => pick(g)}>
 					<span class="tile-fx" aria-hidden="true"></span>
 					{#if g === hot}<span class="casino-hot font-head" title={hotWon ? f.hotLabel : f.hotParty}><span aria-hidden="true">🔥</span> {f.hot}</span>{/if}
-					{#if g === 'fortune2'}<MybotsLogo tile />{:else if g === 'slots'}<FortuneLogo tile live={game === g} />{:else if g === 'book'}<BookLogo tile live={game === g} />{:else if g === 'kushburst'}<KushLogo tile live={game === g} />{:else if g === 'stash'}<StashLogo tile live={game === g} />{:else if g === 'skeddwood'}<SkeddwoodLogo tile live={game === g} />{:else}<CasinoTabArt kind={g} />{/if}
+					{#if g === 'fortune2'}<MybotsLogo tile />{:else if g === 'slots'}<FortuneLogo tile live={game === g} />{:else if g === 'book'}<BookLogo tile live={game === g} />{:else if g === 'kushburst'}<KushLogo tile live={game === g} />{:else if g === 'stash'}<StashLogo tile live={game === g} />{:else if g === 'skeddwood'}<SkeddwoodLogo tile live={game === g} />{:else if g === 'cases'}<CasesTileArt live={game === g} />{:else}<CasinoTabArt kind={g} />{/if}
 					<span class="casino-game-name font-head">{c.games[g]}</span>
 					{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
 							><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span
@@ -213,6 +215,8 @@
 					<CasinoStash {balance} bind:hidden bind:pending />
 				{:else if game === 'skeddwood'}
 					<CasinoSkeddwood {balance} bind:hidden bind:pending />
+				{:else if game === 'cases'}
+					<CasinoCases {balance} bind:hidden bind:pending />
 				{:else if game === 'roulette'}
 					<CasinoRoulette {balance} bind:hidden bind:pending />
 				{:else if game === 'blackjack'}
@@ -430,6 +434,10 @@
 	.casino-game[data-game='skeddwood'] {
 		--tile: #7a3a12;
 		--tile-2: #2a1206;
+	}
+	.casino-game[data-game='cases'] {
+		--tile: #6a4a10;
+		--tile-2: #1a1004;
 	}
 	.casino-game[data-game='admin'] {
 		--tile: #4a1218;

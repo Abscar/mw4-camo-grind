@@ -10,7 +10,7 @@
  */
 import type { RadioMsg } from './squad-radio.ts';
 
-export type FloorGame = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'roulette' | 'blackjack';
+export type FloorGame = 'slots' | 'fortune2' | 'book' | 'kushburst' | 'stash' | 'skeddwood' | 'cases' | 'roulette' | 'blackjack';
 
 export interface FloorWin {
 	id: string;
@@ -30,6 +30,7 @@ const GAME_MARK: [string, FloorGame][] = [
 	['🍃', 'kushburst'],
 	['💨', 'stash'],
 	['🤠', 'skeddwood'],
+	['📦', 'cases'],
 	['🎡', 'roulette'],
 	['🃏', 'blackjack']
 ];
