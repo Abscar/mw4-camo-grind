@@ -76,7 +76,8 @@
 	import { headerAreas, type HideId } from '#lib/hideSections.ts';
 	import HideButton from '#lib/components/HideButton.svelte';
 	import HiddenBar from '#lib/components/HiddenBar.svelte';
-	import BurgiCity from '#lib/components/BurgiCity.svelte';
+	import HolkPark from '#lib/components/HolkPark.svelte';
+	import { holk } from '#lib/abscarOperator.ts';
 	import PageTabIcon from '#lib/components/PageTabIcon.svelte';
 
 	/** The page tabs under the header (2026-11-12; Squad 2026-11-14; BurgiCasino + BurgiShop 2026-11-16; Ranked
@@ -112,6 +113,13 @@
 	};
 	const tabShown = (tab: PageTab) => tab === 'grind' || !hidden.is(TAB_HIDE[tab]);
 	const shownTabs = $derived(PAGE_TABS.filter(tabShown));
+	/** Holk Park (HolkPark.svelte): opened by the hidden holk at the bottom or the terminal's "park" command. */
+	let parkOpen = $state(false);
+	$effect(() => {
+		const go = () => (parkOpen = true);
+		window.addEventListener('mw4:holk-park', go);
+		return () => window.removeEventListener('mw4:holk-park', go);
+	});
 
 	// the tab you're on was hidden (its own "Hide this tab" button, or the list): back to Camo grind
 	$effect(() => {
@@ -327,16 +335,11 @@
 			<!-- the old TV with CoD montages; z above the fixed scanline layer (z 30), so nothing is
 			     drawn over the video -->
 			<div class="hdr-tv abscar-only compact-hide relative z-[31]" hidden={hidden.is('tv')}><RetroTv /></div>
-			<!-- the buddy's row (2026-11-24, the user: "drag What's new and my grass buddy to the right, squeeze Burgi City in
-			     the middle, on the main theme"): Burgi City (Abscar only) on the left, the news buddy with the "What's new"
-			     billboard under him on the right; on narrow screens buddy + board first, the town under them -->
-			<div class="hdr-buddy compact-hide relative z-[1]" hidden={hidden.is('buddy') && hidden.is('whatsNew') && hidden.is('city')}>
-				<div class="hdr-city abscar-only" hidden={hidden.is('city')}><BurgiCity {view} shown={shownTabs} ongo={goTab} /></div>
-				<div class="hdr-right" hidden={hidden.is('buddy') && hidden.is('whatsNew')}>
-					<div class="hdr-buddy-in abscar-only relative" hidden={hidden.is('buddy')}><NewsBuddy /><HideButton id="buddy" /></div>
-					<div class="hdr-board relative" hidden={hidden.is('whatsNew')}>
-						<WhatsNewBoard ongo={goTab} /><HideButton id="whatsNew" />
-					</div>
+			<!-- the buddy's row: the news buddy and, beside him, the "What's new" billboard (2026-11-23; every theme) -->
+			<div class="hdr-buddy compact-hide relative z-[1]" hidden={hidden.is('buddy') && hidden.is('whatsNew')}>
+				<div class="hdr-buddy-in abscar-only relative" hidden={hidden.is('buddy')}><NewsBuddy /><HideButton id="buddy" /></div>
+				<div class="hdr-board relative" hidden={hidden.is('whatsNew')}>
+					<WhatsNewBoard ongo={goTab} /><HideButton id="whatsNew" />
 				</div>
 			</div>
 		</header>
@@ -499,6 +502,14 @@
 			</div>
 			<HideButton id="help" inline class="mt-px" />
 		</footer>
+		<!-- Holk Park, hidden (2026-11-24, the user: "TA BORT burgicity, men behåll holk park nånstans gömd på sidan"):
+		     Burgi City is gone; its park lives on behind a faint little golden holk at the very bottom of the page
+		     (and the secret terminal's "park" command). Not part of Hide: it's an easter egg. -->
+		<div class="park-egg-row compact-hide">
+			<button type="button" class="park-egg" aria-label={t.park.egg} title={t.park.egg} onclick={() => (parkOpen = true)}>
+				<svg viewBox="0 0 44 20" aria-hidden="true">{@html holk('egg', 4, 13, 36, 7, 2.4, 6, 4, true)}</svg>
+			</button>
+		</div>
 	</main>
 </div>
 
@@ -518,6 +529,7 @@
 <BootSequence />
 <!-- Abscar: the secret terminal (type "abscar", press §, or tap the red HUD box 5 times) -->
 <AbscarTerminal />
+<HolkPark bind:open={parkOpen} />
 
 <Dialog bind:open={linkDialogOpen} title={t.linkImport.title}>
 	{#if linkOffer}
@@ -767,7 +779,7 @@
 	:global([data-theme='blackout']) .abscar-header {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas: var(--hdr-phone, 'squad' 'tv' 'buddy' 'city');
+		grid-template-areas: var(--hdr-phone, 'squad' 'tv' 'buddy');
 		gap: 20px 24px;
 		align-items: start;
 	}
@@ -783,68 +795,32 @@
 		justify-self: stretch;
 		max-width: 100%;
 	}
-	/* Burgi City on the left, the buddy + billboard on the right (2026-11-24). wrap-reverse: when they don't fit
-	   side by side, the right group's line goes on top and the town under it */
+	/* the buddy and the billboard side by side where they fit, the billboard under him otherwise */
 	.hdr-buddy {
 		display: flex;
-		flex-wrap: wrap-reverse;
-		align-items: flex-end;
+		flex-wrap: wrap;
+		align-items: flex-start;
 		gap: 16px 20px;
 		width: 100%;
 	}
 	.hdr-buddy[hidden],
-	.hdr-buddy > [hidden],
-	.hdr-right > [hidden] {
+	.hdr-buddy > [hidden] {
 		display: none;
 	}
-	.hdr-city {
-		flex: 1 1 620px;
-		min-width: min(100%, 620px);
-	}
-	.hdr-city :global(.city) {
-		margin-top: 0;
-	}
-	.hdr-right {
-		flex: 0 1 460px;
-		margin-left: auto;
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		gap: 14px;
-		max-width: 100%;
-		min-width: 0;
-	}
 	.hdr-buddy-in {
+		flex: 0 1 auto;
 		max-width: 100%;
 	}
 	.hdr-board {
-		width: 100%;
+		flex: 1 1 300px;
 		max-width: 460px;
 		min-width: 0;
-	}
-	/* below 1140 px (Abscar): the row splits into two grid items, the town gets a full-width row of its own
-	   (`city` in headerAreas); the buddy + board sit left like before */
-	@media (max-width: 1139px) {
-		:global([data-theme='blackout']) .hdr-buddy {
-			display: contents;
-		}
-		:global([data-theme='blackout']) .hdr-right {
-			grid-area: buddy;
-			margin-left: 0;
-			align-items: flex-start;
-			width: 100%;
-			flex-basis: auto;
-		}
-		:global([data-theme='blackout']) .hdr-city {
-			grid-area: city;
-			min-width: 0;
-		}
 	}
 	/* two columns once the title (≈ 425 px) and the TV (304 px) fit side by side */
 	@media (min-width: 820px) {
 		:global([data-theme='blackout']) .abscar-header {
 			grid-template-columns: var(--hdr-mid-cols, minmax(0, 1fr) auto);
-			grid-template-areas: var(--hdr-mid, 'squad squad' 'buddy tv' 'city city');
+			grid-template-areas: var(--hdr-mid, 'squad squad' 'buddy tv');
 		}
 		:global([data-theme='blackout']) .hdr-tv {
 			justify-self: end;
@@ -891,5 +867,35 @@
 		:global([data-theme='blackout']) .hdr-tv {
 			--tvz: 1.9;
 		}
+	}
+	/* the hidden way into Holk Park: a faint golden holk at the very bottom, brighter on hover / focus */
+	.park-egg-row {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 18px;
+	}
+	.park-egg {
+		display: grid;
+		place-items: center;
+		width: 48px;
+		height: 44px;
+		border-radius: 12px;
+		opacity: 0.22;
+		filter: grayscale(0.6);
+		transition:
+			opacity 0.3s,
+			filter 0.3s,
+			transform 0.3s;
+	}
+	.park-egg svg {
+		width: 40px;
+		height: 18px;
+		overflow: visible;
+	}
+	.park-egg:hover,
+	.park-egg:focus-visible {
+		opacity: 1;
+		filter: drop-shadow(0 0 6px rgb(255 200 60 / 0.8));
+		transform: rotate(-8deg) scale(1.15);
 	}
 </style>

@@ -23,6 +23,13 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'city-gone',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Burgi City has left town',
+		text: 'The town map is gone from the front page. Holk Park is still open… if you can find it. 🌿'
+	},
+	{
 		id: 'case-battles-look',
 		date: '2026-11-24',
 		kind: 'update',
@@ -45,13 +52,6 @@ export const WHATS_NEW: readonly WhatsNewEntry[] = [
 		title: 'Madness: calmer pace + game speed',
 		text: 'Abscars Madness runs about a third slower now. Pick Slow, Calm or Fast under Settings; jumps reach just as far.',
 		tab: 'madness'
-	},
-	{
-		id: 'burgi-city',
-		date: '2026-11-24',
-		kind: 'new',
-		title: 'Burgi City',
-		text: 'A little town on the front page: tap a building to go in, the squad walks the streets, and Holk Park is open for a smoke break.'
 	},
 	{
 		id: 'title-removed',

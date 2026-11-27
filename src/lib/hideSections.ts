@@ -17,8 +17,6 @@ export const HIDE_SECTIONS = [
 	{ id: 'buddy', group: 'header', abscar: true },
 	{ id: 'whatsNew', group: 'header' },
 	{ id: 'madness', group: 'header' },
-	// Burgi City, the town in the buddy row (Abscar only)
-	{ id: 'city', group: 'header', abscar: true },
 	// the Camo grind tab, top to bottom
 	{ id: 'news', group: 'grind' },
 	{ id: 'season', group: 'grind' },
@@ -104,27 +102,16 @@ export type HeaderPart = 'squad' | 'tv' | 'buddy';
  */
 export function headerAreas(hidden: ReadonlySet<string>) {
 	// the buddy's row also holds the "What's new" billboard (2026-11-23): it stays while either is shown
-	const on = (p: HeaderPart) => !hidden.has(p) || (p === 'buddy' && (!hidden.has('whatsNew') || !hidden.has('city')));
+	const on = (p: HeaderPart) => !hidden.has(p) || (p === 'buddy' && !hidden.has('whatsNew'));
 	const left = (['squad', 'buddy'] as const).filter(on);
 	const quote = (row: string[]) => `'${row.join(' ')}'`;
-	// Burgi City (2026-11-24) sits in the buddy's row from 1140 px; below that the row is split (CSS
-	// display: contents): `buddy` = the buddy + billboard, `city` = the town in a full-width row under them
-	const rightOn = !hidden.has('buddy') || !hidden.has('whatsNew');
-	const cityOn = !hidden.has('city');
-	const phoneRows = (['squad', 'tv'] as const).filter(on).map((p) => quote([p]));
 	// everything hidden: no areas at all (an empty string isn't valid CSS)
-	const phone = [...phoneRows, ...(rightOn ? [quote(['buddy'])] : []), ...(cityOn ? [quote(['city'])] : [])].join(' ') || 'none';
-	if (!on('tv') || !left.length) {
-		const wideNoTv = [...phoneRows, ...(on('buddy') ? [quote(['buddy'])] : [])].join(' ') || 'none';
-		return { phone, mid: phone, wide: on('tv') ? phone : wideNoTv, midCols: 'minmax(0, 1fr)', wideCols: 'minmax(0, 1fr)' };
-	}
+	const phone = (['squad', 'tv', 'buddy'] as const).filter(on).map((p) => quote([p])).join(' ') || 'none';
+	if (!on('tv') || !left.length) return { phone, mid: phone, wide: phone, midCols: 'minmax(0, 1fr)', wideCols: 'minmax(0, 1fr)' };
 	// 820–1139: the squad frame needs the full width, the TV sits beside the buddy (on the right in its own
-	// row when he's hidden), the town in a full-width row under them
-	const mid = [
-		...(on('squad') ? [quote(['squad', 'squad'])] : []),
-		rightOn ? quote(['buddy', 'tv']) : quote(['.', 'tv']),
-		...(cityOn ? [quote(['city', 'city'])] : [])
-	].join(' ');
+	// row when he's hidden)
+	const below = left.filter((p) => p !== 'squad').map((p) => quote([p, 'tv']));
+	const mid = [...(on('squad') ? [quote(['squad', 'squad'])] : []), ...(below.length ? below : [quote(['.', 'tv'])])].join(' ');
 	// ≥ 1140: with the squad frame on, the TV ends above the buddy's row, so that row takes the full width
 	// (room for the "What's new" billboard beside the buddy, 2026-11-23)
 	const wide = left.map((p) => quote(p === 'buddy' && on('squad') ? ['buddy', 'buddy'] : [p, 'tv'])).join(' ');

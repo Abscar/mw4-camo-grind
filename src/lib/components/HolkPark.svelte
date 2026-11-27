@@ -1,6 +1,7 @@
 <!--
-	Holk Park (2026-11-24, the user: "Gör Holkpark till en riktig destination. Låt fantasin flöda."). Tapping
-	the park in Burgi City opens this: a night scene of the park (holkPark.ts draws the parts that never
+	Holk Park (2026-11-24, the user: "Gör Holkpark till en riktig destination. Låt fantasin flöda."). Since
+	2026-11-24 Burgi City is gone and the park is hidden: the faint golden holk at the very bottom of the page (or
+	the secret terminal’s "park" command) opens this: a night scene of the park (holkPark.ts draws the parts that never
 	change) with things to do. Stoke the campfire and the squad round it tells a story, light the Golden
 	Holk monument (smoke rings, always lit at 4:20), toss a wish in the leaf pond, order from the Munchie
 	Truck, put the boombox on (a lo-fi loop made on the spot, parkRadio.ts), poke the weed buddy asleep in

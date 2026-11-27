@@ -36,7 +36,7 @@
 	let historyAt = 0;
 	const timers = new Set<ReturnType<typeof setTimeout>>();
 
-	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'ping', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker', 'nuke', 'hack', 'holk', 'net_graph', 'clear', 'exit'];
+	const COMMANDS = ['help', 'status', 'next', 'weapon', 'season', 'buddy', 'whoami', 'squad', 'ping', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker', 'nuke', 'hack', 'holk', 'park', 'net_graph', 'clear', 'exit'];
 	const QUICK = ['status', 'next', 'buddy', 'nuke', 'holk', 'help'];
 
 	const abscar = () => document.documentElement.getAttribute('data-theme') === 'blackout';
@@ -269,6 +269,15 @@
 				return nuke();
 			case 'hack':
 				return hack();
+			case 'park':
+			case 'holkpark':
+				// Holk Park, hidden since Burgi City went (2026-11-24): +page.svelte opens it
+				print('out', t.terminal.park);
+				setTimeout(() => {
+					open = false;
+					window.dispatchEvent(new CustomEvent('mw4:holk-park'));
+				}, 600);
+				return;
 			case 'holk':
 			case 'smoke':
 				return print('out', ...t.terminal.holk);

@@ -206,7 +206,6 @@ export const en = {
 			buddy: 'News buddy',
 			whatsNew: 'What’s new billboard',
 			madness: 'Abscars Madness button (the game)',
-			city: 'Burgi City (the town)',
 			news: 'News radar',
 			season: 'Season countdown',
 			kpi: 'Progress tiles',
@@ -311,40 +310,11 @@ export const en = {
 		}
 	},
 	/** Abscar theme: tapping the news buddy (he coughs, blows a smoke ring or laughs). */
-	/** Burgi City (2026-11-23, the user: "bygg en burgi city"): a cartoon town over the page tabs, one building
-	    per tab, the squad's online operators walking the streets. */
-	city: {
-		title: 'Burgi City',
-		kicker: 'Tap a building to go in',
-		fold: 'Fold up',
-		unfold: 'Show Burgi City',
-		label: 'Burgi City: a map of the page, one building per tab',
-		online: (n: number) => (n === 1 ? '1 operator on the streets' : `${n} operators on the streets`),
-		visitors: 'The squad is out for a walk',
-		swipe: 'Swipe to look around',
-		here: 'You are here',
-		go: (name: string) => `Go to ${name}`,
-		park: 'Holk Park',
-		parkSub: 'Chill zone · tap to visit',
-		b: {
-			grind: { name: 'Abscar’s Base', sub: 'Camo grind HQ' },
-			ranked: { name: 'Ranked Tower', sub: 'CDL rules & classes' },
-			cosmetics: { name: 'Sticker Museum', sub: 'Cosmetics & camos' },
-			casino: { name: 'BurgiCasino', sub: 'Slots, roulette, blackjack' },
-			shop: { name: 'BurgiShop Mall', sub: 'Drip, armory, karma' },
-			arcade: { name: 'BurgiArcade', sub: 'Games & high scores' },
-			mayhem: { name: 'Mayhem Arena', sub: 'Play Abscars Madness' },
-			squad: { name: 'Squad Barracks', sub: 'Race, radio, records' }
-		},
-		hbLeft: (n: number) => (n <= 0 ? 'Divergence unlocked' : `${n} HB to Divergence`),
-		inSquad: (n: number) => `${n} online now`,
-		burgers: (n: string) => `You have ${n} 🍔`
-	},
-
-	/** Holk Park, the park in Burgi City as a place of its own (HolkPark.svelte, drawing in holkPark.ts). */
+	/** Holk Park, hidden at the bottom of the page since Burgi City went (HolkPark.svelte, drawing in holkPark.ts). */
 	park: {
 		title: 'Holk Park',
-		kicker: 'Burgi City’s finest chill zone. Tap anything.',
+		kicker: 'You found the secret chill zone. Tap anything.',
+		egg: 'Holk Park (secret)',
 		close: 'Leave the park',
 		scene: 'Holk Park at night: the Munchie Truck, a boombox, a campfire with the squad, the Golden Holk monument, a wishing pond, a hammock with the weed buddy and grass to touch',
 		swipe: 'Swipe to look around the park',
@@ -516,7 +486,7 @@ export const en = {
 			'buddy             how grown the weed buddy is',
 			'whoami · squad    who’s online',
 			'ping <name>       knock on a squad member’s door',
-			'nuke · hack · holk · 420',
+			'nuke · hack · holk · park · 420',
 			'net_graph 0|1     the load readout (PC)',
 			'clear · exit'
 		],
@@ -560,6 +530,7 @@ export const en = {
 		nukeCount: (n: number) => `  ${n}...`,
 		nukeAfter: ['...', 'Just kidding. Your camos survived.', 'Phillestar says hi.'],
 		hackDone: ['ACCESS GRANTED.', 'Bad news: you still have to grind Harmonic Break yourself.'],
+		park: 'Opening the gates to Holk Park… 🌿',
 		holk: ['      ( (', '       ) )', '  =========================*', '*puff puff*'],
 		blaze: 'Blaze it. The weed buddy approves.',
 		gg: 'gg ez',

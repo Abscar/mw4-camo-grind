@@ -45,39 +45,29 @@ test('"Only camos & metas" hides everything but the camo and meta parts', () => 
 
 test('header grid: hidden parts leave no rows, no TV = one column', () => {
 	const all = headerAreas(new Set());
-	assert.equal(all.phone, "'squad' 'tv' 'buddy' 'city'");
-	assert.equal(all.mid, "'squad squad' 'buddy tv' 'city city'");
+	assert.equal(all.phone, "'squad' 'tv' 'buddy'");
+	assert.equal(all.mid, "'squad squad' 'buddy tv'");
 	assert.equal(all.wide, "'squad tv' 'buddy buddy'");
 	assert.equal(all.midCols, 'minmax(0, 1fr) auto');
 
 	const noSquad = headerAreas(new Set(['squad']));
-	assert.equal(noSquad.phone, "'tv' 'buddy' 'city'");
-	assert.equal(noSquad.mid, "'buddy tv' 'city city'");
+	assert.equal(noSquad.phone, "'tv' 'buddy'");
+	assert.equal(noSquad.mid, "'buddy tv'");
 	assert.equal(noSquad.wide, "'buddy tv'");
 
-	const noBuddy = headerAreas(new Set(['buddy', 'whatsNew', 'city']));
+	const noBuddy = headerAreas(new Set(['buddy', 'whatsNew']));
 	assert.equal(noBuddy.mid, "'squad squad' '. tv'", 'the TV keeps a row of its own');
 	assert.equal(noBuddy.wide, "'squad tv'");
 
-	const noTv = headerAreas(new Set(['tv', 'buddy', 'whatsNew', 'city']));
+	const noTv = headerAreas(new Set(['tv', 'buddy', 'whatsNew']));
 	assert.equal(noTv.phone, "'squad'");
 	assert.equal(noTv.mid, noTv.phone);
 	assert.equal(noTv.wide, noTv.phone);
 	assert.equal(noTv.wideCols, 'minmax(0, 1fr)');
 
-	const onlyTv = headerAreas(new Set(['squad', 'buddy', 'whatsNew', 'city']));
+	const onlyTv = headerAreas(new Set(['squad', 'buddy', 'whatsNew']));
 	assert.equal(onlyTv.wide, "'tv'");
 	const boardOnly = headerAreas(new Set(['buddy']));
 	assert.equal(boardOnly.phone, all.phone, 'the billboard keeps the buddy row');
-	assert.equal(headerAreas(new Set(['squad', 'tv', 'buddy', 'whatsNew', 'city'])).phone, 'none');
-
-	// Burgi City alone keeps the buddy row on wide screens and its own row below that
-	const cityOnly = headerAreas(new Set(['buddy', 'whatsNew']));
-	assert.equal(cityOnly.mid, "'squad squad' '. tv' 'city city'");
-	assert.equal(cityOnly.wide, all.wide);
-	assert.equal(cityOnly.phone, "'squad' 'tv' 'city'");
-	// no TV: the town still has a row (inside the buddy row on wide screens)
-	const noTvCity = headerAreas(new Set(['tv']));
-	assert.equal(noTvCity.wide, "'squad' 'buddy'");
-	assert.equal(noTvCity.phone, "'squad' 'buddy' 'city'");
+	assert.equal(headerAreas(new Set(['squad', 'tv', 'buddy', 'whatsNew'])).phone, 'none');
 });
