@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'prestige-only',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Only Prestige boxes after Divergence',
+		text: 'Weapons with G, P and HB done now show just the Prestige boxes once Divergence is unlocked. Gun pictures are plain again.',
+		tab: 'grind'
+	},
+	{
 		id: 'city-gone',
 		date: '2026-11-28',
 		kind: 'update',

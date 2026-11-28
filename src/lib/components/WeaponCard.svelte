@@ -28,6 +28,11 @@
 
 	const level = $derived(progress.level(weapon.id));
 	const maxed = $derived(level >= MAX_LEVEL);
+	/**
+	 * After Divergence (2026-11-28, the user: "the boxes should go once Divergence is unlocked, so I only see
+	 * the Prestige camos"): a weapon with all of G / P / HB drops that row and its Prestige boxes move up.
+	 */
+	const ladderDone = $derived(maxed && progress.divergenceUnlocked);
 	const look = $derived(WEAPON_LOOKS[weapon.id]);
 	const balance = $derived(BALANCE[weapon.id]);
 	const note = $derived(progress.note(weapon.id));
@@ -69,13 +74,14 @@
 
 <li
 	class="weapon-row relative grid items-center gap-x-1.5 gap-y-1 rounded-[calc(var(--t-radius)-1px)] px-2 py-1 transition-colors hover:bg-panel-2"
+	class:ladder-done={ladderDone}
 	style:grid-template-columns={columns}
 >
 	<!-- name + cartoon: one button that opens the weapon's card (details); the boxes beside it change
 	     progress. Nothing tappable sits inside anything else. The META button (copies the meta loadout
 	     code) in its own column on the right, level with the name, so all the buttons in a box line up;
 	     with "Show codes" on, the code itself as a small line underneath. -->
-	<div class="weapon-main row-span-2 grid min-w-0 items-start gap-x-1 {hasCode ? 'has-code grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)]'}">
+	<div class="weapon-main {ladderDone ? '' : 'row-span-2'} grid min-w-0 items-start gap-x-1 {hasCode ? 'has-code grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)]'}">
 	<button
 		type="button"
 		class="weapon-open block min-w-0 text-left"
@@ -95,7 +101,7 @@
 		<span class="weapon-badges flex flex-wrap items-center gap-1">
 			{#if look}
 				<span class="relative flex-none">
-					<WeaponIcon {look} camo={progress.wears(weapon.id)} />
+					<WeaponIcon {look} />
 				</span>
 			{/if}
 			{#if weapon.season === 'season1'}
@@ -134,7 +140,7 @@
 		</p>
 	{/if}
 	</div>
-	{#each LADDER as camo, i (camo.id)}
+	{#if !ladderDone}{#each LADDER as camo, i (camo.id)}
 		<CamoToggle
 			{camo}
 			pressed={progress.has(weapon.id, i)}
@@ -145,8 +151,9 @@
 			note={extra(i)}
 			unsure={i === LADDER.length - 1 && weapon.season !== 'launch'}
 		/>
-	{/each}
-	<!-- the Prestige camos (2026-11-15), a row under G / P / HB; the name column spans both rows -->
+	{/each}{/if}
+	<!-- the Prestige camos (2026-11-15), a row under G / P / HB; the name column spans both rows
+	     (after Divergence a maxed weapon has only this row) -->
 	{#each PRESTIGE as camo, i (camo.id)}
 		<CamoToggle
 			{camo}

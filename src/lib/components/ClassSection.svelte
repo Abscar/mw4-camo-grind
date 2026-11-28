@@ -32,6 +32,10 @@
 	const done = $derived(cls.weapons.reduce((sum, w) => sum + progress.level(w.id), 0));
 	const pct = $derived(percent(done, total * MAX_LEVEL));
 	const maxed = $derived(done === total * MAX_LEVEL);
+	/** After Divergence every shown weapon with G / P / HB has only its Prestige row (WeaponCard), so the heading too. */
+	const onlyPrestige = $derived(
+		progress.divergenceUnlocked && visible.length > 0 && visible.every((w) => progress.level(w.id) >= MAX_LEVEL)
+	);
 	const headingId = $derived(`class-${cls.id}`);
 </script>
 
@@ -84,6 +88,7 @@
 		aria-hidden="true"
 	>
 		<span>{t.weapon.column}</span>
+		{#if !onlyPrestige}
 		<!-- hover a camo's letters (mouse) = its challenge; touch screens use the "?" in the header -->
 		{#each LADDER as camo (camo.id)}
 			{@const fact = cls.challenges[camo.id]}
@@ -99,9 +104,10 @@
 		{/each}
 		<!-- second line: the Prestige camos' row under G / P / HB -->
 		<span class="text-[9.5px] tracking-[0.1em]">{t.weapon.prestigeColumn}</span>
+		{/if}
 		{#each PRESTIGE as camo (camo.id)}
 			<span
-				class="col-tip text-center text-[9.5px] {CAMO_INK[camo.id]}"
+				class="col-tip text-center {onlyPrestige ? '' : 'text-[9.5px]'} {CAMO_INK[camo.id]}"
 				use:hoverTip={{ label: camo.name, text: camo.challenge, ink: CAMO_INK[camo.id] }}>{camo.short}</span
 			>
 		{/each}
