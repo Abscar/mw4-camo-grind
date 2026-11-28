@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-armory',
+		date: '2026-11-28',
+		kind: 'new',
+		title: 'Abscars Madness: your own Armory',
+		text: 'Finish a level holding a gun and it goes in your Armory. Earn gun parts, bolt on attachments and start levels with it.',
+		tab: 'madness'
+	},
+	{
 		id: 'hideouts-lobby',
 		date: '2026-11-28',
 		kind: 'new',

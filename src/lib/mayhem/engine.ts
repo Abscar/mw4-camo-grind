@@ -73,6 +73,8 @@ export type EnemyKind = 'random' | 'sweat' | 'shotty' | 'camper' | 'jugg';
 export interface Held {
 	id: string;
 	ammo: number;
+	/** your own Armory gun (its parts change its stats: statsOf) */
+	own?: 1;
 }
 
 export interface Fighter {
@@ -430,8 +432,9 @@ export class Mayhem {
 	#wasHeld = false;
 	#want = 0;
 	#startGun: string;
+	#kit: GunStats | null;
 
-	constructor(levelId: string = LEVELS[0].id, start: string = STARTER, skills: Iterable<SkillId> = [], seed = Date.now()) {
+	constructor(levelId: string = LEVELS[0].id, start: string = STARTER, skills: Iterable<SkillId> = [], seed = Date.now(), kit: GunStats | null = null) {
 		this.r = rng(seed);
 		this.level = LEVELS.find((l) => l.id === levelId) ?? LEVELS[0];
 		const L = this.level;
@@ -453,6 +456,7 @@ export class Mayhem {
 			this.floodWait = L.flood.delay ?? 3;
 		}
 		this.#startGun = start;
+		this.#kit = kit && kit.id === start ? kit : null;
 		const sy = L.startY ?? FLOOR;
 		this.player = this.#fighter(true, 'player', L.start, sy, this.#playerGun());
 		this.player.hp = this.player.maxHp = this.skills.has('skin') ? 140 : 100;
@@ -478,8 +482,14 @@ export class Mayhem {
 	}
 
 	#playerGun(): Held {
+		if (this.#kit) return { id: this.#kit.id, ammo: this.#mag(this.#kit), own: 1 };
 		const g = gunOf(this.#startGun);
 		return { id: g.id, ammo: this.#mag(g) };
+	}
+
+	/** a held gun's stats: your own Armory gun with its parts, anything else as guns.ts has it */
+	statsOf(h: Held): GunStats {
+		return h.own && this.#kit && h.id === this.#kit.id ? this.#kit : gunOf(h.id);
 	}
 
 	#fighter(player: boolean, kind: EnemyKind | 'player', x: number, y: number, held: Held | null): Fighter {
@@ -733,7 +743,7 @@ export class Mayhem {
 	/** Where a fighter's gun's muzzle is (the gun pivots near the shoulder). */
 	muzzle(f: Fighter) {
 		const s = this.#shoulder(f);
-		const g = f.held ? gunOf(f.held.id) : null;
+		const g = f.held ? this.statsOf(f.held) : null;
 		const len = g ? (g.kind === 'pistol' ? 31 : g.kind === 'melee' ? 36 : 45) : 18;
 		const c = Math.cos(f.aim);
 		const sn = Math.sin(f.aim);
@@ -751,7 +761,7 @@ export class Mayhem {
 		const s = this.#shoulder(p);
 		p.aim = Math.atan2(inp.aimY - s.y, inp.aimX - s.x);
 		p.facing = inp.aimX < p.x ? -1 : 1;
-		const g = p.held ? gunOf(p.held.id) : null;
+		const g = p.held ? this.statsOf(p.held) : null;
 		const speed = RUN * (g?.weight ?? 1.05);
 		const want = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
 		this.#held = inp.jump;
@@ -1013,7 +1023,7 @@ export class Mayhem {
 		this.parts.push({ x: m.x, y: m.y, vx: 0, vy: 0, life: 0.06, max: 0.06, kind: 'flash', r: g.kind === 'shotgun' || g.kind === 'sniper' ? 16 : 11 });
 		if (g.kind !== 'launcher') this.parts.push({ x: m.x - Math.cos(f.aim) * 18, y: m.y, vx: -f.facing * (60 + this.r() * 80), vy: -180 - this.r() * 120, life: 1.2, max: 1.2, kind: 'shell', r: 2 });
 		if (f.player) {
-			this.#noise(m.x, m.y, NOISE[g.kind]);
+			this.#noise(m.x, m.y, NOISE[g.kind] * (g.noise ?? 1));
 			f.vx -= Math.cos(f.aim) * (g.kind === 'shotgun' ? 120 : g.kind === 'sniper' ? 160 : 14);
 			this.shake = Math.max(this.shake, g.kind === 'sniper' || g.kind === 'shotgun' || g.kind === 'launcher' ? 7 : 2);
 		}
@@ -1089,7 +1099,7 @@ export class Mayhem {
 		const dx = tx - e.x;
 		const dist = Math.abs(dx);
 		e.facing = dx < 0 ? -1 : 1;
-		const g = e.held ? gunOf(e.held.id) : null;
+		const g = e.held ? this.statsOf(e.held) : null;
 		const range = g ? (g.kind === 'melee' ? 30 : Math.min(spec.range, g.kind === 'shotgun' ? 140 : 9999)) : 30;
 
 		const s = this.#shoulder(e);
@@ -1554,7 +1564,7 @@ export class Mayhem {
 		if (by?.player) {
 			this.stats.hits++;
 			this.events.push({ t: 'hit', head, mine: true });
-			if (head && this.skills.has('head') && this.player.held && gunOf(this.player.held.id).kind !== 'melee') this.player.held.ammo++;
+			if (head && this.skills.has('head') && this.player.held && this.statsOf(this.player.held).kind !== 'melee') this.player.held.ammo++;
 		}
 		if (f.hp <= 0) {
 			this.#kill(f, kx, ky, head);
@@ -1584,9 +1594,9 @@ export class Mayhem {
 	#kill(f: Fighter, kx: number, ky: number, head: boolean, pit = false) {
 		f.hp = 0;
 		if (f.held && !f.player) {
-			const g = gunOf(f.held.id);
+			const g = this.statsOf(f.held);
 			const ammo = g.kind === 'melee' ? 0 : Math.max(1, Math.round(g.mag * (0.4 + this.r() * 0.6) * (this.skills.has('mags') ? 1.5 : 1)));
-			this.#dropGun(f, { id: f.held.id, ammo }, kx * 0.2);
+			this.#dropGun(f, f.held.own ? { id: f.held.id, ammo, own: 1 } : { id: f.held.id, ammo }, kx * 0.2);
 			f.held = null;
 		}
 		if (!pit) {

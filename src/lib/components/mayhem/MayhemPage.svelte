@@ -17,6 +17,7 @@
 	import { H, Mayhem, NO_INPUT, VH, VW, W, type GameEvent, type Input } from '#lib/mayhem/engine.ts';
 	import { gunOf, OUT_WEAPONS, STARTER } from '#lib/mayhem/guns.ts';
 	import { CHAPTERS, chapterOf, LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, type LevelRecord } from '#lib/mayhem/levels.ts';
+	import { addClear, ATTACHMENTS, buyPart, canBuyPart, cleanArmory, equipPart, kitStats, nextRankAt, partsFor, partsSpent, rankOf, SLOTS, takesParts, type Armory, type Mods, type Slot } from '#lib/mayhem/gunsmith.ts';
 	import { BRANCHES, canBuy, cleanSkills, SKILLS, skillCost, type SkillId } from '#lib/mayhem/skills.ts';
 	import { render } from '#lib/mayhem/render.ts';
 	import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, inputOf, keyLabel, keyMap, PACE, SPEEDS, unbind, type Action, type Settings } from '#lib/mayhem/controls.ts';
@@ -31,7 +32,7 @@
 	let { active = false, onclose }: { active?: boolean; onclose?: () => void } = $props();
 
 	const KEY = 'mw4-camo-grind:mayhem';
-	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[] };
+	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[]; armory?: unknown; parts?: number };
 	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp; settings?: unknown };
 	function readSaved(): Saved {
 		try {
@@ -61,6 +62,9 @@
 		meili: t.operator.meili
 	};
 
+	let op = $state<SquadOp>('abscar');
+	let start = $state<string>(STARTER);
+
 	// ---------- the campaign: levels + skills ----------
 	const camp = $derived<Camp>(saved.camp ?? {});
 	const done = $derived<Record<string, LevelRecord>>(camp.done && typeof camp.done === 'object' ? camp.done : {});
@@ -68,6 +72,48 @@
 	const skillSet = $derived(new Set<SkillId>(skills));
 	const earned = $derived(LEVELS.reduce((n, l) => n + pointsOf(done[l.id]), 0));
 	const free = $derived(earned - skillCost(skills));
+	// ---------- the Armory (gunsmith.ts): guns you finished a level with + their attachments ----------
+	const armory = $derived<Armory>(cleanArmory(camp.armory));
+	const partsEarned = $derived(Math.max(0, Math.floor(Number(camp.parts) || 0)));
+	const partsFree = $derived(Math.max(0, partsEarned - partsSpent(armory)));
+	const armoryIds = $derived(OUT_WEAPONS.map((w) => w.id).filter((id) => armory[id]));
+	let armSel = $state('');
+	const armGun = $derived(armory[armSel] ? armSel : (armoryIds.includes(start) ? start : armoryIds[0]) ?? '');
+	function setArmory(a: Armory) {
+		setCamp({ armory: a });
+	}
+	const FX_KEYS: (keyof Mods)[] = ['dmg', 'rate', 'mag', 'spread', 'reach', 'speed', 'weight', 'noise', 'pierce'];
+	/** a part's effect in words: "+12% damage · −4% mobility" (fire rate / accuracy read the other way) */
+	function fxText(m: Mods): { text: string; good: boolean }[] {
+		const out: { text: string; good: boolean }[] = [];
+		for (const k of FX_KEYS) {
+			const v = m[k];
+			if (v === undefined) continue;
+			if (k === 'pierce') {
+				out.push({ text: M.armory.fx.pierce, good: true });
+				continue;
+			}
+			const pct = k === 'rate' || k === 'spread' ? Math.round((1 / v - 1) * 100) : Math.round((v - 1) * 100);
+			const good = k === 'noise' ? pct < 0 : pct > 0;
+			out.push({ text: `${pct > 0 ? '+' : '−'}${Math.abs(pct)}% ${M.armory.fx[k]}`, good });
+		}
+		return out;
+	}
+	type StatRow = { k: keyof typeof M.armory.stat; base: number; now: number; max: number; show: (v: number) => string };
+	function statRows(id: string, eq: Partial<Record<Slot, string>>): StatRow[] {
+		const b = kitStats(id);
+		const n = kitStats(id, eq);
+		const acc = (x: typeof b) => Math.max(0, 100 - x.spread * 400);
+		return [
+			{ k: 'dmg', base: b.dmg * Math.max(1, b.pellets), now: n.dmg * Math.max(1, n.pellets), max: 200, show: (v) => String(Math.round(v)) },
+			{ k: 'rate', base: 1 / b.rate, now: 1 / n.rate, max: 14, show: (v) => `${v.toFixed(1)}/s` },
+			{ k: 'mag', base: b.mag, now: n.mag, max: 160, show: (v) => String(Math.round(v)) },
+			{ k: 'acc', base: acc(b), now: acc(n), max: 100, show: (v) => String(Math.round(v)) },
+			{ k: 'reach', base: b.reach, now: n.reach, max: 2200, show: (v) => String(Math.round(v)) },
+			{ k: 'move', base: b.weight * 100, now: n.weight * 100, max: 115, show: (v) => String(Math.round(v)) },
+			{ k: 'noise', base: 100, now: (n.noise ?? 1) * 100, max: 130, show: (v) => `${Math.round(v)}%` }
+		];
+	}
 	const cleared = $derived(LEVELS.filter((l) => done[l.id]?.clear).length);
 	let levelId = $state(LEVELS[0].id);
 	const level = $derived(LEVEL_BY_ID.get(levelId) ?? LEVELS[0]);
@@ -117,13 +163,10 @@
 		return CAMO_RANK.indexOf(b) > CAMO_RANK.indexOf(a) ? b : a;
 	}
 
-	let op = $state<SquadOp>('abscar');
-	let start = $state<string>(STARTER);
-
 	/** starting guns: the starter pistol, your held Camo Armory gun, and every gun you have a camo on */
 	const gunChoices = $derived.by(() => {
-		const out = OUT_WEAPONS.map((w) => ({ id: w.id, name: w.name, camo: camoFor(w.id) })).filter((g) => g.camo || g.id === STARTER);
-		out.sort((a, b) => (b.camo ? CAMO_RANK.indexOf(b.camo) : -1) - (a.camo ? CAMO_RANK.indexOf(a.camo) : -1));
+		const out = OUT_WEAPONS.map((w) => ({ id: w.id, name: w.name, camo: camoFor(w.id), arm: armory[w.id] ? rankOf(armory[w.id].n) : 0 })).filter((g) => g.camo || g.arm || g.id === STARTER);
+		out.sort((a, b) => b.arm - a.arm || (b.camo ? CAMO_RANK.indexOf(b.camo) : -1) - (a.camo ? CAMO_RANK.indexOf(a.camo) : -1));
 		return out;
 	});
 
@@ -159,7 +202,7 @@
 	const sfx = new MayhemSound();
 	let muted = $state(false);
 	/** the menu's panels */
-	let panel = $state<'levels' | 'skills' | 'loadout' | 'settings'>('levels');
+	let panel = $state<'levels' | 'skills' | 'armory' | 'loadout' | 'settings'>('levels');
 
 	// ---------- settings (controls.ts): keys, volume, shake, hints, short hop ----------
 	let settings = $state<Settings>(DEFAULT_SETTINGS);
@@ -228,6 +271,8 @@
 		acc: number;
 		combo: number;
 		gained: number;
+		parts: number;
+		gun: { id: string; name: string; fresh: boolean; rank: number; up: boolean } | null;
 		all: boolean;
 		clean: boolean;
 		bestTime: boolean;
@@ -318,7 +363,7 @@
 		levelId = id;
 		saved = { ...saved, op, gun: start, level: id };
 		writeSaved(saved);
-		game = new Mayhem(id, start, skills, Date.now());
+		game = new Mayhem(id, start, skills, Date.now(), armory[start] ? kitStats(start, armory[start].eq) : null);
 		game.shortHop = settings.shortHop;
 		game.pace = PACE[settings.speed];
 		pauseSettings = false;
@@ -397,6 +442,13 @@
 		const bestTime = !old.best || time < old.best;
 		if (bestTime) rec.best = time;
 		const i = LEVELS.findIndex((l) => l.id === id);
+		const parts = partsFor(g.stats.kills, all, clean);
+		const heldId = g.player.held?.id ?? null;
+		const before = heldId ? armory[heldId] : undefined;
+		const nextArmory = heldId ? addClear(armory, heldId) : armory;
+		const gun = heldId
+			? { id: heldId, name: gunOf(heldId).name, fresh: !before, rank: rankOf(nextArmory[heldId].n), up: !!before && rankOf(nextArmory[heldId].n) > rankOf(before.n) }
+			: null;
 		result = {
 			name: g.level.name,
 			no: shortNo(i),
@@ -409,12 +461,14 @@
 			acc: g.stats.shots ? Math.round((g.stats.hits / g.stats.shots) * 100) : 0,
 			combo: g.stats.bestCombo,
 			gained: pointsOf(rec) - pointsOf(old),
+			parts,
+			gun,
 			all,
 			clean,
 			bestTime: bestTime && !!old.best,
 			next: LEVELS[i + 1]?.id ?? null
 		};
-		setCamp({ done: { ...done, [id]: rec } });
+		setCamp({ done: { ...done, [id]: rec }, armory: nextArmory, parts: partsEarned + parts });
 		screen = 'done';
 	}
 
@@ -444,7 +498,7 @@
 		}
 
 		// HUD
-		const gun = p.held ? gunOf(p.held.id) : null;
+		const gun = p.held ? g.statsOf(p.held) : null;
 		const h = hud;
 		const next = {
 			hp: Math.max(0, Math.ceil(p.hp)),
@@ -859,6 +913,9 @@
 					<p class="mh-cover-t font-head lime">{M.done.title}</p>
 					<p class="mh-cover-s">{result.name}</p>
 					{#if result.gained > 0}<p class="mh-newbest font-head">{M.done.points(result.gained)}</p>{/if}
+					<p class="mh-armgain font-head">{M.done.parts(result.parts)}</p>
+					{#if result.gun?.fresh}<p class="mh-armgain new">{M.done.newGun(result.gun.name)}</p>
+					{:else if result.gun?.up}<p class="mh-armgain new">{M.done.rankUp(result.gun.name, result.gun.rank)}</p>{/if}
 					<dl class="mh-stats">
 						<div><dt>{M.done.time}</dt><dd class="num">{fmtTime(result.time)}{#if result.bestTime}<small> ★</small>{/if}</dd></div>
 						<div><dt>{M.done.kills}</dt><dd class="num" class:ok={result.all}>{result.kills}/{result.total}</dd></div>
@@ -884,6 +941,16 @@
 								toMenu();
 							}}>{M.done.skills(free)}</button
 						>
+						<button
+							type="button"
+							class="mh-btn"
+							onclick={() => {
+								panel = 'armory';
+								if (result?.gun) armSel = result.gun.id;
+								if (result?.next) levelId = result.next;
+								toMenu();
+							}}>{M.done.armory}</button
+						>
 					</div>
 				</div>
 			{/if}
@@ -908,6 +975,9 @@
 			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'levels'} onclick={() => (panel = 'levels')}>{M.tabs.levels}</button>
 			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'skills'} onclick={() => (panel = 'skills')}>
 				{M.tabs.skills}{#if free > 0}<span class="mh-pill num">{free}</span>{/if}
+			</button>
+			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'armory'} onclick={() => (panel = 'armory')}>
+				{M.tabs.armory}{#if armoryIds.length}<span class="mh-pill num">{armoryIds.length}</span>{/if}
 			</button>
 			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'loadout'} onclick={() => (panel = 'loadout')}>{M.tabs.loadout}</button>
 			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'settings'} onclick={() => (panel = 'settings')}>⚙ {M.tabs.settings}</button>
@@ -958,6 +1028,101 @@
 					</div>
 				{/each}
 			</div>
+		{:else if panel === 'armory'}
+			<div class="mh-skillhead">
+				<p><b class="num">⚙ {M.armory.parts(partsFree)}</b> · {M.armory.partsHelp}</p>
+			</div>
+			{#if !armoryIds.length}
+				<p class="mh-note mh-armempty">{M.armory.empty}</p>
+			{:else}
+				<p class="mh-note mh-armnote">{M.armory.intro}</p>
+				<div class="mh-arm">
+					<div class="mh-armlist" role="listbox" aria-label={M.tabs.armory}>
+						{#each armoryIds as id (id)}
+							{@const a = armory[id]}
+							{@const l = camoLook(id)}
+							<button type="button" class="mh-armgun" role="option" aria-selected={armGun === id} aria-label={M.armory.gunLabel(gunOf(id).name, rankOf(a.n))} onclick={() => (armSel = id)}>
+								{#if l}<WeaponIcon look={l} camo={camoFor(id)} />{/if}
+								<span class="mh-gn">{gunOf(id).name}</span>
+								<span class="mh-armrank">{M.armory.rank(rankOf(a.n))}{#if takesParts(id)} · {M.armory.on(Object.keys(a.eq).length, SLOTS.length)}{/if}</span>
+								{#if start === id}<span class="mh-armstar" aria-hidden="true">★</span>{/if}
+							</button>
+						{/each}
+					</div>
+					{#if armGun}
+						{@const a = armory[armGun]}
+						{@const l = camoLook(armGun)}
+						{@const nx = nextRankAt(a.n)}
+						<div class="mh-armbox">
+							<div class="mh-armtop">
+								{#if l}<div class="mh-armpic"><WeaponIcon look={l} camo={camoFor(armGun)} /></div>{/if}
+								<div class="mh-armtitle">
+									<h3 class="mh-armname font-head">{gunOf(armGun).name}</h3>
+									<p class="mh-armsub">{M.armory.rank(rankOf(a.n))} · {M.armory.clears(a.n)} · {nx ? M.armory.nextRank(nx - a.n, rankOf(nx)) : M.armory.maxRank}</p>
+								</div>
+								<button
+									type="button"
+									class="mh-btn sm"
+									class:primary={start !== armGun}
+									disabled={start === armGun}
+									onclick={() => {
+										start = armGun;
+										gunPicked = true;
+										saved = { ...saved, gun: armGun };
+										writeSaved(saved);
+									}}>{start === armGun ? M.armory.using : M.armory.use}</button
+								>
+							</div>
+							{#if takesParts(armGun)}
+								<h4 class="mh-armh">{M.armory.stats}</h4>
+								<dl class="mh-armstats">
+									{#each statRows(armGun, a.eq) as r (r.k)}
+										{@const better = r.k === 'noise' ? r.now < r.base - 0.5 : r.now > r.base + 0.001}
+										{@const worse = r.k === 'noise' ? r.now > r.base + 0.5 : r.now < r.base - 0.001}
+										{@const lo = Math.min(100, (Math.min(r.base, r.now) / r.max) * 100)}
+										<div>
+											<dt>{M.armory.stat[r.k]}</dt>
+											<dd>
+												<span class="mh-bar" aria-hidden="true"><i style:width="{lo}%"></i><b class:up={better} class:down={worse} style:left="{lo}%" style:width="{Math.min(100 - lo, (Math.abs(r.now - r.base) / r.max) * 100)}%"></b></span>
+												<span class="num mh-sv" class:up={better} class:down={worse}>{r.show(r.now)}</span>
+											</dd>
+										</div>
+									{/each}
+								</dl>
+								<div class="mh-slots">
+									{#each SLOTS as slot (slot)}
+										<div class="mh-slot">
+											<h4 class="mh-armh">{M.armory.slot[slot]}</h4>
+											<button type="button" class="mh-part none" data-state={a.eq[slot] ? 'owned' : 'on'} aria-pressed={!a.eq[slot]} onclick={() => setArmory(equipPart(armory, armGun, slot, null))}>
+												<span class="mh-pn">{M.armory.none}</span>
+											</button>
+											{#each ATTACHMENTS.filter((x) => x.slot === slot) as att (att.id)}
+												{@const st = canBuyPart(armory, armGun, att.id, partsFree)}
+												{@const on = a.eq[slot] === att.id}
+												<button
+													type="button"
+													class="mh-part"
+													data-state={on ? 'on' : st}
+													aria-pressed={on}
+													disabled={st === 'rank' || st === 'poor'}
+													aria-label={st === 'ok' ? M.armory.buyLabel(att.name, gunOf(armGun).name, att.cost) : undefined}
+													onclick={() => setArmory(st === 'owned' ? equipPart(armory, armGun, slot, att.id) : buyPart(armory, armGun, att.id, partsFree))}
+												>
+													<span class="mh-pn">{att.name}</span>
+													<span class="mh-pfx">{#each fxText(att.mods) as fx, i (i)}<em class:good={fx.good}>{fx.text}</em>{/each}</span>
+													<span class="mh-pst">{on ? M.armory.on1 : st === 'owned' ? M.armory.put : st === 'rank' ? M.armory.needRank(att.rank) : st === 'poor' ? M.armory.poor(att.cost) : M.armory.buy(att.cost)}</span>
+												</button>
+											{/each}
+										</div>
+									{/each}
+								</div>
+							{:else}
+								<p class="mh-note">{M.armory.melee}</p>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/if}
 		{:else if panel === 'settings'}
 			<div class="mh-setwrap">{@render settingsUi()}</div>
 		{:else}
@@ -991,6 +1156,7 @@
 								{#if l}<WeaponIcon look={l} camo={g.camo} />{/if}
 								<span class="mh-gn">{g.name}</span>
 								<span class="mh-gc" data-camo={g.camo}>{g.camo ? CAMO_NAME[g.camo] : g.id === STARTER ? M.starter : M.noCamo}</span>
+								{#if g.arm}<span class="mh-garm">{M.armory.picked} · {M.armory.rank(g.arm)}</span>{/if}
 							</button>
 						{/each}
 					</div>
@@ -2312,5 +2478,263 @@
 		.mh-hint {
 			font-size: 11px;
 		}
+	}
+/* ---------- the Armory (gunsmith.ts) ---------- */
+	.mh-arm,
+	.mh-armnote,
+	.mh-armempty {
+		max-width: 1100px;
+		margin-inline: auto;
+	}
+	.mh-armempty {
+		margin-top: 12px;
+		padding: 18px;
+		text-align: center;
+		border: 1px dashed rgba(157, 255, 46, 0.35);
+		border-radius: 12px;
+	}
+	.mh-arm {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 10px;
+		margin-top: 8px;
+	}
+	@media (min-width: 820px) {
+		.mh-arm {
+			grid-template-columns: 220px minmax(0, 1fr);
+			align-items: start;
+		}
+		.mh-armlist {
+			display: grid !important;
+			grid-auto-flow: row !important;
+			max-height: 640px;
+			overflow-y: auto;
+		}
+	}
+	.mh-armlist {
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: 132px;
+		gap: 6px;
+		overflow-x: auto;
+		padding-bottom: 4px;
+	}
+	.mh-armgun {
+		position: relative;
+		display: grid;
+		justify-items: center;
+		gap: 2px;
+		min-height: 44px;
+		padding: 8px 6px;
+		border-radius: 10px;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		background: rgba(0, 0, 0, 0.35);
+		color: inherit;
+		text-align: center;
+	}
+	.mh-armgun :global(.weapon-icon) {
+		width: 78px;
+		height: 29px;
+	}
+	.mh-armgun[aria-selected='true'] {
+		border-color: #ffd23a;
+		background: rgba(255, 210, 58, 0.12);
+		box-shadow: 0 0 12px rgba(255, 210, 58, 0.25);
+	}
+	.mh-armrank {
+		font-size: 10px;
+		color: #ffd23a;
+		font-weight: 700;
+	}
+	.mh-armstar {
+		position: absolute;
+		top: 4px;
+		right: 7px;
+		color: var(--mh-lime);
+		font-size: 12px;
+	}
+	.mh-armbox {
+		min-width: 0;
+		padding: 12px;
+		border-radius: 12px;
+		border: 1px solid rgba(255, 210, 58, 0.35);
+		background: linear-gradient(180deg, rgba(255, 210, 58, 0.08), rgba(0, 0, 0, 0.35));
+	}
+	.mh-armtop {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px;
+	}
+	.mh-armtitle {
+		flex: 1 1 180px;
+		min-width: 0;
+	}
+	.mh-armpic :global(.weapon-icon) {
+		width: 140px;
+		height: 52px;
+	}
+	.mh-armname {
+		font-size: 20px;
+		font-weight: 900;
+		line-height: 1.1;
+	}
+	.mh-armsub {
+		font-size: 11.5px;
+		opacity: 0.8;
+	}
+	.mh-armh {
+		margin: 12px 0 5px;
+		font-size: 11px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: rgba(233, 251, 216, 0.65);
+	}
+	.mh-armstats {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 4px 16px;
+	}
+	@media (min-width: 640px) {
+		.mh-armstats {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	.mh-armstats > div {
+		display: grid;
+		grid-template-columns: 74px minmax(0, 1fr);
+		align-items: center;
+		gap: 8px;
+		font-size: 12px;
+	}
+	.mh-armstats dd {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.mh-bar {
+		position: relative;
+		flex: 1;
+		height: 7px;
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.1);
+		overflow: hidden;
+	}
+	.mh-bar i {
+		position: absolute;
+		inset: 0 auto 0 0;
+		background: rgba(233, 251, 216, 0.75);
+	}
+	.mh-bar b {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+	}
+	.mh-bar b.up {
+		background: var(--mh-lime);
+	}
+	.mh-bar b.down {
+		background: var(--mh-red);
+	}
+	.mh-sv {
+		min-width: 46px;
+		text-align: right;
+		font-weight: 700;
+	}
+	.mh-sv.up {
+		color: var(--mh-lime);
+	}
+	.mh-sv.down {
+		color: #ff7a6e;
+	}
+	.mh-slots {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 4px 10px;
+	}
+	@media (min-width: 640px) {
+		.mh-slots {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	@media (min-width: 1100px) {
+		.mh-slots {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+	.mh-slot {
+		display: grid;
+		gap: 5px;
+		align-content: start;
+	}
+	.mh-part {
+		display: grid;
+		gap: 2px;
+		min-height: 44px;
+		padding: 7px 10px;
+		text-align: left;
+		border-radius: 9px;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		background: rgba(0, 0, 0, 0.35);
+		color: inherit;
+	}
+	.mh-part.none {
+		align-content: center;
+	}
+	.mh-part[data-state='on'] {
+		border-color: var(--mh-lime);
+		background: rgba(157, 255, 46, 0.14);
+		box-shadow: 0 0 10px rgba(157, 255, 46, 0.25);
+	}
+	.mh-part[data-state='ok'] {
+		border-color: #ffd23a;
+	}
+	.mh-part[data-state='ok']:hover,
+	.mh-part[data-state='owned']:hover {
+		background: rgba(255, 210, 58, 0.1);
+	}
+	.mh-part:disabled {
+		opacity: 0.55;
+		cursor: default;
+	}
+	.mh-pn {
+		font-weight: 800;
+		font-size: 13px;
+	}
+	.mh-pfx {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2px 8px;
+		font-size: 10.5px;
+	}
+	.mh-pfx em {
+		font-style: normal;
+		color: #ff8d83;
+	}
+	.mh-pfx em.good {
+		color: var(--mh-lime);
+	}
+	.mh-pst {
+		font-size: 11px;
+		font-weight: 800;
+		color: #ffd23a;
+	}
+	.mh-part[data-state='on'] .mh-pst {
+		color: var(--mh-lime);
+	}
+	.mh-armgain {
+		margin: 2px 0;
+		font-size: 14px;
+		font-weight: 800;
+		color: #ffd23a;
+	}
+	.mh-armgain.new {
+		color: var(--mh-lime);
+		font-size: 13px;
+	}
+	.mh-garm {
+		font-size: 9.5px;
+		font-weight: 800;
+		color: #ffd23a;
 	}
 </style>

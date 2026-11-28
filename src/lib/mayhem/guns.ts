@@ -26,6 +26,8 @@ export interface GunStats {
 	reach: number;
 	/** run speed multiplier while holding it */
 	weight: number;
+	/** how far away a shot is heard, × the kind's distance (Armory muzzle parts; unset = 1) */
+	noise?: number;
 }
 
 const CLASS_KIND: Record<string, GunKind> = {
