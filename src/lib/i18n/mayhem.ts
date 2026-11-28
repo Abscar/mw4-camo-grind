@@ -80,7 +80,7 @@ export const mayhemText = {
 	noCamo: 'No camo',
 	play: 'Play',
 	playAgain: 'Play again',
-	menu: 'Levels',
+	menu: 'Back to HQ',
 	restart: 'Restart level',
 	resume: 'Resume',
 	paused: 'Paused',
@@ -142,6 +142,38 @@ export const mayhemText = {
 		armory: 'Armory'
 	},
 	stageLabel: 'Abscars Madness game. Needs a mouse and keyboard, or touch.',
+	secret: {
+		kicker: 'Easter egg',
+		title: 'SECRET FOUND!',
+		unlocked: (no: string, name: string) => `You crawled into a hidden vent. Bonus level ${no} unlocked: ${name}.`,
+		again: (no: string, name: string) => `The vent again. It leads to bonus level ${no}: ${name}.`,
+		play: 'Play it now ▶'
+	},
+	bonus: {
+		title: (n: number, total: number) => `Bonus levels · ${n} / ${total} found`,
+		note: 'Hidden entrances in the campaign lead here. Look up, jump twice.',
+		clue: (no: string, name: string) => `A secret entrance hides somewhere in level ${no}${name ? ` (${name})` : ''}. Look up.`,
+		kicker: (no: string) => `Bonus level ${no}`
+	},
+	hq: {
+		rooms: { locker: 'Locker room', war: 'War room', heli: 'Helipad', armory: 'Armory', lab: 'Augment lab', comms: 'Comms room' },
+		icon: { locker: '🪖', war: '🗺', heli: '🚁', armory: '🔫', lab: '🧪', comms: '📡' },
+		floorName: ['HQ · TOP FLOOR', 'HQ · BASEMENT'],
+		stations: { operator: 'Pick operator', levels: 'Missions', deploy: 'Deploy', gun: 'Guns & parts', skills: 'Skill tree', settings: 'Settings' },
+		deployTo: (name: string) => `Deploy: ${name}`,
+		panel: { operator: 'Locker room', levels: 'War room · Missions', deploy: 'Helipad', gun: 'Armory · Guns & attachments', skills: 'Augment lab · Skill tree', settings: 'Comms room · Settings' },
+		back: 'Back to HQ',
+		map: 'MAP',
+		mapLabel: 'HQ map: tap a room you have seen to go there',
+		travel: (room: string, what: string) => `Go to the ${room}${what ? ` (${what})` : ''}`,
+		unknown: 'Not found yet',
+		down: 'Down a ladder or ledge',
+		hint: (use: string) => `A/D walk · Space jump (twice in the air) · C dash · W/S ladders · ${use} use · click to walk there`,
+		secret: 'Secret stash found! Abscar’s golden holk, hidden in the vent. Nobody saw nothing.',
+		ready: 'Ready to go',
+		deployNote: 'Pick another mission at the mission table in the War room.',
+		toMissions: 'Pick another mission'
+	},
 	launch: {
 		label: 'Play Abscars Madness: opens the game full screen',
 		sub: (n: number) => `${n} levels · puzzles · skill tree`,

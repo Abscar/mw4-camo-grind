@@ -24,7 +24,7 @@
  * spikes, horizontal cracked floors, and rising sludge that chases you up (see levels.ts).
  */
 import { gunOf, OUT_WEAPONS, STARTER, weaponsOfKind, type GunKind, type GunStats } from './guns.ts';
-import { CEIL, FLOOR, LEVELS, type Block, type KeyColour, type Level } from './levels.ts';
+import { CEIL, FLOOR, LEVEL_BY_ID, LEVELS, type Block, type KeyColour, type Level } from './levels.ts';
 import type { SkillId } from './skills.ts';
 
 export { FLOOR, CEIL };
@@ -519,6 +519,8 @@ export class Mayhem {
 	#camLook = 0;
 	windUsed = false;
 	complete = false;
+	/** the bonus level whose secret entrance you stepped into (set with complete) */
+	foundSecret: string | null = null;
 	/** the run is over: true after the level is completed (the page shows the result) */
 	over = false;
 	overT = 0;
@@ -537,7 +539,7 @@ export class Mayhem {
 
 	constructor(levelId: string = LEVELS[0].id, start: string = STARTER, skills: Iterable<SkillId> = [], seed = Date.now(), kit: GunStats | null = null) {
 		this.r = rng(seed);
-		this.level = LEVELS.find((l) => l.id === levelId) ?? LEVELS[0];
+		this.level = LEVEL_BY_ID.get(levelId) ?? LEVELS[0];
 		const L = this.level;
 		this.w = L.w;
 		this.skills = new Set(skills);
@@ -1803,6 +1805,16 @@ export class Mayhem {
 			p.vx = 0;
 			this.events.push({ t: 'complete' });
 			this.popups.push({ x: 0, y: 0, text: 'LEVEL COMPLETE', t: 0, tone: 'wave', screen: true });
+		}
+		// a secret entrance: standing in its vent takes you to a bonus level (the level isn't cleared that way)
+		const sec = this.level.secret;
+		if (sec && !this.complete && p.hp > 0 && p.onGround && Math.abs(p.x - sec.x) < 24 && Math.abs(p.y - sec.y) < 4) {
+			this.complete = true;
+			this.over = true;
+			this.foundSecret = sec.to;
+			p.vx = 0;
+			this.events.push({ t: 'complete' });
+			this.popups.push({ x: 0, y: 0, text: 'SECRET FOUND', t: 0, tone: 'wave', screen: true });
 		}
 	}
 

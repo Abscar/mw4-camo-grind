@@ -70,6 +70,12 @@ export interface Level {
 	flood?: { speed: number; delay?: number };
 	/** a line under the name on the level card */
 	hint: string;
+	/** a hidden entrance to a bonus level (2026-11-28, the user: easter eggs, "on level 3 you'd need a double jump to
+	 * reach a special entrance that takes you to a bonus level you couldn't see at first"): a vent on a high ledge;
+	 * (x, y) = the spot on that ledge you stand on (the ledge itself is in `platforms`), `to` = the bonus level */
+	secret?: { x: number; y: number; to: string };
+	/** a bonus level: not in the campaign order, opens when its secret entrance is found */
+	bonus?: true;
 }
 
 // ---------- helpers ----------
@@ -142,7 +148,9 @@ export const LEVELS: Level[] = [
 		ground: [[0, 1300], [1450, 3200]],
 		lasers: [{ id: 'l1', x: 900, top: 40 }, { id: 'l2', x: 960, top: 40 }],
 		switches: [{ id: 's1', x: 1150, y: 300, opens: ['l1', 'l2'] }],
-		platforms: [{ x: 1080, y: 330, w: 140 }, { x: 2350, y: 320, w: 200 }],
+		// the secret: a vent high above the start, only a double jump reaches it (one jump ≈ 180 up, this is 250)
+		platforms: [{ x: 1080, y: 330, w: 140 }, { x: 2350, y: 320, w: 200 }, { x: 300, y: 250, w: 70 }],
+		secret: { x: 335, y: 250, to: 'b1' },
 		crates: [{ x: 2050 }],
 		keys: [{ colour: 'blue', x: 2440, y: 280 }],
 		blocks: [shelf('sh', 1480, 380, 120, 120), door('db', 2750, { key: 'blue' })],
@@ -243,7 +251,9 @@ export const LEVELS: Level[] = [
 		w: 3600,
 		hint: 'Three areas, three locked doors. Clear them all.',
 		ground: [[0, 1150], [1300, 2500], [2650, 3600]],
-		platforms: [{ x: 700, y: 390, w: 180 }, { x: 1700, y: 380, w: 200 }, { x: 1950, y: 290, w: 180 }, { x: 3000, y: 380, w: 200 }],
+		// the secret: a vent high up by the first door, a double jump from the ledge before it (220 up, 210 across); the ground is too far below (330)
+		platforms: [{ x: 700, y: 390, w: 180 }, { x: 1700, y: 380, w: 200 }, { x: 1950, y: 290, w: 180 }, { x: 3000, y: 380, w: 200 }, { x: 1090, y: 170, w: 60 }],
+		secret: { x: 1120, y: 170, to: 'b2' },
 		blocks: [door('da', 1000, { kill: 'a' }), door('db', 2300, { kill: 'b' }), door('dc', 3300, { kill: 'c' })],
 		guns: [{ kind: 'ar', x: 300 }, { kind: 'lmg', x: 2000, y: 290 }],
 		burgers: [{ x: 1400 }, { x: 2750 }],
@@ -589,7 +599,44 @@ export const LEVELS: Level[] = [
 	})
 ];
 
-export const LEVEL_BY_ID = new Map(LEVELS.map((l) => [l.id, l]));
+/** the bonus levels behind the secret entrances: short, silly, full of loot. Never change an id (records use it). */
+export const BONUS: Level[] = [
+	lvl({
+		id: 'b1',
+		name: 'The Burger Vault',
+		theme: 'diner',
+		w: 2400,
+		bonus: true,
+		hint: 'SECRET: Abscar’s hidden burger vault. Big guns, bigger barrels. Go nuts.',
+		platforms: [{ x: 500, y: 380, w: 200 }, { x: 900, y: 300, w: 220 }, { x: 1400, y: 380, w: 200 }, { x: 1700, y: 290, w: 200 }],
+		guns: [{ kind: 'launcher', x: 250 }, { kind: 'lmg', x: 1000, y: 300 }, { kind: 'shotgun', x: 1500, y: 380 }],
+		burgers: [{ x: 600, y: 380 }, { x: 1010, y: 300 }, { x: 1300 }, { x: 1800, y: 290 }, { x: 2000 }],
+		barrels: [{ x: 760 }, { x: 800 }, { x: 1250 }, { x: 1290 }, { x: 1950 }],
+		enemies: [e('random', 650), e('random', 820), e('shotty', 1000, undefined, 300), e('random', 1200), e('random', 1330), e('sweat', 1500, undefined, 380), e('shotty', 1800, undefined, 290), e('random', 1900), e('random', 2050)],
+		checkpoints: [1150]
+	}),
+	lvl({
+		id: 'b2',
+		name: 'Holk Heaven',
+		theme: 'warehouse',
+		w: 2600,
+		bonus: true,
+		hint: 'SECRET: a party in the rafters. Springs, barrels and a rocket launcher.',
+		ground: [[0, 1100], [1300, 2600]],
+		pads: [{ x: 800 }, { x: 1700 }],
+		platforms: [{ x: 700, y: 200, w: 220 }, { x: 1000, y: 150, w: 260 }, { x: 1600, y: 210, w: 240 }, { x: 2000, y: 340, w: 200 }],
+		guns: [{ kind: 'launcher', x: 300 }, { kind: 'sniper', x: 1100, y: 150 }],
+		burgers: [{ x: 800, y: 200 }, { x: 1150, y: 150 }, { x: 1700, y: 210 }, { x: 2100, y: 340 }],
+		barrels: [{ x: 1450 }, { x: 1490 }, { x: 2300 }],
+		enemies: [e('random', 600), e('camper', 820, undefined, 200), e('sweat', 1150, undefined, 150), e('random', 1450), e('shotty', 1550), e('camper', 1720, undefined, 210), e('sweat', 2100, undefined, 340), e('random', 2350)],
+		checkpoints: [1320]
+	})
+];
+/** every level, campaign and bonus */
+export const ALL_LEVELS = [...LEVELS, ...BONUS];
+export const LEVEL_BY_ID = new Map(ALL_LEVELS.map((l) => [l.id, l]));
+/** the campaign level that hides a bonus level's entrance */
+export const secretOf = (bonusId: string) => LEVELS.find((l) => l.secret?.to === bonusId) ?? null;
 
 /** Per-level record on this device: cleared, everyone killed, no deaths, best time (s). */
 export interface LevelRecord {

@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-hq',
+		date: '2026-11-28',
+		kind: 'new',
+		title: 'Madness: walk your own HQ',
+		text: 'No more menu: walk around your headquarters to pick missions, gun and skills. Two secret vents hide bonus levels. Jump twice. 🕵️',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-cash',
 		date: '2026-11-28',
 		kind: 'new',

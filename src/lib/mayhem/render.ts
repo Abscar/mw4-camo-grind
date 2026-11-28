@@ -796,6 +796,33 @@ function exitDoor(c: Ctx, x: number, t: number, ey = FLOOR) {
 	c.restore();
 }
 
+/** a secret entrance (levels.ts `secret`): an open vent in the wall over a high ledge, a faint gold glow inside */
+function secretVent(c: Ctx, x: number, y: number, t: number) {
+	c.save();
+	const g = c.createRadialGradient(x, y - 22, 2, x, y - 22, 46);
+	g.addColorStop(0, `rgba(255,207,64,${0.3 + Math.sin(t * 2.4) * 0.12})`);
+	g.addColorStop(1, 'rgba(255,207,64,0)');
+	c.fillStyle = g;
+	c.fillRect(x - 48, y - 70, 96, 70);
+	// the hole and its frame
+	c.fillStyle = '#07080a';
+	c.fillRect(x - 20, y - 40, 40, 40);
+	c.strokeStyle = '#5a5f66';
+	c.lineWidth = 3;
+	c.strokeRect(x - 20, y - 40, 40, 40);
+	// the grille, kicked loose and hanging off one screw
+	c.translate(x - 20, y - 40);
+	c.rotate(0.5);
+	c.fillStyle = '#4a4f56';
+	c.fillRect(0, 0, 38, 6);
+	c.fillStyle = '#2a2d32';
+	for (let i = 4; i < 36; i += 6) c.fillRect(i, 1, 3, 4);
+	c.restore();
+	// something shiny deep inside
+	c.fillStyle = `rgba(255,226,138,${0.55 + Math.sin(t * 5) * 0.35})`;
+	c.fillRect(x - 2, y - 22, 4, 4);
+}
+
 // ---------- chapter 2 pieces ----------
 
 function moverDeco(c: Ctx, m: Platform, t: number) {
@@ -962,6 +989,7 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	for (const sp of L.spikes ?? []) if (inView(sp.x, sp.x + sp.w)) spikes(c, sp.x, sp.w, sp.y ?? FLOOR);
 	for (let i = 0; i < g.cps.length; i++) if (inView(g.cps[i].x - 10, g.cps[i].x + 40)) flag(c, g.cps[i].x, g.checkpoint > i, g.t, g.cps[i].y);
 	if (inView(L.exit - 50, L.exit + 60)) exitDoor(c, L.exit, g.t, L.exitY ?? FLOOR);
+	if (L.secret && inView(L.secret.x - 40, L.secret.x + 40)) secretVent(c, L.secret.x, L.secret.y, g.t);
 	for (const l of g.lasers) if (inView(l.x - 10, l.x + 10)) laser(c, l, g.t);
 	for (const b of g.blocks) {
 		if (b.gone || !inView(b.x, b.x + b.w)) continue;

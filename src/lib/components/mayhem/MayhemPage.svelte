@@ -8,7 +8,9 @@
 	skill tree, your operator, your starting gun (the guns you have a camo on). Progress is kept on this device.
 -->
 <script lang="ts">
-	import { onDestroy, onMount, untrack } from 'svelte';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
+	import type { HqEvent, RoomId, Station } from '#lib/mayhem/hq.ts';
+	import MadnessHQ from './MadnessHQ.svelte';
 	import { ARMORY_CAMOS, bestCamo, heldGun } from '#lib/armory.ts';
 	import { camoLook } from '#lib/data/weaponLooks.ts';
 	import type { IconCamo } from '#lib/data/camos.ts';
@@ -16,12 +18,12 @@
 	import { t } from '#lib/i18n/en.ts';
 	import { H, Mayhem, NO_INPUT, VH, VW, W, type GameEvent, type Input } from '#lib/mayhem/engine.ts';
 	import { gunOf, OUT_WEAPONS, STARTER } from '#lib/mayhem/guns.ts';
-	import { CHAPTERS, chapterOf, LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, type LevelRecord } from '#lib/mayhem/levels.ts';
+	import { ALL_LEVELS, BONUS, CHAPTERS, chapterOf, LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, secretOf, type Level, type LevelRecord } from '#lib/mayhem/levels.ts';
 	import { addClear, ATTACHMENTS, buyPart, canBuyPart, cleanArmory, equipPart, kitStats, nextRankAt, partsFor, partsSpent, rankOf, SLOTS, takesParts, type Armory, type Mods, type Slot } from '#lib/mayhem/gunsmith.ts';
 	import { BRANCHES, canBuy, cleanSkills, SKILLS, skillCost, type SkillId } from '#lib/mayhem/skills.ts';
 	import { render } from '#lib/mayhem/render.ts';
 	import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, inputOf, keyLabel, keyMap, PACE, SPEEDS, unbind, type Action, type Settings } from '#lib/mayhem/controls.ts';
-	import { LOOKS, paintFigure, type GunPic } from '#lib/mayhem/painter.ts';
+	import { LOOKS, type GunPic } from '#lib/mayhem/painter.ts';
 	import { MayhemSound } from '#lib/mayhem/sound.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { squad } from '#lib/squad.svelte.ts';
@@ -33,8 +35,8 @@
 
 	const KEY = 'mw4-camo-grind:mayhem';
 	/** `cash` = every dollar ever looted on this device (spending comes later: wallet = cash − spent) */
-	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[]; armory?: unknown; parts?: number; cash?: number };
-	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp; settings?: unknown };
+	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[]; armory?: unknown; parts?: number; cash?: number; found?: string[] };
+	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp; settings?: unknown; hq?: { seen?: string[]; secret?: boolean } };
 	function readSaved(): Saved {
 		try {
 			const v = JSON.parse(localStorage.getItem(KEY) ?? '{}');
@@ -71,7 +73,10 @@
 	const done = $derived<Record<string, LevelRecord>>(camp.done && typeof camp.done === 'object' ? camp.done : {});
 	const skills = $derived(cleanSkills(camp.skills));
 	const skillSet = $derived(new Set<SkillId>(skills));
-	const earned = $derived(LEVELS.reduce((n, l) => n + pointsOf(done[l.id]), 0));
+	const earned = $derived(ALL_LEVELS.reduce((n, l) => n + pointsOf(done[l.id]), 0));
+	/** the bonus levels whose secret entrance you have found */
+	const found = $derived((Array.isArray(camp.found) ? camp.found : []).filter((id) => BONUS.some((b) => b.id === id)));
+	const maxPoints = ALL_LEVELS.length * 4;
 	const free = $derived(earned - skillCost(skills));
 	// ---------- the Armory (gunsmith.ts): guns you finished a level with + their attachments ----------
 	const armory = $derived<Armory>(cleanArmory(camp.armory));
@@ -134,6 +139,8 @@
 	function bankCash(n: number) {
 		if (n > 0) setCamp({ cash: wallet + n });
 	}
+	/** a level's number: "3", "2-3" in chapter 2, "B1" for a bonus level */
+	const noOf = (l: Level) => (l.bonus ? `B${BONUS.indexOf(l) + 1}` : shortNo(LEVELS.indexOf(l)));
 	function setCamp(c: Camp) {
 		saved = { ...saved, camp: { ...camp, ...c } };
 		writeSaved(saved);
@@ -144,7 +151,7 @@
 	}
 	function pickLevel(id: string) {
 		const i = LEVELS.findIndex((l) => l.id === id);
-		if (i < 0 || !levelOpen(i, done)) return;
+		if (i < 0 ? !found.includes(id) : !levelOpen(i, done)) return;
 		levelId = id;
 		saved = { ...saved, level: id };
 		writeSaved(saved);
@@ -210,8 +217,37 @@
 	let game: Mayhem | null = null;
 	const sfx = new MayhemSound();
 	let muted = $state(false);
-	/** the menu's panels */
-	let panel = $state<'levels' | 'skills' | 'armory' | 'loadout' | 'settings'>('levels');
+	// ---------- the headquarters (MadnessHQ.svelte): its stations open a panel ----------
+	let station = $state<Station | null>(null);
+	/** where you stand when the HQ opens: the locker room at first, the helipad after a mission */
+	let hqAt = $state<RoomId>('locker');
+	let stBack: HTMLButtonElement | undefined = $state();
+	function openStation(s: Station) {
+		station = s;
+		sfx.unlock();
+		tick().then(() => stBack?.focus());
+	}
+	function closeStation() {
+		station = null;
+		listening = null;
+		stage?.focus();
+	}
+	function pickOp(o: SquadOp) {
+		op = o;
+		saved = { ...saved, op: o };
+		writeSaved(saved);
+	}
+	function saveHq(seen: RoomId[], secret: boolean) {
+		saved = { ...saved, hq: { ...saved.hq, seen, secret } };
+		writeSaved(saved);
+	}
+	function hqSound(e: HqEvent) {
+		if (e.t === 'jump') sfx.play({ t: 'jump', n: e.n });
+		else if (e.t === 'land') sfx.play({ t: 'land', hard: true });
+		else if (e.t === 'step') sfx.play({ t: 'step' });
+		else if (e.t === 'dash') sfx.play({ t: 'dash' });
+		else if (e.t === 'secret') sfx.play({ t: 'switch' });
+	}
 
 	// ---------- settings (controls.ts): keys, volume, shake, hints, short hop ----------
 	let settings = $state<Settings>(DEFAULT_SETTINGS);
@@ -291,8 +327,11 @@
 		clean: boolean;
 		bestTime: boolean;
 		next: string | null;
+		bonus: boolean;
 	};
 	let result = $state<Result | null>(null);
+	/** a secret entrance was found: which bonus level it opened */
+	let secretResult = $state<{ id: string; name: string; no: string; isNew: boolean } | null>(null);
 
 	function place(node: HTMLElement, uid: number) {
 		dropEls.set(uid, node);
@@ -346,31 +385,14 @@
 	/** the guns whose pictures we need: the one in hand + the starting gun */
 	const picIds = $derived([...new Set([hud.gunId, start].filter(Boolean))]);
 
-	// ---------- the menu's figure: the same painting as in the game ----------
-	let heroCanvas: HTMLCanvasElement | undefined = $state();
-	let heroK = $state(2);
+	// ---------- the starting gun's picture: held by your operator in the HQ and on the armory bench ----------
+	let startPic = $state<GunPic | null>(null);
 	$effect(() => {
 		void picTick;
-		const cv = heroCanvas;
-		const o = op;
-		const k = heroK;
 		const id = start;
-		if (!cv || screen !== 'menu') return;
-		requestAnimationFrame(() => {
-			const d = Math.min(window.devicePixelRatio || 1, 2);
-			cv.width = Math.round(70 * k * d);
-			cv.height = Math.round(104 * k * d);
-			const c = cv.getContext('2d');
-			if (!c) return;
-			c.setTransform(k * d, 0, 0, k * d, 0, 0);
-			c.clearRect(0, 0, 70, 104);
-			const sh = c.createRadialGradient(32, 100, 0, 32, 100, 18);
-			sh.addColorStop(0, 'rgba(0,0,0,0.55)');
-			sh.addColorStop(1, 'rgba(0,0,0,0)');
-			c.fillStyle = sh;
-			c.fillRect(10, 94, 44, 10);
-			paintFigure(c, LOOKS[o] ?? LOOKS.abscar, 30, 100, 1, { facing: 1, aim: 0.12, walk: 0, onGround: true, vx: 0, recoil: 0, gun: gunOf(id).kind, punch: 0, t: 0 }, 7, gunPic(id));
-		});
+		if (!gunSrc) return;
+		// the hidden WeaponIcon for it is drawn in the same update: look for it after that
+		requestAnimationFrame(() => (startPic = gunPic(id)));
 	});
 
 	function begin(id: string = levelId) {
@@ -381,9 +403,11 @@
 		game.shortHop = settings.shortHop;
 		game.pace = PACE[settings.speed];
 		pauseSettings = false;
+		station = null;
 		// for the check scripts (read only; like the frame cap's window.__mw4fx)
 		(window as unknown as { __mayhem: Mayhem }).__mayhem = game;
 		result = null;
+		secretResult = null;
 		drops = [];
 		dropKey = '';
 		screen = 'play';
@@ -398,7 +422,10 @@
 		stage?.focus();
 	}
 
-	function toMenu() {
+	function toMenu(at: RoomId = 'heli') {
+		hqAt = at;
+		station = null;
+		secretResult = null;
 		screen = 'menu';
 		paused = false;
 		cancelAnimationFrame(raf);
@@ -458,6 +485,18 @@
 		const bestTime = !old.best || time < old.best;
 		if (bestTime) rec.best = time;
 		const i = LEVELS.findIndex((l) => l.id === id);
+		// stepped into a secret entrance: the bonus level opens (this level isn't cleared that way)
+		if (g.foundSecret) {
+			const b = LEVEL_BY_ID.get(g.foundSecret);
+			if (b) {
+				const isNew = !found.includes(b.id);
+				setCamp({ found: isNew ? [...found, b.id] : found });
+				secretResult = { id: b.id, name: b.name, no: noOf(b), isNew };
+				result = null;
+				screen = 'done';
+				return;
+			}
+		}
 		const parts = partsFor(g.stats.kills, all, clean);
 		const heldId = g.player.held?.id ?? null;
 		const before = heldId ? armory[heldId] : undefined;
@@ -467,7 +506,7 @@
 			: null;
 		result = {
 			name: g.level.name,
-			no: shortNo(i),
+			no: noOf(g.level),
 			time,
 			kills: g.stats.kills,
 			total: g.totalEnemies,
@@ -483,7 +522,8 @@
 			all,
 			clean,
 			bestTime: bestTime && !!old.best,
-			next: LEVELS[i + 1]?.id ?? null
+			next: i >= 0 ? (LEVELS[i + 1]?.id ?? null) : null,
+			bonus: !!g.level.bonus
 		};
 		setCamp({ done: { ...done, [id]: rec }, armory: nextArmory, parts: partsEarned + parts });
 		screen = 'done';
@@ -560,7 +600,6 @@
 	let ro: ResizeObserver | null = null;
 	onMount(() => {
 		reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-		heroK = innerWidth < 640 ? 1.2 : 1.8;
 		touchy = matchMedia('(pointer: coarse)').matches;
 		full = !!document.fullscreenElement;
 		ro = new ResizeObserver(resize);
@@ -628,9 +667,15 @@
 		}
 		if (typing(e)) return;
 		if (screen !== 'play') {
-			if (e.code === 'Escape' && onclose) {
-				e.preventDefault();
-				onclose();
+			sfx.unlock();
+			if (e.code === 'Escape') {
+				if (station) {
+					e.preventDefault();
+					closeStation();
+				} else if (onclose) {
+					e.preventDefault();
+					onclose();
+				}
 			}
 			return;
 		}
@@ -818,11 +863,11 @@
 			<p class="mh-kicker font-head">{M.kicker(LEVELS.length)}</p>
 			<h2 id="mh-h" class="mh-logo font-head" aria-label={M.title}><span>ABSCARS</span><b>MADNESS</b></h2>
 		</div>
-		<p class="mh-best num">{M.progress(cleared, LEVELS.length, earned, LEVELS.length * 4)} · <span class="mh-wallet" title={M.cash.label}>{M.cash.amount(wallet)}</span></p>
+		<p class="mh-best num">{M.progress(cleared, LEVELS.length, earned, maxPoints)} · <span class="mh-wallet" title={M.cash.label}>{M.cash.amount(wallet)}</span></p>
 		{#if onclose}<button type="button" class="mh-close" onclick={onclose} aria-label={M.close}>✕ <span>{M.close}</span></button>{/if}
 	</header>
 
-	<div class="mh-shell">
+	<div class="mh-shell" inert={station ? true : undefined}>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div
 			class="mh-stage"
@@ -867,7 +912,7 @@
 				<!-- HUD -->
 				<div class="mh-hud" aria-hidden="true">
 					<div class="mh-hud-l">
-						<span class="mh-wave-sm font-head">{shortNo(LEVELS.indexOf(level))}. {level.name}</span>
+						<span class="mh-wave-sm font-head">{noOf(level)}. {level.name}</span>
 						<div class="mh-hp" data-tone={hpTone}><i style:width="{(hud.hp / hud.maxHp) * 100}%"></i><span class="num">{hud.hp} HP</span></div>
 						<div class="mh-holk" class:on={hud.holkOn} class:ready={hud.holk >= 20}>
 							<i style:width="{hud.holk}%"></i><span>{M.hud.holk}{#if !touchy && settings.keys.holk[0]}<em> · {keyLabel(settings.keys.holk[0])}</em>{/if}</span>
@@ -881,7 +926,7 @@
 						</div>
 					</div>
 					<div class="mh-hud-c">
-						<span class="mh-wave font-head">{shortNo(LEVELS.indexOf(level))}. {level.name}</span>
+						<span class="mh-wave font-head">{noOf(level)}. {level.name}</span>
 						<span class="mh-left num">{M.hud.kills(hud.kills, hud.total)} · {M.hud.cp(hud.cp, level.checkpoints.length)}</span>
 					</div>
 					<div class="mh-hud-r">
@@ -939,13 +984,25 @@
 							<button type="button" class="mh-btn primary" onclick={() => pause(false)}>{M.resume}</button>
 							<button type="button" class="mh-btn" onclick={() => (pauseSettings = true)}>⚙ {M.tabs.settings}</button>
 							<button type="button" class="mh-btn" onclick={() => begin(levelId)}>{M.restart}</button>
-							<button type="button" class="mh-btn" onclick={toMenu}>{M.menu}</button>
+							<button type="button" class="mh-btn" onclick={() => toMenu()}>{M.menu}</button>
 						</div>
 						{/if}
 					</div>
 				{/if}
 			{/if}
 
+			{#if screen === 'done' && secretResult}
+				{@const sr = secretResult}
+				<div class="mh-cover over secret">
+					<p class="mh-cover-k font-head">{M.secret.kicker}</p>
+					<p class="mh-cover-t font-head gold">{M.secret.title}</p>
+					<p class="mh-cover-s">{sr.isNew ? M.secret.unlocked(sr.no, sr.name) : M.secret.again(sr.no, sr.name)}</p>
+					<div class="mh-row">
+						<button type="button" class="mh-btn primary" onclick={() => begin(sr.id)}>{M.secret.play}</button>
+						<button type="button" class="mh-btn" onclick={() => toMenu('war')}>{M.menu}</button>
+					</div>
+				</div>
+			{/if}
 			{#if screen === 'done' && result}
 				<div class="mh-cover over">
 					<p class="mh-cover-k font-head">{M.done.kicker(result.no)}</p>
@@ -968,6 +1025,8 @@
 						{#if result.next}
 							{@const nx = result.next}
 							<button type="button" class="mh-btn primary" onclick={() => begin(nx)}>{M.done.next}</button>
+						{:else if result.bonus}
+							<button type="button" class="mh-btn primary" onclick={() => toMenu('war')}>{M.menu}</button>
 						{:else}
 							<p class="mh-newbest font-head">{M.done.allDone}</p>
 						{/if}
@@ -976,19 +1035,19 @@
 							type="button"
 							class="mh-btn"
 							onclick={() => {
-								panel = 'skills';
 								if (result?.next) levelId = result.next;
-								toMenu();
+								toMenu('lab');
+								openStation('skills');
 							}}>{M.done.skills(free)}</button
 						>
 						<button
 							type="button"
 							class="mh-btn"
 							onclick={() => {
-								panel = 'armory';
 								if (result?.gun) armSel = result.gun.id;
 								if (result?.next) levelId = result.next;
-								toMenu();
+								toMenu('armory');
+								openStation('gun');
 							}}>{M.done.armory}</button
 						>
 					</div>
@@ -996,189 +1055,235 @@
 			{/if}
 
 			{#if screen === 'menu'}
-				<div class="mh-menu">
-					<!-- your operator, whole body, holding the starting gun: the same drawing as in the game -->
-					<canvas class="mh-menu-hero" bind:this={heroCanvas} aria-hidden="true" style:width="{70 * heroK}px" style:height="{104 * heroK}px"></canvas>
-					<div class="mh-menu-info">
-						<p class="mh-cover-k font-head">{#if chapterOf(level) > 1}{M.chapter(chapterOf(level), chapterName(chapterOf(level)))} · {/if}{M.levelNo(levelNo, chapterLevels.length)} · {THEME_NAME[level.theme]}</p>
-						<p class="mh-menu-name font-head">{level.name}</p>
-						<p class="mh-intro">{level.hint}</p>
-						<button type="button" class="mh-btn primary big" onclick={() => begin()}>{done[level.id]?.clear ? M.playAgain : M.play}</button>
-					</div>
-				</div>
+				<!-- the headquarters you walk around (MadnessHQ.svelte); its stations open the panels below -->
+				<MadnessHQ
+					active={active && !station && !listening}
+					look={LOOKS[op] ?? LOOKS.abscar}
+					gun={startPic}
+					gunKind={gunOf(start).kind}
+					keys={keymap}
+					pickLabel={keyLabel(settings.keys.pick[0] || settings.keys.pick[1])}
+					stats={{ cleared, total: LEVELS.length, free, levelName: `${noOf(level)}. ${level.name}` }}
+					startAt={hqAt}
+					seen={saved.hq?.seen ?? []}
+					secret={!!saved.hq?.secret}
+					onuse={openStation}
+					onseen={saveHq}
+					onsound={hqSound}
+				/>
 			{/if}
 		</div>
 	</div>
 
-	{#if screen === 'menu'}
-		<div class="mh-tabs" role="tablist" aria-label={M.menuLabel}>
-			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'levels'} onclick={() => (panel = 'levels')}>{M.tabs.levels}</button>
-			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'skills'} onclick={() => (panel = 'skills')}>
-				{M.tabs.skills}{#if free > 0}<span class="mh-pill num">{free}</span>{/if}
-			</button>
-			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'armory'} onclick={() => (panel = 'armory')}>
-				{M.tabs.armory}{#if armoryIds.length}<span class="mh-pill num">{armoryIds.length}</span>{/if}
-			</button>
-			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'loadout'} onclick={() => (panel = 'loadout')}>{M.tabs.loadout}</button>
-			<button type="button" role="tab" class="mh-tab" aria-selected={panel === 'settings'} onclick={() => (panel = 'settings')}>⚙ {M.tabs.settings}</button>
-		</div>
+	{#if screen === 'menu' && station}
+		<div class="mh-station" role="dialog" aria-modal="true" aria-labelledby="mh-st-h" data-station={station}>
+			<div class="mh-st-head">
+				<h3 id="mh-st-h" class="mh-st-t font-head">{M.hq.panel[station]}</h3>
+				<button type="button" class="mh-btn" bind:this={stBack} onclick={closeStation}>← {M.hq.back}</button>
+			</div>
 
-		{#if panel === 'levels'}
-			<div class="mh-levels">
-				{#each LEVELS as l, i (l.id)}
-					{@const open = levelOpen(i, done)}
-					{@const r = done[l.id]}
-					{#if i === 0 || chapterOf(LEVELS[i - 1]) !== chapterOf(l)}
-						<div class="mh-chapter" data-ch={chapterOf(l)}>
-							<h3 class="font-head">{M.chapter(chapterOf(l), chapterName(chapterOf(l)))}</h3>
-							<p>{M.chapterNote[chapterOf(l)] ?? ''}</p>
-						</div>
-					{/if}
-					<button type="button" class="mh-level" data-theme-l={l.theme} aria-pressed={levelId === l.id} disabled={!open} onclick={() => pickLevel(l.id)}>
-						<span class="mh-lv-no num">{shortNo(i)}</span>
-						<span class="mh-lv-name font-head">{l.name}</span>
-						<span class="mh-lv-hint">{open ? l.hint : M.locked}</span>
-						<span class="mh-lv-stars" aria-label={M.starsLabel(pointsOf(r))}>
-							<i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.all} title={M.star.all}>☠</i><i class:on={!!r?.clean} title={M.star.clean}>♥</i>
-							{#if r?.best}<em class="num">{fmtTime(r.best)}</em>{/if}
-						</span>
-						{#if !open}<span class="mh-lv-lock" aria-hidden="true">🔒</span>{/if}
-					</button>
-				{/each}
-			</div>
-			<p class="mh-note">{M.levelsNote}</p>
-		{:else if panel === 'skills'}
-			<div class="mh-skillhead">
-				<p><b class="num">{free}</b> {M.skillPoints(free)} · {M.earned(earned, LEVELS.length * 4)}</p>
-				{#if skills.length}<button type="button" class="mh-btn sm" onclick={() => setCamp({ skills: [] })}>{M.refund}</button>{/if}
-			</div>
-			<div class="mh-tree">
-				{#each BRANCHES as b (b.id)}
-					<div class="mh-branch" style:--bc={b.colour}>
-						<h3 class="mh-h3 font-head">{b.name}</h3>
-						{#each SKILLS.filter((s) => s.branch === b.id) as s (s.id)}
-							{@const st = canBuy(s.id, skillSet, free)}
-							<button type="button" class="mh-skill" data-state={st} disabled={st !== 'ok'} onclick={() => buySkill(s.id)}>
-								<span class="mh-sk-name font-head">{s.name}</span>
-								<span class="mh-sk-what">{s.what}</span>
-								{#if s.key}<span class="mh-sk-key"><kbd>{s.key}</kbd></span>{/if}
-								<span class="mh-sk-cost">{st === 'owned' ? M.owned : st === 'locked' ? M.needsFirst : M.cost(s.cost)}</span>
-							</button>
-						{/each}
+			{#if station === 'levels' || station === 'deploy'}
+				<div class="mh-deploy" data-theme-l={level.theme}>
+					<div>
+						<p class="mh-cover-k font-head">{#if level.bonus}{M.bonus.kicker(noOf(level))}{:else}{#if chapterOf(level) > 1}{M.chapter(chapterOf(level), chapterName(chapterOf(level)))} · {/if}{M.levelNo(levelNo, chapterLevels.length)}{/if} · {THEME_NAME[level.theme]}</p>
+						<p class="mh-deploy-name font-head">{level.name}</p>
+						<p class="mh-deploy-hint">{level.hint}</p>
 					</div>
-				{/each}
-			</div>
-		{:else if panel === 'armory'}
-			<div class="mh-skillhead">
-				<p><b class="num">⚙ {M.armory.parts(partsFree)}</b> · {M.armory.partsHelp}</p>
-			</div>
-			{#if !armoryIds.length}
-				<p class="mh-note mh-armempty">{M.armory.empty}</p>
-			{:else}
-				<p class="mh-note mh-armnote">{M.armory.intro}</p>
-				<div class="mh-arm">
-					<div class="mh-armlist" role="listbox" aria-label={M.tabs.armory}>
-						{#each armoryIds as id (id)}
-							{@const a = armory[id]}
-							{@const l = camoLook(id)}
-							<button type="button" class="mh-armgun" role="option" aria-selected={armGun === id} aria-label={M.armory.gunLabel(gunOf(id).name, rankOf(a.n))} onclick={() => (armSel = id)}>
-								{#if l}<WeaponIcon look={l} camo={camoFor(id)} />{/if}
-								<span class="mh-gn">{gunOf(id).name}</span>
-								<span class="mh-armrank">{M.armory.rank(rankOf(a.n))}{#if takesParts(id)} · {M.armory.on(Object.keys(a.eq).length, SLOTS.length)}{/if}</span>
-								{#if start === id}<span class="mh-armstar" aria-hidden="true">★</span>{/if}
-							</button>
-						{/each}
-					</div>
-					{#if armGun}
-						{@const a = armory[armGun]}
-						{@const l = camoLook(armGun)}
-						{@const nx = nextRankAt(a.n)}
-						<div class="mh-armbox">
-							<div class="mh-armtop">
-								{#if l}<div class="mh-armpic"><WeaponIcon look={l} camo={camoFor(armGun)} /></div>{/if}
-								<div class="mh-armtitle">
-									<h3 class="mh-armname font-head">{gunOf(armGun).name}</h3>
-									<p class="mh-armsub">{M.armory.rank(rankOf(a.n))} · {M.armory.clears(a.n)} · {nx ? M.armory.nextRank(nx - a.n, rankOf(nx)) : M.armory.maxRank}</p>
-								</div>
-								<button
-									type="button"
-									class="mh-btn sm"
-									class:primary={start !== armGun}
-									disabled={start === armGun}
-									onclick={() => {
-										start = armGun;
-										gunPicked = true;
-										saved = { ...saved, gun: armGun };
-										writeSaved(saved);
-									}}>{start === armGun ? M.armory.using : M.armory.use}</button
-								>
-							</div>
-							{#if takesParts(armGun)}
-								<h4 class="mh-armh">{M.armory.stats}</h4>
-								<dl class="mh-armstats">
-									{#each statRows(armGun, a.eq) as r (r.k)}
-										{@const better = r.k === 'noise' ? r.now < r.base - 0.5 : r.now > r.base + 0.001}
-										{@const worse = r.k === 'noise' ? r.now > r.base + 0.5 : r.now < r.base - 0.001}
-										{@const lo = Math.min(100, (Math.min(r.base, r.now) / r.max) * 100)}
-										<div>
-											<dt>{M.armory.stat[r.k]}</dt>
-											<dd>
-												<span class="mh-bar" aria-hidden="true"><i style:width="{lo}%"></i><b class:up={better} class:down={worse} style:left="{lo}%" style:width="{Math.min(100 - lo, (Math.abs(r.now - r.base) / r.max) * 100)}%"></b></span>
-												<span class="num mh-sv" class:up={better} class:down={worse}>{r.show(r.now)}</span>
-											</dd>
-										</div>
-									{/each}
-								</dl>
-								<div class="mh-slots">
-									{#each SLOTS as slot (slot)}
-										<div class="mh-slot">
-											<h4 class="mh-armh">{M.armory.slot[slot]}</h4>
-											<button type="button" class="mh-part none" data-state={a.eq[slot] ? 'owned' : 'on'} aria-pressed={!a.eq[slot]} onclick={() => setArmory(equipPart(armory, armGun, slot, null))}>
-												<span class="mh-pn">{M.armory.none}</span>
-											</button>
-											{#each ATTACHMENTS.filter((x) => x.slot === slot) as att (att.id)}
-												{@const st = canBuyPart(armory, armGun, att.id, partsFree)}
-												{@const on = a.eq[slot] === att.id}
-												<button
-													type="button"
-													class="mh-part"
-													data-state={on ? 'on' : st}
-													aria-pressed={on}
-													disabled={st === 'rank' || st === 'poor'}
-													aria-label={st === 'ok' ? M.armory.buyLabel(att.name, gunOf(armGun).name, att.cost) : undefined}
-													onclick={() => setArmory(st === 'owned' ? equipPart(armory, armGun, slot, att.id) : buyPart(armory, armGun, att.id, partsFree))}
-												>
-													<span class="mh-pn">{att.name}</span>
-													<span class="mh-pfx">{#each fxText(att.mods) as fx, i (i)}<em class:good={fx.good}>{fx.text}</em>{/each}</span>
-													<span class="mh-pst">{on ? M.armory.on1 : st === 'owned' ? M.armory.put : st === 'rank' ? M.armory.needRank(att.rank) : st === 'poor' ? M.armory.poor(att.cost) : M.armory.buy(att.cost)}</span>
-												</button>
-											{/each}
-										</div>
-									{/each}
-								</div>
-							{:else}
-								<p class="mh-note">{M.armory.melee}</p>
-							{/if}
-						</div>
-					{/if}
+					<button type="button" class="mh-btn primary big" onclick={() => begin()}>{done[level.id]?.clear ? M.playAgain : M.play} ▶</button>
 				</div>
 			{/if}
-		{:else if panel === 'settings'}
-			<div class="mh-setwrap">{@render settingsUi()}</div>
-		{:else}
-			<div class="mh-setup">
+
+			{#if station === 'levels'}
+				<div class="mh-levels">
+					{#each LEVELS as l, i (l.id)}
+						{@const open = levelOpen(i, done)}
+						{@const r = done[l.id]}
+						{#if i === 0 || chapterOf(LEVELS[i - 1]) !== chapterOf(l)}
+							<div class="mh-chapter" data-ch={chapterOf(l)}>
+								<h3 class="font-head">{M.chapter(chapterOf(l), chapterName(chapterOf(l)))}</h3>
+								<p>{M.chapterNote[chapterOf(l)] ?? ''}</p>
+							</div>
+						{/if}
+						<button type="button" class="mh-level" data-theme-l={l.theme} aria-pressed={levelId === l.id} disabled={!open} onclick={() => pickLevel(l.id)}>
+							<span class="mh-lv-no num">{shortNo(i)}</span>
+							<span class="mh-lv-name font-head">{l.name}</span>
+							<span class="mh-lv-hint">{open ? l.hint : M.locked}</span>
+							<span class="mh-lv-stars" aria-label={M.starsLabel(pointsOf(r))}>
+								<i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.all} title={M.star.all}>☠</i><i class:on={!!r?.clean} title={M.star.clean}>♥</i>
+								{#if r?.best}<em class="num">{fmtTime(r.best)}</em>{/if}
+							</span>
+							{#if !open}<span class="mh-lv-lock" aria-hidden="true">🔒</span>{/if}
+						</button>
+					{/each}
+				</div>
+				<div class="mh-chapter bonus">
+					<h3 class="font-head">{M.bonus.title(found.length, BONUS.length)}</h3>
+					<p>{M.bonus.note}</p>
+				</div>
+				<div class="mh-levels">
+					{#each BONUS as l (l.id)}
+						{@const open = found.includes(l.id)}
+						{@const r = done[l.id]}
+						{@const from = secretOf(l.id)}
+						<button type="button" class="mh-level bonus" data-theme-l={l.theme} aria-pressed={levelId === l.id} disabled={!open} onclick={() => pickLevel(l.id)}>
+							<span class="mh-lv-no num">{noOf(l)}</span>
+							<span class="mh-lv-name font-head">{open ? l.name : '???'}</span>
+							<span class="mh-lv-hint">{open ? l.hint : M.bonus.clue(from ? noOf(from) : '?', from?.name ?? '')}</span>
+							<span class="mh-lv-stars" aria-label={M.starsLabel(pointsOf(r))}>
+								<i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.clear} title={M.star.clear}>★</i><i class:on={!!r?.all} title={M.star.all}>☠</i><i class:on={!!r?.clean} title={M.star.clean}>♥</i>
+								{#if r?.best}<em class="num">{fmtTime(r.best)}</em>{/if}
+							</span>
+							{#if !open}<span class="mh-lv-lock" aria-hidden="true">🔒</span>{/if}
+						</button>
+					{/each}
+				</div>
+				<p class="mh-note">{M.levelsNote}</p>
+			{:else if station === 'deploy'}
+				<div class="mh-row">
+					<button type="button" class="mh-btn" onclick={() => openStation('levels')}>🗺 {M.hq.toMissions}</button>
+				</div>
+				<p class="mh-note">{M.hq.deployNote}</p>
+			{:else if station === 'skills'}
+				<div class="mh-skillhead">
+					<p><b class="num">{free}</b> {M.skillPoints(free)} · {M.earned(earned, maxPoints)}</p>
+					{#if skills.length}<button type="button" class="mh-btn sm" onclick={() => setCamp({ skills: [] })}>{M.refund}</button>{/if}
+				</div>
+				<div class="mh-tree">
+					{#each BRANCHES as b (b.id)}
+						<div class="mh-branch" style:--bc={b.colour}>
+							<h3 class="mh-h3 font-head">{b.name}</h3>
+							{#each SKILLS.filter((s) => s.branch === b.id) as s (s.id)}
+								{@const st = canBuy(s.id, skillSet, free)}
+								<button type="button" class="mh-skill" data-state={st} disabled={st !== 'ok'} onclick={() => buySkill(s.id)}>
+									<span class="mh-sk-name font-head">{s.name}</span>
+									<span class="mh-sk-what">{s.what}</span>
+									{#if s.key}<span class="mh-sk-key"><kbd>{s.key}</kbd></span>{/if}
+									<span class="mh-sk-cost">{st === 'owned' ? M.owned : st === 'locked' ? M.needsFirst : M.cost(s.cost)}</span>
+								</button>
+							{/each}
+						</div>
+					{/each}
+				</div>
+			{:else if station === 'settings'}
+				<div class="mh-setwrap">{@render settingsUi()}</div>
+				<div class="mh-box">
+					<h3 class="mh-h3 font-head">{M.controlsTitle}</h3>
+					<dl class="mh-keys">
+						{#each ACTIONS as act (act.a)}
+							<div><dt><kbd>{settings.keys[act.a].filter(Boolean).map(keyLabel).join(' / ') || '–'}</kbd></dt><dd>{act.name}</dd></div>
+						{/each}
+						<div><dt><kbd>{M.set.mouseKeys}</kbd></dt><dd>{M.set.mouse}</dd></div>
+					</dl>
+					<p class="mh-note">{M.touchHint}</p>
+				</div>
+			{:else if station === 'operator'}
 				<div class="mh-box">
 					<h3 class="mh-h3 font-head">{M.pickOp}</h3>
 					<div class="mh-ops" role="radiogroup" aria-label={M.pickOp}>
 						{#each SQUAD_OPS as o (o)}
-							<button type="button" class="mh-op" role="radio" aria-checked={op === o} onclick={() => (op = o)}>
+							<button type="button" class="mh-op" role="radio" aria-checked={op === o} onclick={() => pickOp(o)}>
 								<SquadAvatar name={OP_NAMES[o]} op={o} size={44} />
 								<span>{OP_NAMES[o]}</span>
 							</button>
 						{/each}
 					</div>
 				</div>
-				<div class="mh-box">
+			{:else}
+				<div class="mh-skillhead">
+					<p><b class="num">⚙ {M.armory.parts(partsFree)}</b> · {M.armory.partsHelp}</p>
+				</div>
+				{#if !armoryIds.length}
+					<p class="mh-note mh-armempty">{M.armory.empty}</p>
+				{:else}
+					<p class="mh-note mh-armnote">{M.armory.intro}</p>
+					<div class="mh-arm">
+						<div class="mh-armlist" role="listbox" aria-label={M.tabs.armory}>
+							{#each armoryIds as id (id)}
+								{@const a = armory[id]}
+								{@const l = camoLook(id)}
+								<button type="button" class="mh-armgun" role="option" aria-selected={armGun === id} aria-label={M.armory.gunLabel(gunOf(id).name, rankOf(a.n))} onclick={() => (armSel = id)}>
+									{#if l}<WeaponIcon look={l} camo={camoFor(id)} />{/if}
+									<span class="mh-gn">{gunOf(id).name}</span>
+									<span class="mh-armrank">{M.armory.rank(rankOf(a.n))}{#if takesParts(id)} · {M.armory.on(Object.keys(a.eq).length, SLOTS.length)}{/if}</span>
+									{#if start === id}<span class="mh-armstar" aria-hidden="true">★</span>{/if}
+								</button>
+							{/each}
+						</div>
+						{#if armGun}
+							{@const a = armory[armGun]}
+							{@const l = camoLook(armGun)}
+							{@const nx = nextRankAt(a.n)}
+							<div class="mh-armbox">
+								<div class="mh-armtop">
+									{#if l}<div class="mh-armpic"><WeaponIcon look={l} camo={camoFor(armGun)} /></div>{/if}
+									<div class="mh-armtitle">
+										<h3 class="mh-armname font-head">{gunOf(armGun).name}</h3>
+										<p class="mh-armsub">{M.armory.rank(rankOf(a.n))} · {M.armory.clears(a.n)} · {nx ? M.armory.nextRank(nx - a.n, rankOf(nx)) : M.armory.maxRank}</p>
+									</div>
+									<button
+										type="button"
+										class="mh-btn sm"
+										class:primary={start !== armGun}
+										disabled={start === armGun}
+										onclick={() => {
+											start = armGun;
+											gunPicked = true;
+											saved = { ...saved, gun: armGun };
+											writeSaved(saved);
+										}}>{start === armGun ? M.armory.using : M.armory.use}</button
+									>
+								</div>
+								{#if takesParts(armGun)}
+									<h4 class="mh-armh">{M.armory.stats}</h4>
+									<dl class="mh-armstats">
+										{#each statRows(armGun, a.eq) as r (r.k)}
+											{@const better = r.k === 'noise' ? r.now < r.base - 0.5 : r.now > r.base + 0.001}
+											{@const worse = r.k === 'noise' ? r.now > r.base + 0.5 : r.now < r.base - 0.001}
+											{@const lo = Math.min(100, (Math.min(r.base, r.now) / r.max) * 100)}
+											<div>
+												<dt>{M.armory.stat[r.k]}</dt>
+												<dd>
+													<span class="mh-bar" aria-hidden="true"><i style:width="{lo}%"></i><b class:up={better} class:down={worse} style:left="{lo}%" style:width="{Math.min(100 - lo, (Math.abs(r.now - r.base) / r.max) * 100)}%"></b></span>
+													<span class="num mh-sv" class:up={better} class:down={worse}>{r.show(r.now)}</span>
+												</dd>
+											</div>
+										{/each}
+									</dl>
+									<div class="mh-slots">
+										{#each SLOTS as slot (slot)}
+											<div class="mh-slot">
+												<h4 class="mh-armh">{M.armory.slot[slot]}</h4>
+												<button type="button" class="mh-part none" data-state={a.eq[slot] ? 'owned' : 'on'} aria-pressed={!a.eq[slot]} onclick={() => setArmory(equipPart(armory, armGun, slot, null))}>
+													<span class="mh-pn">{M.armory.none}</span>
+												</button>
+												{#each ATTACHMENTS.filter((x) => x.slot === slot) as att (att.id)}
+													{@const st = canBuyPart(armory, armGun, att.id, partsFree)}
+													{@const on = a.eq[slot] === att.id}
+													<button
+														type="button"
+														class="mh-part"
+														data-state={on ? 'on' : st}
+														aria-pressed={on}
+														disabled={st === 'rank' || st === 'poor'}
+														aria-label={st === 'ok' ? M.armory.buyLabel(att.name, gunOf(armGun).name, att.cost) : undefined}
+														onclick={() => setArmory(st === 'owned' ? equipPart(armory, armGun, slot, att.id) : buyPart(armory, armGun, att.id, partsFree))}
+													>
+														<span class="mh-pn">{att.name}</span>
+														<span class="mh-pfx">{#each fxText(att.mods) as fx, i (i)}<em class:good={fx.good}>{fx.text}</em>{/each}</span>
+														<span class="mh-pst">{on ? M.armory.on1 : st === 'owned' ? M.armory.put : st === 'rank' ? M.armory.needRank(att.rank) : st === 'poor' ? M.armory.poor(att.cost) : M.armory.buy(att.cost)}</span>
+													</button>
+												{/each}
+											</div>
+										{/each}
+									</div>
+								{:else}
+									<p class="mh-note">{M.armory.melee}</p>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
+				<div class="mh-box mh-gunbox">
 					<h3 class="mh-h3 font-head">{M.pickGun}</h3>
 					<div class="mh-guns" role="radiogroup" aria-label={M.pickGun}>
 						{#each gunChoices as g (g.id)}
@@ -1191,6 +1296,8 @@
 								onclick={() => {
 									start = g.id;
 									gunPicked = true;
+									saved = { ...saved, gun: g.id };
+									writeSaved(saved);
 								}}
 							>
 								{#if l}<WeaponIcon look={l} camo={g.camo} />{/if}
@@ -1202,18 +1309,8 @@
 					</div>
 					<p class="mh-note">{M.gunHint}</p>
 				</div>
-				<div class="mh-box">
-					<h3 class="mh-h3 font-head">{M.controlsTitle}</h3>
-					<dl class="mh-keys">
-						{#each ACTIONS as act (act.a)}
-							<div><dt><kbd>{settings.keys[act.a].filter(Boolean).map(keyLabel).join(' / ') || '–'}</kbd></dt><dd>{act.name}</dd></div>
-						{/each}
-						<div><dt><kbd>{M.set.mouseKeys}</kbd></dt><dd>{M.set.mouse}</dd></div>
-					</dl>
-					<p class="mh-note">{M.touchHint}</p>
-				</div>
-			</div>
-		{/if}
+			{/if}
+		</div>
 	{/if}
 </section>
 
@@ -1636,8 +1733,7 @@
 	}
 
 	/* covers: paused, game over, the menu's play screen */
-	.mh-cover,
-	.mh-menu {
+	.mh-cover {
 		position: absolute;
 		inset: 0;
 		display: flex;
@@ -1650,16 +1746,8 @@
 		background: rgba(5, 7, 5, 0.72);
 		backdrop-filter: blur(2px);
 	}
-	.mh-menu {
-		background:
-			radial-gradient(60% 70% at 50% 40%, rgba(157, 255, 46, 0.18), transparent 70%),
-			repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 12px, transparent 12px 24px),
-			#0c0f0b;
-	}
-	.mh-menu-hero {
-		position: relative;
-		flex: none;
-	}
+	
+	
 	/* no held props on the emblems in the game, only the weapon (the user, 2026-11-22): Phillestar's burger
 	   and its steam, Drängen's beer, Ingman's raised arms with the dumbbell. Things in the mouth stay. */
 	.mh :global(.pe-burger),
@@ -1919,10 +2007,7 @@
 			font-size: 9px;
 			line-height: 11px;
 		}
-		.mh-menu {
-			gap: 6px;
-			padding: 8px;
-		}
+		
 		.mh-intro {
 			display: none;
 		}
@@ -2257,51 +2342,12 @@
 	.mh-stats small {
 		color: #ffd23a;
 	}
-	.mh-menu {
-		flex-direction: row;
-		gap: clamp(10px, 4vw, 40px);
-	}
-	.mh-menu-info {
-		display: grid;
-		justify-items: start;
-		gap: 8px;
-		text-align: left;
-		max-width: 420px;
-	}
-	.mh-menu-name {
-		font-size: clamp(24px, 4.4vw, 44px);
-		font-weight: 900;
-		line-height: 1;
-		color: #fff;
-		text-shadow: 0 0 20px rgba(255, 106, 26, 0.5), 3px 3px 0 #2a0a08;
-	}
-	.mh-tabs {
-		display: flex;
-		gap: 6px;
-		max-width: 1100px;
-		margin: 12px auto 0;
-		flex-wrap: wrap;
-	}
-	.mh-tab {
-		min-height: 44px;
-		padding: 0 16px;
-		border-radius: 10px;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		background: rgba(255, 255, 255, 0.05);
-		color: inherit;
-		font-weight: 800;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		font-size: 13px;
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-	}
-	.mh-tab[aria-selected='true'] {
-		border-color: #ff6a1a;
-		background: rgba(255, 106, 26, 0.16);
-		box-shadow: 0 0 12px rgba(255, 106, 26, 0.35);
-	}
+	
+	
+	
+	
+	
+	
 	.mh-pill {
 		min-width: 20px;
 		padding: 1px 6px;
@@ -2569,13 +2615,8 @@
 		}
 	}
 	@media (max-width: 639px) {
-		.mh-menu {
-			flex-direction: column;
-		}
-		.mh-menu-info {
-			justify-items: center;
-			text-align: center;
-		}
+		
+		
 		.mh-close span {
 			display: none;
 		}
@@ -2840,5 +2881,80 @@
 		font-size: 9.5px;
 		font-weight: 800;
 		color: #ffd23a;
+	}
+
+	/* the HQ's station panels (MadnessHQ.svelte opens them) */
+	.mh-station {
+		position: absolute;
+		inset: 0;
+		z-index: 5;
+		overflow: auto;
+		padding: 14px clamp(10px, 3vw, 28px) 28px;
+		background:
+			radial-gradient(80% 50% at 50% 0%, rgba(157, 255, 46, 0.1), transparent 60%),
+			rgba(6, 9, 5, 0.97);
+	}
+	.mh-station > * {
+		max-width: 1100px;
+		margin-inline: auto;
+	}
+	.mh-st-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		flex-wrap: wrap;
+		margin-bottom: 12px;
+	}
+	.mh-st-t {
+		margin: 0;
+		font-size: clamp(18px, 3vw, 28px);
+		letter-spacing: 0.06em;
+		color: var(--mh-lime);
+	}
+	.mh-deploy {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px 20px;
+		flex-wrap: wrap;
+		margin-bottom: 14px;
+		padding: 14px 16px;
+		border-radius: 12px;
+		border: 1.5px solid rgba(255, 106, 26, 0.55);
+		background: linear-gradient(120deg, rgba(255, 106, 26, 0.16), rgba(0, 0, 0, 0.35));
+	}
+	.mh-deploy > div {
+		display: grid;
+		gap: 4px;
+		min-width: 0;
+	}
+	.mh-deploy-name {
+		margin: 0;
+		font-size: clamp(22px, 3.6vw, 36px);
+		font-weight: 900;
+		line-height: 1.05;
+		color: #fff;
+		text-shadow: 0 0 20px rgba(255, 106, 26, 0.5), 3px 3px 0 #2a0a08;
+	}
+	.mh-deploy-hint {
+		margin: 0;
+		font-size: 13px;
+		opacity: 0.85;
+	}
+	/* secrets + bonus levels: gold */
+	.mh-cover-t.gold {
+		color: #ffcf40;
+		text-shadow: 0 0 24px rgba(255, 207, 64, 0.6);
+	}
+	.mh-chapter.bonus h3 {
+		color: #ffcf40;
+	}
+	.mh-level.bonus:not(:disabled) {
+		border-color: rgba(255, 207, 64, 0.6);
+		box-shadow: inset 0 0 0 1px rgba(255, 207, 64, 0.25);
+	}
+	.mh-station .mh-setwrap + .mh-box {
+		margin-top: 12px;
 	}
 </style>
