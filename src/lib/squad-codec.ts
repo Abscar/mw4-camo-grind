@@ -35,6 +35,7 @@ import { cleanLoans, type LoanBook } from './loans.ts';
 import { cleanDonations, cleanKarma, type DonationBook, type Karma } from './donations.ts';
 import { cleanKarmaShop, type KarmaShopState } from './karma-shop.ts';
 import { cleanArcade, type ArcadeState } from './arcade.ts';
+import { cleanHideout, type Hideout } from './hideout.ts';
 import { cleanClasses, type ClassList } from './squad-classes.ts';
 import { cleanCombat, type CombatLog } from './squad-combat.ts';
 import { cleanRanked, type RankedLog } from './squad-ranked.ts';
@@ -156,6 +157,10 @@ export interface SquadMember {
 	karmaShop?: KarmaShopState;
 	/** BurgiArcade: high scores, tickets, prizes bought, Quickscope duels (arcade.ts; 2026-11-22). */
 	arcade?: ArcadeState;
+	/** Hideout: bought, room, furniture, display wall, sign (hideout.ts; 2026-11-28). */
+	hideout?: Hideout;
+	/** Burgers won (+) / lost (−) to other players in hideouts, per device (hangout.ts duels; never through the house). */
+	pvp?: CasinoLedger;
 	/** Fields a newer page wrote that this one doesn't know: kept as they are, never dropped. */
 	more?: Record<string, unknown>;
 }
@@ -260,7 +265,7 @@ export const MAX_BETS = 40;
 export const BET_MAX = 10_000;
 export const SETTLED_MAX = 40;
 
-const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans', 'donations', 'karmaShop', 'arcade']);
+const MEMBER_KEYS = new Set(['name', 'op', 'seen', 'away', 'weapons', 'mastery', 'prestige', 'tickAt', 'recent', 'readyAt', 'ping', 'played', 'combat', 'ranked', 'classes', 'online', 'casino', 'shop', 'loans', 'donations', 'karmaShop', 'arcade', 'hideout', 'pvp']);
 const DOC_KEYS = new Set(['app', 'squad', 'members', 'duels', 'roulette', 'bets', 'settled', 'paid', 'bans', 'grants', 'tune', 'karma', 'karmaHearts', 'zero']);
 
 /** Admin grants: member id → whole burgers (±), within a sane range. */
@@ -364,6 +369,10 @@ function cleanMember(raw: unknown): SquadMember | null {
 	if (karmaShop) member.karmaShop = karmaShop;
 	const arcade = cleanArcade(raw.arcade);
 	if (arcade) member.arcade = arcade;
+	const hideout = cleanHideout(raw.hideout);
+	if (hideout) member.hideout = hideout;
+	const pvp = cleanCasino(raw.pvp);
+	if (pvp) member.pvp = pvp;
 	let more = unknownKeys(raw, MEMBER_KEYS);
 	// an operator added after this page was built: keep it (in `more`, written back as `op`), so this page's next
 	// write doesn't turn the newer page's operator back into initials (what a page from before TheJoker_BPL does
@@ -566,6 +575,8 @@ export function memberEntry(
 		donations?: DonationBook | null;
 		karmaShop?: KarmaShopState | null;
 		arcade?: ArcadeState | null;
+		hideout?: Hideout | null;
+		pvp?: CasinoLedger | null;
 	} = {}
 ): SquadMember {
 	const entry = cleanMember({
@@ -590,7 +601,9 @@ export function memberEntry(
 		loans: extra.loans ?? undefined,
 		donations: extra.donations ?? undefined,
 		karmaShop: extra.karmaShop ?? undefined,
-		arcade: extra.arcade ?? undefined
+		arcade: extra.arcade ?? undefined,
+		hideout: extra.hideout ?? undefined,
+		pvp: extra.pvp ?? undefined
 	});
 	if (!entry) throw new Error('bad squad entry');
 	return entry;

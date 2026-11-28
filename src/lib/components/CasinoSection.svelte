@@ -60,6 +60,10 @@
 	import CasinoLoans from './CasinoLoans.svelte';
 	import CasinoDonate from './CasinoDonate.svelte';
 	import { bjTable } from '#lib/bjTable.svelte.ts';
+	import { hangout } from '#lib/hangout.svelte.ts';
+	import CasinoLobby from './hangout/CasinoLobby.svelte';
+	import CasinoHideouts from './hangout/CasinoHideouts.svelte';
+	import HideoutTileArt from './hangout/HideoutTileArt.svelte';
 
 	let { onSquad }: { onSquad?: () => void } = $props();
 	/** The blackjack table's "n at the table" on its button (read now and then while this is on screen). */
@@ -67,10 +71,10 @@
 	$effect(() => (casinoEl && squad.on ? bjTable.lobby(casinoEl) : undefined));
 	const atTable = $derived(squad.on && bjTable.online ? bjTable.seated.filter((s) => s.id !== squad.me?.id).length : 0);
 	const c = t.casino;
-	type Game = Exclude<CasinoTab, 'shop'>;
-	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'cases', 'roulette', 'blackjack', 'bank', 'donate', 'admin'];
+	type Game = Exclude<CasinoTab, 'shop'> | 'hideout';
+	const ALL_GAMES: Game[] = ['slots', 'fortune2', 'book', 'kushburst', 'stash', 'skeddwood', 'cases', 'roulette', 'blackjack', 'bank', 'donate', 'hideout', 'admin'];
 	/** Not games: a row of smaller tiles of their own under the game tiles. */
-	const UTIL: Game[] = ['bank', 'donate', 'admin'];
+	const UTIL: Game[] = ['bank', 'donate', 'hideout', 'admin'];
 	const GAME_KEY = 'mw4-camo-grind:casino-game';
 
 	let savedGame = $state<string | null>(null);
@@ -139,6 +143,17 @@
 	const hot = $derived(hotWon ?? 'fortune2');
 	const meter = $derived(bonusMeter(days, DAILY.every, daysToNextRate(days)));
 	let confetti = $state<CasinoConfetti>();
+
+	/** The casino lobby (hangout.ts): who's here, what they play; a hideout you're visiting. */
+	$effect(() => (squad.on ? hangout.watch() : undefined));
+	$effect(() => {
+		if (squad.on && game !== 'hideout') hangout.at(game);
+	});
+	let visitHo = $state<string | null>(null);
+	function visit(id: string) {
+		visitHo = id;
+		pick('hideout');
+	}
 </script>
 
 <section bind:this={casinoEl} class="class-card meta-list casino overflow-hidden rounded-card bg-panel shadow-card" style:--c="#ffc928" aria-labelledby="casino-h">
@@ -179,7 +194,7 @@
 				<button type="button" class="casino-game" class:util={!span} data-game={g} aria-pressed={game === g} style:--span={span || undefined} onclick={() => pick(g)}>
 					<span class="tile-fx" aria-hidden="true"></span>
 					{#if g === hot}<span class="casino-hot font-head" title={hotWon ? f.hotLabel : f.hotParty}><span aria-hidden="true">🔥</span> {f.hot}</span>{/if}
-					{#if g === 'fortune2'}<MybotsLogo tile />{:else if g === 'slots'}<FortuneLogo tile live={game === g} />{:else if g === 'book'}<BookLogo tile live={game === g} />{:else if g === 'kushburst'}<KushLogo tile live={game === g} />{:else if g === 'stash'}<StashLogo tile live={game === g} />{:else if g === 'skeddwood'}<SkeddwoodLogo tile live={game === g} />{:else if g === 'cases'}<CasesTileArt live={game === g} />{:else}<CasinoTabArt kind={g} />{/if}
+					{#if g === 'fortune2'}<MybotsLogo tile />{:else if g === 'slots'}<FortuneLogo tile live={game === g} />{:else if g === 'book'}<BookLogo tile live={game === g} />{:else if g === 'kushburst'}<KushLogo tile live={game === g} />{:else if g === 'stash'}<StashLogo tile live={game === g} />{:else if g === 'skeddwood'}<SkeddwoodLogo tile live={game === g} />{:else if g === 'cases'}<CasesTileArt live={game === g} />{:else if g === 'hideout'}<HideoutTileArt />{:else}<CasinoTabArt kind={g} />{/if}
 					<span class="casino-game-name font-head">{c.games[g]}</span>
 					{#if g === 'blackjack' && atTable}<span class="casino-live num" title={c.blackjack.atTable(atTable)}
 							><span aria-hidden="true">{atTable}</span><span class="sr-only"> ({c.blackjack.atTable(atTable)})</span></span
@@ -196,6 +211,9 @@
 					{#each UTILS as g (g)}{@render tile(g, 0)}{/each}
 				</div>
 			</div>
+
+			<!-- who else is in the casino right now, and what they play -->
+			<CasinoLobby games={{ ...c.games, hideout: c.games.hideout, lobby: t.hang.inLobby }} onVisit={visit} />
 
 			<!-- karma luck: hearts from giving burgers away make the slot machines kinder (casino-rig.ts) -->
 			{#if karmaCounts(game) || game === 'donate'}
@@ -223,6 +241,8 @@
 					<CasinoBlackjack {balance} bind:hidden />
 				{:else if game === 'admin'}
 					<CasinoRig />
+				{:else if game === 'hideout'}
+					<CasinoHideouts bind:visit={visitHo} />
 				{:else if game === 'donate'}
 					<CasinoDonate balance={shown} />
 				{:else}

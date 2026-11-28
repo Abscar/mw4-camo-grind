@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'hideouts-lobby',
+		date: '2026-11-28',
+		kind: 'new',
+		title: 'Casino lobby, collab spins + hideouts',
+		text: 'See who’s in the casino and what they play, chip in on collab spins, and buy a hideout to hang out, play cards and bet with the squad.',
+		tab: 'casino'
+	},
+	{
 		id: 'meili-joins',
 		date: '2026-11-28',
 		kind: 'new',

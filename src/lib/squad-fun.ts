@@ -35,6 +35,7 @@ import { startOfDay, startOfWeek } from './stats.ts';
 import { isReleased } from './steps.ts';
 import { bonus420, casinoTotal, dailyTotal, HOUSE_OP } from './squad-casino.ts';
 import { shopSpent } from './shop.ts';
+import { hideoutSpent } from './hideout.ts';
 import { loanEffect } from './loans.ts';
 import { donationTotal } from './donations.ts';
 
@@ -230,7 +231,7 @@ export function burgersEarned(m: Pick<SquadMember, 'weapons' | 'mastery'>): numb
 
 type Members = Record<string, Pick<SquadMember, 'weapons' | 'recent' | 'name'>>;
 /** What the bank needs of a member: the grind, the daily bonus, the casino and who's the house (2026-11-16). */
-type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'> & Partial<Pick<SquadMember, 'op' | 'shop' | 'loans' | 'donations'>>;
+type BankMember = Pick<SquadMember, 'weapons' | 'mastery' | 'recent' | 'name' | 'online' | 'casino'> & Partial<Pick<SquadMember, 'op' | 'shop' | 'loans' | 'donations' | 'hideout' | 'pvp'>>;
 
 /** The member who is the house (squad-casino.ts HOUSE_OP), the lowest id if two picked that operator; null without one. */
 export function houseOf(members: Record<string, Partial<Pick<SquadMember, 'op'>>>): string | null {
@@ -288,8 +289,10 @@ export interface BankRow {
 	casino: number;
 	/** The house only: what everyone else lost in BurgiCasino and on bets, and spent in BurgiShop. */
 	house: number;
-	/** Burgers spent in BurgiShop (shop.ts). */
+	/** Burgers spent in BurgiShop (shop.ts) and on the hideout (hideout.ts). */
 	spent: number;
+	/** Hideout games against other players: won minus lost (hangout.ts; never through the house). */
+	pvp: number;
 	/** BurgiBank: + loans, − loans and interest paid back or collected (loans.ts). */
 	loan: number;
 	/** Burgers still owed on an open loan (not taken off the balance yet). */
@@ -326,7 +329,8 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 			daily: dailyTotal(m.online?.n ?? 0) + bonus420(m.online),
 			casino: casinoTotal(m.casino).net,
 			house: 0,
-			spent: shopSpent(m.shop),
+			spent: shopSpent(m.shop) + hideoutSpent(m.hideout),
+			pvp: casinoTotal(m.pvp).net,
 			loan: loan.balance,
 			owed: loan.owed,
 			grant: doc.grants?.[id] ?? 0,
@@ -354,7 +358,7 @@ export function burgerBank(doc: SquadDoc, members: Record<string, BankMember>, n
 		}
 	}
 	for (const row of Object.values(out)) {
-		row.raw = row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.karma + row.won - row.lost - row.held - row.spent - row.donated;
+		row.raw = row.earned + row.daily + row.casino + row.house + row.loan + row.grant + row.karma + row.pvp + row.won - row.lost - row.held - row.spent - row.donated;
 		row.balance = Math.max(0, row.raw);
 	}
 	return out;

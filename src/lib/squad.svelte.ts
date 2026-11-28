@@ -113,6 +113,7 @@ import { buyKarmaItem, cleanKarmaShop, heartsOf, mergeKarmaShop, ownKarmaItems, 
 import { buyCs2, buyGun as armoryBuy, camoIndex, ownedCount, ARMORY_CAMOS, ARMORY_CLASSES, CS2_BY_ID, GUN_BY_ID, type GunBuyResult } from './armory.ts';
 import { cs2Name } from './data/cs2Skins.ts';
 import { is420 } from './four20.ts';
+import { arrange, buyHideout, cleanHideout, mergeHideout, type Hideout, type HideoutBuy, type Spot } from './hideout.ts';
 import { addDuel, bestOfOthers, cleanArcade, mergeArcade, playDuel, recordPlay, ticketsOf, duelsFor, duelOutcome, type ArcadeGame, type ArcadeState, type PlayResult, type Tickets } from './arcade.ts';
 import { buyPrize as arcadeBuy, ownPrizes, PRIZE_BY_ID, type PrizeBuyResult } from './arcade-prizes.ts';
 import { GAME_WORDS } from './i18n/arcade/index.ts';
@@ -143,6 +144,9 @@ const KARMA_SEEN_KEY = 'mw4-camo-grind:karma-seen';
 const KARMA_SHOP_KEY = 'mw4-camo-grind:karma-shop';
 /** BurgiArcade: high scores, tickets, prizes, duels (arcade.ts), kept on this device too (works outside a squad). */
 const ARCADE_KEY = 'mw4-camo-grind:arcade';
+/** Hideout (hideout.ts) and burgers won / lost to other players there (hangout.ts), kept on this device too. */
+const HIDEOUT_KEY = 'mw4-camo-grind:hideout';
+const PVP_KEY = 'mw4-camo-grind:pvp';
 /** Next-only casino settings this device already took (casino-rig.ts), newest last. */
 const RIG_USED_KEY = 'mw4-camo-grind:casino-taken';
 const RIG_USED_MAX = 30;
@@ -399,6 +403,10 @@ class Squad {
 	karmaShop = $state<KarmaShopState | undefined>(undefined);
 	/** BurgiArcade: your high scores, tickets, prizes and duels, merged with your other device's. */
 	arcade = $state<ArcadeState | undefined>(undefined);
+	/** Your hideout (hideout.ts), merged with your other device's. */
+	hideout = $state<Hideout | undefined>(undefined);
+	/** Burgers won / lost to other players in hideouts, per device (like the casino tally). */
+	pvp = $state<CasinoLedger>({});
 	/** Today's daily bonus when this page counted it (for the casino tab's welcome line). */
 	bonusToday = $state<{ amount: number; n: number } | null>(null);
 	#device = '';
@@ -459,7 +467,9 @@ class Squad {
 			loans: this.loans,
 			donations: this.donations,
 			karmaShop: this.karmaShop,
-			arcade: this.arcade
+			arcade: this.arcade,
+			hideout: this.hideout,
+			pvp: this.pvp
 		};
 		return rankMembers(
 			Object.entries(members).map(([id, member]) => ({
@@ -507,6 +517,8 @@ class Squad {
 		this.donations = cleanDonations(readJson(DONATIONS_KEY));
 		this.karmaShop = cleanKarmaShop(readJson(KARMA_SHOP_KEY));
 		this.arcade = cleanArcade(readJson(ARCADE_KEY));
+		this.hideout = cleanHideout(readJson(HIDEOUT_KEY));
+		this.pvp = cleanCasino(readJson(PVP_KEY)) ?? {};
 		const taken = readJson(RIG_USED_KEY);
 		this.#rigUsed = Array.isArray(taken) ? taken.filter((x): x is string => typeof x === 'string').slice(-RIG_USED_MAX) : [];
 		const device = readJson(DEVICE_KEY);
@@ -1181,6 +1193,39 @@ class Squad {
 		writeJson(CASINO_KEY, this.casino);
 		this.#schedulePublish();
 		if (event) void this.#event(event);
+		// the casino lobby's "pling" over your head (hangout.svelte.ts listens)
+		if (net > 0 && !opts.sameGame && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('mw4:casino-win', { detail: { net } }));
+	}
+
+	/** Burgers won (+) or lost (−) to another player in a hideout (hangout.ts duels): never through the house. */
+	recordPvp(net: number): void {
+		if (!this.me) return;
+		this.pvp = withGame(this.pvp, this.#device, net, Math.round(this.serverNow()));
+		writeJson(PVP_KEY, this.pvp);
+		this.#schedulePublish();
+	}
+
+	/** Buy your hideout, a room style or a piece of furniture (hideout.ts); the burgers go to the house. */
+	buyHideout(id: string): HideoutBuy | 'off' {
+		const bank = this.myBank;
+		if (!this.me || !bank) return 'off';
+		const r = buyHideout(this.hideout, id, bank.balance, Math.round(this.serverNow()));
+		if (r.result !== 'ok') return r.result;
+		this.hideout = r.state;
+		writeJson(HIDEOUT_KEY, r.state);
+		this.#schedulePublish();
+		if (id === 'ho-base') void this.#event(t.hideout.boughtEvent);
+		return 'ok';
+	}
+
+	/** Change your hideout's room style, a spot's furniture, the display wall or the sign. */
+	arrangeHideout(change: { th?: string; spot?: [Spot, string | null]; show?: string[]; sign?: string }): boolean {
+		const next = arrange(this.hideout, change, Math.round(this.serverNow()));
+		if (!next) return false;
+		this.hideout = next;
+		writeJson(HIDEOUT_KEY, next);
+		this.#schedulePublish();
+		return true;
 	}
 
 	/** Buy a BurgiShop item with your burgers (worn at once); epic and legendary ones go on the radio. */
@@ -1572,6 +1617,20 @@ class Squad {
 				writeJson(ARCADE_KEY, merged ?? null);
 			}
 		}
+		if (mine?.hideout) {
+			const merged = mergeHideout(this.hideout, mine.hideout);
+			if (JSON.stringify(merged) !== JSON.stringify(this.hideout)) {
+				this.hideout = merged;
+				writeJson(HIDEOUT_KEY, merged ?? null);
+			}
+		}
+		if (mine?.pvp) {
+			const merged = mergeCasino(this.pvp, mine.pvp);
+			if (JSON.stringify(merged) !== JSON.stringify(this.pvp)) {
+				this.pvp = merged;
+				writeJson(PVP_KEY, merged);
+			}
+		}
 		// a KarmaShop item or arcade prize bought but missing from the shop (a copy that lost it) is owned again
 		const owned = ownPrizes(ownKarmaItems(this.shop, this.karmaShop), this.arcade);
 		if (owned !== this.shop) {
@@ -1607,7 +1666,9 @@ class Squad {
 			loans: this.loans,
 			donations: this.donations,
 			karmaShop: this.karmaShop,
-			arcade: this.arcade
+			arcade: this.arcade,
+			hideout: this.hideout,
+			pvp: this.pvp
 		});
 		// what a newer page (your other device) added to your entry stays
 		const more = this.#squad.doc?.members[me.id]?.more;
