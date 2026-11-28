@@ -32,7 +32,8 @@
 	let { active = false, onclose }: { active?: boolean; onclose?: () => void } = $props();
 
 	const KEY = 'mw4-camo-grind:mayhem';
-	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[]; armory?: unknown; parts?: number };
+	/** `cash` = every dollar ever looted on this device (spending comes later: wallet = cash − spent) */
+	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[]; armory?: unknown; parts?: number; cash?: number };
 	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp; settings?: unknown };
 	function readSaved(): Saved {
 		try {
@@ -115,6 +116,7 @@
 		];
 	}
 	const cleared = $derived(LEVELS.filter((l) => done[l.id]?.clear).length);
+	const wallet = $derived(cleanCash(camp.cash));
 	let levelId = $state(LEVELS[0].id);
 	const level = $derived(LEVEL_BY_ID.get(levelId) ?? LEVELS[0]);
 	const chapterLevels = $derived(LEVELS.filter((l) => chapterOf(l) === chapterOf(level)));
@@ -125,6 +127,13 @@
 		const n = LEVELS.filter((x, j) => j <= i && chapterOf(x) === chapterOf(l)).length;
 		return chapterOf(l) === 1 ? String(n) : `${chapterOf(l)}-${n}`;
 	};
+	function cleanCash(v: unknown): number {
+		return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(Math.floor(v), 1e12) : 0;
+	}
+	/** loot is banked the moment you pick it up, so quitting mid-level never loses it */
+	function bankCash(n: number) {
+		if (n > 0) setCamp({ cash: wallet + n });
+	}
 	function setCamp(c: Camp) {
 		saved = { ...saved, camp: { ...camp, ...c } };
 		writeSaved(saved);
@@ -255,6 +264,7 @@
 		keys: '',
 		nades: 0,
 		knives: 0,
+		cash: 0,
 		cp: 0,
 		dead: false,
 		hint: ''
@@ -276,6 +286,7 @@
 		gained: number;
 		parts: number;
 		gun: { id: string; name: string; fresh: boolean; rank: number; up: boolean } | null;
+		cash: number;
 		all: boolean;
 		clean: boolean;
 		bestTime: boolean;
@@ -430,6 +441,7 @@
 		if (e.t === 'hit' && e.mine) hitmark(e.head ? 'head' : 'hit');
 		else if (e.t === 'kill') hitmark('kill');
 		if (e.t === 'complete') setTimeout(finish, 1500);
+		if (e.t === 'cash') bankCash(e.n);
 	}
 
 	function finish() {
@@ -467,6 +479,7 @@
 			gained: pointsOf(rec) - pointsOf(old),
 			parts,
 			gun,
+			cash: g.cash,
 			all,
 			clean,
 			bestTime: bestTime && !!old.best,
@@ -524,6 +537,7 @@
 			keys: [...g.have].sort().join(','),
 			nades: g.grenades,
 			knives: g.knives,
+			cash: wallet,
 			cp: g.checkpoint,
 			dead: p.hp <= 0,
 			hint: settings.hints && g.time < (g.level.id === LEVELS[0].id ? 12 : 8) ? (g.level.id === LEVELS[0].id ? `${g.level.hint} ${M.hud.stealthTip}` : g.level.hint) : ''
@@ -804,7 +818,7 @@
 			<p class="mh-kicker font-head">{M.kicker(LEVELS.length)}</p>
 			<h2 id="mh-h" class="mh-logo font-head" aria-label={M.title}><span>ABSCARS</span><b>MADNESS</b></h2>
 		</div>
-		<p class="mh-best num">{M.progress(cleared, LEVELS.length, earned, LEVELS.length * 4)}</p>
+		<p class="mh-best num">{M.progress(cleared, LEVELS.length, earned, LEVELS.length * 4)} · <span class="mh-wallet" title={M.cash.label}>{M.cash.amount(wallet)}</span></p>
 		{#if onclose}<button type="button" class="mh-close" onclick={onclose} aria-label={M.close}>✕ <span>{M.close}</span></button>{/if}
 	</header>
 
@@ -863,7 +877,7 @@
 						</div>
 						<div class="mh-inv">
 							{#each hud.keys ? hud.keys.split(',') : [] as k (k)}<span class="mh-key" style:background={KEY_COL[k]} title="{k} key"></span>{/each}
-							<span class="mh-knives num" title={M.hud.knives} aria-label="{M.hud.knives}: {hud.knives}">🔪 {hud.knives}</span>{#if skillSet.has('frag')}<span class="mh-nades num">💣 {hud.nades}</span>{/if}
+							<span class="mh-knives num" title={M.hud.knives} aria-label="{M.hud.knives}: {hud.knives}">🔪 {hud.knives}</span>{#if skillSet.has('frag')}<span class="mh-nades num">💣 {hud.nades}</span>{/if}<span class="mh-cash num" title={M.cash.label}>{M.cash.amount(hud.cash)}</span>
 						</div>
 					</div>
 					<div class="mh-hud-c">
@@ -948,6 +962,7 @@
 						<div><dt>{M.done.score}</dt><dd class="num">{fmt(result.score)}</dd></div>
 						<div><dt>{M.done.heads}</dt><dd class="num">{result.heads}</dd></div>
 						<div><dt>{M.done.acc}</dt><dd class="num">{result.acc}%</dd></div>
+						<div><dt>{M.done.cash}</dt><dd class="num cash">{M.cash.amount(result.cash)}</dd></div>
 					</dl>
 					<div class="mh-row">
 						{#if result.next}
@@ -2186,6 +2201,16 @@
 		box-shadow: 0 0 6px currentColor;
 		border: 1px solid rgba(0, 0, 0, 0.6);
 	}
+	.mh-cash {
+		color: #ffd650;
+		text-shadow: 0 1px 0 #000;
+	}
+	.mh-wallet,
+	dd.cash {
+		color: #ffd650;
+		font-weight: 700;
+	}
+	.mh-cash,
 	.mh-nades,
 	.mh-knives {
 		font-size: 11px;

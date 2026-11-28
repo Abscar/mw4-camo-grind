@@ -107,6 +107,7 @@ export const mayhemText = {
 		['V / X', 'Holk Time (slow motion)'],
 		['Esc', 'pause']
 	] as [string, string][],
+	cash: { label: 'Cash: loot it from the enemies you kill. Kept on this device.', amount: (n: number) => `$${n.toLocaleString('en-US')}` },
 	touchHint: 'On a phone: tap and hold on the game to aim and shoot, buttons for the rest. Turn it sideways.',
 	hud: {
 		holk: 'Holk Time',
@@ -130,6 +131,7 @@ export const mayhemText = {
 		score: 'Score',
 		heads: 'Headshots',
 		acc: 'Accuracy',
+		cash: 'Cash looted',
 		next: 'Next level ▶',
 		again: 'Play it again',
 		skills: (n: number) => (n > 0 ? `Skill tree (${n} to spend)` : 'Skill tree'),

@@ -249,6 +249,8 @@ export interface Pickup {
 	/** a throwing knife to pick back up (`ang` = how it sticks) */
 	knife?: boolean;
 	ang?: number;
+	/** loot cash from a killed enemy (walk over it; it slides to you when close) */
+	cash?: number;
 }
 
 export interface Corpse {
@@ -286,7 +288,7 @@ export interface Popup {
 	y: number;
 	text: string;
 	t: number;
-	tone: 'kill' | 'head' | 'combo' | 'heal' | 'wave' | 'gun' | 'info' | 'alert' | 'stealth';
+	tone: 'kill' | 'head' | 'combo' | 'heal' | 'cash' | 'wave' | 'gun' | 'info' | 'alert' | 'stealth';
 	/** drawn on the screen (centre), not in the world */
 	screen?: boolean;
 }
@@ -358,6 +360,7 @@ export type GameEvent =
 	| { t: 'takedown' }
 	| { t: 'spotted' }
 	| { t: 'pickup'; id: string | null }
+	| { t: 'cash'; n: number }
 	| { t: 'empty' }
 	| { t: 'wave'; n: number }
 	| { t: 'clear'; n: number }
@@ -410,6 +413,12 @@ export function rng(seed: number) {
 		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 	};
 }
+
+/** loot cash per kill (low, high) before headshot ×1.5 / takedown + knife kill ×2 */
+export const CASH: Record<EnemyKind, [number, number]> = { random: [10, 25], sweat: [20, 40], shotty: [25, 45], camper: [30, 55], jugg: [200, 300] };
+/** seconds a cash bundle lies before it fades; how close it starts sliding to you */
+const CASH_LIFE = 25;
+const CASH_PULL = 110;
 
 const ENEMY: Record<EnemyKind, { hp: number; speed: number; range: number; kinds: (GunKind | null)[]; dmg: number; scale: number; score: number }> = {
 	random: { hp: 60, speed: 0.78, range: 240, kinds: [null, 'pistol', 'pistol', 'melee'], dmg: 0.2, scale: 1, score: 100 },
@@ -474,6 +483,8 @@ export class Mayhem {
 	shake = 0;
 	grenades = 0;
 	knives = KNIVES_START;
+	/** loot cash picked up this run (the page banks every pickup at once, from the `cash` events) */
+	cash = 0;
 	/** a short slow-motion kill cam (takedowns, knife headshots) */
 	slowT = 0;
 	/** sprint / slide / dive fuel (the bar under Holk Time); `winded` = ran dry, no sprint until it's back to STAM.winded */
@@ -1887,7 +1898,21 @@ export class Mayhem {
 		this.popups.push({ x: f.x, y: f.y - 100 * f.scale, text: label ? `${label} +${pts}` : head ? `HEADSHOT +${pts}` : `+${pts}`, t: 0, tone: label ? 'stealth' : head ? 'head' : 'kill' });
 		if (this.combo >= 2) this.popups.push({ x: f.x, y: f.y - 124 * f.scale, text: `×${mult} COMBO`, t: 0, tone: 'combo' });
 		this.events.push({ t: 'kill', head });
+		this.#dropCash(f, head, !!label);
 		if (this.r() < (f.kind === 'jugg' ? 1 : 0.12)) this.pickups.push({ uid: this.uid++, x: f.x, y: f.y - 40, vx: 0, vy: -300, gun: null, heal: f.kind === 'jugg' ? 60 : 30, life: 20, spin: 0, onGround: false });
+	}
+
+	/** a killed enemy spills cash: 1–3 bundles (5 from a juggernaut), more for headshots and takedowns / knife kills */
+	#dropCash(f: Fighter, head: boolean, silent: boolean) {
+		const [lo, hi] = CASH[f.kind as EnemyKind] ?? CASH.random;
+		const total = Math.round((lo + this.r() * (hi - lo)) * (head ? 1.5 : 1) * (silent ? 2 : 1));
+		const n = Math.min(f.kind === 'jugg' ? 5 : 3, Math.max(1, Math.round(total / 15)));
+		let left = total;
+		for (let i = 0; i < n; i++) {
+			const v = i === n - 1 ? left : Math.round(total / n);
+			left -= v;
+			this.pickups.push({ uid: this.uid++, x: f.x, y: f.y - 50 * f.scale, vx: (this.r() - 0.5) * 220, vy: -240 - this.r() * 140, gun: null, heal: 0, life: CASH_LIFE, spin: (this.r() - 0.5) * 10, onGround: false, cash: v });
+		}
 	}
 
 	#kill(f: Fighter, kx: number, ky: number, head: boolean, pit = false) {
@@ -2083,6 +2108,20 @@ export class Mayhem {
 				this.events.push({ t: 'pickup', id: null });
 				this.popups.push({ x: p.x, y: p.y - 110, text: `KNIFE ${this.knives}/${KNIVES_MAX}`, t: 0, tone: 'gun' });
 				continue;
+			}
+			if (k.cash && p.hp > 0) {
+				const dx = p.x - k.x;
+				const dy = p.y - 30 - k.y;
+				const d = Math.hypot(dx, dy);
+				if (d < 34) {
+					this.cash += k.cash;
+					k.life = 0;
+					this.events.push({ t: 'cash', n: k.cash });
+					this.popups.push({ x: p.x, y: p.y - 110, text: `+$${k.cash}`, t: 0, tone: 'cash' });
+					continue;
+				}
+				// a magnet: bills close by slide over to you
+				if (d < CASH_PULL && k.onGround && Math.abs(dy) < 60) k.x += (dx / d) * 280 * dt;
 			}
 			if (k.heal > 0 && p.hp > 0 && Math.hypot(k.x - p.x, k.y - (p.y - 20)) < 40 && p.hp < p.maxHp) {
 				p.hp = Math.min(p.maxHp, p.hp + k.heal);

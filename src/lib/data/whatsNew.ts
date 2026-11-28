@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-cash',
+		date: '2026-11-28',
+		kind: 'new',
+		title: 'Madness: loot cash',
+		text: 'Enemies you kill in Abscars Madness drop cash. Walk over it to grab it: headshots and takedowns pay more. 💵',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-dive-stamina',
 		date: '2026-11-28',
 		kind: 'update',

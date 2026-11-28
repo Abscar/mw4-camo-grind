@@ -313,6 +313,11 @@ export class MayhemSound {
 				this.#burst(3000, 1, 0.03, 0.12, 'highpass');
 				this.#tone(e.id ? 500 : 700, e.id ? 900 : 1300, 0.09, 0.15, 'triangle', 0.02);
 				break;
+			case 'cash':
+				// a little cha-ching: two bright pings
+				this.#tone(1800, 1800, 0.05, 0.1, 'triangle');
+				this.#tone(2700, 2700, 0.12, 0.09, 'triangle', 0.05);
+				break;
 			case 'empty':
 				this.#tone(1600, 1600, 0.03, 0.12, 'square');
 				break;

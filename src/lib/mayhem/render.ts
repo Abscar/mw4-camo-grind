@@ -480,6 +480,35 @@ function drawCorpse(c: Ctx, k: Corpse, op: string) {
 	c.restore();
 }
 
+/** a bundle of loot cash: a green banknote stack with a paper band, a soft gold glow, blinking before it fades */
+function cashBundle(c: Ctx, x: number, y: number, t: number, spin: number, onGround: boolean, life: number) {
+	if (life < 3 && Math.floor(life * 6) % 2) return;
+	c.save();
+	c.translate(x, y - 3 + (onGround ? Math.sin(t * 4 + x) * 1.2 : 0));
+	c.rotate(onGround ? -0.08 : t * spin);
+	c.shadowColor = 'rgba(255,220,90,0.75)';
+	c.shadowBlur = 6 + Math.sin(t * 6 + x) * 3;
+	c.fillStyle = '#1d5a2a';
+	c.fillRect(-10, -3, 20, 8);
+	c.shadowBlur = 0;
+	c.fillStyle = '#4fa85a';
+	c.fillRect(-10, -5, 20, 7);
+	c.strokeStyle = '#173f20';
+	c.lineWidth = 1;
+	c.strokeRect(-9.5, -4.5, 19, 6);
+	c.fillStyle = '#9fe0a0';
+	c.beginPath();
+	c.ellipse(0, -1.5, 3, 2.2, 0, 0, Math.PI * 2);
+	c.fill();
+	c.fillStyle = '#f2e6b8';
+	c.fillRect(-2.2, -5.5, 4.4, 8.5);
+	c.fillStyle = '#1d5a2a';
+	c.font = 'bold 6px system-ui, sans-serif';
+	c.textAlign = 'center';
+	c.fillText('$', 0, 0.6);
+	c.restore();
+}
+
 function burger(c: Ctx, x: number, y: number, t: number) {
 	c.save();
 	c.translate(x, y - 4 + Math.sin(t * 4) * 2);
@@ -954,6 +983,7 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 	}
 	for (const k of g.corpses) drawCorpse(c, k, v.op);
 	for (const k of g.pickups) if (k.heal > 0) burger(c, k.x, k.y, g.t);
+	for (const k of g.pickups) if (k.cash && inView(k.x - 14, k.x + 14)) cashBundle(c, k.x, k.y, g.t, k.spin, k.onGround, k.life);
 	for (const k of g.pickups) {
 		if (!k.knife || !inView(k.x - 20, k.x + 20)) continue;
 		c.save();
@@ -1140,7 +1170,7 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 		const big = u.tone === 'wave';
 		c.font = big ? '800 44px Bahnschrift, Arial Black, sans-serif' : `800 ${u.screen ? 18 : u.tone === 'alert' ? 20 : u.tone === 'head' || u.tone === 'stealth' ? 13 : 11}px Bahnschrift, Arial Black, sans-serif`;
 		c.fillStyle =
-			u.tone === 'head' || u.tone === 'alert' ? `rgba(255,70,50,${a})` : u.tone === 'stealth' ? `rgba(190,140,255,${a})` : u.tone === 'combo' ? `rgba(255,214,60,${a})` : u.tone === 'heal' ? `rgba(110,255,120,${a})` : u.tone === 'gun' ? `rgba(160,220,255,${a})` : `rgba(255,255,255,${a})`;
+			u.tone === 'head' || u.tone === 'alert' ? `rgba(255,70,50,${a})` : u.tone === 'stealth' ? `rgba(190,140,255,${a})` : u.tone === 'combo' ? `rgba(255,214,60,${a})` : u.tone === 'heal' ? `rgba(110,255,120,${a})` : u.tone === 'cash' ? `rgba(255,214,80,${a})` : u.tone === 'gun' ? `rgba(160,220,255,${a})` : `rgba(255,255,255,${a})`;
 		c.strokeStyle = `rgba(0,0,0,${a * 0.7})`;
 		c.lineWidth = big ? 6 : 3;
 		const yy = y - u.t * (big ? 8 : 24);
