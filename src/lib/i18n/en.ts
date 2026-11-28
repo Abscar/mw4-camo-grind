@@ -3524,6 +3524,18 @@ export const en = {
 		sayLabel: 'Say something',
 		says: { gg: 'GG', 'lets-go': 'LET’S GO!', lol: 'LOL', rip: 'RIP', nice: 'Nice one', hype: '🔥🔥🔥', cmon: 'C’mon…', sheesh: 'SHEESH' } as Record<string, string>,
 		menuFor: (name: string) => `What to do with ${name}`,
+		map: {
+			lobby: 'LOBBY',
+			hideouts: 'HIDEOUTS',
+			goTo: (name: string) => `Go to ${name}`,
+			fold: 'Hide map',
+			unfold: 'Show map'
+		},
+		near: {
+			label: 'Who else is playing',
+			title: (n: number) => (n === 1 ? 'Also in the casino' : `${n} more in the casino`),
+			same: 'Same machine'
+		},
 		collab: {
 			heading: 'Collab spin',
 			intro: 'Chip in together on one big spin of Abscar’s Fortune. The whole pot is the bet, and everyone gets a share of the win by what they put in.',

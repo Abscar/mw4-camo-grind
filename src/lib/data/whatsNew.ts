@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'casino-map',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Casino floor map',
+		text: 'The lobby is a top-down map with everyone at their machine, and the squad’s machines now show up beside yours while you spin.',
+		tab: 'casino'
+	},
+	{
 		id: 'madness-grab-bodies',
 		date: '2026-11-28',
 		kind: 'update',

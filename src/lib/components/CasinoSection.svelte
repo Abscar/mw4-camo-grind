@@ -62,6 +62,8 @@
 	import { bjTable } from '#lib/bjTable.svelte.ts';
 	import { hangout } from '#lib/hangout.svelte.ts';
 	import CasinoLobby from './hangout/CasinoLobby.svelte';
+	import SlotNeighbors from './hangout/SlotNeighbors.svelte';
+	import { isSlot } from '#lib/floorMap.ts';
 	import CasinoHideouts from './hangout/CasinoHideouts.svelte';
 	import HideoutTileArt from './hangout/HideoutTileArt.svelte';
 
@@ -150,6 +152,7 @@
 		if (squad.on && game !== 'hideout') hangout.at(game);
 	});
 	let visitHo = $state<string | null>(null);
+	const lobbyGames: Record<string, string> = { ...c.games, lobby: t.hang.inLobby };
 	function visit(id: string) {
 		visitHo = id;
 		pick('hideout');
@@ -213,13 +216,18 @@
 			</div>
 
 			<!-- who else is in the casino right now, and what they play -->
-			<CasinoLobby games={{ ...c.games, hideout: c.games.hideout, lobby: t.hang.inLobby }} onVisit={visit} />
+			<CasinoLobby games={lobbyGames} {game} onPick={(g) => pick(g as Game)} onVisit={visit} />
 
 			<!-- karma luck: hearts from giving burgers away make the slot machines kinder (casino-rig.ts) -->
 			{#if karmaCounts(game) || game === 'donate'}
 				<CasinoKarmaLuck onGive={game === 'donate' ? undefined : () => pick('donate')} />
 			{/if}
 
+			<!-- not playing alone: the others at their machines beside yours (a row above it on narrower screens) -->
+			{#if isSlot(game)}<SlotNeighbors {game} side="row" games={lobbyGames} />{/if}
+			<div class="stage" class:flank={isSlot(game)}>
+			{#if isSlot(game)}<SlotNeighbors {game} side="left" games={lobbyGames} />{/if}
+			<div class="stage-mid">
 			{#key game}
 				{#if game === 'slots'}
 					<CasinoSlots {balance} bind:hidden bind:pending />
@@ -268,6 +276,9 @@
 					</div>
 				{/if}
 			{/key}
+			</div>
+			{#if isSlot(game)}<SlotNeighbors {game} side="right" games={lobbyGames} />{/if}
+			</div>
 
 			<!-- who's up, who's down: a podium -->
 			<CasinoPodium rows={board} />
@@ -277,6 +288,30 @@
 </section>
 
 <style>
+	/* the game in the middle; on wide screens a slot machine is flanked by the others' machines (SlotNeighbors) */
+	.stage {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.stage > :global(.sn-side) {
+		display: none;
+	}
+	@media (min-width: 1180px) {
+		.stage.flank:has(> :global(.sn-side)) {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 800px) minmax(0, 1fr);
+			column-gap: 12px;
+			align-items: start;
+		}
+		.stage.flank > :global(.sn-side) {
+			display: grid;
+		}
+		.stage.flank:not(:has(> :global(.sn-right))) > .stage-mid {
+			grid-column: 2;
+		}
+		:global(.sn-row) {
+			display: none !important;
+		}
+	}
 	/* the casino floor: a dark carpet in every theme (the theme's colours re-tuned inside, so text, buttons
 	   and fields in the games, loans, donations and the control room stay readable on it), a stacking
 	   context of its own so the floor's lights and props (CasinoFloorFx, z-index −1) sit behind everything */
