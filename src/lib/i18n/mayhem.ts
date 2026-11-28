@@ -99,8 +99,8 @@ export const mayhemText = {
 		['Mouse', 'aim'],
 		['Click', 'shoot · punch · throw an empty gun · behind an unaware enemy: takedown'],
 		['F', 'throwing knife (silent; a headshot or an unaware enemy = dead) · walk over it to pick it up'],
-		['E / right click', 'pick up a gun · flip a switch'],
-		['Q', 'throw your gun'],
+		['E / right click', 'pick up a gun · flip a switch · grab a body (carry it as a shield, E again drops it)'],
+		['Q', 'throw your gun · throw the body you carry (it bowls enemies over)'],
 		['C', 'dash (on the ground and in the air)'],
 		['G', 'grenade (skill)'],
 		['V / X', 'Holk Time (slow motion)'],
@@ -119,7 +119,7 @@ export const mayhemText = {
 		kills: (n: number, total: number) => `${n}/${total} kills`,
 		cp: (n: number, total: number) => `checkpoint ${n}/${total}`
 	},
-	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Crouch, slide or drop down', sprint: 'Sprint on or off', dive: 'Dive', pick: 'Pick up or use', throw: 'Throw', holk: 'Holk Time', dash: 'Dash', nade: 'Grenade', knife: 'Throwing knife' },
+	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Crouch, slide or drop down', sprint: 'Sprint on or off', dive: 'Dive', pick: 'Pick up, grab a body or use', throw: 'Throw a gun or a body', holk: 'Holk Time', dash: 'Dash', nade: 'Grenade', knife: 'Throwing knife' },
 	done: {
 		kicker: (n: string) => `Level ${n}`,
 		title: 'LEVEL CLEARED',

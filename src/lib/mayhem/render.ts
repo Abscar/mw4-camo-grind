@@ -949,6 +949,9 @@ export interface View {
 	ph: number;
 	/** the player's gun picture (their camo), drawn in their hands */
 	gun?: GunPic | null;
+	/** key labels for the body hints ("E: GRAB", "Q: THROW"); touch shows the button names */
+	grabKey?: string;
+	throwKey?: string;
 }
 
 export function render(c: Ctx, g: Mayhem, v: View) {
@@ -1082,6 +1085,20 @@ export function render(c: Ctx, g: Mayhem, v: View) {
 		c.fillText('?', hx, hy);
 		c.restore();
 	}
+
+	// a body you can grab, or the one you carry
+	const hint = (text: string, x: number, y: number, a: number) => {
+		c.font = '800 9px Bahnschrift, Arial Black, sans-serif';
+		c.lineWidth = 3;
+		c.strokeStyle = 'rgba(0,0,0,0.75)';
+		c.fillStyle = `rgba(255,214,120,${a})`;
+		c.strokeText(text, x, y);
+		c.fillText(text, x, y);
+	};
+	const grabKey = v.grabKey ?? 'E', throwKey = v.throwKey ?? 'Q';
+	const grab = g.player.hp > 0 ? g.canGrab() : null;
+	if (grab) hint(`${grabKey}: GRAB`, grab.x, grab.y - 34, 0.7 + Math.sin(g.t * 7) * 0.25);
+	if (g.carry && g.carryT < 4) hint(`${throwKey}: THROW · ${grabKey}: DROP`, g.player.x, g.player.y - 112 * g.player.scale, Math.min(1, (4 - g.carryT) / 1.5));
 
 	c.lineCap = 'round';
 	for (const b of g.bullets) {

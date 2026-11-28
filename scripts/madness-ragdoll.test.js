@@ -123,3 +123,68 @@ test('in the game: a killed enemy becomes a ragdoll that settles on the floor; s
 	const moved = body.rag.p.some((q, i) => Math.hypot(q.x - before[i][0], q.y - before[i][1]) > 1.5);
 	assert.ok(moved, 'a bullet makes the body jerk');
 });
+
+test('a pinned point follows the hand and the rest of the body hangs off it', () => {
+	const rag = makeRag(300, FLOOR, 1, 1, 0, 0, 0, 0, false, seeded());
+	run(rag, world(), 3);
+	for (let i = 0; i < 90; i++) {
+		rag.pin = { i: R.footF, x: 300 + i * 3, y: FLOOR - 140 };
+		stepRag(rag, 1 / 60, world());
+	}
+	assert.ok(Math.hypot(rag.p[R.footF].x - 567, rag.p[R.footF].y - (FLOOR - 140)) < 1, 'the held foot is at the hand');
+	assert.ok(rag.p[R.head].y > rag.p[R.footF].y + 40, 'held by the foot: the head hangs below it');
+	rag.sticks.forEach((k) => assert.ok(len(rag, k.a, k.b) <= k.max * 1.12, 'bones stay on'));
+	assert.ok(!rag.asleep);
+});
+
+test('in the game: grab a body with E, carry it, throw it into an enemy; a carried body stops enemy bullets', () => {
+	const g = new Mayhem('o1', STARTER, [], 5);
+	const [a, b] = g.enemies;
+	g.enemies = [a, b];
+	const p = g.player;
+	const step = (secs, inp) => {
+		for (let i = 0; i < secs * 60; i++) g.step(1 / 60, inp);
+	};
+	Object.assign(a, { x: p.x + 40, y: FLOOR, vx: 0, vy: 0, hp: 1, asleep: true, pause: 99, home: p.x + 40, facing: 1, spot: 0 });
+	Object.assign(b, { x: p.x + 330, y: FLOOR, vx: 0, vy: 0, asleep: true, pause: 99, home: p.x + 330, facing: -1, spot: 0 });
+	g.pickups = [];
+	p.held = null;
+	const aim = { ...NO_INPUT, aimX: p.x + 300, aimY: FLOOR - 60 };
+	// punch the first one dead (empty hands)
+	step(0.05, aim);
+	step(0.02, { ...aim, fire: true });
+	step(1.5, aim);
+	assert.equal(g.corpses.length, 1, 'a body');
+	g.pickups = [];
+	// walk up to it (the takedown threw it a bit)
+	for (let i = 0; i < 240 && !g.canGrab(); i++) g.step(1 / 60, { ...aim, right: true });
+	assert.ok(g.canGrab(), 'it is within reach');
+	step(0.02, { ...aim, pick: true });
+	step(0.05, aim);
+	assert.equal(g.carry, g.corpses[0], 'carrying it');
+	// walk with it: it comes along
+	const x0 = p.x;
+	step(0.6, { ...aim, right: true });
+	assert.ok(p.x > x0 + 60, 'you walk');
+	assert.ok(Math.abs(g.carry.x - p.x) < 60, 'the body comes with you');
+	// enemy bullets stop in it
+	const hand = g.carry.rag.p.reduce((m, q) => (q.y < m.y ? q : m));
+	g.bullets.push({ x: p.x + 120, y: hand.y + 20, vx: -900, vy: 0, dmg: 20, mine: false, life: 1, pierce: 0, hit: [], kind: 'bullet', from: b.uid });
+	const hp = p.hp;
+	let shielded = false;
+	for (let i = 0; i < 18; i++) {
+		g.step(1 / 60, aim);
+		shielded ||= g.events.some((e) => e.t === 'shield');
+	}
+	assert.ok(shielded, 'the body took the shot');
+	assert.equal(p.hp, hp, 'you were not hurt');
+	// throw it at the second enemy
+	b.x = p.x + 200;
+	b.home = b.x;
+	const aimB = { ...NO_INPUT, aimX: b.x, aimY: FLOOR - 50 };
+	step(0.05, aimB);
+	step(0.02, { ...aimB, throw: true });
+	assert.equal(g.carry, null, 'let go');
+	step(1, aimB);
+	assert.ok(b.hp <= 0, 'the thrown body bowled the enemy over');
+});

@@ -264,7 +264,15 @@ export interface Corpse {
 	vy: number;
 	t: number;
 	still: boolean;
+	/** thrown by the player: seconds it can still knock someone over, and who it already hit */
+	fly?: number;
+	hits?: number[];
 }
+
+/** how far from your hand a body can be grabbed, how fast you walk carrying one, how hard you throw it */
+export const GRAB_R = 46;
+export const CARRY_SPEED = 0.78;
+export const BODY_THROW = 860;
 
 export interface Particle {
 	x: number;
@@ -373,6 +381,8 @@ export type GameEvent =
 	| { t: 'slide' }
 	| { t: 'dive' }
 	| { t: 'tackle' }
+	| { t: 'grab' }
+	| { t: 'shield' }
 	| { t: 'winded' }
 	| { t: 'slam'; big: boolean }
 	| { t: 'jump'; n: number }
@@ -465,6 +475,11 @@ export class Mayhem {
 	bullets: Bullet[] = [];
 	pickups: Pickup[] = [];
 	corpses: Corpse[] = [];
+	/** the body the player is carrying (E grabs / drops, THROW throws it); enemy bullets stop in it */
+	carry: Corpse | null = null;
+	/** seconds the current body has been carried (the THROW hint fades out) */
+	carryT = 0;
+	#carryPt = 0;
 	parts: Particle[] = [];
 	splats: Splat[] = [];
 	popups: Popup[] = [];
@@ -829,6 +844,7 @@ export class Mayhem {
 		fresh.hp = fresh.maxHp = p.maxHp;
 		fresh.safeT = 1.5;
 		this.player = fresh;
+		this.carry = null;
 		this.corpses = this.corpses.filter((c) => c.f !== p);
 		this.windUsed = false;
 		this.grenades = this.skills.has('frag') ? 3 : 0;
@@ -879,7 +895,7 @@ export class Mayhem {
 		p.aim = Math.atan2(inp.aimY - s.y, inp.aimX - s.x);
 		p.facing = inp.aimX < p.x ? -1 : 1;
 		const g = p.held ? this.statsOf(p.held) : null;
-		const speed = RUN * (g?.weight ?? 1.05);
+		const speed = RUN * (g?.weight ?? 1.05) * (this.carry ? CARRY_SPEED : 1);
 		const want = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
 		this.#held = inp.jump;
 		this.#want = want;
@@ -953,6 +969,7 @@ export class Mayhem {
 			p.slam = false;
 			p.ready = 0;
 			p.tackled = false;
+			if (this.carry) this.#dropBody(false);
 			this.events.push({ t: 'dive' });
 			for (let i = 0; i < 7; i++) this.parts.push({ x: p.x + (this.r() - 0.5) * 16, y: p.y, vx: -dir * (30 + this.r() * 120), vy: -this.r() * 60, life: 0.4, max: 0.4, kind: 'smoke', r: 2.5 + this.r() * 2 });
 		} else if (wasDiving) {
@@ -1095,24 +1112,117 @@ export class Mayhem {
 
 		// pick up / swap / use a switch
 		if (press('pick')) {
-			if (!this.#useSwitch()) this.#pickUp(p, true);
+			if (this.carry) this.#dropBody(false);
+			else if (!this.#useSwitch()) {
+				const gt = this.#grabTarget();
+				if (gt && gt.d < this.#nearGun(p, 54)) this.#grab(gt.c, gt.i);
+				else this.#pickUp(p, true);
+			}
 		} else if (!p.held) this.#pickUp(p, false);
 
 		// walk up behind someone who hasn't seen you and click: a takedown, gun in hand or not
 		const td = press('fire') && p.cool <= 0 ? this.canTakedown() : null;
 		if (td) this.#punch(p);
+		else if (press('throw') && this.carry) this.#dropBody(true);
 		else if (press('throw') && p.held && armed) this.#throw(p);
 		else if (g && p.held) {
 			if (g.kind === 'melee') {
 				if (press('fire') && p.cool <= 0) this.#slash(p, g);
 			} else if (p.held.ammo > 0) {
 				// an auto gun fires once it's up if fire is held; a single-shot gun needs a fresh click once it's up
-				if (armed && (g.auto ? inp.fire : press('fire')) && p.cool <= 0) this.#shoot(p, g, this.skills.has('aim') ? 1.2 : 1, steady);
+				if (armed && (g.auto ? inp.fire : press('fire')) && p.cool <= 0) this.#shoot(p, g, this.skills.has('aim') ? 1.2 : 1, steady * (this.carry ? 1.7 : 1));
 			} else if (press('fire') && armed) {
 				this.events.push({ t: 'empty' });
 				this.#throw(p);
 			}
-		} else if (press('fire') && p.cool <= 0) this.#punch(p);
+		} else if (press('fire') && p.cool <= 0) {
+			// empty hands and a body: the click throws it
+			if (this.carry) this.#dropBody(true);
+			else this.#punch(p);
+		}
+	}
+
+	/** where the player's free hand holds a body */
+	#hand(p: Fighter) {
+		return { x: p.x + p.facing * 17 * p.scale, y: p.y - 58 * p.scale };
+	}
+
+	/** the body point nearest your hand, if one is within reach (and you're not already carrying) */
+	#grabTarget(): { c: Corpse; i: number; d: number } | null {
+		const p = this.player;
+		if (p.hp <= 0 || this.carry || p.stance === 'dive' || p.stance === 'prone') return null;
+		const hd = this.#hand(p);
+		let best: { c: Corpse; i: number; d: number } | null = null;
+		for (const c of this.corpses) {
+			if (c.f === p || c.y > H + 50) continue;
+			for (let i = 0; i < c.rag.p.length; i++) {
+				const q = c.rag.p[i];
+				const d = Math.min(Math.hypot(q.x - hd.x, q.y - hd.y), Math.hypot(q.x - p.x, q.y - (p.y - 20)));
+				if (d < GRAB_R * p.scale && (!best || d < best.d)) best = { c, i, d };
+			}
+		}
+		return best;
+	}
+
+	/** the body E would grab right now (for the "E: GRAB" hint) */
+	canGrab(): Corpse | null {
+		return this.#grabTarget()?.c ?? null;
+	}
+
+	#nearGun(f: Fighter, r: number) {
+		let bd = Infinity;
+		for (const k of this.pickups) {
+			if (!k.gun || k.heal < 0) continue;
+			const d = Math.hypot(k.x - f.x, k.y - (f.y - 10));
+			if (d < r && d < bd) bd = d;
+		}
+		return bd;
+	}
+
+	#grab(c: Corpse, i: number) {
+		this.carry = c;
+		this.#carryPt = i;
+		this.carryT = 0;
+		c.fly = 0;
+		c.still = false;
+		c.t = 0;
+		this.player.punch = 0.12;
+		this.events.push({ t: 'grab' });
+	}
+
+	/** let go of the body: dropped (keeps your speed) or thrown at where you aim */
+	#dropBody(thrown: boolean) {
+		const c = this.carry;
+		if (!c) return;
+		const p = this.player;
+		this.carry = null;
+		c.rag.pin = undefined;
+		c.rag.asleep = false;
+		c.rag.calm = 0;
+		c.still = false;
+		if (!thrown) {
+			for (const q of c.rag.p) {
+				q.vx = q.vx * 0.5 + p.vx * 0.5;
+				q.vy = Math.min(q.vy, 0) * 0.5 + p.vy * 0.3;
+			}
+			return;
+		}
+		const ax = Math.cos(p.aim), ay = Math.sin(p.aim);
+		const held = c.rag.p[this.#carryPt];
+		const hx = held.x, hy = held.y;
+		for (const q of c.rag.p) {
+			// the end you hold flies a bit faster: the body turns over in the air
+			const near = 1 - Math.min(1, Math.hypot(q.x - hx, q.y - hy) / 90);
+			const k = BODY_THROW * (0.82 + near * 0.35);
+			q.vx = ax * k + p.vx * 0.5;
+			q.vy = ay * k - 230 + Math.min(0, p.vy) * 0.3;
+		}
+		c.fly = 1.4;
+		c.hits = [];
+		p.cool = Math.max(p.cool, 0.3);
+		p.punch = 0.2;
+		this.shake = Math.max(this.shake, 3);
+		this.events.push({ t: 'throw' });
 	}
 
 	/** standing on a thin one-way ledge (▼ drops through it) rather than on floor or a block */
@@ -1164,6 +1274,42 @@ export class Mayhem {
 			p.vx = -dir * 180;
 			p.vy = Math.min(p.vy, -280);
 			break;
+		}
+	}
+
+	/** a thrown body knocks over whoever it flies into */
+	#bowl(c: Corpse, dt: number) {
+		c.fly = Math.max(0, (c.fly ?? 0) - dt);
+		const sp = Math.hypot(c.vx, c.vy);
+		if (sp < 240) return;
+		for (const e of this.enemies) {
+			if (e.hp <= 0 || c.hits?.includes(e.uid)) continue;
+			const half = BODY.half * e.scale + 6, top = e.y - BODY.top * e.scale;
+			const q = c.rag.p.find((q) => Math.abs(q.x - e.x) < half + q.r && q.y > top - q.r && q.y < e.y + q.r);
+			if (!q) continue;
+			(c.hits ??= []).push(e.uid);
+			const dir = (Math.sign(c.vx) || 1) as 1 | -1;
+			this.stats.hits++;
+			this.shake = Math.max(this.shake, 7);
+			this.events.push({ t: 'tackle' });
+			for (let i = 0; i < 10; i++) this.parts.push({ x: q.x, y: q.y, vx: dir * this.r() * 260, vy: -this.r() * 260, life: 0.5, max: 0.5, kind: 'debris', r: 1.8 });
+			this.parts.push({ x: q.x, y: q.y, vx: 0, vy: 0, life: 0.35, max: 0.35, kind: 'ring', r: 18 });
+			// the body loses some speed, the one it hit flies
+			for (const r of c.rag.p) {
+				r.vx *= 0.55;
+				r.vy *= 0.7;
+			}
+			e.asleep = false;
+			e.vx = dir * 340;
+			e.vy = -300;
+			e.stun = e.kind === 'jugg' ? 1 : 1.6;
+			if (e.kind === 'jugg' || sp < 420) {
+				this.popups.push({ x: e.x, y: e.y - 120 * e.scale, text: 'KNOCKED DOWN', t: 0, tone: 'stealth' });
+				this.#damage(e, e.kind === 'jugg' ? 80 : 45, false, this.player, dir * 300, -300);
+			} else {
+				this.#label = 'HUMAN BOWLING';
+				this.#damage(e, 9999, false, this.player, dir * 460, -420);
+			}
 		}
 	}
 
@@ -1942,12 +2088,16 @@ export class Mayhem {
 			for (let i = 0; i < 16; i++) this.parts.push({ x: f.x, y: f.y - 50 * f.scale, vx: kx * 0.4 + (this.r() - 0.5) * 420, vy: -this.r() * 420, life: 1.6, max: 1.6, kind: 'ketchup', r: 2 + this.r() * 3.5 });
 		}
 		if (f.player) {
+			if (this.carry) this.#dropBody(false);
 			this.deaths++;
 			this.respawnT = 1.6;
 			this.holkOn = false;
 			this.events.push({ t: 'dead' });
 		} else this.enemies = this.enemies.filter((e) => e !== f);
-		if (this.corpses.length > 22) this.corpses.shift();
+		if (this.corpses.length > 22) {
+			const old = this.corpses.findIndex((c) => c !== this.carry);
+			this.corpses.splice(old, 1);
+		}
 	}
 
 	#boom(x: number, y: number, mine: boolean, size = 1) {
@@ -2048,6 +2198,21 @@ export class Mayhem {
 				if (b.kind === 'knife') this.#dropKnife(b.x, b.y, false, 0);
 				continue;
 			}
+			// a body in your hand is a shield: enemy bullets stop in it
+			if (!b.mine && this.carry && b.kind !== 'rocket') {
+				const c = this.carry;
+				const i = ragHit(c.rag, x0, y0, b.x, b.y);
+				if (i >= 0) {
+					const q = c.rag.p[i];
+					const sp = Math.hypot(b.vx, b.vy) || 1;
+					pushRag(c.rag, q.x, q.y, 16 * c.f.scale, (b.vx / sp) * 160, (b.vy / sp) * 160);
+					for (let j = 0; j < 4; j++) this.parts.push({ x: q.x, y: q.y, vx: (b.vx / sp) * 120 + (this.r() - 0.5) * 160, vy: -this.r() * 160, life: 0.6, max: 0.6, kind: 'ketchup', r: 1.5 + this.r() * 2 });
+					if (b.kind === 'knife') this.#dropKnife(b.x, b.y, false, 0);
+					b.life = 0;
+					this.events.push({ t: 'shield' });
+					continue;
+				}
+			}
 			for (const f of fighters) {
 				if (f.hp <= 0 || f.uid === b.from || b.hit.includes(f.uid)) continue;
 				if (b.mine === f.player) continue;
@@ -2093,7 +2258,7 @@ export class Mayhem {
 			// bodies on the floor jerk when shot (the bullet goes on)
 			if (b.life > 0 && b.kind === 'bullet') {
 				for (const c of this.corpses) {
-					if (b.hit.includes(-1 - c.f.uid)) continue;
+					if (c === this.carry || b.hit.includes(-1 - c.f.uid)) continue;
 					const i = ragHit(c.rag, x0, y0, b.x, b.y);
 					if (i < 0) continue;
 					b.hit.push(-1 - c.f.uid);
@@ -2185,12 +2350,21 @@ export class Mayhem {
 
 		// ragdolls
 		const ragWorld = { floor: FLOOR, onGround: (x: number) => this.#onGroundAt(x), plats: this.plats, solids: sol, gravity: GRAV };
+		if (this.carry && (this.player.hp <= 0 || !this.corpses.includes(this.carry))) this.carry = null;
 		for (const c of this.corpses) {
 			c.t += dt;
+			if (c === this.carry) {
+				const hd = this.#hand(this.player);
+				c.rag.pin = { i: this.#carryPt, x: hd.x, y: hd.y };
+				this.carryT += dt;
+				c.still = false;
+				c.t = 0;
+			}
 			if (c.still) continue;
 			const moving = stepRag(c.rag, dt, ragWorld);
 			Object.assign(c, ragCenter(c.rag));
-			if (!moving || c.y > H + 200) c.still = true;
+			if (c.fly) this.#bowl(c, dt);
+			if (c !== this.carry && (!moving || c.y > H + 200)) c.still = true;
 		}
 
 		// particles

@@ -537,7 +537,7 @@
 		if (!game || !ctx || !canvas) return;
 		const g = game;
 		if (reduce || !settings.shake) g.shake = 0;
-		render(ctx, g, { op, scale: (cssW * dpr) / VW, pw: canvas.width, ph: canvas.height, gun: g.player.held ? gunPic(g.player.held.id) : null });
+		render(ctx, g, { op, scale: (cssW * dpr) / VW, pw: canvas.width, ph: canvas.height, gun: g.player.held ? gunPic(g.player.held.id) : null, grabKey: touchy ? 'PICK' : keyLabel(settings.keys.pick[0] || settings.keys.pick[1]), throwKey: touchy ? 'THROW' : keyLabel(settings.keys.throw[0] || settings.keys.throw[1]) });
 		if (layerEl) layerEl.style.transform = `scale(${layerScale}) translate(${-g.cam.x}px, ${-g.cam.y}px)`;
 		const p = g.player;
 

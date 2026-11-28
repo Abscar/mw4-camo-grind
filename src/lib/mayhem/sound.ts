@@ -359,6 +359,15 @@ export class MayhemSound {
 				this.#burst(300, 0.6, 0.25, 0.5, 'lowpass');
 				this.#burst(2200, 0.8, 0.06, 0.25, 'highpass');
 				break;
+			case 'grab':
+				// grabbing a body: a cloth rustle and a soft thump
+				this.#burst(1100, 0.8, 0.12, 0.14, 'bandpass', 1600);
+				this.#tone(130, 70, 0.12, 0.2);
+				break;
+			case 'shield':
+				// a bullet stopped by the body in your hand: a dull slap
+				if (this.#ok('shield', 0.05)) this.#burst(500, 1, 0.07, 0.25, 'lowpass');
+				break;
 			case 'winded':
 				// out of breath: a short low puff
 				this.#burst(700, 0.8, 0.3, 0.1, 'bandpass', 400);

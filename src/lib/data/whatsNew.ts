@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-grab-bodies',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Madness: grab and throw bodies',
+		text: 'Press E by a body to drag it along as a shield, then Q (or click with empty hands) to throw it and bowl enemies over. 🎳',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-ragdolls',
 		date: '2026-11-28',
 		kind: 'update',

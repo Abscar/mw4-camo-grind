@@ -58,6 +58,8 @@ export interface Rag {
 	/** seconds the body has been almost still */
 	calm: number;
 	asleep: boolean;
+	/** a point held by someone's hand: it moves to (x, y) this step, the rest of the body hangs off it */
+	pin?: { i: number; x: number; y: number };
 }
 
 export interface RagWorld {
@@ -228,11 +230,23 @@ const SUB = 1 / 120;
 
 /** Move a ragdoll forward by dt. Returns true while it's still moving. */
 export function stepRag(rag: Rag, dt: number, w: RagWorld): boolean {
+	const pin = rag.pin;
+	if (pin) rag.asleep = false;
 	if (rag.asleep) return false;
 	const n = Math.min(8, Math.max(1, Math.ceil(dt / SUB)));
 	const h = dt / n;
 	const p = rag.p;
 	let moved = 0;
+	// a held point weighs (nearly) nothing in the solver and slides to the hand over the sub-steps
+	const held = pin ? p[pin.i] : null;
+	const hw = held?.w ?? 0, hx = held?.x ?? 0, hy = held?.y ?? 0;
+	if (held) held.w = 1e-4;
+	const place = (sub: number) => {
+		if (!held || !pin) return;
+		const k = (sub + 1) / n;
+		held.x = hx + (pin.x - hx) * k;
+		held.y = hy + (pin.y - hy) * k;
+	};
 	for (let sub = 0; sub < n; sub++) {
 		for (const q of p) {
 			q.vy += w.gravity * h;
@@ -244,6 +258,7 @@ export function stepRag(rag: Rag, dt: number, w: RagWorld): boolean {
 			q.x += q.vx * h;
 			q.y += q.vy * h;
 		}
+		place(sub);
 		const ground: boolean[] = [];
 		for (let it = 0; it < 6; it++) {
 			for (const k of rag.sticks) solveStick(p, k);
@@ -252,6 +267,7 @@ export function stepRag(rag: Rag, dt: number, w: RagWorld): boolean {
 			solveHip(rag, R.hipB, R.kneeB);
 			for (const hg of rag.hinges) solveHinge(p, hg);
 			for (let i = 0; i < p.length; i++) if (collide(p[i], w)) ground[i] = true;
+			place(sub);
 		}
 		for (let i = 0; i < p.length; i++) {
 			const q = p[i];
@@ -265,6 +281,11 @@ export function stepRag(rag: Rag, dt: number, w: RagWorld): boolean {
 			q.vy = nvy;
 			moved += Math.abs(q.x - q.px) + Math.abs(q.y - q.py);
 		}
+	}
+	if (held) held.w = hw;
+	if (pin) {
+		rag.calm = 0;
+		return true;
 	}
 	// asleep once it has hardly moved for a while (or fell out of the world)
 	const per = moved / (p.length * n);
