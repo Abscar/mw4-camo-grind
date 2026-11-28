@@ -6,12 +6,13 @@
  */
 import type { Input } from './engine.ts';
 
-export type Action = 'left' | 'right' | 'jump' | 'down' | 'pick' | 'throw' | 'knife' | 'dash' | 'nade' | 'holk' | 'pause';
+export type Action = 'left' | 'right' | 'jump' | 'down' | 'sprint' | 'pick' | 'throw' | 'knife' | 'dash' | 'nade' | 'holk' | 'pause';
 export const ACTIONS: { a: Action; name: string }[] = [
 	{ a: 'left', name: 'Run left' },
 	{ a: 'right', name: 'Run right' },
 	{ a: 'jump', name: 'Jump' },
-	{ a: 'down', name: 'Drop down · ground slam' },
+	{ a: 'down', name: 'Crouch · slide · drop down · ground slam' },
+	{ a: 'sprint', name: 'Sprint (hold)' },
 	{ a: 'dash', name: 'Dash' },
 	{ a: 'pick', name: 'Pick up · use' },
 	{ a: 'throw', name: 'Throw gun' },
@@ -26,14 +27,17 @@ export const DEFAULT_KEYS: Keys = {
 	right: ['KeyD', 'ArrowRight'],
 	jump: ['Space', 'KeyW'],
 	down: ['KeyS', 'ArrowDown'],
+	sprint: ['ShiftLeft', 'ShiftRight'],
 	dash: ['KeyC', ''],
 	pick: ['KeyE', ''],
 	throw: ['KeyQ', ''],
 	knife: ['KeyF', ''],
 	nade: ['KeyG', ''],
-	holk: ['ShiftLeft', 'ShiftRight'],
+	holk: ['KeyV', 'KeyX'],
 	pause: ['KeyP', '']
 };
+/** Holk Time sat on Shift until sprint arrived (2026-11-28) */
+const OLD_HOLK = ['ShiftLeft', 'ShiftRight'];
 
 export interface Settings {
 	keys: Keys;
@@ -56,7 +60,9 @@ const CODE = /^[A-Za-z0-9]{1,24}$/;
 /** a saved copy, checked: unknown bits fall back to the defaults, a key used twice keeps its first place */
 export function cleanSettings(v: unknown): Settings {
 	const o = (v && typeof v === 'object' ? v : {}) as Partial<Record<keyof Settings, unknown>>;
-	const raw = (o.keys && typeof o.keys === 'object' ? o.keys : {}) as Record<string, unknown>;
+	const raw = { ...(o.keys && typeof o.keys === 'object' ? o.keys : {}) } as Record<string, unknown>;
+	// a save from before sprint with Holk Time still on its old Shift keys: Shift becomes sprint, Holk Time moves to V / X
+	if (!Array.isArray(raw.sprint) && Array.isArray(raw.holk) && OLD_HOLK.every((k, i) => (raw.holk as unknown[])[i] === k)) delete raw.holk;
 	const keys = {} as Keys;
 	const used = new Set<string>(['Escape']);
 	for (const { a } of ACTIONS) {

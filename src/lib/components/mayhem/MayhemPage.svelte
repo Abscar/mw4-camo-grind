@@ -375,6 +375,7 @@
 		screen = 'play';
 		paused = false;
 		Object.assign(input, NO_INPUT, { aimX: game.player.x + 200, aimY: game.player.y - 60 });
+		sprintOn = false;
 		mfx = 0.75;
 		mfy = 0.6;
 		sfx.unlock();
@@ -578,7 +579,10 @@
 	function pause(on: boolean) {
 		if (screen !== 'play' || game?.over) return;
 		paused = on;
-		if (on) Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false });
+		if (on) {
+			Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, sprint: false });
+			sprintOn = false;
+		}
 		else {
 			last = 0;
 			stage?.focus();
@@ -682,6 +686,16 @@
 			onpointercancel: () => ((input as unknown as Record<string, boolean>)[k] = false),
 			onpointerleave: () => ((input as unknown as Record<string, boolean>)[k] = false)
 		};
+	}
+
+	/** touch: sprint is a switch (on until you tap it again or pause); ▼ while it's on = slide */
+	let sprintOn = $state(false);
+	function toggleSprint(e: PointerEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		touchy = true;
+		sprintOn = !sprintOn;
+		input.sprint = sprintOn;
 	}
 
 	// ---------- full screen + sound ----------
@@ -836,7 +850,7 @@
 						<span class="mh-wave-sm font-head">{shortNo(LEVELS.indexOf(level))}. {level.name}</span>
 						<div class="mh-hp" data-tone={hpTone}><i style:width="{(hud.hp / hud.maxHp) * 100}%"></i><span class="num">{hud.hp} HP</span></div>
 						<div class="mh-holk" class:on={hud.holkOn} class:ready={hud.holk >= 20}>
-							<i style:width="{hud.holk}%"></i><span>{M.hud.holk}{#if !touchy}<em> · {M.hud.holkReady}</em>{/if}</span>
+							<i style:width="{hud.holk}%"></i><span>{M.hud.holk}{#if !touchy && settings.keys.holk[0]}<em> · {keyLabel(settings.keys.holk[0])}</em>{/if}</span>
 						</div>
 						<div class="mh-inv">
 							{#each hud.keys ? hud.keys.split(',') : [] as k (k)}<span class="mh-key" style:background={KEY_COL[k]} title="{k} key"></span>{/each}
@@ -874,6 +888,7 @@
 							<button type="button" class="mh-tb" aria-label={M.touch.right} {...hold('right')}>▶</button>
 							<button type="button" class="mh-tb" aria-label={M.touch.down} {...hold('down')}>▼</button>
 							<button type="button" class="mh-tb" aria-label={M.touch.jump} {...hold('jump')}>▲</button>
+						<button type="button" class="mh-tb sm sprint" aria-label={M.touch.sprint} aria-pressed={sprintOn} onpointerdown={toggleSprint}>SPRINT</button>
 						</div>
 						<div class="mh-pad">
 							<button type="button" class="mh-tb sm" aria-label={M.touch.pick} {...hold('pick')}>USE</button>
@@ -1539,6 +1554,11 @@
 	}
 	.mh-tb:active {
 		background: rgba(157, 255, 46, 0.3);
+	}
+	.mh-tb.sprint[aria-pressed='true'] {
+		background: rgba(255, 176, 46, 0.35);
+		border-color: #ffb02e;
+		color: #ffd27a;
 	}
 
 	/* covers: paused, game over, the menu's play screen */

@@ -94,7 +94,8 @@ export const mayhemText = {
 	controls: [
 		['A / D', 'run'],
 		['W / Space', 'jump · again in the air · off walls (hold = higher)'],
-		['S', 'drop through a ledge · ground slam in the air'],
+		['S', 'hold: crouch (slow, low, harder to spot) · while sprinting: slide · tap on a thin ledge: drop through · in the air: ground slam'],
+		['Shift', 'sprint (hold; the gun is down while you run)'],
 		['Mouse', 'aim'],
 		['Click', 'shoot · punch · throw an empty gun · behind an unaware enemy: takedown'],
 		['F', 'throwing knife (silent; a headshot or an unaware enemy = dead) · walk over it to pick it up'],
@@ -102,21 +103,20 @@ export const mayhemText = {
 		['Q', 'throw your gun'],
 		['C', 'dash (on the ground and in the air)'],
 		['G', 'grenade (skill)'],
-		['Shift', 'Holk Time (slow motion)'],
+		['V / X', 'Holk Time (slow motion)'],
 		['Esc', 'pause']
 	] as [string, string][],
 	touchHint: 'On a phone: tap and hold on the game to aim and shoot, buttons for the rest. Turn it sideways.',
 	hud: {
 		holk: 'Holk Time',
-		holkReady: 'Shift',
 		fists: 'Fists',
 		knives: 'Throwing knives',
-		stealthTip: 'Take it slow: sneak up behind them and click for a silent takedown, or throw a knife (F).',
+		stealthTip: 'Take it slow: hold S to crouch and sneak up behind them, click for a silent takedown, or throw a knife (F). Shift sprints, S while sprinting slides.',
 		empty: 'EMPTY: click to throw it',
 		kills: (n: number, total: number) => `${n}/${total} kills`,
 		cp: (n: number, total: number) => `checkpoint ${n}/${total}`
 	},
-	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Drop down', pick: 'Pick up or use', throw: 'Throw', holk: 'Holk Time', dash: 'Dash', nade: 'Grenade', knife: 'Throwing knife' },
+	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Crouch, slide or drop down', sprint: 'Sprint on or off', pick: 'Pick up or use', throw: 'Throw', holk: 'Holk Time', dash: 'Dash', nade: 'Grenade', knife: 'Throwing knife' },
 	done: {
 		kicker: (n: string) => `Level ${n}`,
 		title: 'LEVEL CLEARED',

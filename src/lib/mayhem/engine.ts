@@ -45,6 +45,23 @@ const COYOTE = 0.12;
 const BUFFER = 0.14;
 const DASH_V = 820;
 const DASH_T = 0.18;
+/**
+ * Sprint / slide / crouch (2026-11-28, the user: "en sprint-knapp, slide-knapp … huka"):
+ * sprint = hold the sprint key while running on the ground: faster, gun lowered, no shooting; letting go
+ * (or pressing fire) brings the gun up after READY_T. Slide = ▼ while sprinting: a low, fast glide you can
+ * shoot from; jump out of it for a hop with a little extra speed. Crouch = hold ▼ on solid ground (a thin
+ * ledge still drops you through on a tap): slow, low, steadier aim, harder to spot.
+ */
+export const SPRINT = 1.45;
+export const CROUCH = 0.45;
+export const SLIDE_T = 0.55;
+const SLIDE_COOL = 0.4;
+const READY_T = 0.18;
+/** how tall a fighter is while low, as a share of standing (hitbox, head, where enemies aim) */
+export const LOW = { stand: 1, crouch: 0.64, slide: 0.42 } as const;
+export type Stance = keyof typeof LOW;
+/** how far the body sinks (px at scale 1) for a height share: the painter and the gun's pivot use it */
+export const dropOf = (low: number) => Math.round(BODY.shoulder * (1 - low));
 /** throwing knives: what you start (and respawn) with, the most you carry */
 export const KNIVES_START = 4;
 export const KNIVES_MAX = 6;
@@ -137,6 +154,14 @@ export interface Fighter {
 	quiet: number;
 	/** launched by a jump pad: the rise isn't cut short by letting go of jump */
 	boost: number;
+	/** standing, crouching or sliding (the player only) */
+	stance: Stance;
+	sprint: boolean;
+	slideT: number;
+	slideCool: number;
+	slideDir: 1 | -1;
+	/** after a sprint: the gun comes up when this runs out */
+	ready: number;
 }
 
 export interface Bullet {
@@ -288,6 +313,7 @@ export type GameEvent =
 	| { t: 'switch' }
 	| { t: 'checkpoint' }
 	| { t: 'dash' }
+	| { t: 'slide' }
 	| { t: 'slam'; big: boolean }
 	| { t: 'jump'; n: number }
 	| { t: 'wall' }
@@ -309,11 +335,12 @@ export interface Input {
 	dash: boolean;
 	nade: boolean;
 	knife: boolean;
+	sprint: boolean;
 	aimX: number;
 	aimY: number;
 }
 
-export const NO_INPUT: Input = { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, aimX: W, aimY: FLOOR - 60 };
+export const NO_INPUT: Input = { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, sprint: false, aimX: W, aimY: FLOOR - 60 };
 
 /** A small seeded random (mulberry32), so tests can replay a run. */
 export function rng(seed: number) {
@@ -542,7 +569,13 @@ export class Mayhem {
 			safeT: 0,
 			laserCool: 0,
 			quiet: 99,
-			boost: 0
+			boost: 0,
+			stance: 'stand',
+			sprint: false,
+			slideT: 0,
+			slideCool: 0,
+			slideDir: 1,
+			ready: 0
 		};
 	}
 
@@ -737,7 +770,7 @@ export class Mayhem {
 	}
 
 	#shoulder(f: Fighter) {
-		return { x: f.x + f.facing * 6 * f.scale, y: f.y - (BODY.shoulder - 1) * f.scale };
+		return { x: f.x + f.facing * 6 * f.scale, y: f.y - (BODY.shoulder - 1) * f.scale + dropOf(this.lowOf(f)) * f.scale };
 	}
 
 	/** Where a fighter's gun's muzzle is (the gun pivots near the shoulder). */
@@ -781,6 +814,40 @@ export class Mayhem {
 		if (press('jump')) p.buffer = BUFFER;
 		const maxJumps = this.skills.has('triple') ? 3 : 2;
 		const maxAir = this.skills.has('airdash') ? 2 : 1;
+
+		// --- sprint, slide, crouch ---
+		p.slideCool -= dt;
+		p.ready -= dt;
+		const ledge = p.onGround && this.#onLedge(p);
+		if (p.slideT > 0) {
+			p.slideT -= dt;
+			if (p.slideT <= 0 || !p.onGround || p.stun > 0 || p.dashT > 0) this.#endSlide(p, inp, ledge);
+		}
+		const sliding = p.slideT > 0;
+		const wasSprint = p.sprint;
+		p.sprint =
+			inp.sprint && !inp.fire && want !== 0 && !sliding && p.stun <= 0 && p.dashT <= 0 && (p.onGround ? true : wasSprint && Math.sign(p.vx) === want);
+		if (wasSprint && !p.sprint) p.ready = READY_T;
+		if (p.sprint && p.onGround && press('down') && p.slideCool <= 0) {
+			p.sprint = false;
+			p.slideT = SLIDE_T;
+			p.slideDir = want as 1 | -1;
+			p.vx = want * Math.max(Math.abs(p.vx), speed * SPRINT) * 1.08;
+			p.stance = 'slide';
+			p.ready = 0;
+			this.events.push({ t: 'slide' });
+			for (let i = 0; i < 8; i++) this.parts.push({ x: p.x - want * this.r() * 14, y: p.y - 1, vx: -want * (40 + this.r() * 120), vy: -this.r() * 70, life: 0.45, max: 0.45, kind: 'smoke', r: 2.5 + this.r() * 2 });
+		} else if (!sliding) p.stance = !p.sprint && inp.down && p.onGround && !ledge ? 'crouch' : 'stand';
+		if (p.sprint) {
+			p.facing = want as 1 | -1;
+			p.aim = want > 0 ? 0.95 : Math.PI - 0.95; // gun lowered
+		}
+		if (p.slideT > 0) {
+			p.vx = p.slideDir * Math.max(speed * CROUCH, Math.abs(p.vx) - 560 * dt);
+			if (this.r() < 0.5) this.parts.push({ x: p.x - p.slideDir * 6, y: p.y - 1, vx: -p.slideDir * this.r() * 80, vy: -this.r() * 40, life: 0.35, max: 0.35, kind: 'smoke', r: 2 + this.r() * 1.5 });
+		}
+		const pace = p.sprint ? SPRINT : p.stance === 'crouch' ? CROUCH : 1;
+
 		if (p.dashT > 0) {
 			p.dashT -= dt;
 			p.vy = 0;
@@ -799,14 +866,23 @@ export class Mayhem {
 				}
 			if (p.dashT <= 0) p.vx = p.dashDir * speed * 1.2;
 		} else if (p.stun <= 0) {
-			const target = want * speed;
+			const target = want * speed * pace;
 			let acc: number;
 			if (p.onGround) acc = want === 0 ? 3800 : p.vx && Math.sign(target) !== Math.sign(p.vx) ? 5400 : 2700;
 			else acc = want === 0 ? 520 : 2000;
 			if (p.wallLock > 0 && want === p.wall) acc *= 0.2;
-			p.vx += Math.max(-acc * dt, Math.min(acc * dt, target - p.vx));
+			// a sprint jump keeps its speed in the air
+			if (!p.onGround && wasSprint && Math.abs(p.vx) > Math.abs(target) && Math.sign(p.vx) === want) acc = 0;
+			if (!sliding) p.vx += Math.max(-acc * dt, Math.min(acc * dt, target - p.vx));
 			if (p.buffer > 0) {
 				if (p.onGround || p.coyote > 0) {
+					// jumping out of a slide: a hop that keeps a bit of extra speed
+					if (sliding) {
+						p.vx = p.slideDir * Math.max(Math.abs(p.vx), speed) * 1.12;
+						p.slideT = 0;
+						p.stance = 'stand';
+						p.slideCool = SLIDE_COOL;
+					}
 					p.vy = -P_JUMP;
 					p.onGround = false;
 					p.coyote = 0;
@@ -835,8 +911,8 @@ export class Mayhem {
 			}
 			// a short tap of jump gives a short hop
 			if (this.shortHop && !inp.jump && p.vy < -P_JUMP * 0.45 && !p.onGround && prevJumpHeld(p) && p.boost <= 0) p.vy = -P_JUMP * 0.45;
-			if (press('down')) {
-				if (p.onGround && p.y < FLOOR - 1) p.drop = 0.25;
+			if (press('down') && !sliding && p.slideT <= 0) {
+				if (ledge) p.drop = 0.25;
 				else if (!p.onGround && !p.slam) {
 					p.slam = true;
 					p.vy = 1150;
@@ -858,14 +934,17 @@ export class Mayhem {
 		// self repair
 		if (this.skills.has('regen') && p.quiet > 3 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + 7 * dt);
 
-		if (press('nade') && this.grenades > 0) {
+		// sprinting: the gun is down (and it takes a moment to come up after)
+		const armed = !p.sprint && p.ready <= 0;
+		const steady = p.stance === 'crouch' ? 0.5 : 1;
+		if (press('nade') && this.grenades > 0 && armed) {
 			this.grenades--;
 			const m = this.muzzle(p);
 			this.bullets.push({ x: m.x, y: m.y, vx: Math.cos(p.aim) * 620 + p.vx * 0.3, vy: Math.sin(p.aim) * 620 - 260, dmg: 0, mine: true, life: 1.4, pierce: 0, hit: [], kind: 'frag', spin: 8, from: p.uid });
 			this.events.push({ t: 'throw' });
 		}
 
-		if (press('knife') && this.knives > 0 && p.cool <= 0.1) this.#throwKnife(p);
+		if (press('knife') && this.knives > 0 && p.cool <= 0.1 && armed) this.#throwKnife(p);
 
 		// pick up / swap / use a switch
 		if (press('pick')) {
@@ -875,17 +954,37 @@ export class Mayhem {
 		// walk up behind someone who hasn't seen you and click: a takedown, gun in hand or not
 		const td = press('fire') && p.cool <= 0 ? this.canTakedown() : null;
 		if (td) this.#punch(p);
-		else if (press('throw') && p.held) this.#throw(p);
+		else if (press('throw') && p.held && armed) this.#throw(p);
 		else if (g && p.held) {
 			if (g.kind === 'melee') {
 				if (press('fire') && p.cool <= 0) this.#slash(p, g);
 			} else if (p.held.ammo > 0) {
-				if ((g.auto ? inp.fire : press('fire')) && p.cool <= 0) this.#shoot(p, g, this.skills.has('aim') ? 1.2 : 1);
-			} else if (press('fire')) {
+				// an auto gun fires once it's up if fire is held; a single-shot gun needs a fresh click once it's up
+				if (armed && (g.auto ? inp.fire : press('fire')) && p.cool <= 0) this.#shoot(p, g, this.skills.has('aim') ? 1.2 : 1, steady);
+			} else if (press('fire') && armed) {
 				this.events.push({ t: 'empty' });
 				this.#throw(p);
 			}
 		} else if (press('fire') && p.cool <= 0) this.#punch(p);
+	}
+
+	/** standing on a thin one-way ledge (▼ drops through it) rather than on floor or a block */
+	#onLedge(f: Fighter) {
+		if (f.y >= FLOOR - 1 && this.#onGroundAt(f.x)) return false;
+		const hw = BODY.half * f.scale;
+		for (const s of this.solids()) if (Math.abs(f.y - s.y) < 1 && f.x + hw * 0.7 > s.x && f.x - hw * 0.7 < s.x + s.w) return false;
+		return this.plats.some((pl) => Math.abs(f.y - pl.y) < 1 && f.x > pl.x - 4 && f.x < pl.x + pl.w + 4);
+	}
+
+	#endSlide(p: Fighter, inp: Input, ledge: boolean) {
+		p.slideT = 0;
+		p.slideCool = SLIDE_COOL;
+		p.stance = inp.down && p.onGround && !ledge ? 'crouch' : 'stand';
+	}
+
+	/** how tall a fighter is right now (1 = standing) */
+	lowOf(f: Fighter) {
+		return f.player ? LOW[f.stance] : 1;
 	}
 
 	/** an unaware enemy right in front of you with their back turned (a click = takedown) */
@@ -1004,7 +1103,7 @@ export class Mayhem {
 				if (o !== e && o.asleep && Math.abs(o.x - e.x) < 260 && Math.abs(o.y - e.y) < 120 && this.clearLine(o.x, o.y - 70, e.x, e.y - 70)) this.#alert(o, react + 0.5, false);
 	}
 
-	#shoot(f: Fighter, g: GunStats, dmgMult: number) {
+	#shoot(f: Fighter, g: GunStats, dmgMult: number, steady = 1) {
 		if (!f.held) return;
 		f.cool = f.player ? g.rate : g.rate * 2.4;
 		if (f.player) {
@@ -1015,7 +1114,7 @@ export class Mayhem {
 		const m = this.muzzle(f);
 		const err = f.player ? 0 : (this.r() - 0.5) * f.err;
 		for (let i = 0; i < g.pellets; i++) {
-			const a = f.aim + err + (this.r() - 0.5) * 2 * g.spread;
+			const a = f.aim + err + (this.r() - 0.5) * 2 * g.spread * steady;
 			const base = g.speed * (f.player ? MY_BULLET : THEIR_BULLET);
 			const sp = base * (g.pellets > 1 ? 0.85 + this.r() * 0.3 : 1);
 			this.bullets.push({ x: m.x, y: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: g.dmg * dmgMult, mine: f.player, life: g.reach / base, pierce: g.pierce, hit: [], kind: g.kind === 'launcher' ? 'rocket' : 'bullet', from: f.uid });
@@ -1084,9 +1183,12 @@ export class Mayhem {
 			if (pAlive) {
 				const dx = p.x - e.x, dy = p.y - e.y, d = Math.abs(dx);
 				const front = Math.sign(dx) === e.facing || d < 14;
-				const range = e.kind === 'camper' ? 520 : 340;
+				// crouching: seen from half as far, and slower
+				const low = p.stance !== 'stand';
+				const range = (e.kind === 'camper' ? 520 : 340) * (low ? 0.5 : 1);
 				let rate = 0;
-				if (front && d < range && Math.abs(dy) < 170 && this.clearLine(e.x + e.facing * 6, e.y - 72, p.x, p.y - 70)) rate = d < 150 ? 2.4 : d < 260 ? 1.3 : 0.8;
+				if (front && d < range && Math.abs(dy) < 170 && this.clearLine(e.x + e.facing * 6, e.y - 72, p.x, p.y - 70 * this.lowOf(p))) rate = (d < 150 ? 2.4 : d < 260 ? 1.3 : 0.8) * (low ? 0.6 : 1);
+				else if (p.sprint && p.onGround && d < 150 && Math.abs(dy) < 60) rate = d < 70 ? 1.8 : 0.9; // loud running steps
 				else if (d < 40 && Math.abs(dy) < 50 && Math.abs(p.vx) > 170) rate = 1.1;
 				e.spot = rate ? Math.min(1, e.spot + rate * dt) : Math.max(0, e.spot - 0.35 * dt);
 				if (e.spot >= 1) this.#alert(e, 0.55);
@@ -1095,7 +1197,8 @@ export class Mayhem {
 		}
 		e.react -= dt;
 		const tx = p.x;
-		const ty = p.y - BODY.shoulder + 6;
+		// they aim at a crouching player's lowered chest; a slide is too quick, they still aim where you stood
+		const ty = p.y - BODY.shoulder * (p.stance === 'crouch' ? LOW.crouch : 1) + 6;
 		const dx = tx - e.x;
 		const dist = Math.abs(dx);
 		e.facing = dx < 0 ? -1 : 1;
@@ -1524,14 +1627,17 @@ export class Mayhem {
 	/** Where a line from a to b first touches a fighter: head, body or nothing. */
 	#touch(f: Fighter, x0: number, y0: number, x1: number, y1: number): 'head' | 'body' | null {
 		const s = f.scale;
+		const low = this.lowOf(f);
+		const slide = f.player && f.stance === 'slide';
 		const hx = f.x;
-		const hy = f.y - BODY.head * s;
+		const hy = f.y - BODY.head * s * low;
 		const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6));
 		for (let i = 0; i <= n; i++) {
 			const x = x0 + ((x1 - x0) * i) / n;
 			const y = y0 + ((y1 - y0) * i) / n;
-			if (Math.hypot(x - hx, y - hy) < BODY.headR * s + 1) return 'head';
-			if (Math.abs(x - f.x) < BODY.half * s && y > f.y - (BODY.shoulder + 4) * s && y < f.y) return 'body';
+			// sliding: flat on your back, nothing to headshot
+			if (!slide && Math.hypot(x - hx, y - hy) < BODY.headR * s + 1) return 'head';
+			if (Math.abs(x - f.x) < BODY.half * s * (slide ? 1.8 : 1) && y > f.y - (BODY.shoulder + 4) * s * low && y < f.y) return 'body';
 		}
 		return null;
 	}

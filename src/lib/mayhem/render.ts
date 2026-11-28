@@ -15,7 +15,7 @@
  * The camera (engine `cam`, VW × VH) is zoomed in and follows the player. The player's head + gun and the guns
  * on the floor are SVG on top (MayhemPage); every character is painted by painter.ts.
  */
-import { CEIL, FLOOR, H, PAD_W, SPIKE_H, VH, VW, W, type Arena, type Corpse, type Fighter, type Mayhem, type Platform } from './engine.ts';
+import { CEIL, dropOf, FLOOR, H, LOW, PAD_W, SPIKE_H, VH, VW, W, type Arena, type Corpse, type Fighter, type Mayhem, type Platform } from './engine.ts';
 import { gunOf, type GunKind } from './guns.ts';
 import { contactShadow, gunPaint, LOOKS, paintFigure, RIG, type GunPic, type Pose } from './painter.ts';
 
@@ -425,7 +425,13 @@ function platform(c: Ctx, theme: Arena['id'], p: Platform) {
 const gunShape = gunPaint;
 
 function poseOf(f: Fighter, t: number): Pose {
-	return { facing: f.facing, aim: f.aim, walk: f.walk, onGround: f.onGround, vx: f.vx, recoil: f.recoil, gun: f.held ? gunOf(f.held.id).kind : null, punch: f.punch, t };
+	const pose: Pose = { facing: f.facing, aim: f.aim, walk: f.walk, onGround: f.onGround, vx: f.vx, recoil: f.recoil, gun: f.held ? gunOf(f.held.id).kind : null, punch: f.punch, t };
+	if (f.player && f.stance !== 'stand') {
+		pose.drop = dropOf(LOW[f.stance]);
+		pose.slide = f.stance === 'slide';
+	}
+	if (f.player && f.sprint) pose.sprint = true;
+	return pose;
 }
 
 function drawEnemy(c: Ctx, f: Fighter, t: number) {

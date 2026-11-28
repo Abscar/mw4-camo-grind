@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-sprint-slide',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Madness: sprint, slide and crouch',
+		text: 'Hold Shift to sprint, S while sprinting to slide under bullets, hold S to crouch and sneak. Holk Time moved to V.',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-armory',
 		date: '2026-11-28',
 		kind: 'new',

@@ -167,6 +167,25 @@ export interface Pose {
 	punch: number;
 	limp?: boolean;
 	t: number;
+	/** crouch / slide: how far the body sinks (px), and a slide or sprint (2026-11-28) */
+	drop?: number;
+	slide?: boolean;
+	sprint?: boolean;
+}
+
+/** how much the body tips around the hip: forward in a sprint, back in a slide (radians, + = forward) */
+function leanOf(p: Pose) {
+	if (p.limp) return 0;
+	return p.slide ? -0.55 : p.sprint && p.onGround ? 0.16 : 0;
+}
+
+/** a point in floor coordinates (feet at 0) → the figure's sunk + tipped frame */
+function toLocal(p: Pose, pt: P): P {
+	const drop = p.drop ?? 0;
+	const lean = leanOf(p);
+	const x = pt[0], y = pt[1] - drop + RIG.hip; // relative to the hip pivot
+	const c = Math.cos(-lean), s = Math.sin(-lean);
+	return [x * c - y * s, x * s + y * c - RIG.hip];
 }
 
 type P = [number, number];
@@ -191,9 +210,14 @@ function ik(root: P, tip: P, l1: number, l2: number, bend: number): { mid: P; ti
 function legTargets(p: Pose, s: 1 | -1): P {
 	if (p.limp) return [s * 5 + Math.sin(p.walk + s) * 8, -2];
 	if (!p.onGround) return s > 0 ? [7, -16] : [-4, -12];
+	// a slide: front leg stretched out ahead, the back one tucked under
+	if (p.slide) return s > 0 ? [24, 0] : [4, 0];
 	const moving = Math.min(1, Math.abs(p.vx) / 110);
 	const ph = p.walk * 1.1 + (s > 0 ? 0 : Math.PI);
-	const fx = Math.sin(ph) * 13 * moving + s * 6 * (1 - moving);
+	// crouching: feet wider apart, short steps
+	if (p.drop) return [Math.sin(ph) * 6 * moving + s * 9, -Math.max(0, Math.cos(ph)) * 3 * moving];
+	const stride = 13 * Math.max(1, Math.abs(p.vx) / 280);
+	const fx = Math.sin(ph) * stride * moving + s * 6 * (1 - moving);
 	const lift = Math.max(0, Math.cos(ph)) * 6 * moving;
 	return [fx, -lift];
 }
@@ -387,7 +411,8 @@ function endoPelvis(c: Ctx, dim: number) {
 function leg(c: Ctx, p: Pose, L: Look, s: 1 | -1, dim: number, seed: number) {
 	const bulk = L.bulk ?? 1;
 	const hip: P = [s * 4.4 * bulk, -RIG.hip + 1];
-	const target = legTargets(p, s);
+	const t0 = legTargets(p, s);
+	const target = p.drop || p.slide || p.sprint ? toLocal(p, t0) : t0;
 	const { mid: knee, tip: foot } = ik(hip, [target[0], target[1] - 6], 19.4, 17.4, p.limp ? 1 : -1);
 	if (L.endo) return endoLeg(c, hip, knee, [foot[0], foot[1] + 3], dim);
 	const pants = tone(L.pants, dim);
@@ -1086,10 +1111,26 @@ export function paintFigure(c: Ctx, L: Look, x: number, y: number, s: number, p:
 	c.save();
 	c.translate(x, y);
 	c.scale(s * p.facing, s);
+	// crouch / slide: the whole body sinks (the legs bend to keep the feet on the floor), a slide or sprint tips it
+	if (p.drop) {
+		// a long coat / robe would poke through the floor: cut everything below the feet
+		c.beginPath();
+		c.rect(-300, -400, 600, 401.5);
+		c.clip();
+		c.translate(0, p.drop);
+	}
+	const lean = leanOf(p);
+	if (lean) {
+		c.translate(0, -RIG.hip);
+		c.rotate(lean);
+		c.translate(0, RIG.hip);
+	}
 	const bulk = L.bulk ?? 1;
 	// local aim (+x forward)
-	const dx = Math.cos(p.aim) * p.facing;
-	const dy = Math.sin(p.aim);
+	// the body is tipped by `lean`: turn the aim back so the gun still points where it should
+	const la = Math.atan2(Math.sin(p.aim), Math.cos(p.aim) * p.facing) - lean;
+	const dx = Math.cos(la);
+	const dy = Math.sin(la);
 	const back = p.recoil * 3;
 	const shF: P = [6 * bulk, -RIG.shoulder + 1];
 	const shB: P = [-6.5 * bulk, -RIG.shoulder + 1.6];

@@ -339,6 +339,10 @@ export class MayhemSound {
 				this.#burst(600, 1.6, 0.2, 0.22, 'bandpass', 4000);
 				this.#tone(300, 900, 0.1, 0.06, 'sawtooth');
 				break;
+			case 'slide':
+				// a gritty scrape along the floor
+				this.#burst(900, 0.5, 0.5, 0.16, 'bandpass', 1800);
+				break;
 			case 'slam':
 				this.#burst(160, 0.5, e.big ? 0.8 : 0.5, e.big ? 0.75 : 0.55, 'lowpass');
 				this.#tone(80, 28, e.big ? 0.8 : 0.5, 0.55);
