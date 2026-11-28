@@ -343,6 +343,21 @@ export class MayhemSound {
 				// a gritty scrape along the floor
 				this.#burst(900, 0.5, 0.5, 0.16, 'bandpass', 1800);
 				break;
+			case 'dive':
+				// a slowed-down whoosh
+				this.#burst(400, 1.2, 0.5, 0.2, 'bandpass', 1400);
+				this.#tone(220, 90, 0.45, 0.08, 'triangle');
+				break;
+			case 'tackle':
+				// a body slam: a deep thud and a crack
+				this.#tone(110, 38, 0.4, 0.6);
+				this.#burst(300, 0.6, 0.25, 0.5, 'lowpass');
+				this.#burst(2200, 0.8, 0.06, 0.25, 'highpass');
+				break;
+			case 'winded':
+				// out of breath: a short low puff
+				this.#burst(700, 0.8, 0.3, 0.1, 'bandpass', 400);
+				break;
 			case 'slam':
 				this.#burst(160, 0.5, e.big ? 0.8 : 0.5, e.big ? 0.75 : 0.55, 'lowpass');
 				this.#tone(80, 28, e.big ? 0.8 : 0.5, 0.55);

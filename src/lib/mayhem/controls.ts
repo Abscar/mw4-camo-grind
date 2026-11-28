@@ -6,13 +6,14 @@
  */
 import type { Input } from './engine.ts';
 
-export type Action = 'left' | 'right' | 'jump' | 'down' | 'sprint' | 'pick' | 'throw' | 'knife' | 'dash' | 'nade' | 'holk' | 'pause';
+export type Action = 'left' | 'right' | 'jump' | 'down' | 'sprint' | 'dive' | 'pick' | 'throw' | 'knife' | 'dash' | 'nade' | 'holk' | 'pause';
 export const ACTIONS: { a: Action; name: string }[] = [
 	{ a: 'left', name: 'Run left' },
 	{ a: 'right', name: 'Run right' },
 	{ a: 'jump', name: 'Jump' },
 	{ a: 'down', name: 'Crouch · slide · drop down · ground slam' },
 	{ a: 'sprint', name: 'Sprint (hold)' },
+	{ a: 'dive', name: 'Dive (slow motion) · into an enemy = takedown' },
 	{ a: 'dash', name: 'Dash' },
 	{ a: 'pick', name: 'Pick up · use' },
 	{ a: 'throw', name: 'Throw gun' },
@@ -28,6 +29,7 @@ export const DEFAULT_KEYS: Keys = {
 	jump: ['Space', 'KeyW'],
 	down: ['KeyS', 'ArrowDown'],
 	sprint: ['ShiftLeft', 'ShiftRight'],
+	dive: ['KeyZ', ''],
 	dash: ['KeyC', ''],
 	pick: ['KeyE', ''],
 	throw: ['KeyQ', ''],

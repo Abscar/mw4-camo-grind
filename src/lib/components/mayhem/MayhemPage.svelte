@@ -247,6 +247,9 @@
 		combo: 0,
 		holk: 0,
 		holkOn: false,
+		stamina: 100,
+		winded: false,
+		stamFlash: false,
 		kills: 0,
 		total: 0,
 		keys: '',
@@ -513,6 +516,9 @@
 			combo: g.combo,
 			holk: Math.round(g.holk),
 			holkOn: g.holkOn,
+			stamina: Math.round(g.stamina),
+			winded: g.winded,
+			stamFlash: g.staminaFlash > 0,
 			kills: g.stats.kills,
 			total: g.totalEnemies,
 			keys: [...g.have].sort().join(','),
@@ -580,7 +586,7 @@
 		if (screen !== 'play' || game?.over) return;
 		paused = on;
 		if (on) {
-			Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, sprint: false });
+			Object.assign(input, { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, sprint: false, dive: false });
 			sprintOn = false;
 		}
 		else {
@@ -852,6 +858,9 @@
 						<div class="mh-holk" class:on={hud.holkOn} class:ready={hud.holk >= 20}>
 							<i style:width="{hud.holk}%"></i><span>{M.hud.holk}{#if !touchy && settings.keys.holk[0]}<em> · {keyLabel(settings.keys.holk[0])}</em>{/if}</span>
 						</div>
+						<div class="mh-stam" class:winded={hud.winded} class:flash={hud.stamFlash}>
+							<i style:width="{hud.stamina}%"></i><span>{hud.winded ? M.hud.winded : M.hud.stamina}</span>
+						</div>
 						<div class="mh-inv">
 							{#each hud.keys ? hud.keys.split(',') : [] as k (k)}<span class="mh-key" style:background={KEY_COL[k]} title="{k} key"></span>{/each}
 							<span class="mh-knives num" title={M.hud.knives} aria-label="{M.hud.knives}: {hud.knives}">🔪 {hud.knives}</span>{#if skillSet.has('frag')}<span class="mh-nades num">💣 {hud.nades}</span>{/if}
@@ -894,6 +903,7 @@
 							<button type="button" class="mh-tb sm" aria-label={M.touch.pick} {...hold('pick')}>USE</button>
 							<button type="button" class="mh-tb sm" aria-label={M.touch.throw} {...hold('throw')}>THROW</button>
 							<button type="button" class="mh-tb sm" aria-label={M.touch.dash} {...hold('dash')}>DASH</button>
+						<button type="button" class="mh-tb sm dive" aria-label={M.touch.dive} {...hold('dive')}>DIVE</button>
 							<button type="button" class="mh-tb sm" aria-label={M.touch.knife} {...hold('knife')}>KNIFE</button>
 							{#if skillSet.has('frag')}<button type="button" class="mh-tb sm" aria-label={M.touch.nade} {...hold('nade')}>NADE</button>{/if}
 							<button type="button" class="mh-tb sm holk" aria-label={M.touch.holk} {...hold('holk')}>HOLK</button>
@@ -1445,6 +1455,55 @@
 	}
 	.mh-holk.on {
 		box-shadow: 0 0 10px #9dff2e;
+	}
+	/* stamina (2026-11-28): sprint, slide and dives use it */
+	.mh-stam {
+		position: relative;
+		height: 10px;
+		border-radius: 4px;
+		background: rgba(0, 0, 0, 0.55);
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		overflow: hidden;
+	}
+	.mh-stam i {
+		position: absolute;
+		inset: 0 auto 0 0;
+		background: linear-gradient(90deg, #d9a21b, #ffe27a);
+		transition: width 0.12s;
+	}
+	.mh-stam span {
+		position: relative;
+		display: block;
+		padding-left: 6px;
+		font-size: 8px;
+		font-weight: 800;
+		line-height: 8px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #fff;
+		white-space: nowrap;
+		text-shadow: 0 1px 1px #000;
+	}
+	.mh-stam.winded i {
+		background: linear-gradient(90deg, #8a2a1a, #ff5a3a);
+	}
+	.mh-stam.flash {
+		animation: mh-stam-flash 0.25s steps(2) 2;
+	}
+	@keyframes mh-stam-flash {
+		50% {
+			border-color: #ff5a3a;
+			box-shadow: 0 0 8px #ff5a3a;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.mh-stam.flash {
+			animation: none;
+			border-color: #ff5a3a;
+		}
+		.mh-stam i {
+			transition: none;
+		}
 	}
 	.mh-wave-sm {
 		display: none;

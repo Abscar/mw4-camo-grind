@@ -95,7 +95,8 @@ export const mayhemText = {
 		['A / D', 'run'],
 		['W / Space', 'jump · again in the air · off walls (hold = higher)'],
 		['S', 'hold: crouch (slow, low, harder to spot) · while sprinting: slide · tap on a thin ledge: drop through · in the air: ground slam'],
-		['Shift', 'sprint (hold; the gun is down while you run)'],
+		['Shift', 'sprint (hold; the gun is down while you run; uses stamina)'],
+		['Z', 'dive in slow motion, shooting as you fly · away from where you aim = backwards dive · into an enemy = wrestling takedown'],
 		['Mouse', 'aim'],
 		['Click', 'shoot · punch · throw an empty gun · behind an unaware enemy: takedown'],
 		['F', 'throwing knife (silent; a headshot or an unaware enemy = dead) · walk over it to pick it up'],
@@ -109,14 +110,16 @@ export const mayhemText = {
 	touchHint: 'On a phone: tap and hold on the game to aim and shoot, buttons for the rest. Turn it sideways.',
 	hud: {
 		holk: 'Holk Time',
+		stamina: 'Stamina',
+		winded: 'Out of breath',
 		fists: 'Fists',
 		knives: 'Throwing knives',
-		stealthTip: 'Take it slow: hold S to crouch and sneak up behind them, click for a silent takedown, or throw a knife (F). Shift sprints, S while sprinting slides.',
+		stealthTip: 'Take it slow: hold S to crouch and sneak up behind them, click for a silent takedown, or throw a knife (F). Shift sprints, S while sprinting slides, Z dives.',
 		empty: 'EMPTY: click to throw it',
 		kills: (n: number, total: number) => `${n}/${total} kills`,
 		cp: (n: number, total: number) => `checkpoint ${n}/${total}`
 	},
-	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Crouch, slide or drop down', sprint: 'Sprint on or off', pick: 'Pick up or use', throw: 'Throw', holk: 'Holk Time', dash: 'Dash', nade: 'Grenade', knife: 'Throwing knife' },
+	touch: { left: 'Run left', right: 'Run right', jump: 'Jump', down: 'Crouch, slide or drop down', sprint: 'Sprint on or off', dive: 'Dive', pick: 'Pick up or use', throw: 'Throw', holk: 'Holk Time', dash: 'Dash', nade: 'Grenade', knife: 'Throwing knife' },
 	done: {
 		kicker: (n: string) => `Level ${n}`,
 		title: 'LEVEL CLEARED',

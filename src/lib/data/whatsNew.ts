@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-dive-stamina',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Madness: dives, takedowns, stamina',
+		text: 'Press Z to dive in slow motion and shoot as you fly, backwards too. Dive into an enemy for a wrestling takedown. Sprinting uses stamina.',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-sprint-slide',
 		date: '2026-11-28',
 		kind: 'update',

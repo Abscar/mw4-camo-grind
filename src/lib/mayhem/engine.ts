@@ -58,10 +58,32 @@ export const SLIDE_T = 0.55;
 const SLIDE_COOL = 0.4;
 const READY_T = 0.18;
 /** how tall a fighter is while low, as a share of standing (hitbox, head, where enemies aim) */
-export const LOW = { stand: 1, crouch: 0.64, slide: 0.42 } as const;
+export const LOW = { stand: 1, crouch: 0.64, slide: 0.42, dive: 0.5, prone: 0.3 } as const;
 export type Stance = keyof typeof LOW;
 /** how far the body sinks (px at scale 1) for a height share: the painter and the gun's pivot use it */
 export const dropOf = (low: number) => Math.round(BODY.shoulder * (1 - low));
+/**
+ * Stamina + dives (2026-11-28, the user: "en stamina bar och lite movement actions … dive, dyka baklänges, Max Payne
+ * style … dyka mot en enemy och då kanske ger man en WWE takedown"): sprinting drains stamina, a slide and a dive cost a
+ * chunk, it refills after a short rest; run it dry and you're winded (no sprint) until it's back to `winded`.
+ * A dive (Z) flies low in the direction you run (or face) while the world goes into slow motion and you can shoot;
+ * diving away from where you aim = a backwards dive on your back. You land flat for a moment, then get up (jump = sooner).
+ * Diving into an enemy = a wrestling takedown.
+ */
+export const STAMINA_MAX = 100;
+export const STAM = { sprint: 20, slide: 20, dive: 30, regen: 32, wait: 0.7, winded: 30 } as const;
+const DIVE_VX = 560;
+const DIVE_VY = 420;
+const PRONE_T = 0.45;
+/** how fast the world runs while you're in the air in a dive */
+export const DIVE_SLOW = 0.4;
+const DIVE_LEAN = 1.45;
+const SLIDE_LEAN = -0.55;
+const SPRINT_LEAN = 0.16;
+/** lying flat: how far the body sinks so it rests on the floor */
+const PRONE_DROP = 34;
+/** what the popup shouts when a dive lands on someone (wrestling moves, plain words) */
+export const TACKLES = ['SPEAR!', 'FLYING TACKLE!', 'BODY SLAM!', 'CLOTHESLINE!', 'FLYING ELBOW!'] as const;
 /** throwing knives: what you start (and respawn) with, the most you carry */
 export const KNIVES_START = 4;
 export const KNIVES_MAX = 6;
@@ -162,6 +184,37 @@ export interface Fighter {
 	slideDir: 1 | -1;
 	/** after a sprint: the gun comes up when this runs out */
 	ready: number;
+	/** a dive's direction in the world, how long you still lie flat after it, and whether it already hit someone */
+	diveDir: 1 | -1;
+	proneT: number;
+	tackled: boolean;
+}
+
+/** how a fighter's body sits: how far it sinks and how much it tips round the hip (+ = forward). The painter draws the same. */
+export function bodyOf(f: Fighter): { drop: number; lean: number } {
+	if (!f.player) return { drop: 0, lean: 0 };
+	switch (f.stance) {
+		case 'crouch':
+			return { drop: dropOf(LOW.crouch), lean: 0 };
+		case 'slide':
+			return { drop: dropOf(LOW.slide), lean: SLIDE_LEAN };
+		case 'dive':
+			return { drop: 0, lean: f.diveDir * f.facing * DIVE_LEAN };
+		case 'prone':
+			return { drop: PRONE_DROP, lean: f.diveDir * f.facing * DIVE_LEAN };
+		default:
+			return { drop: 0, lean: f.sprint && f.onGround ? SPRINT_LEAN : 0 };
+	}
+}
+
+/** a point on the standing body (x forward, y from the feet, up = negative) → the world, once the body has sunk and tipped */
+export function bodyPoint(f: Fighter, lx: number, ly: number) {
+	const { drop, lean } = bodyOf(f);
+	const y = ly + BODY.hip;
+	const c = Math.cos(lean), s = Math.sin(lean);
+	const x2 = lx * c - y * s;
+	const y2 = lx * s + y * c - BODY.hip + drop;
+	return { x: f.x + f.facing * x2 * f.scale, y: f.y + y2 * f.scale };
 }
 
 export interface Bullet {
@@ -314,6 +367,9 @@ export type GameEvent =
 	| { t: 'checkpoint' }
 	| { t: 'dash' }
 	| { t: 'slide' }
+	| { t: 'dive' }
+	| { t: 'tackle' }
+	| { t: 'winded' }
 	| { t: 'slam'; big: boolean }
 	| { t: 'jump'; n: number }
 	| { t: 'wall' }
@@ -336,11 +392,12 @@ export interface Input {
 	nade: boolean;
 	knife: boolean;
 	sprint: boolean;
+	dive: boolean;
 	aimX: number;
 	aimY: number;
 }
 
-export const NO_INPUT: Input = { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, sprint: false, aimX: W, aimY: FLOOR - 60 };
+export const NO_INPUT: Input = { left: false, right: false, jump: false, down: false, fire: false, pick: false, throw: false, holk: false, dash: false, nade: false, knife: false, sprint: false, dive: false, aimX: W, aimY: FLOOR - 60 };
 
 /** A small seeded random (mulberry32), so tests can replay a run. */
 export function rng(seed: number) {
@@ -419,6 +476,12 @@ export class Mayhem {
 	knives = KNIVES_START;
 	/** a short slow-motion kill cam (takedowns, knife headshots) */
 	slowT = 0;
+	/** sprint / slide / dive fuel (the bar under Holk Time); `winded` = ran dry, no sprint until it's back to STAM.winded */
+	stamina: number = STAMINA_MAX;
+	winded = false;
+	/** > 0 = you tried something without the stamina for it (the bar flashes) */
+	staminaFlash = 0;
+	#stamRest = 0;
 	/** the label for the next kill's popup (TAKEDOWN …), set right before the killing blow */
 	#label = '';
 	/** the camera's top-left corner in the world */
@@ -575,7 +638,10 @@ export class Mayhem {
 			slideT: 0,
 			slideCool: 0,
 			slideDir: 1,
-			ready: 0
+			ready: 0,
+			diveDir: 1,
+			proneT: 0,
+			tackled: false
 		};
 	}
 
@@ -712,8 +778,10 @@ export class Mayhem {
 		}
 		const slow = this.slowT > 0 ? 0.28 : 1;
 		if (this.slowT > 0) this.slowT -= dt;
-		const wdt = (this.holkOn ? dt * 0.35 : dt) * slow;
-		const pdt = (this.holkOn ? dt * 0.75 : dt) * (slow < 1 ? 0.5 : 1);
+		// a dive in the air: Max Payne slow motion (the world much slower, you a bit)
+		const dodge = this.player.stance === 'dive' && this.player.hp > 0 && !this.holkOn ? DIVE_SLOW : 1;
+		const wdt = (this.holkOn ? dt * 0.35 : dt) * slow * dodge;
+		const pdt = (this.holkOn ? dt * 0.75 : dt) * (slow < 1 ? 0.5 : 1) * (dodge < 1 ? 0.7 : 1);
 		this.t += wdt;
 
 		this.#moveMovers();
@@ -753,6 +821,8 @@ export class Mayhem {
 		this.knives = Math.max(this.knives, KNIVES_START);
 		this.slowT = 0;
 		this.holk = Math.max(this.holk, 40);
+		this.stamina = STAMINA_MAX;
+		this.winded = false;
 		this.events.push({ t: 'respawn' });
 	}
 
@@ -770,7 +840,7 @@ export class Mayhem {
 	}
 
 	#shoulder(f: Fighter) {
-		return { x: f.x + f.facing * 6 * f.scale, y: f.y - (BODY.shoulder - 1) * f.scale + dropOf(this.lowOf(f)) * f.scale };
+		return bodyPoint(f, 6, -(BODY.shoulder - 1));
 	}
 
 	/** Where a fighter's gun's muzzle is (the gun pivots near the shoulder). */
@@ -815,9 +885,10 @@ export class Mayhem {
 		const maxJumps = this.skills.has('triple') ? 3 : 2;
 		const maxAir = this.skills.has('airdash') ? 2 : 1;
 
-		// --- sprint, slide, crouch ---
+		// --- sprint, slide, crouch, dive (+ stamina) ---
 		p.slideCool -= dt;
 		p.ready -= dt;
+		this.staminaFlash -= dt;
 		const ledge = p.onGround && this.#onLedge(p);
 		if (p.slideT > 0) {
 			p.slideT -= dt;
@@ -825,10 +896,54 @@ export class Mayhem {
 		}
 		const sliding = p.slideT > 0;
 		const wasSprint = p.sprint;
+		const wasDiving = p.stance === 'dive' || p.stance === 'prone';
 		p.sprint =
-			inp.sprint && !inp.fire && want !== 0 && !sliding && p.stun <= 0 && p.dashT <= 0 && (p.onGround ? true : wasSprint && Math.sign(p.vx) === want);
+			!wasDiving &&
+			!this.winded &&
+			this.stamina > 0 &&
+			inp.sprint &&
+			!inp.fire &&
+			want !== 0 &&
+			!sliding &&
+			p.stun <= 0 &&
+			p.dashT <= 0 &&
+			(p.onGround ? true : wasSprint && Math.sign(p.vx) === want);
+		// stamina: a sprint drains it, a rest refills it; empty = winded
+		if (p.sprint) {
+			this.stamina -= STAM.sprint * dt;
+			this.#stamRest = STAM.wait;
+			if (this.stamina <= 0) {
+				this.stamina = 0;
+				this.winded = true;
+				p.sprint = false;
+				this.events.push({ t: 'winded' });
+			}
+		} else if (p.stance !== 'dive') {
+			this.#stamRest -= dt;
+			if (this.#stamRest <= 0) this.stamina = Math.min(STAMINA_MAX, this.stamina + STAM.regen * dt);
+		}
+		if (this.winded && this.stamina >= STAM.winded) this.winded = false;
 		if (wasSprint && !p.sprint) p.ready = READY_T;
-		if (p.sprint && p.onGround && press('down') && p.slideCool <= 0) {
+		if (!wasDiving && press('dive') && p.stun <= 0 && p.dashT <= 0 && (p.onGround || p.coyote > 0) && this.#spend(STAM.dive)) {
+			const dir = (want || p.facing) as 1 | -1;
+			p.stance = 'dive';
+			p.diveDir = dir;
+			p.vx = dir * Math.max(DIVE_VX, Math.abs(p.vx) * 1.05);
+			p.vy = -DIVE_VY;
+			p.onGround = false;
+			p.coyote = 0;
+			p.buffer = 0;
+			p.boost = 0.5;
+			p.slideT = 0;
+			p.sprint = false;
+			p.slam = false;
+			p.ready = 0;
+			p.tackled = false;
+			this.events.push({ t: 'dive' });
+			for (let i = 0; i < 7; i++) this.parts.push({ x: p.x + (this.r() - 0.5) * 16, y: p.y, vx: -dir * (30 + this.r() * 120), vy: -this.r() * 60, life: 0.4, max: 0.4, kind: 'smoke', r: 2.5 + this.r() * 2 });
+		} else if (wasDiving) {
+			// the dive / lying flat runs further down
+		} else if (p.sprint && p.onGround && press('down') && p.slideCool <= 0 && this.#spend(STAM.slide)) {
 			p.sprint = false;
 			p.slideT = SLIDE_T;
 			p.slideDir = want as 1 | -1;
@@ -848,7 +963,25 @@ export class Mayhem {
 		}
 		const pace = p.sprint ? SPRINT : p.stance === 'crouch' ? CROUCH : 1;
 
-		if (p.dashT > 0) {
+		if (p.stance === 'dive') {
+			// flying: no steering; land on someone = a takedown, land on the floor = lie flat for a moment
+			this.#tackle(p);
+			if (p.onGround) {
+				p.stance = 'prone';
+				p.proneT = PRONE_T;
+				p.vx *= 0.45;
+				this.shake = Math.max(this.shake, 3);
+				this.events.push({ t: 'land', hard: true });
+				for (let i = 0; i < 9; i++) this.parts.push({ x: p.x + (this.r() - 0.5) * 40, y: p.y - 2, vx: (this.r() - 0.5) * 260, vy: -this.r() * 80, life: 0.45, max: 0.45, kind: 'smoke', r: 2.5 + this.r() * 2.5 });
+			}
+		} else if (p.stance === 'prone') {
+			p.proneT -= dt;
+			p.vx += Math.max(-1600 * dt, Math.min(1600 * dt, -p.vx));
+			// jump gets you up sooner (and doesn't jump)
+			const up = p.buffer > 0 && p.proneT < PRONE_T - 0.15;
+			if (up) p.buffer = 0;
+			if (p.proneT <= 0 || up || !p.onGround) p.stance = inp.down && p.onGround && !ledge ? 'crouch' : 'stand';
+		} else if (p.dashT > 0) {
 			p.dashT -= dt;
 			p.vy = 0;
 			p.vx = p.dashDir * DASH_V;
@@ -974,6 +1107,50 @@ export class Mayhem {
 		const hw = BODY.half * f.scale;
 		for (const s of this.solids()) if (Math.abs(f.y - s.y) < 1 && f.x + hw * 0.7 > s.x && f.x - hw * 0.7 < s.x + s.w) return false;
 		return this.plats.some((pl) => Math.abs(f.y - pl.y) < 1 && f.x > pl.x - 4 && f.x < pl.x + pl.w + 4);
+	}
+
+	/** pay stamina for a move; not enough = the bar flashes and nothing happens */
+	#spend(n: number) {
+		if (this.stamina < n) {
+			this.staminaFlash = 0.5;
+			return false;
+		}
+		this.stamina -= n;
+		this.#stamRest = STAM.wait;
+		return true;
+	}
+
+	/** a dive that hits an enemy: a wrestling takedown (a juggernaut only staggers) */
+	#tackle(p: Fighter) {
+		if (p.tackled) return;
+		for (const e of this.enemies) {
+			if (e.hp <= 0) continue;
+			if (Math.abs(e.x - p.x) > BODY.half * e.scale + 26) continue;
+			if (p.y < e.y - BODY.top * e.scale + 30 || p.y - 60 > e.y) continue;
+			p.tackled = true;
+			const dir = p.diveDir;
+			const move = TACKLES[Math.floor(this.r() * TACKLES.length)];
+			this.slowT = 0.6;
+			this.shake = Math.max(this.shake, 10);
+			this.events.push({ t: 'tackle' });
+			for (let i = 0; i < 12; i++) this.parts.push({ x: e.x, y: e.y - 40 * e.scale, vx: dir * this.r() * 260, vy: -this.r() * 260, life: 0.5, max: 0.5, kind: 'debris', r: 1.8 });
+			this.parts.push({ x: e.x, y: e.y - 45 * e.scale, vx: 0, vy: 0, life: 0.35, max: 0.35, kind: 'ring', r: 18 });
+			if (e.kind === 'jugg') {
+				e.asleep = false;
+				e.stun = 1.4;
+				e.vx = dir * 260;
+				e.vy = -260;
+				this.popups.push({ x: e.x, y: e.y - 120 * e.scale, text: move, t: 0, tone: 'stealth' });
+				this.#damage(e, 120, false, p, dir * 300, -300);
+			} else {
+				this.#label = move;
+				this.#damage(e, 9999, false, p, dir * 460, -420);
+			}
+			// bounce off them
+			p.vx = -dir * 180;
+			p.vy = Math.min(p.vy, -280);
+			break;
+		}
 	}
 
 	#endSlide(p: Fighter, inp: Input, ledge: boolean) {
@@ -1197,8 +1374,8 @@ export class Mayhem {
 		}
 		e.react -= dt;
 		const tx = p.x;
-		// they aim at a crouching player's lowered chest; a slide is too quick, they still aim where you stood
-		const ty = p.y - BODY.shoulder * (p.stance === 'crouch' ? LOW.crouch : 1) + 6;
+		// they aim at a crouching player's lowered chest, at a body lying flat; a slide or a dive is too quick, they still aim where you stood
+		const ty = p.stance === 'prone' ? bodyPoint(p, 0, -40).y : p.y - BODY.shoulder * (p.stance === 'crouch' ? LOW.crouch : 1) + 6;
 		const dx = tx - e.x;
 		const dist = Math.abs(dx);
 		e.facing = dx < 0 ? -1 : 1;
@@ -1627,6 +1804,22 @@ export class Mayhem {
 	/** Where a line from a to b first touches a fighter: head, body or nothing. */
 	#touch(f: Fighter, x0: number, y0: number, x1: number, y1: number): 'head' | 'body' | null {
 		const s = f.scale;
+		// flying in a dive or lying flat: the body is tipped over, so test a capsule along it
+		if (f.player && (f.stance === 'dive' || f.stance === 'prone')) {
+			const head = bodyPoint(f, 0, -BODY.head);
+			const a = bodyPoint(f, 0, -6);
+			const b = bodyPoint(f, 0, -(BODY.shoulder + 2));
+			const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6));
+			for (let i = 0; i <= n; i++) {
+				const x = x0 + ((x1 - x0) * i) / n;
+				const y = y0 + ((y1 - y0) * i) / n;
+				if (Math.hypot(x - head.x, y - head.y) < BODY.headR * s + 1) return 'head';
+				const dx = b.x - a.x, dy = b.y - a.y;
+				const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (dx * dx + dy * dy)));
+				if (Math.hypot(x - (a.x + dx * t), y - (a.y + dy * t)) < BODY.half * s) return 'body';
+			}
+			return null;
+		}
 		const low = this.lowOf(f);
 		const slide = f.player && f.stance === 'slide';
 		const hx = f.x;
