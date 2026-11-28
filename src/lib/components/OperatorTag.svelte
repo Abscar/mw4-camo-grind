@@ -31,6 +31,7 @@
 	import IngmanEmblem from './IngmanEmblem.svelte';
 	import JokerEmblem from './JokerEmblem.svelte';
 	import LarsAkeEmblem from './LarsAkeEmblem.svelte';
+	import MeiliEmblem from './MeiliEmblem.svelte';
 	import PhillestarEmblem from './PhillestarEmblem.svelte';
 	import { LADDER, MASTERY, MASTERY_TRACKS } from '#lib/data/camos.ts';
 
@@ -69,7 +70,9 @@
 		/** not told yet (2026-11-20): not started until the user says otherwise */
 		aw: ['todo', 'todo', 'todo'],
 		/** not told yet (2026-11-21): not started until the user says otherwise */
-		joker: ['todo', 'todo', 'todo']
+		joker: ['todo', 'todo', 'todo'],
+		/** not told yet (2026-11-28): not started until the user says otherwise */
+		meili: ['todo', 'todo', 'todo']
 	} satisfies Record<SquadOp, Status[]>;
 
 	/** The squad member who is this operator (only when you're in a squad yourself). */
@@ -136,7 +139,7 @@
 	 * `data-fx-rest` on their tag, which app.html's frame cap reads. Someone playing an emote moves too. The five
 	 * emblems were about half of what the page still drew on a PC and three quarters on a phone.
 	 */
-	const TURN_ORDER: SquadOp[] = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker'];
+	const TURN_ORDER: SquadOp[] = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker', 'meili'];
 	const TURN_MS = 6000;
 	let turn = $state(0);
 	$effect(() => {
@@ -162,8 +165,8 @@
 	 */
 	// Ingman (2026-11-14) is a "Pro player" by his own sign, so he's left out too: Abscar keeps the sticker.
 	// AW (2026-11-20) too, until the user says how far he is: with nothing typed in he'd share last place with
-	// Abscar and nobody would wear the sticker. TheJoker_BPL (2026-11-21) the same.
-	const SLACKER_EXEMPT: SquadOp[] = ['jeeven', 'ingman', 'aw', 'joker'];
+	// Abscar and nobody would wear the sticker. TheJoker_BPL (2026-11-21) and Meili (2026-11-28) the same.
+	const SLACKER_EXEMPT: SquadOp[] = ['jeeven', 'ingman', 'aw', 'joker', 'meili'];
 	const points = (list: Status[]) => list.reduce((sum, s) => sum + (s === 'done' ? 2 : s === 'active' ? 1 : 0), 0);
 	const slacker = $derived.by(() => {
 		const scores = (Object.keys(statuses) as SquadOp[])
@@ -416,9 +419,9 @@
 			{@render mastery(t.operator.aw, statuses.aw, slacker === 'aw' || !!pr.aw.slacker, t.operator.awMotto, 'teal', 'aw')}
 		</div>
 
-		<!-- TheJoker_BPL (2026-11-17, the user's friend), drawn after the picture the user sent (JokerEmblem). Seventh,
-		     so he gets the last row to himself, in the middle (styles) -->
-		<div class="op-member op-last">
+		<!-- TheJoker_BPL (2026-11-17, the user's friend), drawn after the picture the user sent (JokerEmblem). Seventh;
+		     since Meili (eighth) the two share the last row, centred (styles) -->
+		<div class="op-member op-pair">
 			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('joker') ? undefined : ''}>
 				<OpGear aura={gear.joker.aura?.id} effect={gear.joker.effect?.id} badge={gear.joker.badge?.id} pet={gear.joker.pet?.id} smoked={!!pr.joker['smoke-bomb']} extra={extras.joker}><JokerEmblem face={faceOf(gear.joker)} /></OpGear>
 				<!-- on two lines, "TheJoker_" / "BPL" (a zero-width space after the underscore), like Drängen's, so his
@@ -428,6 +431,18 @@
 			{@render stamp('joker', t.operator.joker)}
 			{@render high('joker')}
 			{@render mastery(t.operator.joker, statuses.joker, slacker === 'joker' || !!pr.joker.slacker, '', 'purple', 'joker')}
+		</div>
+
+		<!-- Meili (2026-11-28, the user's friend: "lägg till Meili som operator på en gång"): drawn after the
+		     picture of his fantasy-MMO warrior the user sent (MeiliEmblem). Eighth, beside TheJoker_BPL in the last row -->
+		<div class="op-member op-pair op-pair-2">
+			<div class="op-tag flex items-center gap-3.5" data-fx-rest={awake('meili') ? undefined : ''}>
+				<OpGear aura={gear.meili.aura?.id} effect={gear.meili.effect?.id} badge={gear.meili.badge?.id} pet={gear.meili.pet?.id} smoked={!!pr.meili['smoke-bomb']} extra={extras.meili}><MeiliEmblem face={faceOf(gear.meili)} /></OpGear>
+				{@render callsign(t.operator.meili, 'meili')}
+			</div>
+			{@render stamp('meili', t.operator.meili)}
+			{@render high('meili')}
+			{@render mastery(t.operator.meili, statuses.meili, slacker === 'meili' || !!pr.meili.slacker, '', 'teal', 'meili')}
 		</div>
 	</div>
 </div>
@@ -452,20 +467,22 @@
 	}
 	/* five members (Ingman joined 2026-11-14): three in a row, then two, so the frame still fits beside the TV;
 	   six since AW (2026-11-20): two rows of three, so the frame keeps its height; seven since TheJoker_BPL
-	   (2026-11-21): he gets a third row to himself, in the middle (and across both columns two by two) */
-	@container squad (min-width: 470px) {
-		.op-last {
-			grid-column: 1 / -1;
-			justify-self: center;
-		}
-	}
+	   (2026-11-21): a third row; eight since Meili (2026-11-28): Joker and Meili share that row, centred. Three in a
+	   row is a grid of six half-columns, every member spanning two, so the last two can start half a column in;
+	   two by two, eight members simply fill four rows */
 	@container squad (min-width: 700px) {
 		.squad-frame {
-			grid-template-columns: repeat(3, auto);
+			grid-template-columns: repeat(6, auto);
 			column-gap: 14px;
 		}
-		.op-last {
-			grid-column: 2;
+		.op-member {
+			grid-column: span 2;
+		}
+		.op-pair {
+			grid-column: 2 / span 2;
+		}
+		.op-pair-2 {
+			grid-column: 4 / span 2;
 		}
 		.op-tag :global(.og-body > svg) {
 			width: 64px;

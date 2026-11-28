@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'meili-joins',
+		date: '2026-11-28',
+		kind: 'new',
+		title: 'Meili joins the squad',
+		text: 'Meili is the eighth operator in the squad frame, with his own pick in the squad link. Welcome to the grind! 🛡️',
+		tab: 'squad'
+	},
+	{
 		id: 'prestige-only',
 		date: '2026-11-28',
 		kind: 'update',

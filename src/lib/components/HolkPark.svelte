@@ -33,7 +33,8 @@
 		jeeven: 'Da Jeeven',
 		ingman: 'Ingman',
 		aw: 'AW',
-		joker: 'TheJoker_BPL'
+		joker: 'TheJoker_BPL',
+		meili: 'Meili'
 	};
 	/** round the fire: the squad's online members, or the header crew for visitors */
 	const crew = $derived.by(() => {

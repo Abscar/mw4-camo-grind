@@ -57,7 +57,8 @@
 		jeeven: t.operator.jeeven,
 		ingman: t.operator.ingman,
 		aw: t.operator.aw,
-		joker: t.operator.joker
+		joker: t.operator.joker,
+		meili: t.operator.meili
 	};
 
 	// ---------- the campaign: levels + skills ----------

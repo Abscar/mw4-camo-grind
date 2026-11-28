@@ -48,6 +48,7 @@ export const BODY_AT: Record<BodyKey, BodyAt> = {
 	ingman: { cx: 32, ty: 46, hw: 30.5, by: 64.5, drop: 13.2 },
 	aw: { cx: 32, ty: 47, hw: 30.5, by: 64.5, drop: 9 },
 	joker: { cx: 32, ty: 46.2, hw: 31, by: 64.5, drop: 9 },
+	meili: { cx: 32, ty: 46, hw: 31, by: 64.5, drop: 9 },
 	// the round initials badge: a smaller torso low in the circle, under the letters
 	initials: { cx: 32, ty: 50, hw: 24, by: 64.5, drop: 7.5 },
 	mannequin: { cx: 32, ty: 46.5, hw: 30.5, by: 64.5, drop: 9.5 }

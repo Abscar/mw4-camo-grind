@@ -370,6 +370,7 @@ export const BOTS = [
 	{ op: 'ingman', name: 'Ingman' },
 	{ op: 'aw', name: 'AW' },
 	{ op: 'joker', name: 'TheJoker_BPL' },
+	{ op: 'meili', name: 'Meili' },
 	{ op: 'abscar', name: 'Abscar' }
 ] as const;
 /** The bots in a battle: never the operator you are, picked from a seed. */

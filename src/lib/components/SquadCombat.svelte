@@ -117,7 +117,8 @@
 		jeeven: t.operator.jeeven,
 		ingman: t.operator.ingman,
 		aw: t.operator.aw,
-		joker: t.operator.joker
+		joker: t.operator.joker,
+		meili: t.operator.meili
 	};
 	/**
 	 * For Abscar's box: the code's joke bans, plus everyone whose latest K/D is over the limit or who

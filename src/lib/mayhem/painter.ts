@@ -61,6 +61,9 @@ export const LOOKS: Record<string, Look> = {
 	ingman: { head: 'ingman', skin: '#f0c8a0', top: '#5a2a8a', vest: '#2a2620', pouch: '#5e4a2c', accent: '#f2c34a', pants: '#1e1a22', knee: '#1a161e', boot: '#3a2a1c', glove: '#1e1a16', coat: { col: '#5e2c90', trim: '#f2c34a', to: 26, stars: true } },
 	aw: { head: 'aw', skin: '#f4ece6', top: '#d8d0bc', vest: '#2e2a24', pouch: '#3a352c', accent: '#1aa79a', pants: '#cfc6b0', knee: '#1e1e1e', boot: '#2a2420', glove: '#2a2622', camo: ['#1aa79a', '#bdb39a'] },
 	joker: { head: 'joker', skin: '#ece2d6', top: '#5b2a86', vest: '#3c8a3a', pouch: '#4a3a2a', accent: '#8bc34a', pants: '#2a2230', knee: '#1e1a22', boot: '#3e2a4e', glove: '#1e1a1e', coat: { col: '#5b2a86', trim: '#3a1758', to: 30, lapel: '#4a2070', inner: '#3c8a3a' } },
+	// Meili (2026-11-28, after the user's picture): purple-skinned warrior, visored helm head, yellow fur yoke, blue
+	// pauldron colour as accent, brown kilt, scaled boots
+	meili: { head: 'breacher', skin: '#6a5498', top: '#6a5498', vest: '#d6ad48', pouch: '#5a3e2c', accent: '#3a78ac', pants: '#6a5498', knee: '#8a8a94', boot: '#6e6e78', glove: '#5a3e2c', patch: '#3a78ac', bootTrim: true },
 	// ---- the enemies, after the user's enemy sheet (2026-11-23) ----
 	random: { head: 'rookie', skin: '#c8936a', top: '#5d6136', vest: '#6a6440', pouch: '#7a7448', accent: '#7cff5a', pants: '#5a5a34', knee: '#1c1c1c', boot: '#4a3620', glove: '#2a2a20', camo: ['#3e4224', '#7d7a4e'] },
 	sweat: { head: 'sweat', skin: '#c8936a', top: '#1a1b1e', vest: '#222428', pouch: '#2a2c30', accent: '#39ff6a', pants: '#1c1d20', knee: '#121314', boot: '#151517', glove: '#1a1a1c' },

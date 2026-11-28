@@ -79,7 +79,7 @@ function mouthFrom(px: number, py: number, qx: number, qy: number): Mouth {
 	return { x: px, y: py, dir: dx < 0 ? -1 : 1, deg: f((Math.atan2(dy, Math.abs(dx)) * 180) / Math.PI, 1), k: f(Math.hypot(dx, dy) / 19, 3) };
 }
 
-export type FaceKey = 'abscar' | 'phillestar' | 'lars' | 'jeeven' | 'ingman' | 'aw' | 'joker' | 'initials';
+export type FaceKey = 'abscar' | 'phillestar' | 'lars' | 'jeeven' | 'ingman' | 'aw' | 'joker' | 'meili' | 'initials';
 
 /** Every face's anchors in its emblem's 64×64 box (read off the drawings; holk ends = the Golden Holk's). */
 export const FACES: Record<FaceKey, Face> = {
@@ -99,6 +99,9 @@ export const FACES: Record<FaceKey, Face> = {
 	// TheJoker_BPL (JokerEmblem): eyes 27.6/36.4, 26.4 in their black paint, the red mouth's right corner 37.6, 35.2,
 	// hair top 5.8 (a hat sits on the hair)
 	joker: { eyes: { l: [27.6, 26.4], r: [36.4, 26.4], rad: 3.4 }, mouth: mouthFrom(37.6, 35.2, 55, 40), head: { x: 32, y: 7, w: 30 }, smokes: false, puff: [44, 36] },
+	// Meili (MeiliEmblem): glowing eyes 27.6/36.4, 25 in the visor slit, the helm's lower right corner 38.4, 39.4,
+	// helm top 7.4 (a hat sits on the helm)
+	meili: { eyes: { l: [27.6, 25], r: [36.4, 25], rad: 3.4 }, mouth: mouthFrom(38.4, 39.4, 55.4, 43.2), head: { x: 32, y: 8, w: 22 }, smokes: false, puff: [45, 40.4] },
 	// a member without an operator: the initials badge (SquadAvatar); glasses sit just above the letters
 	initials: { eyes: { l: [22.5, 17.6], r: [41.5, 17.6], rad: 5 }, mouth: mouthFrom(40, 45, 62, 52), head: { x: 32, y: 2, w: 44 }, smokes: false, puff: [58, 48] }
 };

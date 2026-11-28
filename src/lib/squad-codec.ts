@@ -50,7 +50,7 @@ export const NAME_MAX = 24;
 export const ONLINE_MS = 5 * 60_000;
 
 /** The operators in the header's squad frame a member can say they are (OperatorTag). */
-export const SQUAD_OPS = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker'] as const;
+export const SQUAD_OPS = ['abscar', 'phillestar', 'lars', 'jeeven', 'ingman', 'aw', 'joker', 'meili'] as const;
 export type SquadOp = (typeof SQUAD_OPS)[number];
 
 /**
@@ -66,7 +66,8 @@ const OP_CALLSIGNS: Record<SquadOp, readonly string[]> = {
 	jeeven: ['dajeeven', 'jeeven'],
 	ingman: ['ingman'],
 	aw: ['aw'],
-	joker: ['thejokerbpl', 'thejoker', 'jokerbpl', 'joker']
+	joker: ['thejokerbpl', 'thejoker', 'jokerbpl', 'joker'],
+	meili: ['meili']
 };
 const callsignKey = (name: string) =>
 	name

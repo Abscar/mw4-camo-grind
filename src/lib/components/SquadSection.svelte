@@ -45,7 +45,8 @@
 		jeeven: t.operator.jeeven,
 		ingman: t.operator.ingman,
 		aw: t.operator.aw,
-		joker: t.operator.joker
+		joker: t.operator.joker,
+		meili: t.operator.meili
 	};
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
