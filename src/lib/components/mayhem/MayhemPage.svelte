@@ -19,7 +19,7 @@
 	import { H, Mayhem, NO_INPUT, VH, VW, W, type GameEvent, type Input } from '#lib/mayhem/engine.ts';
 	import { gunOf, OUT_WEAPONS, STARTER } from '#lib/mayhem/guns.ts';
 	import { ALL_LEVELS, BONUS, CHAPTERS, chapterOf, LEVEL_BY_ID, LEVELS, levelOpen, pointsOf, secretOf, type Level, type LevelRecord } from '#lib/mayhem/levels.ts';
-	import { addClear, ATTACHMENTS, buyPart, canBuyPart, cleanArmory, equipPart, kitStats, nextRankAt, partsFor, partsSpent, rankOf, SLOTS, takesParts, type Armory, type Mods, type Slot } from '#lib/mayhem/gunsmith.ts';
+	import { addClear, ATTACHMENTS, buyPart, canBuyPart, cleanArmory, costOf, equipPart, kitStats, nextRankAt, rankOf, SLOTS, takesParts, type Armory, type Mods, type Slot } from '#lib/mayhem/gunsmith.ts';
 	import { BRANCHES, canBuy, cleanSkills, SKILLS, skillCost, type SkillId } from '#lib/mayhem/skills.ts';
 	import { render } from '#lib/mayhem/render.ts';
 	import { ACTIONS, bind, cleanSettings, DEFAULT_KEYS, DEFAULT_SETTINGS, inputOf, keyLabel, keyMap, PACE, SPEEDS, unbind, type Action, type Settings } from '#lib/mayhem/controls.ts';
@@ -34,8 +34,8 @@
 	let { active = false, onclose }: { active?: boolean; onclose?: () => void } = $props();
 
 	const KEY = 'mw4-camo-grind:mayhem';
-	/** `cash` = every dollar ever looted on this device (spending comes later: wallet = cash − spent) */
-	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[]; armory?: unknown; parts?: number; cash?: number; found?: string[] };
+	/** `cash` = every dollar ever looted on this device, `spent` = dollars spent on Armory attachments (wallet = cash − spent); `parts` = the old Gun Parts (no longer used) */
+	type Camp = { done?: Record<string, LevelRecord>; skills?: SkillId[]; armory?: unknown; parts?: number; cash?: number; spent?: number; found?: string[] };
 	type Saved = { op?: SquadOp; gun?: string; mute?: boolean; level?: string; camp?: Camp; settings?: unknown; hq?: { seen?: string[]; secret?: boolean } };
 	function readSaved(): Saved {
 		try {
@@ -80,13 +80,17 @@
 	const free = $derived(earned - skillCost(skills));
 	// ---------- the Armory (gunsmith.ts): guns you finished a level with + their attachments ----------
 	const armory = $derived<Armory>(cleanArmory(camp.armory));
-	const partsEarned = $derived(Math.max(0, Math.floor(Number(camp.parts) || 0)));
-	const partsFree = $derived(Math.max(0, partsEarned - partsSpent(armory)));
 	const armoryIds = $derived(OUT_WEAPONS.map((w) => w.id).filter((id) => armory[id]));
 	let armSel = $state('');
 	const armGun = $derived(armory[armSel] ? armSel : (armoryIds.includes(start) ? start : armoryIds[0]) ?? '');
 	function setArmory(a: Armory) {
 		setCamp({ armory: a });
+	}
+	/** buy an attachment with looted cash (it goes on at once) */
+	function buyAttachment(gunId: string, attId: string) {
+		const next = buyPart(armory, gunId, attId, wallet);
+		if (next === armory) return;
+		setCamp({ armory: next, spent: spent + costOf(attId) });
 	}
 	const FX_KEYS: (keyof Mods)[] = ['dmg', 'rate', 'mag', 'spread', 'reach', 'speed', 'weight', 'noise', 'pierce'];
 	/** a part's effect in words: "+12% damage · −4% mobility" (fire rate / accuracy read the other way) */
@@ -121,7 +125,10 @@
 		];
 	}
 	const cleared = $derived(LEVELS.filter((l) => done[l.id]?.clear).length);
-	const wallet = $derived(cleanCash(camp.cash));
+	/** every dollar looted, what attachments cost, and what's left to spend */
+	const looted = $derived(cleanCash(camp.cash));
+	const spent = $derived(cleanCash(camp.spent));
+	const wallet = $derived(Math.max(0, looted - spent));
 	let levelId = $state(LEVELS[0].id);
 	const level = $derived(LEVEL_BY_ID.get(levelId) ?? LEVELS[0]);
 	const chapterLevels = $derived(LEVELS.filter((l) => chapterOf(l) === chapterOf(level)));
@@ -137,7 +144,7 @@
 	}
 	/** loot is banked the moment you pick it up, so quitting mid-level never loses it */
 	function bankCash(n: number) {
-		if (n > 0) setCamp({ cash: wallet + n });
+		if (n > 0) setCamp({ cash: looted + n });
 	}
 	/** a level's number: "3", "2-3" in chapter 2, "B1" for a bonus level */
 	const noOf = (l: Level) => (l.bonus ? `B${BONUS.indexOf(l) + 1}` : shortNo(LEVELS.indexOf(l)));
@@ -320,7 +327,6 @@
 		acc: number;
 		combo: number;
 		gained: number;
-		parts: number;
 		gun: { id: string; name: string; fresh: boolean; rank: number; up: boolean } | null;
 		cash: number;
 		all: boolean;
@@ -497,7 +503,6 @@
 				return;
 			}
 		}
-		const parts = partsFor(g.stats.kills, all, clean);
 		const heldId = g.player.held?.id ?? null;
 		const before = heldId ? armory[heldId] : undefined;
 		const nextArmory = heldId ? addClear(armory, heldId) : armory;
@@ -516,7 +521,6 @@
 			acc: g.stats.shots ? Math.round((g.stats.hits / g.stats.shots) * 100) : 0,
 			combo: g.stats.bestCombo,
 			gained: pointsOf(rec) - pointsOf(old),
-			parts,
 			gun,
 			cash: g.cash,
 			all,
@@ -525,7 +529,7 @@
 			next: i >= 0 ? (LEVELS[i + 1]?.id ?? null) : null,
 			bonus: !!g.level.bonus
 		};
-		setCamp({ done: { ...done, [id]: rec }, armory: nextArmory, parts: partsEarned + parts });
+		setCamp({ done: { ...done, [id]: rec }, armory: nextArmory });
 		screen = 'done';
 	}
 
@@ -1009,7 +1013,6 @@
 					<p class="mh-cover-t font-head lime">{M.done.title}</p>
 					<p class="mh-cover-s">{result.name}</p>
 					{#if result.gained > 0}<p class="mh-newbest font-head">{M.done.points(result.gained)}</p>{/if}
-					<p class="mh-armgain font-head">{M.done.parts(result.parts)}</p>
 					{#if result.gun?.fresh}<p class="mh-armgain new">{M.done.newGun(result.gun.name)}</p>
 					{:else if result.gun?.up}<p class="mh-armgain new">{M.done.rankUp(result.gun.name, result.gun.rank)}</p>{/if}
 					<dl class="mh-stats">
@@ -1190,7 +1193,7 @@
 				</div>
 			{:else}
 				<div class="mh-skillhead">
-					<p><b class="num">⚙ {M.armory.parts(partsFree)}</b> · {M.armory.partsHelp}</p>
+					<p><b class="num mh-armcash">{M.cash.amount(wallet)}</b> · {M.armory.cashHelp}</p>
 				</div>
 				{#if !armoryIds.length}
 					<p class="mh-note mh-armempty">{M.armory.empty}</p>
@@ -1257,7 +1260,7 @@
 													<span class="mh-pn">{M.armory.none}</span>
 												</button>
 												{#each ATTACHMENTS.filter((x) => x.slot === slot) as att (att.id)}
-													{@const st = canBuyPart(armory, armGun, att.id, partsFree)}
+													{@const st = canBuyPart(armory, armGun, att.id, wallet)}
 													{@const on = a.eq[slot] === att.id}
 													<button
 														type="button"
@@ -1266,7 +1269,7 @@
 														aria-pressed={on}
 														disabled={st === 'rank' || st === 'poor'}
 														aria-label={st === 'ok' ? M.armory.buyLabel(att.name, gunOf(armGun).name, att.cost) : undefined}
-														onclick={() => setArmory(st === 'owned' ? equipPart(armory, armGun, slot, att.id) : buyPart(armory, armGun, att.id, partsFree))}
+														onclick={() => (st === 'owned' ? setArmory(equipPart(armory, armGun, slot, att.id)) : buyAttachment(armGun, att.id))}
 													>
 														<span class="mh-pn">{att.name}</span>
 														<span class="mh-pfx">{#each fxText(att.mods) as fx, i (i)}<em class:good={fx.good}>{fx.text}</em>{/each}</span>

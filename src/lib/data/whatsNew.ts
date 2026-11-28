@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-armory-cash',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Madness: attachments cost cash',
+		text: 'Spend the cash you loot from enemies on attachments in your Armory. Headshots and takedowns pay more. 💵',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-hq',
 		date: '2026-11-28',
 		kind: 'new',

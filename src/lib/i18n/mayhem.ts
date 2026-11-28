@@ -13,8 +13,7 @@ export const mayhemText = {
 	menuLabel: 'Game menu',
 	tabs: { levels: 'Levels', skills: 'Skill tree', armory: 'Armory', loadout: 'Operator & gun', settings: 'Settings' },
 	armory: {
-		parts: (n: number) => `${n.toLocaleString('en-US')} gun parts`,
-		partsHelp: 'Every level you finish gives gun parts: 10 for the clear, 1 per kill, +10 for killing everyone, +10 for no deaths.',
+		cashHelp: 'Loot cash from the enemies you kill (headshots and takedowns pay more) and spend it on attachments here.',
 		empty: 'Finish a level with a gun in your hands and it lands here. Then you can put attachments on it and start levels with it.',
 		intro: 'Guns you finished a level with. Each level you finish with a gun ranks it up and opens better attachments.',
 		rank: (n: number) => `Rank ${n}`,
@@ -31,13 +30,13 @@ export const mayhemText = {
 		none: 'None',
 		on1: 'On',
 		put: 'Put on',
-		buy: (n: number) => `Buy · ${n} ⚙`,
+		buy: (n: number) => `Buy · $${n.toLocaleString('en-US')}`,
 		needRank: (n: number) => `Needs rank ${n}`,
-		poor: (n: number) => `${n} ⚙ (not enough)`,
+		poor: (n: number) => `$${n.toLocaleString('en-US')} (not enough cash)`,
 		fx: { dmg: 'damage', rate: 'fire rate', mag: 'ammo', spread: 'accuracy', reach: 'range', speed: 'bullet speed', weight: 'mobility', noise: 'noise', pierce: 'goes through 1 more enemy' },
 		gunLabel: (name: string, rank: number) => `${name}, rank ${rank}`,
 		picked: 'Armory',
-		buyLabel: (part: string, gun: string, cost: number) => `Buy ${part} for ${gun}, ${cost} gun parts`
+		buyLabel: (part: string, gun: string, cost: number) => `Buy ${part} for ${gun}, $${cost.toLocaleString('en-US')}`
 	},
 	set: {
 		keys: 'Keys',
@@ -136,7 +135,6 @@ export const mayhemText = {
 		again: 'Play it again',
 		skills: (n: number) => (n > 0 ? `Skill tree (${n} to spend)` : 'Skill tree'),
 		allDone: 'Every level cleared. Legend.',
-		parts: (n: number) => `+${n} gun parts ⚙`,
 		newGun: (name: string) => `${name} added to your Armory!`,
 		rankUp: (name: string, rank: number) => `${name} reached rank ${rank}: better attachments open`,
 		armory: 'Armory'

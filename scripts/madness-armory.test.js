@@ -1,5 +1,5 @@
 // Abscars Madness' Armory (src/lib/mayhem/gunsmith.ts + the engine's own-gun stats): guns land in it when you
-// finish a level holding them, ranks open better parts, parts cost gun parts and change the gun's stats.
+// finish a level holding them, ranks open better parts, parts cost looted cash and change the gun's stats.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Mayhem } from '../src/lib/mayhem/engine.ts';
@@ -13,8 +13,7 @@ import {
 	cleanArmory,
 	equipPart,
 	kitStats,
-	partsFor,
-	partsSpent,
+	costOf,
 	rankOf,
 	SLOTS,
 	takesParts
@@ -23,6 +22,10 @@ import { LEVELS } from '../src/lib/mayhem/levels.ts';
 
 const ar = weaponsOfKind('ar')[0].id;
 const knife = weaponsOfKind('melee')[0]?.id;
+
+test('prices: in dollars, $200–$900, a few levels of loot each', () => {
+	for (const a of ATTACHMENTS) assert.ok(a.cost >= 200 && a.cost <= 900 && a.cost % 50 === 0, a.id + ' ' + a.cost);
+});
 
 test('catalogue: unique ids, three parts per slot, one of each rank, cost grows with rank', () => {
 	assert.equal(new Set(ATTACHMENTS.map((a) => a.id)).size, ATTACHMENTS.length);
@@ -46,20 +49,20 @@ test('finishing levels adds the gun and ranks it up', () => {
 	assert.equal(rankOf(a[ar].n), 2);
 	for (let i = 0; i < 3; i++) a = addClear(a, ar);
 	assert.equal(rankOf(a[ar].n), 3);
-	assert.equal(partsFor(12, true, false), 32);
-	assert.equal(partsFor(0, false, false), 10);
 });
 
 test('buying: rank, money, owned; bought parts go on and can be swapped or taken off', () => {
 	let a = addClear({}, ar);
-	assert.equal(canBuyPart(a, ar, 'holo', 999), 'rank');
-	assert.equal(canBuyPart(a, ar, 'reflex', 5), 'poor');
-	assert.equal(canBuyPart(a, 'nope', 'reflex', 999), 'none');
-	a = buyPart(a, ar, 'reflex', 100);
+	assert.equal(canBuyPart(a, ar, 'holo', 99999), 'rank');
+	assert.equal(canBuyPart(a, ar, 'reflex', costOf('reflex') - 1), 'poor');
+	assert.equal(canBuyPart(a, ar, 'reflex', costOf('reflex')), 'ok');
+	assert.equal(canBuyPart(a, 'nope', 'reflex', 99999), 'none');
+	a = buyPart(a, ar, 'reflex', 1000);
 	assert.deepEqual(a[ar].own, ['reflex']);
 	assert.equal(a[ar].eq.optic, 'reflex');
-	assert.equal(canBuyPart(a, ar, 'reflex', 100), 'owned');
-	assert.equal(partsSpent(a), ATT_BY_ID.get('reflex').cost);
+	assert.equal(canBuyPart(a, ar, 'reflex', 1000), 'owned');
+	assert.equal(costOf('reflex'), ATT_BY_ID.get('reflex').cost);
+	assert.equal(costOf('bogus'), 0);
 	// can't afford = nothing changes
 	assert.equal(buyPart(a, ar, 'ext', 1), a);
 	a = equipPart(a, ar, 'optic', null);
