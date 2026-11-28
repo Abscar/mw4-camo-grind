@@ -25,6 +25,7 @@
  */
 import { gunOf, OUT_WEAPONS, STARTER, weaponsOfKind, type GunKind, type GunStats } from './guns.ts';
 import { CEIL, FLOOR, LEVEL_BY_ID, LEVELS, type Block, type KeyColour, type Level } from './levels.ts';
+import { makeRag, pushRag, ragCenter, ragHit, stepRag, type Rag } from './ragdoll.ts';
 import type { SkillId } from './skills.ts';
 
 export { FLOOR, CEIL };
@@ -255,12 +256,12 @@ export interface Pickup {
 
 export interface Corpse {
 	f: Fighter;
+	/** the body's points (ragdoll.ts); x / y / vx / vy = its middle, for the camera */
+	rag: Rag;
 	x: number;
 	y: number;
 	vx: number;
 	vy: number;
-	ang: number;
-	spin: number;
 	t: number;
 	still: boolean;
 }
@@ -1936,7 +1937,8 @@ export class Mayhem {
 			f.held = null;
 		}
 		if (!pit) {
-			this.corpses.push({ f, x: f.x, y: f.y - 46 * f.scale, vx: f.vx + kx * 0.9, vy: Math.min(f.vy, 0) + ky - 120, ang: 0, spin: (kx >= 0 ? 1 : -1) * (6 + this.r() * 8) * (head ? 1.4 : 1), t: 0, still: false });
+			const rag = makeRag(f.x, f.y, f.scale, f.facing, f.vx * 0.8, Math.min(f.vy, 0) - 90, kx * 0.9, ky * 0.8 - 60, head, this.r);
+			this.corpses.push({ f, rag, ...ragCenter(rag), t: 0, still: false });
 			for (let i = 0; i < 16; i++) this.parts.push({ x: f.x, y: f.y - 50 * f.scale, vx: kx * 0.4 + (this.r() - 0.5) * 420, vy: -this.r() * 420, life: 1.6, max: 1.6, kind: 'ketchup', r: 2 + this.r() * 3.5 });
 		}
 		if (f.player) {
@@ -1970,6 +1972,24 @@ export class Mayhem {
 			f.stun = 0.5;
 			f.asleep = false;
 			this.#damage(f, dmg, false, mine ? this.player : null, dir * 520 * k, -560 * k);
+		}
+		// bodies get thrown around
+		const RB = R * 1.2;
+		for (const c of this.corpses) {
+			let any = false;
+			for (const q of c.rag.p) {
+				const d = Math.hypot(q.x - x, q.y - y);
+				if (d > RB) continue;
+				const k = 1 - d / RB;
+				q.vx += ((q.x - x) / (d || 1)) * 700 * k;
+				q.vy += ((q.y - y) / (d || 1)) * 500 * k - 380 * k;
+				any = true;
+			}
+			if (any) {
+				c.rag.asleep = false;
+				c.rag.calm = 0;
+				c.still = false;
+			}
 		}
 		// cracked walls break, other barrels go off
 		for (const b of this.blocks) {
@@ -2070,6 +2090,21 @@ export class Mayhem {
 					break;
 				}
 			}
+			// bodies on the floor jerk when shot (the bullet goes on)
+			if (b.life > 0 && b.kind === 'bullet') {
+				for (const c of this.corpses) {
+					if (b.hit.includes(-1 - c.f.uid)) continue;
+					const i = ragHit(c.rag, x0, y0, b.x, b.y);
+					if (i < 0) continue;
+					b.hit.push(-1 - c.f.uid);
+					const sp = Math.hypot(b.vx, b.vy) || 1;
+					const k = Math.min(420, 120 + b.dmg * 5);
+					const q = c.rag.p[i];
+					pushRag(c.rag, q.x, q.y, 16 * c.f.scale, (b.vx / sp) * k, (b.vy / sp) * k - 60);
+					c.still = false;
+					for (let j = 0; j < 3; j++) this.parts.push({ x: q.x, y: q.y, vx: (b.vx / sp) * 120 + (this.r() - 0.5) * 160, vy: -this.r() * 160, life: 0.6, max: 0.6, kind: 'ketchup', r: 1.5 + this.r() * 2 });
+				}
+			}
 			// walls, the floor
 			if (b.life > 0 && (inSolid(b.x, b.y) || (b.y >= FLOOR && this.#onGroundAt(b.x)))) {
 				if (b.kind === 'rocket') this.#boom(b.x - Math.sign(b.vx) * 6, Math.min(b.y, FLOOR - 4), b.mine);
@@ -2149,42 +2184,13 @@ export class Mayhem {
 		}
 
 		// ragdolls
+		const ragWorld = { floor: FLOOR, onGround: (x: number) => this.#onGroundAt(x), plats: this.plats, solids: sol, gravity: GRAV };
 		for (const c of this.corpses) {
 			c.t += dt;
 			if (c.still) continue;
-			const py = c.y;
-			c.vy += GRAV * dt;
-			c.x += c.vx * dt;
-			c.y += c.vy * dt;
-			c.ang += c.spin * dt;
-			const ground = (y: number) => {
-				c.y = y;
-				if (Math.abs(c.vy) > 220) {
-					c.vy = -c.vy * 0.32;
-					c.spin *= 0.6;
-				} else c.vy = 0;
-				c.vx *= 0.82;
-				const lie = Math.round(c.ang / Math.PI - 0.5) * Math.PI + Math.PI / 2;
-				if (c.vy === 0) {
-					c.ang += (lie - c.ang) * Math.min(1, dt * 10);
-					c.spin *= 0.7;
-					if (Math.abs(c.vx) < 8 && Math.abs(lie - c.ang) < 0.02) {
-						c.ang = lie;
-						c.still = true;
-					}
-				}
-			};
-			const off = 9 * c.f.scale;
-			if (this.#onGroundAt(c.x) && py <= FLOOR - off + 1 && c.y >= FLOOR - off) ground(FLOOR - off);
-			else if (c.vy > 0) {
-				for (const pl of this.plats) if (py <= pl.y - off && c.y >= pl.y - off && c.x > pl.x && c.x < pl.x + pl.w) ground(pl.y - off);
-				for (const s of sol) if (py <= s.y - off && c.y >= s.y - off && c.x > s.x && c.x < s.x + s.w) ground(s.y - off);
-			}
-			if (inSolid(c.x, c.y)) {
-				c.x -= c.vx * dt;
-				c.vx = -c.vx * 0.4;
-			}
-			if (c.y > H + 200) c.still = true;
+			const moving = stepRag(c.rag, dt, ragWorld);
+			Object.assign(c, ragCenter(c.rag));
+			if (!moving || c.y > H + 200) c.still = true;
 		}
 
 		// particles

@@ -17,7 +17,7 @@
  */
 import { bodyOf, CEIL, FLOOR, H, PAD_W, SPIKE_H, VH, VW, W, type Arena, type Corpse, type Fighter, type Mayhem, type Platform } from './engine.ts';
 import { gunOf, type GunKind } from './guns.ts';
-import { contactShadow, gunPaint, LOOKS, paintFigure, RIG, type GunPic, type Pose } from './painter.ts';
+import { contactShadow, gunPaint, LOOKS, paintFigure, paintRagdoll, RIG, type GunPic, type Pose } from './painter.ts';
 
 type Ctx = CanvasRenderingContext2D;
 // ---------- the arenas (whole world, drawn once per scale into an offscreen canvas) ----------
@@ -474,9 +474,7 @@ function drawCorpse(c: Ctx, k: Corpse, op: string) {
 	const L = f.player ? (LOOKS[op] ?? LOOKS.abscar) : (LOOKS[f.kind] ?? LOOKS.random);
 	c.save();
 	c.globalAlpha = k.t > 9 ? Math.max(0, 1 - (k.t - 9) / 2) : 1;
-	c.translate(k.x, k.y);
-	c.rotate(k.ang);
-	paintFigure(c, L, 0, 46 * f.scale, f.scale, { facing: f.facing, aim: 0, walk: k.t * 3, onGround: false, vx: 0, recoil: 0, gun: null, punch: 0, limp: true, t: k.t }, f.uid);
+	paintRagdoll(c, L, k.rag.p, k.rag.s, k.rag.facing, k.t, f.uid);
 	c.restore();
 }
 

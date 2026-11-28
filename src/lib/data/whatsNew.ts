@@ -23,6 +23,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: readonly WhatsNewEntry[] = [
 	{
+		id: 'madness-ragdolls',
+		date: '2026-11-28',
+		kind: 'update',
+		title: 'Abscars Madness: real ragdolls',
+		text: 'Enemies now crumple when they die: knees buckle, arms flop, bodies slide off ledges, and blasts and bullets throw them around.',
+		tab: 'madness'
+	},
+	{
 		id: 'madness-armory-cash',
 		date: '2026-11-28',
 		kind: 'update',

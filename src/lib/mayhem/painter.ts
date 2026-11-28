@@ -229,7 +229,15 @@ function legTargets(p: Pose, s: 1 | -1): P {
 
 // ---------- parts ----------
 
-function boot(c: Ctx, foot: P, L: Look, dim: number) {
+function boot(c: Ctx, foot: P, L: Look, dim: number, turn = 0) {
+	if (turn) {
+		c.save();
+		c.translate(foot[0], foot[1]);
+		c.rotate(turn);
+		boot(c, [0, 0], L, dim);
+		c.restore();
+		return;
+	}
 	const [x, y] = foot;
 	c.beginPath();
 	c.moveTo(x - 3.4, y - 7);
@@ -296,13 +304,24 @@ function bone(c: Ctx, a: P, b: P, ra: number, rb: number, dim: number) {
 	c.stroke();
 }
 
-function endoLeg(c: Ctx, hip: P, knee: P, foot: P, dim: number) {
+function endoLeg(c: Ctx, hip: P, knee: P, foot: P, dim: number, turn = 0) {
 	piston(c, hip, knee, -3, dim);
 	bone(c, hip, knee, 2.6, 2.1, dim);
 	piston(c, knee, foot, 2.6, dim);
 	bone(c, knee, [foot[0], foot[1] - 2], 2.2, 1.8, dim);
 	joint(c, hip, 3.2, dim);
 	joint(c, knee, 3.1, dim);
+	if (turn) {
+		c.save();
+		c.translate(foot[0], foot[1]);
+		c.rotate(turn);
+		c.translate(-foot[0], -foot[1]);
+	}
+	endoFoot(c, foot, dim);
+	if (turn) c.restore();
+}
+
+function endoFoot(c: Ctx, foot: P, dim: number) {
 	// a clawed metal foot
 	const [x, y] = foot;
 	c.beginPath();
@@ -413,14 +432,24 @@ function endoPelvis(c: Ctx, dim: number) {
 	c.stroke();
 }
 
-function leg(c: Ctx, p: Pose, L: Look, s: 1 | -1, dim: number, seed: number) {
+/** the angle a boot turns so its sole stays across the shin (0 = standing) */
+function shinTurn(knee: P, foot: P) {
+	return Math.atan2(foot[1] - knee[1], foot[0] - knee[0]) - Math.PI / 2;
+}
+
+function leg(c: Ctx, p: Pose, L: Look, s: 1 | -1, dim: number, seed: number, rag?: { knee: P; foot: P }) {
 	const bulk = L.bulk ?? 1;
 	const hip: P = [s * 4.4 * bulk, -RIG.hip + 1];
-	const t0 = legTargets(p, s);
-	// standing on the floor while sunk / tipped: keep the feet on the floor (a dive's legs just go with the body)
-	const target = (p.drop || p.lean) && !p.lie && p.onGround ? toLocal(p, t0) : t0;
-	const { mid: knee, tip: foot } = ik(hip, [target[0], target[1] - 6], 19.4, 17.4, p.limp ? 1 : -1);
-	if (L.endo) return endoLeg(c, hip, knee, [foot[0], foot[1] + 3], dim);
+	let knee: P, foot: P;
+	if (rag) ({ knee, foot } = rag);
+	else {
+		const t0 = legTargets(p, s);
+		// standing on the floor while sunk / tipped: keep the feet on the floor (a dive's legs just go with the body)
+		const target = (p.drop || p.lean) && !p.lie && p.onGround ? toLocal(p, t0) : t0;
+		({ mid: knee, tip: foot } = ik(hip, [target[0], target[1] - 6], 19.4, 17.4, p.limp ? 1 : -1));
+	}
+	const turn = rag ? shinTurn(knee, foot) : 0;
+	if (L.endo) return endoLeg(c, hip, knee, [foot[0], foot[1] + 3], dim, turn);
 	const pants = tone(L.pants, dim);
 	limb(c, hip[0], hip[1], knee[0], knee[1], 5.6 * bulk, 4.2 * bulk, pants);
 	if (L.camo) {
@@ -446,7 +475,7 @@ function leg(c: Ctx, p: Pose, L: Look, s: 1 | -1, dim: number, seed: number) {
 		const ex = knee[0] + (sx / sl) * 5.5, ey = knee[1] + (sy / sl) * 5.5;
 		limb(c, knee[0] + 1, knee[1] - 1, ex + 1, ey, 3.6 * bulk, 3 * bulk, tone(L.knee, dim));
 	}
-	boot(c, foot, L, dim);
+	boot(c, foot, L, dim, turn);
 }
 
 function hand(c: Ctx, at: P, col: string, r = 3.1) {
@@ -462,9 +491,9 @@ function hand(c: Ctx, at: P, col: string, r = 3.1) {
 	c.stroke();
 }
 
-function arm(c: Ctx, L: Look, sh: P, target: P, dim: number, glow?: string) {
+function arm(c: Ctx, L: Look, sh: P, target: P, dim: number, glow?: string, elbow?: P) {
 	const bulk = L.bulk ?? 1;
-	const { mid: el, tip: h } = ik(sh, target, 14, 13.5, 1);
+	const { mid: el, tip: h } = elbow ? { mid: elbow, tip: target } : ik(sh, target, 14, 13.5, 1);
 	if (L.endo) return endoArm(c, sh, el, h, dim);
 	c.save();
 	if (glow) {
@@ -1185,6 +1214,65 @@ export function paintFigure(c: Ctx, L: Look, x: number, y: number, s: number, p:
 		c.restore();
 	}
 	arm(c, L, shF, handF, 0);
+	c.restore();
+}
+
+/**
+ * Paint a dead body from its ragdoll points (ragdoll.ts order: shF, shB, hipF, hipB, head, elF, handF, elB, handB,
+ * kneeF, footF, kneeB, footB; world units). The torso is drawn in its own frame (from the hips up to the shoulders),
+ * the limbs from their joints in that frame, the head turned round the neck.
+ */
+export function paintRagdoll(c: Ctx, L: Look, pts: { x: number; y: number }[], s: number, facing: 1 | -1, t: number, seed = 1) {
+	const hx = (pts[2].x + pts[3].x) / 2, hy = (pts[2].y + pts[3].y) / 2;
+	const sx = (pts[0].x + pts[1].x) / 2, sy = (pts[0].y + pts[1].y) / 2;
+	let ux = sx - hx, uy = sy - hy;
+	const ul = Math.hypot(ux, uy) || 1;
+	ux /= ul;
+	uy /= ul;
+	// local axes: Y towards the feet, X towards the facing side (mirrored when facing left)
+	const Yx = -ux, Yy = -uy;
+	const Xx = -uy * facing, Xy = ux * facing;
+	// origin = the local (0, 0): the hips' middle is local (0, -43)
+	const hipY = -RIG.hip + 1;
+	const Ox = hx - Yx * s * hipY, Oy = hy - Yy * s * hipY;
+	const loc = (i: number): P => {
+		const dx = pts[i].x - Ox, dy = pts[i].y - Oy;
+		return [(dx * Xx + dy * Xy) / s, (dx * Yx + dy * Yy) / s];
+	};
+	const p: Pose = { facing: 1, aim: 0, walk: 0, onGround: false, vx: 0, recoil: 0, gun: null, punch: 0, limp: true, t };
+	c.save();
+	c.transform(Xx * s, Xy * s, Yx * s, Yy * s, Ox, Oy);
+	const bulk = L.bulk ?? 1;
+	const shF: P = [6 * bulk, -RIG.shoulder + 1];
+	const shB: P = [-6.5 * bulk, -RIG.shoulder + 1.6];
+	capeBack(c, L, p);
+	coatBack(c, L, p);
+	arm(c, L, shB, loc(8), -0.28, L.glowArm, loc(7));
+	leg(c, p, L, -1, -0.3, seed, { knee: loc(11), foot: loc(12) });
+	if (L.endo) endoPelvis(c, 0);
+	else {
+		c.beginPath();
+		c.roundRect(-8.6 * bulk, -RIG.hip - 3, 17.2 * bulk, 10, 4);
+		shadeFill(c, L.pants, -8, 8, -RIG.hip - 3, -RIG.hip + 7);
+	}
+	leg(c, p, L, 1, 0, seed, { knee: loc(9), foot: loc(10) });
+	torso(c, L, p, seed);
+	coatFront(c, L, p);
+	ghillie(c, L, p, seed);
+	{
+		// the head tilts round the base of the neck
+		const hd = loc(4);
+		const nx = 0, ny = -RIG.shoulder - 1;
+		const tilt = Math.atan2(hd[1] - ny, hd[0] - nx) - Math.atan2(-RIG.head - ny, 1.2 - nx);
+		c.save();
+		c.translate(nx, ny);
+		c.rotate(tilt);
+		c.translate(-nx, -ny);
+		head(c, L, p);
+		c.restore();
+	}
+	capeFront(c, L);
+	arm(c, L, shF, loc(6), 0, undefined, loc(5));
 	c.restore();
 }
 
